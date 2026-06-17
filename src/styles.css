@@ -1,0 +1,174 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* macOS-style draggable title bar region */
+.titlebar-drag {
+  -webkit-app-region: drag;
+}
+.titlebar-nodrag {
+  -webkit-app-region: no-drag;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Markdown styling inside chat & editor previews */
+.md h1,
+.md h2,
+.md h3 {
+  @apply font-semibold text-ink-50 mt-4 mb-2;
+}
+.md h1 { @apply text-lg; }
+.md h2 { @apply text-base; }
+.md h3 { @apply text-sm uppercase tracking-wider text-ink-300; }
+.md p { @apply leading-relaxed mb-2 text-ink-100; }
+.md ul, .md ol { @apply ml-5 mb-2; }
+.md ul { @apply list-disc; }
+.md ol { @apply list-decimal; }
+.md li { @apply mb-1; }
+.md code {
+  @apply font-mono text-[12px] bg-ink-800 text-ink-100 px-1 py-0.5 rounded;
+}
+.md pre {
+  @apply font-mono text-[12px] bg-ink-900 border border-ink-800 rounded-lg p-3 my-2 overflow-x-auto;
+}
+.md pre code { @apply bg-transparent p-0; }
+.md a { @apply text-accent underline decoration-accent/40 hover:decoration-accent; }
+.md hr { @apply border-ink-800 my-3; }
+.md blockquote { @apply border-l-2 border-ink-700 pl-3 italic text-ink-300; }
+
+/* Editor textarea look */
+.code-input {
+  font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  font-size: 13px;
+  line-height: 1.65;
+  tab-size: 2;
+}
+
+/* react-simple-code-editor container */
+.kraken-editor {
+  font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  font-size: 13px;
+  line-height: 1.65;
+  tab-size: 2;
+  caret-color: #7c5cff;
+  min-height: 100%;
+}
+.kraken-editor textarea:focus {
+  outline: none;
+}
+.kraken-editor pre {
+  margin: 0;
+}
+
+/* Prism — Kraken dark theme. Applied both inside markdown code blocks
+   (`.md-code`) and inside the SDD spec editor (`.kraken-editor`).        */
+.md-code,
+.kraken-editor pre {
+  color: #e7ebf3;
+  background: rgba(255, 255, 255, 0.025);
+}
+.md-codespan {
+  font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  font-size: 12px;
+  background: #252b3a;
+  color: #e7ebf3;
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata { color: #5b6781; font-style: italic; }
+.token.punctuation { color: #aab3c4; }
+.token.namespace { opacity: 0.7; }
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted { color: #f78c6c; }
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted { color: #c3e88d; }
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string { color: #89ddff; }
+.token.atrule,
+.token.attr-value,
+.token.keyword { color: #c792ea; }
+.token.function,
+.token.class-name { color: #82aaff; }
+.token.regex,
+.token.important,
+.token.variable { color: #ffcb6b; }
+.token.important,
+.token.bold { font-weight: 700; }
+.token.italic { font-style: italic; }
+
+/* shell-session / bash prompts */
+.token.command { color: #82aaff; }
+.token.output { color: #aab3c4; }
+
+/* Markdown grammar tokens used by the spec editor */
+.language-markdown .token.title,
+.language-markdown .token.title .token.punctuation { color: #82aaff; font-weight: 600; }
+.language-markdown .token.bold { color: #f78c6c; font-weight: 700; }
+.language-markdown .token.italic { color: #c792ea; font-style: italic; }
+.language-markdown .token.list.punctuation { color: #7c5cff; }
+.language-markdown .token.url { color: #89ddff; }
+.language-markdown .token.code,
+.language-markdown .token.code-snippet { color: #c3e88d; }
+
+/* Tool-use lines emitted by the streaming Claude CLI */
+.tool-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  font-size: 11px;
+  color: #7c5cff;
+  background: rgba(124, 92, 255, 0.08);
+  border: 1px solid rgba(124, 92, 255, 0.2);
+  padding: 2px 6px;
+  border-radius: 4px;
+}

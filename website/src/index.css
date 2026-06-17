@@ -1,0 +1,117 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-ink-975 text-ink-200 font-sans antialiased;
+    /* Abyssal base: deep radial wells of purple + cyan against near-black. */
+    background-color: #070810;
+    background-image:
+      radial-gradient(60rem 60rem at 18% -8%, rgba(124, 92, 255, 0.18), transparent 60%),
+      radial-gradient(50rem 50rem at 92% 4%, rgba(57, 224, 230, 0.1), transparent 55%),
+      radial-gradient(70rem 50rem at 50% 120%, rgba(124, 92, 255, 0.12), transparent 60%);
+    background-attachment: fixed;
+  }
+
+  ::selection {
+    background: rgba(124, 92, 255, 0.4);
+    color: #fff;
+  }
+
+  /* Themed scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #252b3a;
+    border-radius: 6px;
+    border: 2px solid #070810;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #3a4257;
+  }
+}
+
+@layer components {
+  /* Grain overlay used by the Background component */
+  .grain {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(120deg, #ffffff 0%, #c9bdff 42%, #7c5cff 70%, #39e0e6 100%);
+  }
+
+  .text-glow {
+    text-shadow: 0 0 24px rgba(124, 92, 255, 0.45);
+  }
+
+  .hairline {
+    @apply border border-white/[0.06];
+  }
+
+  .glass {
+    @apply bg-ink-900/50 backdrop-blur-xl border border-white/[0.07];
+  }
+
+  /* Card with a faint top sheen + hover lift */
+  .card {
+    @apply relative rounded-2xl border border-white/[0.07] bg-white/[0.02] transition-all duration-300;
+  }
+  .card::before {
+    content: '';
+    @apply pointer-events-none absolute inset-x-0 top-0 h-px rounded-t-2xl;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.18), transparent);
+  }
+  .card:hover {
+    @apply border-white/15 bg-white/[0.04];
+    transform: translateY(-3px);
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-ink-300;
+  }
+
+  /* Animated dashed flow edge fallback (for non-RF diagrams) */
+  .flowline {
+    stroke-dasharray: 6 6;
+    animation: dash 0.8s linear infinite;
+  }
+}
+
+/* React Flow theme overrides */
+.react-flow__attribution {
+  display: none;
+}
+.react-flow__edge-path {
+  stroke: rgba(124, 92, 255, 0.55);
+}
+.react-flow__controls {
+  background: rgba(23, 27, 38, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  overflow: hidden;
+  backdrop-filter: blur(8px);
+}
+.react-flow__controls-button {
+  background: transparent;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  color: #aab3c4;
+}
+.react-flow__controls-button:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.react-flow__controls-button svg {
+  fill: currentColor;
+}
