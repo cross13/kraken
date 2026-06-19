@@ -162,6 +162,19 @@ the active editor tab's spec for branch/commit/PR defaults and writes branch/com
 back into `SpecMeta`). The current project + branch are also shown in the `TitleBar` and
 `StatusBar`, which deep-link into this panel.
 
+### Terminals — interactive PTY sessions (`electron/terminal.ts` + `TerminalView`/`TerminalsView`)
+Where `claude:stream` is one-shot and fire-and-forget (`-p`, no stdin), terminals are a **fully
+bidirectional** channel — the only way to *answer* Claude. A `TerminalManager` owns `node-pty`
+processes keyed by `termId`; `createTerminal` in `main.ts` resolves the spawn policy
+(`profile: 'shell'` = login shell; `profile: 'claude'` = the real `claude` CLI via `detectCli()`),
+always with `expandedPath()` + workspace cwd. This gives **AskUserQuestion answers, permission
+prompts, and real CLI slash commands** natively, "as in the cli". IPC: `terminal:create` (invoke)
++ `terminal:write`/`terminal:resize`/`terminal:kill` (send) + `terminal:data`/`terminal:exit`
+events. The renderer uses **xterm.js** (`TerminalView`, kept mounted across tab switches so the PTY
+survives) with the web-links addon routing URL clicks to `shell:openUrl`, which **opens URLs Claude
+emits in Google Chrome** (default-browser fallback). node-pty ships an N-API prebuilt binary (no
+from-source rebuild; `asarUnpack`-ed for packaging). Sidebar: **Terminals** panel (`TerminalsView`).
+
 ## Conventions worth knowing
 
 - **The IPC boundary is the contract.** A new feature touching the backend means: handler

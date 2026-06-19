@@ -7,7 +7,10 @@
     "dev": "vite --port 5990 --strictPort",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --port 5990 --strictPort",
-    "typecheck": "tsc --noEmit"
+    "start": "vite preview --port 80 --strictPort",
+    "typecheck": "tsc --noEmit",
+    "docker:build": "docker build -t kraken-website .",
+    "docker:run": "docker run --rm -p 80:80 kraken-website"
   },
   "dependencies": {
     "@xyflow/react": "^12.3.5",

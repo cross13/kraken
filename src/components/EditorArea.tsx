@@ -10,6 +10,7 @@ import { SkillViewer } from './views/SkillViewer';
 import { RunViewer } from './views/RunViewer';
 import { HookEditor } from './views/HookEditor';
 import { AgentGraphView } from './views/AgentGraphView';
+import { TerminalView } from './views/TerminalView';
 
 export function EditorArea() {
   const tabs = useUi((s) => s.tabs);
@@ -49,9 +50,21 @@ export function EditorArea() {
           );
         })}
       </div>
-      <div className="flex-1 min-h-0 overflow-hidden">
-        {!active && <WelcomeView />}
-        {active?.kind === 'welcome' && <WelcomeView />}
+      <div className="flex-1 min-h-0 overflow-hidden relative">
+        {/* Terminals stay mounted across tab switches (toggled with display) so
+            their PTY process survives — unmounting would kill the shell. */}
+        {tabs
+          .filter((t) => t.kind === 'terminal')
+          .map((t) => (
+            <div
+              key={t.id}
+              className="absolute inset-0"
+              style={{ display: t.id === activeTabId ? 'block' : 'none' }}
+            >
+              <TerminalView tabId={t.id} profile={t.termProfile ?? 'shell'} />
+            </div>
+          ))}
+        {(!active || active.kind === 'welcome') && <WelcomeView />}
         {active?.kind === 'spec' && active.specId && active.specFile && (
           <SpecEditor key={active.id} specId={active.specId} file={active.specFile} />
         )}

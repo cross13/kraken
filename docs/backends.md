@@ -26,6 +26,14 @@ All runs go through `streamClaude` in `electron/main.ts`. It:
 Active child processes are tracked in **`activeStreams`** (keyed by `requestId`) for cancellation
 (`claude:cancel`).
 
+> **Not a backend: interactive terminals.** `streamClaude` (both backends) is **one-shot and
+> fire-and-forget** — a prompt goes in via `-p`/`messages`, output streams back, and there is no
+> stdin to answer a follow-up. When the user needs to *answer* Claude (AskUserQuestion, permission
+> prompts) or run CLI slash commands, that runs through the separate **Terminals** subsystem
+> (`electron/terminal.ts`, a node-pty PTY running the real `claude` CLI) — a fully bidirectional
+> channel. See [`subsystems.md`](./subsystems.md) → Terminals. Keep the two paths distinct: the
+> backends stay one-shot; interactivity lives in terminals.
+
 ## `streamViaCli`
 
 - Flattens system + message history into a **single prompt**.

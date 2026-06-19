@@ -16,6 +16,34 @@ npm run dev        # http://localhost:5990
 npm run build      # tsc --noEmit + vite build → dist/
 ```
 
+## Deploy
+
+The public site is this `website/` directory only — the Electron renderer in the repo's
+`src/` is desktop-only (it depends on the `window.kraken` IPC bridge) and is **not** web-hostable.
+
+We ship a **Docker + nginx** image and a **DigitalOcean App Platform** spec:
+
+| File | What |
+| --- | --- |
+| `website/Dockerfile` | Multi-stage build: `node:22-alpine` runs `npm ci && npm run build`, then `nginx:alpine` serves `dist/`. |
+| `website/nginx.conf` | Listens on **80**, SPA fallback (`try_files ... /index.html`) for `BrowserRouter` deep links, gzip, immutable cache for hashed `/assets/`. |
+| `website/.dockerignore` | Keeps the build context lean (deps installed fresh in the image). |
+| `.do/app.yaml` (repo root) | App Platform spec — builds `source_dir: /website` from the Dockerfile, `http_port: 80`, deploy-on-push from `main`. |
+
+```bash
+# Build + run the production image locally (parity with DigitalOcean):
+cd website
+npm run docker:build
+npm run docker:run        # -> http://localhost:80  (may need sudo to bind :80)
+
+# Or via DigitalOcean (from repo root, with doctl authenticated):
+doctl apps create --spec .do/app.yaml
+```
+
+Sanity check after deploy: reload directly on `/docs` — it must render, not 404 (proves the
+SPA fallback). The Docker build sets `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1` so the `playwright`
+devDependency doesn't pull browsers into the image.
+
 ## Pages
 
 | Route | What |

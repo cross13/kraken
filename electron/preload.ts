@@ -21,6 +21,10 @@ import type {
   GitHubTokenStatus,
   PullRequestMeta,
   GitHubOpResult,
+  TerminalCreateOpts,
+  TerminalCreateResult,
+  TerminalDataEvent,
+  TerminalExitEvent,
 } from './shared/types';
 
 type StreamHandler = (event: {
@@ -344,6 +348,28 @@ const api = {
       ipcRenderer.on('claude:event', listener);
       return () => ipcRenderer.removeListener('claude:event', listener);
     },
+  },
+  terminal: {
+    create: (opts: TerminalCreateOpts) =>
+      ipcRenderer.invoke('terminal:create', opts) as Promise<TerminalCreateResult>,
+    write: (termId: string, data: string) =>
+      ipcRenderer.send('terminal:write', { termId, data }),
+    resize: (termId: string, cols: number, rows: number) =>
+      ipcRenderer.send('terminal:resize', { termId, cols, rows }),
+    kill: (termId: string) => ipcRenderer.send('terminal:kill', termId),
+    onData: (handler: (ev: TerminalDataEvent) => void) => {
+      const listener = (_: unknown, ev: TerminalDataEvent) => handler(ev);
+      ipcRenderer.on('terminal:data', listener);
+      return () => ipcRenderer.removeListener('terminal:data', listener);
+    },
+    onExit: (handler: (ev: TerminalExitEvent) => void) => {
+      const listener = (_: unknown, ev: TerminalExitEvent) => handler(ev);
+      ipcRenderer.on('terminal:exit', listener);
+      return () => ipcRenderer.removeListener('terminal:exit', listener);
+    },
+  },
+  shell: {
+    openUrl: (url: string) => ipcRenderer.invoke('shell:open-url', url) as Promise<void>,
   },
 };
 

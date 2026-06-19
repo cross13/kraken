@@ -30,7 +30,8 @@ Layout + tabs. `activity` (`ActivityTab` — the activity-bar selection), `sideb
 toggles, `sidebarWidth`/`chatWidth` (clamped + persisted to `localStorage`), and the editor
 **tab model**: `tabs: OpenTab[]`, `activeTabId`, with `openTab`/`closeTab`/`setActiveTab`. An
 `OpenTab.kind` is one of `'spec' | 'questions' | 'file' | 'agent' | 'skill' | 'welcome' | 'settings' | 'run' |
-'hook' | 'graph'` — this is what the `EditorArea` switches on to pick a viewer.
+'hook' | 'graph' | 'terminal'` — this is what the `EditorArea` switches on to pick a viewer.
+(`terminal` tabs also carry `termProfile: 'shell' | 'claude'`; the tab id doubles as the PTY id.)
 
 ### `orchestrator.ts` — `useOrchestrator`
 **The global registry of every in-flight run** — chat, spec drafting, audits, and wave tasks all
@@ -49,12 +50,14 @@ App
 ├─ ActivityBar            left rail; selects the sidebar view + running-count badge
 ├─ Sidebar               switches (in `Sidebar.tsx`) to one of the sidebar/*View components
 │   ├─ ExplorerView  SpecsView  AgentsView  SkillsView  SteeringView  TasksView
-│   ├─ HooksView  HistoryView  OrchestratorView  SourceControlView  GraphView  SettingsView
+│   ├─ HooksView  HistoryView  OrchestratorView  SourceControlView  GraphView
+│   ├─ TerminalsView  SettingsView
 ├─ EditorArea            tabbed; renders a views/*Viewer by active tab kind
 │   ├─ WelcomeView  SpecEditor  QuestionsView  FileViewer  AgentViewer
-│   ├─ SkillViewer  RunViewer  HookEditor  AgentGraphView
+│   ├─ SkillViewer  RunViewer  HookEditor  AgentGraphView  TerminalView
 │       (SpecEditor toggles Board / Edit / Preview; the tasks file defaults to Board,
-│        a full-height TaskRunner. TaskRunner + CompletionSummary are nested, not tabs.)
+│        a full-height TaskRunner. TaskRunner + CompletionSummary are nested, not tabs.
+│        Terminal tabs stay mounted across switches — display-toggled — so the PTY survives.)
 ├─ ChatPanel             dockable streaming chat
 └─ StatusBar             project/branch, running-count, deep-links
 ```

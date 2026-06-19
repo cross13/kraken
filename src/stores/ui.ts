@@ -11,6 +11,7 @@ export type ActivityTab =
   | 'orchestrator'
   | 'graph'
   | 'tasks'
+  | 'terminal'
   | 'history'
   | 'settings';
 
@@ -56,7 +57,8 @@ export interface OpenTab {
     | 'settings'
     | 'run'
     | 'hook'
-    | 'graph';
+    | 'graph'
+    | 'terminal';
   // for hook tabs (hook id, or 'new' to create):
   hookId?: string;
   // for spec tabs:
@@ -66,6 +68,8 @@ export interface OpenTab {
   filePath?: string;
   // for run tabs:
   runId?: string;
+  // for terminal tabs — the tab id doubles as the PTY id:
+  termProfile?: 'shell' | 'claude';
 }
 
 interface UiStore {

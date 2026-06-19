@@ -102,6 +102,20 @@ typeahead), `listPrs(args)`, `createPr(args)`, `mergePr(args)`. Backed by `elect
 model, cwd, plus routing/audit metadata (`agent`, `skill`, `routeReason`, `kind`, `taskId`,
 `wave`, `dependsOn`, …). See [`backends.md`](./backends.md).
 
+### `terminal`
+Interactive PTY terminals (node-pty). `create(opts)` (`invoke` on `terminal:create`, returns
+`TerminalCreateResult`) spawns a shell or the real `claude` CLI (`opts.profile`); `write(termId,
+data)` and `resize(termId, cols, rows)` are fire-and-forget `send`s; `kill(termId)` stops it;
+`onData(handler)` / `onExit(handler)` subscribe to `terminal:data` / `terminal:exit`. The
+`termId` (the editor tab id) correlates every message — same role as `requestId` for `claude`.
+This is the only bidirectional input path to a Claude process; `claude:stream` stays one-shot.
+See [`subsystems.md`](./subsystems.md) → Terminals.
+
+### `shell`
+`openUrl(url)` (`invoke` on `shell:open-url`) — opens an http(s) URL in Google Chrome (falls back
+to the OS default browser). Used by the terminal's web-links addon and the window-open handler so
+URLs Claude emits land in Chrome.
+
 ## Gotchas
 
 - A handler with no matching preload method is unreachable from the renderer (and vice-versa) —

@@ -417,3 +417,36 @@ export interface GitHubOpResult<T = unknown> {
   error?: string;
   data?: T;
 }
+
+// ---------- Terminal (PTY) ----------
+
+// Which program the PTY launches. `shell` is the user's login shell; `claude`
+// runs the interactive Claude CLI directly so AskUserQuestion, slash commands,
+// and permission prompts all work natively.
+export type TerminalProfile = 'shell' | 'claude';
+
+export interface TerminalCreateOpts {
+  termId: string;
+  cwd?: string | null;
+  cols: number;
+  rows: number;
+  profile?: TerminalProfile;
+}
+
+export interface TerminalCreateResult {
+  ok: boolean;
+  pid?: number;
+  file?: string;
+  error?: string;
+}
+
+export interface TerminalDataEvent {
+  termId: string;
+  data: string;
+}
+
+export interface TerminalExitEvent {
+  termId: string;
+  exitCode: number;
+  signal?: number;
+}

@@ -9,6 +9,7 @@ import { SourceControlView } from './sidebar/SourceControlView';
 import { OrchestratorView } from './sidebar/OrchestratorView';
 import { GraphView } from './sidebar/GraphView';
 import { TasksView } from './sidebar/TasksView';
+import { TerminalsView } from './sidebar/TerminalsView';
 import { HistoryView } from './sidebar/HistoryView';
 import { SettingsView } from './sidebar/SettingsView';
 
@@ -27,6 +28,7 @@ export function Sidebar() {
       {activity === 'orchestrator' && <OrchestratorView />}
       {activity === 'graph' && <GraphView />}
       {activity === 'tasks' && <TasksView />}
+      {activity === 'terminal' && <TerminalsView />}
       {activity === 'history' && <HistoryView />}
       {activity === 'settings' && <SettingsView />}
     </div>

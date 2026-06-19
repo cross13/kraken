@@ -1,0 +1,26 @@
+# DigitalOcean App Platform spec for the Kraken marketing website.
+# Builds website/ from its Dockerfile (node build -> nginx) and serves it.
+#
+# Deploy:
+#   doctl apps create --spec .do/app.yaml          # first time
+#   doctl apps update <app-id> --spec .do/app.yaml  # subsequent changes
+# Or in the DO control panel: Create App -> from this GitHub repo (it picks up
+# this spec automatically).
+name: kraken-website
+region: nyc
+services:
+  - name: web
+    # Build context is the website/ subdirectory; Dockerfile path is relative to it.
+    source_dir: /website
+    dockerfile_path: Dockerfile
+    github:
+      repo: cross13/kraken
+      branch: main
+      deploy_on_push: true
+    http_port: 80
+    instance_size_slug: apps-s-1vcpu-0.5gb
+    instance_count: 1
+    routes:
+      - path: /
+    health_check:
+      http_path: /

@@ -81,3 +81,31 @@ Fire Claude runs automatically on app-level events.
   `github.listBranches(cwd)`, defaulting to the repo's actual default branch. The dialog also has a
   **Generate with Claude** button that streams a PR description from the spec's content
   (`source: 'pr-description'`, registered in the orchestrator) straight into the body field.
+
+## Terminals — interactive PTY sessions
+
+Unlike `claude:stream` (one-shot `-p`, fire-and-forget, no stdin), terminals are a **fully
+bidirectional** channel. This is what lets the user answer Claude's `AskUserQuestion`, respond to
+permission prompts, and run real CLI slash commands — exactly as in a normal terminal.
+
+- **`electron/terminal.ts`** — `TerminalManager` owns the live `node-pty` processes keyed by
+  `termId`. It only manages lifecycle (`create`/`write`/`resize`/`kill`/`killAll`); the main
+  process owns the policy. node-pty loads from its **N-API prebuilt binary** (ABI-stable across
+  Node and Electron — no from-source rebuild), and the module restores the `spawn-helper`
+  executable bit on load (a common prebuild gotcha that otherwise fails every spawn with
+  `posix_spawnp failed`). Packaged builds unpack it via `asarUnpack` (see `package.json` build
+  config) so the binary + helper are spawnable.
+- **`createTerminal()` in `main.ts`** resolves the spawn policy: `profile: 'shell'` runs the
+  user's login shell; `profile: 'claude'` runs the real `claude` binary (resolved via
+  `detectCli()`, falling back to a shell if not found). Env always uses `expandedPath()` + `TERM`,
+  cwd defaults to the workspace root. Wires `onData`/`onExit` to the renderer over `terminal:data`
+  / `terminal:exit`. `mainWindow` `'closed'` → `terminals.killAll()`.
+- **IPC:** `terminal:create` (invoke), `terminal:write` / `terminal:resize` / `terminal:kill`
+  (send), data/exit event channels. See [`ipc-contract.md`](./ipc-contract.md) → `terminal`.
+- **UI:** `TerminalView` (xterm.js + fit + web-links addons) renders each terminal; the
+  **Terminals** sidebar panel (`TerminalsView`) lists open terminals and offers *New Terminal* /
+  *New Claude Session*. Terminal tabs are **kept mounted (display-toggled) across tab switches in
+  `EditorArea`** so the PTY survives — unmounting kills the shell. See [`renderer.md`](./renderer.md).
+- **Open in Chrome:** the web-links addon routes URL clicks to `shell.openUrl`, and the window
+  open-handler does the same, so any http(s) URL a session emits opens in Google Chrome (falling
+  back to the default browser).

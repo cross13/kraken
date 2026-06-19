@@ -18,7 +18,7 @@ deeper into *how to build*.
 | [`data-model.md`](./data-model.md) | Shared types, on-disk spec shape, and the SQLite schema | You're changing what gets stored or persisted |
 | [`backends.md`](./backends.md) | The CLI vs API Claude-streaming backends and the common event stream | You're touching how Claude is invoked or streamed |
 | [`renderer.md`](./renderer.md) | Zustand stores, component tree, layout, agent routing, skill injection | You're building UI or changing client-side state |
-| [`subsystems.md`](./subsystems.md) | Hooks, steering, orchestration, agents/skills, git/GitHub | You're working on one of those features |
+| [`subsystems.md`](./subsystems.md) | Hooks, steering, orchestration, agents/skills, git/GitHub, terminals | You're working on one of those features |
 | [`adding-a-feature.md`](./adding-a-feature.md) | A step-by-step recipe for shipping a new module end-to-end | You're creating a new module/view/feature from scratch |
 
 ## The one rule that matters most

@@ -1,0 +1,12 @@
+# Reproducible, lean build context — deps are installed fresh inside the image.
+node_modules
+dist
+preview
+demo/workspace
+scripts
+*.tsbuildinfo
+.DS_Store
+.git
+.gitignore
+Dockerfile
+.dockerignore

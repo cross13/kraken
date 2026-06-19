@@ -31,6 +31,7 @@ import {
   ghMergePullRequest,
   ghListBranches,
 } from './github.js';
+import { TerminalManager } from './terminal.js';
 import {
   initDb,
   upsertSpec,
@@ -69,6 +70,8 @@ import type {
   HookFireEvent,
   McpServerMeta,
   StreamChannel,
+  TerminalCreateOpts,
+  TerminalProfile,
 } from './shared/types.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -120,6 +123,41 @@ function getEffectiveTools(): string[] {
 
 let mainWindow: BrowserWindow | null = null;
 
+const terminals = new TerminalManager();
+
+// Open a URL in Google Chrome when one is requested (e.g. a localhost preview a
+// running Claude session emits). Falls back to the OS default browser if Chrome
+// isn't installed or the platform launcher fails. Only http(s) is honored.
+function openUrlInChrome(rawUrl: string) {
+  let url: URL;
+  try {
+    url = new URL(rawUrl);
+  } catch {
+    return;
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
+  const href = url.toString();
+
+  const fallback = () => shell.openExternal(href);
+  try {
+    if (process.platform === 'darwin') {
+      const child = spawn('open', ['-a', 'Google Chrome', href], { stdio: 'ignore' });
+      child.on('error', fallback);
+      child.on('exit', (code) => {
+        if (code !== 0) fallback();
+      });
+    } else if (process.platform === 'win32') {
+      const child = spawn('cmd', ['/c', 'start', '', 'chrome', href], { stdio: 'ignore' });
+      child.on('error', fallback);
+    } else {
+      const child = spawn('google-chrome', [href], { stdio: 'ignore' });
+      child.on('error', fallback);
+    }
+  } catch {
+    fallback();
+  }
+}
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1440,
@@ -147,8 +185,12 @@ function createWindow() {
   }
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url);
+    openUrlInChrome(url);
     return { action: 'deny' };
+  });
+
+  mainWindow.on('closed', () => {
+    terminals.killAll();
   });
 }
 
@@ -474,6 +516,22 @@ function registerIpc() {
 
   ipcMain.on('claude:stream', (e, payload) => streamClaude(e.sender, payload));
   ipcMain.handle('claude:cancel', (_e, requestId: string) => cancelClaude(requestId));
+
+  // Interactive PTY terminals — run a shell or the real `claude` CLI so the user
+  // can answer AskUserQuestion, run slash commands, etc. exactly as in a terminal.
+  ipcMain.handle('terminal:create', (e, opts: TerminalCreateOpts) =>
+    createTerminal(e.sender, opts)
+  );
+  ipcMain.on('terminal:write', (_e, p: { termId: string; data: string }) =>
+    terminals.write(p.termId, p.data)
+  );
+  ipcMain.on('terminal:resize', (_e, p: { termId: string; cols: number; rows: number }) =>
+    terminals.resize(p.termId, p.cols, p.rows)
+  );
+  ipcMain.on('terminal:kill', (_e, termId: string) => terminals.kill(termId));
+
+  // Open a URL (typically clicked in terminal output or chat) in Chrome.
+  ipcMain.handle('shell:open-url', (_e, url: string) => openUrlInChrome(url));
 
   ipcMain.handle('history:list-runs', (_e, opts) => listRuns(opts ?? {}));
   ipcMain.handle('history:get-run', (_e, id: string) => getRun(id));
@@ -1541,6 +1599,54 @@ function detectCli(): { found: boolean; binary?: string; version?: string; error
     }
   }
   return { found: false, error: 'Could not find `claude` on PATH.' };
+}
+
+// ---------- Terminals ----------
+
+function userShell(): string {
+  if (process.platform === 'win32') return process.env.COMSPEC || 'powershell.exe';
+  return process.env.SHELL || '/bin/zsh';
+}
+
+function createTerminal(
+  sender: Electron.WebContents,
+  opts: TerminalCreateOpts
+): { ok: boolean; pid?: number; file?: string; error?: string } {
+  const env = { ...process.env, PATH: expandedPath(), TERM: 'xterm-256color' };
+  const cwd = opts.cwd && existsSync(opts.cwd) ? opts.cwd : app.getPath('home');
+
+  let file = userShell();
+  let args: string[] = [];
+  const profile: TerminalProfile = opts.profile ?? 'shell';
+  if (profile === 'claude') {
+    const detect = detectCli();
+    // If `claude` is resolvable, run it directly; otherwise drop the user into a
+    // shell (PATH is already expanded) so they can launch it themselves.
+    if (detect.found && detect.binary) {
+      file = detect.binary;
+      args = [];
+    }
+  }
+
+  try {
+    const { pid } = terminals.create(
+      { termId: opts.termId, file, args, cwd, env, cols: opts.cols, rows: opts.rows },
+      (data) => {
+        if (!sender.isDestroyed()) sender.send('terminal:data', { termId: opts.termId, data });
+      },
+      (exit) => {
+        if (!sender.isDestroyed())
+          sender.send('terminal:exit', {
+            termId: opts.termId,
+            exitCode: exit.exitCode,
+            signal: exit.signal,
+          });
+      }
+    );
+    return { ok: true, pid, file };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
 }
 
 // ---------- Claude streaming ----------

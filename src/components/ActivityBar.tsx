@@ -11,6 +11,7 @@ import {
   Network,
   Workflow,
   ListTodo,
+  SquareTerminal,
 } from 'lucide-react';
 import { useUi, type ActivityTab } from '../stores/ui';
 import { useOrchestrator } from '../stores/orchestrator';
@@ -25,6 +26,7 @@ const items: { tab: ActivityTab; icon: React.ReactNode; label: string }[] = [
   { tab: 'hooks', icon: <Zap size={18} />, label: 'Hooks' },
   { tab: 'source-control', icon: <GitBranch size={18} />, label: 'Source Control' },
   { tab: 'tasks', icon: <ListTodo size={18} />, label: 'Running Tasks' },
+  { tab: 'terminal', icon: <SquareTerminal size={18} />, label: 'Terminals' },
   { tab: 'orchestrator', icon: <Network size={18} />, label: 'Orchestrator' },
   { tab: 'graph', icon: <Workflow size={18} />, label: 'Agent Graph' },
   { tab: 'history', icon: <History size={18} />, label: 'History' },

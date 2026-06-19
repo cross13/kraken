@@ -14,6 +14,7 @@ export default defineConfig({
           'electron-store',
           'gray-matter',
           'better-sqlite3',
+          'node-pty',
         ],
       },
     },
