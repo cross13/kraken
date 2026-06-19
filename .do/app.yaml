@@ -10,9 +10,9 @@ name: kraken-website
 region: nyc
 services:
   - name: web
-    # Build context is the website/ subdirectory; Dockerfile path is relative to it.
-    source_dir: /website
-    dockerfile_path: Dockerfile
+    # source_dir = Docker build context; dockerfile_path is always repo-root relative.
+    source_dir: website
+    dockerfile_path: website/Dockerfile
     github:
       repo: cross13/kraken
       branch: main

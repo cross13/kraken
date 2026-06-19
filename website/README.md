@@ -28,7 +28,7 @@ We ship a **Docker + nginx** image and a **DigitalOcean App Platform** spec:
 | `website/Dockerfile` | Multi-stage build: `node:22-alpine` runs `npm ci && npm run build`, then `nginx:alpine` serves `dist/`. |
 | `website/nginx.conf` | Listens on **80**, SPA fallback (`try_files ... /index.html`) for `BrowserRouter` deep links, gzip, immutable cache for hashed `/assets/`. |
 | `website/.dockerignore` | Keeps the build context lean (deps installed fresh in the image). |
-| `.do/app.yaml` (repo root) | App Platform spec — builds `source_dir: /website` from the Dockerfile, `http_port: 80`, deploy-on-push from `main`. |
+| `.do/app.yaml` (repo root) | App Platform spec — `source_dir: website` (build context), `dockerfile_path: website/Dockerfile` (repo-root relative), `http_port: 80`, deploy-on-push from `main`. |
 
 ```bash
 # Build + run the production image locally (parity with DigitalOcean):
