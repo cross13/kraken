@@ -65,7 +65,12 @@ export class TerminalManager {
     this.terms.set(opts.termId, term);
     term.onData(onData);
     term.onExit(({ exitCode, signal }) => {
-      this.terms.delete(opts.termId);
+      // Only forget this id if it still points at *this* pty. A pty's exit event
+      // fires asynchronously, so a replacement may already own the slot (e.g. the
+      // StrictMode mount→unmount→remount cycle spawns A, kills A, then spawns B
+      // under the same id — A's late exit must not evict B, or writes to the id
+      // would be silently dropped and typing would appear locked).
+      if (this.terms.get(opts.termId) === term) this.terms.delete(opts.termId);
       onExit({ exitCode, signal });
     });
     return { pid: term.pid };
