@@ -5,8 +5,14 @@ import { useUi } from '../../stores/ui';
 import { cn } from '../../lib/cn';
 import type { SpecKind } from '../../../electron/shared/types';
 
-export function NewSpecDialog({ onClose }: { onClose: () => void }) {
-  const [kind, setKind] = useState<SpecKind>('feature');
+export function NewSpecDialog({
+  onClose,
+  defaultKind = 'feature',
+}: {
+  onClose: () => void;
+  defaultKind?: SpecKind;
+}) {
+  const [kind, setKind] = useState<SpecKind>(defaultKind);
   const [name, setName] = useState('');
   const createSpec = useWorkspace((s) => s.createSpec);
   const openTab = useUi((s) => s.openTab);

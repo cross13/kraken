@@ -83,12 +83,22 @@ renderer can't reach it. Streaming is fire-and-forget: `claude.stream(payload)` 
 results arrive through `claude.onEvent(handler)`.
 
 ### Renderer — `src/` (React 18 + Tailwind + Zustand)
-- **State** lives in three Zustand stores (`src/stores/`): `workspace` (root path, specs,
-  agents, skills), `chat` (message list, streaming state, selected agent), `ui` (active
-  view, panel layout). Components subscribe to these — there is no other global state.
-- **Layout** is a VS Code-style shell: `ActivityBar` → `Sidebar` (Explorer, Specs,
-  Agents, Skills, History, Settings views) → `EditorArea` (tabbed viewers) → dockable
-  `ChatPanel` → `StatusBar`.
+- **State** lives in Zustand stores (`src/stores/`): `workspace` (root path, specs,
+  agents, skills), `chat` (message list, streaming state, selected agent, `pendingPrompt`
+  handoff), `ui` (active view, panel layout), `orchestrator` (global run registry), and
+  `theme` (active palette). Components subscribe to these — there is no other global state.
+- **Theming** is variable-driven: every Tailwind colour is `rgb(var(--x) / <alpha-value>)`,
+  with three palettes (Abyss [default], Bioluminescent, Daylight) selected by `<html data-theme>`
+  (see `docs/renderer.md` → Theming). `--accent-fg` is themeable; fonts are Hanken Grotesk (body) /
+  Space Grotesk (`font-display`) / JetBrains Mono. Surfaces are **mostly borderless** — regions are
+  separated by background-shade differences rather than borders. The **Welcome view** is the
+  data-driven home screen (command bar, Continue-working spec cards, agent fleet) wired to real
+  specs/agents/skills.
+- **Layout** is the **Mission Control shell** (`App.tsx`): `CommandBar` (brand + ⌘K
+  `CommandPalette` + live-agents + project/model status) → `SpecRail` (unified left rail: 13-tab
+  destination nav + the active-spec hero card / other specs, re-homing the `sidebar/*View`s) →
+  `EditorArea` (tabbed viewers) → `ActivityStream` (live orchestrator feed + chat). It replaced the
+  old VS Code-style shell (`TitleBar`/`ActivityBar`/`Sidebar`/`ChatPanel`/`StatusBar`, now removed).
 - **Agent routing** (`src/lib/agentRouter.ts`) is content-aware. Precedence: per-task
   `@agent` > chat `@agent` override > best-matching **installed** agent for the action.
   "Best match" tries the bundled default by name, then scores every agent in `.claude/agents`
@@ -147,10 +157,12 @@ at the end. `specs:set-phase` allows reopening a phase (Re-sync); the **Audit** 
 to `spec-doctor` for drift detection.
 
 ### Layout & resizing (`App.tsx` + `ResizeHandle` + `ui` store)
-The sidebar and chat panels are drag-resizable via `ResizeHandle` (pointer-capture divider);
-widths live in the `ui` store (`sidebarWidth`/`chatWidth`, clamped + persisted to `localStorage`).
-`sidebarOpen`/`chatOpen` toggle visibility; the ActivityBar tab set (incl. Source Control,
-Orchestrator) is the `ActivityTab` union in `ui.ts`.
+The `SpecRail` and `ActivityStream` panels are drag-resizable via `ResizeHandle` (pointer-capture
+divider); widths live in the `ui` store (`sidebarWidth` = rail, `chatWidth` = activity stream,
+clamped + persisted to `localStorage`). The rail is always shown; `chatOpen` toggles the activity
+stream. The rail's destination nav is driven by `ui.activity`; the `ActivityTab` union in `ui.ts`
+(incl. Source Control, Orchestrator) is the full set of destinations, surfaced both in the
+`SpecRail` nav and the `CommandPalette`.
 
 ### Git & GitHub — `electron/git.ts`, `electron/github.ts`
 Per-workspace git helpers (status, current-branch, create-branch, commit-push, push-current)

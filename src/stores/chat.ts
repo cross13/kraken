@@ -6,8 +6,12 @@ interface ChatStore {
   busy: boolean;
   currentRequestId: string | null;
   selectedAgent: string | null;
+  /** a prompt handed off from elsewhere (e.g. the Welcome command bar) for the
+   *  ChatPanel to send on its next render */
+  pendingPrompt: string | null;
 
   setSelectedAgent: (a: string | null) => void;
+  setPendingPrompt: (text: string | null) => void;
   push: (m: ChatMessage) => void;
   appendDelta: (id: string, text: string, channel?: StreamChannel) => void;
   finish: (id: string) => void;
@@ -29,8 +33,10 @@ export const useChat = create<ChatStore>((set) => ({
   busy: false,
   currentRequestId: null,
   selectedAgent: null,
+  pendingPrompt: null,
 
   setSelectedAgent: (a) => set({ selectedAgent: a }),
+  setPendingPrompt: (text) => set({ pendingPrompt: text }),
 
   push: (m) => set((s) => ({ messages: [...s.messages, m] })),
 

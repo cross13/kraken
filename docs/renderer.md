@@ -6,7 +6,7 @@ the Zustand stores.
 
 ## Stores (`src/stores/`)
 
-Four stores, each a `create<…>()` from Zustand. Components subscribe directly.
+Five stores, each a `create<…>()` from Zustand. Components subscribe directly.
 
 ### `workspace.ts` — `useWorkspace`
 The loaded project. Holds `root`, `tree` (file `DirEntry[]`), and the lists `specs`, `skills`,
@@ -15,9 +15,13 @@ The loaded project. Holds `root`, `tree` (file `DirEntry[]`), and the lists `spe
 and call `refreshAll()` after a mutation.
 
 ### `chat.ts` — `useChat`
-The chat panel's single conversation: `messages`, `busy`, `currentRequestId`, `selectedAgent`.
-Actions: `push`, `appendDelta(id, text, channel?)`, `finish(id)`, `fail(id, error)`, `clear`,
-`setBusy(b, requestId?)`, `setSelectedAgent`. The `claude.onEvent` handler routes streaming
+The chat panel's single conversation: `messages`, `busy`, `currentRequestId`, `selectedAgent`,
+and `pendingPrompt`. Actions: `push`, `appendDelta(id, text, channel?)`, `finish(id)`,
+`fail(id, error)`, `clear`, `setBusy(b, requestId?)`, `setSelectedAgent`, `setPendingPrompt`.
+`pendingPrompt` is a **cross-component handoff**: the Welcome command bar calls `setPendingPrompt`
+(and opens the chat panel); `ChatPanel` watches it and, once idle, sends it via `send(text?)` then
+clears it. `ChatPanel.send` accepts an optional explicit text so the same path serves typed input
+and handed-off prompts. The `claude.onEvent` handler routes streaming
 deltas here by `requestId` for chat-kind runs. `appendDelta` is **channel-aware**: it keeps a flat
 `content` string (history/persistence) *and* builds `segments: MessageSegment[]` — consecutive
 same-channel deltas merge, while `tool`/`tool_result` chunks each become their own segment.
@@ -40,29 +44,90 @@ toggles, `sidebarWidth`/`chatWidth` (clamped + persisted to `localStorage`), and
 and `maxConcurrency` (1–8). Selectors: `runningCount()`, `taskRunningCount()` (task/refine/polish
 only — so chat/spec runs don't throttle wave scheduling), `activeForTask(taskId)`.
 
+### `theme.ts` — `useTheme`
+The active visual palette. Holds `theme: 'abyss' | 'bioluminescent' | 'daylight'` (`abyss` default);
+actions `setTheme` / `cycleTheme`. Persists to `localStorage` and writes
+`document.documentElement.dataset.theme`, which swaps the CSS variables that back every colour token
+(see **Theming** below). Applied once on store init so first paint matches the persisted choice. The
+`CommandBar`'s contrast button cycles it.
+
+## Theming (`styles.css` + `tailwind.config.cjs`)
+
+The whole app re-skins by swapping one attribute. Every Tailwind colour token is defined as
+`rgb(var(--x) / <alpha-value>)`, where `--x` is a **space-separated RGB channel triple**
+(e.g. `--accent: 124 92 255`). This keeps Tailwind's `/opacity` modifiers working *and* makes
+colour themeable. The channel values live in `styles.css` under `:root[data-theme='abyss']`
+(default), `[data-theme='bioluminescent']`, and `[data-theme='daylight']`. The legacy `ink-*` scale
+is remapped onto the design's surfaces (`--bg`→`ink-950`, `--panel`→`ink-900`, `--card`→`ink-850`,
+`--elev`→`ink-800`, `--line`→`ink-700`, …) so existing components re-theme automatically; new
+semantic tokens (`card`, `elev`, `rail`, `panel`, `dim`, `faint`, `good`, `warn`, `danger`,
+`accent`/`accent-2`) are added alongside. **`--accent-fg` is themeable** so accent buttons stay
+legible per theme. Fonts: body **Hanken Grotesk**, display **Space Grotesk** (`font-display`, used for
+spec/wave headings), mono **JetBrains Mono**; plus `flow` (shimmering progress fill) and `pulse-dot`
+animations used by the wave runner / activity stream. The shell is **mostly borderless** — panels and
+cards are separated by background-shade steps (`bg` → `rail` → `panel` → `card` → `elev`) rather than
+borders, with only the faintest hairlines where a split is essential. When adding a colour, add a
+channel var to **all three** theme blocks and a token in the Tailwind config — never hardcode a hex
+that won't follow the theme.
+
+## Welcome view (`views/WelcomeView.tsx`)
+
+The data-driven home screen (editor tab `kind: 'welcome'`). Greeting + live agents-running pill, a
+**command bar** (`/` skills + `@` agents popovers, model chip, Start → hands the text to chat via
+`chat.pendingPrompt`), quick chips that open `NewSpecDialog` with a preset `kind`, a **Continue
+working** grid of spec cards (phase → 3 progress steps, running-agent avatars from the orchestrator,
+Resume/Review), a **Your Kraken** agent-fleet grid (real `agents`, live running state), and an
+SDD-loop + Browse agents/skills footer. With no workspace it collapses to an Open-folder hero.
+
+## Spec rail (`SpecRail.tsx`)
+
+The Mission Control left rail. A 52px **destination nav** (icons for all 13 `ActivityTab`s, with
+live running-count badges on `orchestrator`/`graph`/`tasks`) drives `ui.activity`; the body shows
+the selected destination. For `specs` it renders `SpecRailBody`: a `SPECS · N` header + New-spec
+button, the **ACTIVE SPEC** hero card (display-font name, kind·updated meta, a 4-segment
+`Req·Design·Tasks·Done` phase spine whose segments deep-link to that phase file, a pulsing accent dot
+when a run is live), then an **OTHER SPECS** list (status dot + name + relative `updatedAt`, opens the
+spec's current-phase file). The "active spec" is the spec of the currently-open tab, falling back to
+the most-recently-updated spec. Every other destination re-homes its existing `sidebar/*View`
+component into the rail body. (The old `SpecsView` / `Sidebar` / `ActivityBar` are superseded by this
+file.)
+
 ## Layout / component tree
 
-VS Code-style shell, composed in `src/App.tsx`:
+**Mission Control shell**, composed in `src/App.tsx` — a command-bar-driven frame that replaced the
+old VS Code-style shell (the former `TitleBar` / `ActivityBar` / `Sidebar` / `ChatPanel` / `StatusBar`
+components were removed):
 
 ```
 App
-├─ TitleBar               project + branch, deep-links to Source Control
-├─ ActivityBar            left rail; selects the sidebar view + running-count badge
-├─ Sidebar               switches (in `Sidebar.tsx`) to one of the sidebar/*View components
-│   ├─ ExplorerView  SpecsView  AgentsView  SkillsView  SteeringView  TasksView
-│   ├─ HooksView  HistoryView  OrchestratorView  SourceControlView  GraphView
-│   ├─ TerminalsView  SettingsView
-├─ EditorArea            tabbed; renders a views/*Viewer by active tab kind
+├─ CommandBar            top spine: brand, ⌘K command-palette trigger, live-agents indicator,
+│                        project·branch·model·backend, theme/activity toggles. Opens CommandPalette.
+│   └─ CommandPalette    ⌘K overlay — fuzzy-jump to any spec / destination / quick command.
+├─ SpecRail              unified left rail (replaces ActivityBar + Sidebar): a 52px destination nav
+│   │                    (all 13 `ActivityTab`s, with running-count badges) + a body.
+│   ├─ SpecRailBody      the `specs` destination — ACTIVE SPEC hero card (4-segment phase spine,
+│   │                    clickable) + OTHER SPECS list. The active spec = the open tab's spec.
+│   └─ (other dests)     re-home the existing sidebar/*View components: Explorer, Agents, Skills,
+│                        Steering, Hooks, SourceControl, Orchestrator, Graph, Tasks, Terminals,
+│                        History, Settings.
+├─ EditorArea            tabbed main stage; renders a views/*Viewer by active tab kind
 │   ├─ WelcomeView  SpecEditor  QuestionsView  FileViewer  AgentViewer
 │   ├─ SkillViewer  RunViewer  HookEditor  AgentGraphView  TerminalView
-│       (SpecEditor toggles Board / Edit / Preview; the tasks file defaults to Board,
-│        a full-height TaskRunner. TaskRunner + CompletionSummary are nested, not tabs.
-│        Terminal tabs stay mounted across switches — display-toggled — so the PTY survives.)
-├─ ChatPanel             dockable streaming chat
-└─ StatusBar             project/branch, running-count, deep-links
+│       (SpecEditor's `SpecPhaseStrip` is a clickable **pipeline spine** — each step opens that
+│        phase's file (requirements/bugfix → design → tasks), with the current view ringed, completed
+│        phases checked, and the Advance/Re-sync workflow action on the right. SpecEditor toggles
+│        Board / Edit / Preview; the tasks file defaults to Board, a full-height
+│        TaskRunner rendered as a KANBAN wave runner — one column per wave, live parallel-agent
+│        cards with a pulse dot, `flow` progress bar and `@agent` label; queued cards are dashed,
+│        done cards dimmed/struck. TaskRunner + CompletionSummary are nested, not tabs. Terminal
+│        tabs stay mounted across switches — display-toggled — so the PTY survives.)
+└─ ActivityStream        right panel (replaces ChatPanel): an ActivityFeed (live orchestrator runs as
+                         glowing cards with elapsed timers + recent finished log) stacked over the
+                         ChatPanel thread + input. Toggled by the CommandBar activity button.
 ```
 
-Resizing: `ResizeHandle` (pointer-capture divider) writes widths into the `ui` store.
+Resizing: `ResizeHandle` (pointer-capture divider) writes the rail/activity widths into the `ui`
+store (`sidebarWidth` = SpecRail, `chatWidth` = ActivityStream).
 
 ## Agent routing — `src/lib/agentRouter.ts`
 
@@ -131,5 +196,5 @@ an agent can modify.
 - A viewer that displays an agent-writable file should reload it on Claude run completion (see
   "Keeping open editors in sync with agent writes" above), not only on its own action's `done`.
 - New editor surfaces = a new `OpenTab.kind` + a `views/*Viewer` + an `EditorArea` case.
-- New sidebar surfaces = a new `ActivityTab` (in `ui.ts`) + a `sidebar/*View` + `ActivityBar`
-  entry + `SidebarShell` case.
+- New rail destinations = a new `ActivityTab` (in `ui.ts`) + a `sidebar/*View` + a `NAV` entry and
+  body case in `SpecRail.tsx` (and an entry in `CommandPalette`'s `DEST` list so ⌘K can reach it).

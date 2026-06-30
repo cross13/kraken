@@ -22,7 +22,7 @@ export function EditorArea() {
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
-      <div className="h-9 border-b border-ink-800 flex items-end bg-ink-950 overflow-x-auto">
+      <div className="h-9 border-b border-ink-800/40 flex items-end bg-ink-950 overflow-x-auto">
         {tabs.map((t) => {
           const selected = t.id === activeTabId;
           return (
@@ -30,7 +30,7 @@ export function EditorArea() {
               key={t.id}
               onClick={() => setActiveTab(t.id)}
               className={cn(
-                'group h-full flex items-center gap-2 px-3 border-r border-ink-800 cursor-pointer text-xs',
+                'group h-full flex items-center gap-2 px-3 cursor-pointer text-xs',
                 selected
                   ? 'bg-ink-900 text-ink-50 border-t border-t-accent'
                   : 'text-ink-400 hover:bg-ink-900/60'
