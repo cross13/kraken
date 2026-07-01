@@ -2,6 +2,9 @@ import { useEffect, useState, useRef } from 'react';
 import {
   Eye,
   Pencil,
+  BookOpen,
+  Maximize2,
+  Minimize2,
   ArrowRight,
   Sparkles,
   Loader2,
@@ -21,9 +24,11 @@ import { useWorkspace } from '../../stores/workspace';
 import { useChat } from '../../stores/chat';
 import { useOrchestrator } from '../../stores/orchestrator';
 import { useUi } from '../../stores/ui';
+import { useModels } from '../../stores/models';
 import { renderMarkdown } from '../../lib/markdown';
 import { cn } from '../../lib/cn';
 import { TaskRunner } from './TaskRunner';
+import { SpecDocument } from './SpecDocument';
 import { routeAgent, routeSkill, skillSystemBlock } from '../../lib/agentRouter';
 import { resolveAgent, resolveSkill } from '../../lib/verifyLibrary';
 import { parseOpenQuestions, addQuestion } from '../../lib/openQuestions';
@@ -32,8 +37,9 @@ import type { SpecMeta, SpecPhase } from '../../../electron/shared/types';
 
 const phaseOrder: SpecPhase[] = ['requirements', 'design', 'tasks', 'done'];
 
-// 'board' is the interactive task runner; only offered for the tasks file.
-type SpecView = 'board' | 'edit' | 'preview';
+// 'board' is the interactive task runner (tasks file); 'read' is the structured
+// section-card document view (requirements/bugfix/design); 'edit' is raw markdown.
+type SpecView = 'board' | 'read' | 'edit' | 'preview';
 
 interface Props {
   specId: string;
@@ -45,8 +51,8 @@ export function SpecEditor({ specId, file }: Props) {
   const refreshAll = useWorkspace((s) => s.refreshAll);
   const [meta, setMeta] = useState<SpecMeta | null>(null);
   const [files, setFiles] = useState<Record<string, string>>({});
-  // Tasks open on the interactive Board by default; everything else on Edit.
-  const [view, setView] = useState<SpecView>(file === 'tasks' ? 'board' : 'edit');
+  // Tasks open on the interactive Board; documents open on the structured Read view.
+  const [view, setView] = useState<SpecView>(file === 'tasks' ? 'board' : 'read');
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const debounceRef = useRef<number | null>(null);
@@ -219,12 +225,38 @@ export function SpecEditor({ specId, file }: Props) {
       />
       <SpecPhaseStrip
         currentIdx={currentPhaseIdx}
+        currentStage={file === 'design' ? 1 : file === 'tasks' ? 2 : 0}
         kind={meta.kind}
         phase={meta.phase}
         canAdvance={canAdvance}
         nextPhase={nextPhase}
         onAdvance={advance}
         onReSync={reSync}
+        onNavigate={(stage) => {
+          const key =
+            stage === 0
+              ? meta.kind === 'feature'
+                ? 'requirements'
+                : 'bugfix'
+              : stage === 1
+                ? 'design'
+                : 'tasks';
+          const label =
+            stage === 0
+              ? meta.kind === 'feature'
+                ? 'requirements.md'
+                : 'bugfix.md'
+              : stage === 1
+                ? 'design.md'
+                : 'tasks.md';
+          openTab({
+            id: `spec:${meta.id}:${key}`,
+            title: `${meta.name} / ${label}`,
+            kind: 'spec',
+            specId: meta.id,
+            specFile: key as 'requirements' | 'design' | 'tasks' | 'bugfix',
+          });
+        }}
       />
       {summaryOpen && file !== 'tasks' && (
         <SummaryPanel
@@ -243,6 +275,8 @@ export function SpecEditor({ specId, file }: Props) {
             requirementsMd={files.requirements ?? files.bugfix ?? ''}
             onReload={load}
           />
+        ) : view === 'read' ? (
+          <SpecDocument md={content} onEdit={() => setView('edit')} />
         ) : view === 'preview' ? (
           <div
             className="md w-full px-8 py-6 h-full overflow-y-auto"
@@ -299,7 +333,7 @@ function SpecHeader({
 }) {
   const KindIcon = meta.kind === 'feature' ? FileText : Bug;
   return (
-    <div className="flex items-center justify-between gap-4 border-b border-ink-800 px-6 py-3">
+    <div className="flex items-center justify-between gap-4 px-6 py-3">
       {/* Identity */}
       <div className="min-w-0 flex items-center gap-3">
         <div className="w-9 h-9 grid place-items-center rounded-lg bg-accent/10 text-accent shrink-0">
@@ -311,7 +345,7 @@ function SpecHeader({
             <span className="text-ink-700">·</span>
             <span className="font-mono text-ink-400 normal-case tracking-normal">{file}.md</span>
           </div>
-          <div className="text-base font-semibold text-ink-50 truncate leading-tight">
+          <div className="font-display text-[17px] font-semibold text-ink-50 truncate leading-tight">
             {meta.name}
           </div>
         </div>
@@ -321,20 +355,28 @@ function SpecHeader({
       <div className="flex items-center gap-3 shrink-0">
         <SaveStatus saving={saving} savedAt={savedAt} />
 
-        {/* View mode — tasks add an interactive Board alongside the raw markdown */}
-        <div className="flex rounded-lg border border-ink-800 bg-ink-900/60 p-0.5">
-          {canBoard && (
+        {/* View mode — tasks get the interactive Board + Preview; documents get
+            the structured Read view. Both keep raw Edit. */}
+        <div className="flex rounded-lg bg-ink-900/60 p-0.5">
+          {canBoard ? (
             <SegBtn active={view === 'board'} onClick={() => setView('board')}>
               <ListChecks size={11} /> Board
+            </SegBtn>
+          ) : (
+            <SegBtn active={view === 'read'} onClick={() => setView('read')}>
+              <BookOpen size={11} /> Read
             </SegBtn>
           )}
           <SegBtn active={view === 'edit'} onClick={() => setView('edit')}>
             <Pencil size={11} /> Edit
           </SegBtn>
-          <SegBtn active={view === 'preview'} onClick={() => setView('preview')}>
-            <Eye size={11} /> Preview
-          </SegBtn>
+          {canBoard && (
+            <SegBtn active={view === 'preview'} onClick={() => setView('preview')}>
+              <Eye size={11} /> Preview
+            </SegBtn>
+          )}
         </div>
+        <FocusToggle />
 
         {/* AI assist */}
         <div className="flex items-center gap-1.5">
@@ -433,6 +475,23 @@ function SegBtn({
   );
 }
 
+function FocusToggle() {
+  const focusMode = useUi((s) => s.focusMode);
+  const toggleFocus = useUi((s) => s.toggleFocus);
+  return (
+    <button
+      onClick={toggleFocus}
+      title={focusMode ? 'Exit focus — show rail + activity' : 'Focus mode — fill the screen'}
+      className={cn(
+        'text-xs flex items-center justify-center w-8 h-8 rounded-lg transition',
+        focusMode ? 'text-accent bg-accent/10' : 'text-ink-300 hover:text-ink-50 hover:bg-ink-800'
+      )}
+    >
+      {focusMode ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+    </button>
+  );
+}
+
 function SummaryPanel({
   summary,
   summarizing,
@@ -445,7 +504,7 @@ function SummaryPanel({
   onClose: () => void;
 }) {
   return (
-    <div className="border-b border-ink-800/60 bg-ink-900/40 shrink-0">
+    <div className="bg-ink-900/40 shrink-0">
       <div className="flex items-center gap-2 px-6 py-2">
         <ScrollText size={13} className="text-accent shrink-0" />
         <span className="text-[11px] font-semibold text-ink-100 uppercase tracking-wider">
@@ -485,44 +544,92 @@ function SummaryPanel({
 
 function SpecPhaseStrip({
   currentIdx,
+  currentStage,
   kind,
   phase,
   canAdvance,
   nextPhase,
   onAdvance,
   onReSync,
+  onNavigate,
 }: {
   currentIdx: number;
+  currentStage: number;
   kind: 'feature' | 'bugfix';
   phase: SpecPhase;
   canAdvance: boolean;
   nextPhase: SpecPhase;
   onAdvance: () => void;
   onReSync: () => void;
+  onNavigate: (stage: number) => void;
 }) {
   const stages =
     kind === 'feature'
       ? ['Requirements', 'Design', 'Tasks', 'Done']
       : ['Bug analysis', 'Design', 'Tasks', 'Done'];
   return (
-    <div className="flex items-center gap-2 px-6 py-2 border-b border-ink-800/60 text-[11px]">
-      {/* Phase progress */}
-      <div className="flex items-center gap-1.5 min-w-0 overflow-x-auto">
-        {stages.map((s, i) => (
-          <div key={s} className="flex items-center gap-1.5 shrink-0">
-            <div
-              className={cn(
-                'px-2 py-0.5 rounded-full font-medium',
-                i < currentIdx && 'bg-ok/15 text-ok',
-                i === currentIdx && 'bg-accent/20 text-accent',
-                i > currentIdx && 'bg-ink-800/60 text-ink-500'
+    <div className="flex items-center gap-2 px-6 py-2.5 text-[11px]">
+      {/* Pipeline spine — click a step to open that phase's file */}
+      <div className="flex items-center min-w-0 overflow-x-auto">
+        {stages.map((s, i) => {
+          const complete = phase === 'done' ? true : i < currentIdx;
+          const isCurrentPhase = phase !== 'done' && i === currentIdx;
+          const viewing = i === currentStage;
+          const navigable = i < 3;
+          return (
+            <div key={s} className="flex items-center shrink-0">
+              <button
+                type="button"
+                disabled={!navigable}
+                onClick={() => navigable && onNavigate(i)}
+                title={navigable ? `Open ${s}` : 'Completion'}
+                className={cn(
+                  'flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-full transition',
+                  viewing
+                    ? 'bg-accent/15 ring-1 ring-inset ring-accent/40'
+                    : navigable
+                      ? 'hover:bg-ink-50/[0.05]'
+                      : 'cursor-default'
+                )}
+              >
+                <span
+                  className={cn(
+                    'w-[18px] h-[18px] grid place-items-center rounded-full text-[10px] font-bold shrink-0',
+                    complete
+                      ? 'bg-ok/20 text-ok'
+                      : viewing || isCurrentPhase
+                        ? 'bg-accent text-accent-fg'
+                        : 'bg-ink-800 text-ink-500'
+                  )}
+                >
+                  {complete ? <Check size={11} /> : i + 1}
+                </span>
+                <span
+                  className={cn(
+                    'font-medium whitespace-nowrap',
+                    viewing
+                      ? 'text-accent'
+                      : complete
+                        ? 'text-ink-200'
+                        : isCurrentPhase
+                          ? 'text-ink-100'
+                          : 'text-ink-500'
+                  )}
+                >
+                  {s}
+                </span>
+              </button>
+              {i < stages.length - 1 && (
+                <span
+                  className={cn(
+                    'w-5 h-px mx-0.5 shrink-0',
+                    complete ? 'bg-ok/40' : 'bg-ink-700'
+                  )}
+                />
               )}
-            >
-              {s}
             </div>
-            {i < stages.length - 1 && <ArrowRight size={11} className="text-ink-700" />}
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Workflow action — advancing the spec lives next to the phases it moves through */}
@@ -633,6 +740,9 @@ ${editInstruction}`,
       agent: routed.name ?? undefined,
     });
     setBusy(true, requestId);
+    const stepModel = useModels
+      .getState()
+      .modelFor(file === 'design' ? 'design' : file === 'tasks' ? 'tasks' : 'requirements');
     startRun({
       requestId,
       agent: routed.name,
@@ -643,6 +753,7 @@ ${editInstruction}`,
       startedAt: Date.now(),
       status: 'running',
       skill: routeSkill(meta.kind, skills)?.name ?? null,
+      model: stepModel,
       routeReason: routed.reason,
       agentScope: resolveAgent(routed.name, agents).scope ?? null,
     });
@@ -687,6 +798,7 @@ ${editInstruction}`,
       skillScope: resolveSkill(specSkill?.name, skills).scope ?? null,
       routeReason: routed.reason,
       agentScope: resolveAgent(routed.name, agents).scope ?? null,
+      model: stepModel,
     });
   };
 }

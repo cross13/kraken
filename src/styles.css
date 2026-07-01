@@ -2,8 +2,81 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
+/* ============================================================================
+   Theme tokens — space-separated RGB channels consumed by Tailwind colours as
+   `rgb(var(--x) / <alpha-value>)` (see tailwind.config.cjs). Swapping the
+   `data-theme` attribute on <html> re-skins the entire app. Default = Abyss.
+   ========================================================================== */
+:root,
+:root[data-theme='abyss'] {
   color-scheme: dark;
+  /* Surface ladder — widened steps so borderless panels/cards read with contrast:
+     bg (deepest) → rail → panel → card → elev (most raised). */
+  --bg: 9 9 14;
+  --rail: 16 16 24;
+  --panel: 21 20 31;
+  --card: 29 27 42;
+  --elev: 42 39 60;
+  --line: 60 55 82;
+  --ink-600: 84 78 108;
+  --faint: 132 127 152;
+  --ink-400: 158 152 176;
+  --dim: 188 183 205;
+  --ink-200: 216 212 230;
+  --ink-100: 241 240 249;
+  --ink-50: 251 250 255;
+  --accent: 132 102 255;
+  --accent2: 168 145 255;
+  --accent-fg: 255 255 255;
+  --good: 62 222 168;
+  --warn: 246 186 94;
+  --danger: 245 114 114;
+}
+
+:root[data-theme='bioluminescent'] {
+  color-scheme: dark;
+  --bg: 4 15 13;
+  --rail: 8 24 19;
+  --panel: 11 30 23;
+  --card: 16 39 30;
+  --elev: 24 52 40;
+  --line: 34 70 52;
+  --ink-600: 58 100 84;
+  --faint: 106 144 130;
+  --ink-400: 130 166 154;
+  --dim: 158 196 183;
+  --ink-200: 206 234 224;
+  --ink-100: 233 251 244;
+  --ink-50: 242 255 249;
+  --accent: 38 219 205;
+  --accent2: 104 240 220;
+  --accent-fg: 255 255 255;
+  --good: 52 211 153;
+  --warn: 251 191 107;
+  --danger: 248 113 113;
+}
+
+:root[data-theme='daylight'] {
+  color-scheme: light;
+  --bg: 243 242 239;
+  --rail: 236 234 230;
+  --panel: 255 255 255;
+  --card: 255 255 255;
+  --elev: 237 236 232;
+  --line: 224 222 217;
+  --ink-600: 146 141 156;
+  --faint: 146 141 156;
+  --ink-400: 120 115 130;
+  --dim: 93 88 104;
+  --ink-200: 60 56 72;
+  --ink-100: 27 25 36;
+  --ink-50: 17 15 24;
+  --accent: 109 75 240;
+  --accent2: 139 109 245;
+  --accent-fg: 255 255 255;
+  --good: 22 163 74;
+  --warn: 217 119 6;
+  --danger: 220 38 38;
 }
 
 html,
@@ -33,14 +106,20 @@ body {
   height: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgb(var(--ink-400) / 0.22);
   border-radius: 8px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgb(var(--ink-400) / 0.38);
 }
 ::-webkit-scrollbar-track {
   background: transparent;
+}
+
+/* Shared form input for the studio modules (Agents / Skills / Orchestration) */
+.lib-input {
+  @apply w-full bg-ink-900 ring-1 ring-ink-700/70 rounded-lg px-3 py-2 text-[13px] text-ink-50
+    outline-none placeholder:text-faint focus:ring-accent/50;
 }
 
 /* Markdown styling inside chat & editor previews */
@@ -67,6 +146,15 @@ body {
 .md a { @apply text-accent underline decoration-accent/40 hover:decoration-accent; }
 .md hr { @apply border-ink-800 my-3; }
 .md blockquote { @apply border-l-2 border-ink-700 pl-3 italic text-ink-300; }
+
+/* EARS acceptance-criteria keywords highlighted in SpecDocument checklists */
+.ears-kw {
+  font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  font-size: 0.82em;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: rgb(var(--accent2));
+}
 
 /* Editor textarea look */
 .code-input {
@@ -158,6 +246,64 @@ body {
 .language-markdown .token.url { color: #89ddff; }
 .language-markdown .token.code,
 .language-markdown .token.code-snippet { color: #c3e88d; }
+
+/* File-viewer syntax highlighting — themeable via `--syn-*` custom properties
+   set on the `.code-view` container (built-in or user-installed theme). Scoped
+   so it never disturbs the markdown/editor token colors above. */
+.code-view {
+  color: var(--syn-base, #e7ebf3);
+  background: var(--syn-bg, transparent);
+  font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  font-size: 13px;
+  line-height: 1.65;
+  tab-size: 2;
+}
+.code-view .token.comment,
+.code-view .token.prolog,
+.code-view .token.doctype,
+.code-view .token.cdata { color: var(--syn-comment); font-style: italic; }
+.code-view .token.punctuation { color: var(--syn-punct); }
+.code-view .token.namespace { opacity: 0.7; }
+.code-view .token.property,
+.code-view .token.tag,
+.code-view .token.boolean,
+.code-view .token.number,
+.code-view .token.constant,
+.code-view .token.symbol,
+.code-view .token.deleted { color: var(--syn-num); }
+.code-view .token.selector,
+.code-view .token.attr-name,
+.code-view .token.string,
+.code-view .token.char,
+.code-view .token.builtin,
+.code-view .token.inserted { color: var(--syn-string); }
+.code-view .token.operator,
+.code-view .token.entity,
+.code-view .token.url,
+.code-view .language-css .token.string { color: var(--syn-operator); }
+.code-view .token.atrule,
+.code-view .token.attr-value,
+.code-view .token.keyword { color: var(--syn-keyword); }
+.code-view .token.function,
+.code-view .token.class-name { color: var(--syn-function); }
+.code-view .token.regex,
+.code-view .token.important,
+.code-view .token.variable { color: var(--syn-variable); }
+.code-view .token.important,
+.code-view .token.bold { font-weight: 700; }
+.code-view .token.italic { font-style: italic; }
+/* line-number gutter */
+.code-line { display: flex; }
+.code-ln {
+  user-select: none;
+  text-align: right;
+  min-width: 3ch;
+  padding-right: 1.25rem;
+  color: var(--syn-comment);
+  opacity: 0.5;
+}
+.code-lc { flex: 1; white-space: pre; }
+.code-view.wrap .code-lc { white-space: pre-wrap; word-break: break-word; }
 
 /* Tool-use lines emitted by the streaming Claude CLI */
 .tool-line {

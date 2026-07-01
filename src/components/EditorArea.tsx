@@ -3,10 +3,18 @@ import { useUi } from '../stores/ui';
 import { cn } from '../lib/cn';
 import { WelcomeView } from './views/WelcomeView';
 import { SpecEditor } from './views/SpecEditor';
+import { SpecSummaryView } from './views/SpecSummaryView';
+import { SourceControlView } from './sidebar/SourceControlView';
+import { SettingsView } from './sidebar/SettingsView';
 import { QuestionsView } from './views/QuestionsView';
 import { FileViewer } from './views/FileViewer';
 import { AgentViewer } from './views/AgentViewer';
 import { SkillViewer } from './views/SkillViewer';
+import { AgentsStudio } from './views/AgentsStudio';
+import { SkillsStudio } from './views/SkillsStudio';
+import { RouterStudio } from './views/RouterStudio';
+import { HooksStudio } from './views/HooksStudio';
+import { SyntaxStudio } from './views/SyntaxStudio';
 import { RunViewer } from './views/RunViewer';
 import { HookEditor } from './views/HookEditor';
 import { AgentGraphView } from './views/AgentGraphView';
@@ -22,7 +30,7 @@ export function EditorArea() {
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
-      <div className="h-9 border-b border-ink-800 flex items-end bg-ink-950 overflow-x-auto">
+      <div className="h-9 border-b border-ink-800/40 flex items-end bg-ink-950 overflow-x-auto">
         {tabs.map((t) => {
           const selected = t.id === activeTabId;
           return (
@@ -30,7 +38,7 @@ export function EditorArea() {
               key={t.id}
               onClick={() => setActiveTab(t.id)}
               className={cn(
-                'group h-full flex items-center gap-2 px-3 border-r border-ink-800 cursor-pointer text-xs',
+                'group h-full flex items-center gap-2 px-3 cursor-pointer text-xs',
                 selected
                   ? 'bg-ink-900 text-ink-50 border-t border-t-accent'
                   : 'text-ink-400 hover:bg-ink-900/60'
@@ -68,6 +76,13 @@ export function EditorArea() {
         {active?.kind === 'spec' && active.specId && active.specFile && (
           <SpecEditor key={active.id} specId={active.specId} file={active.specFile} />
         )}
+        {active?.kind === 'summary' && active.specId && (
+          <SpecSummaryView key={active.id} specId={active.specId} />
+        )}
+        {active?.kind === 'source-control' && (
+          <SourceControlView key={active.id} variant="page" />
+        )}
+        {active?.kind === 'settings' && <SettingsView key={active.id} variant="page" />}
         {active?.kind === 'questions' && active.specId && (
           <QuestionsView key={active.id} specId={active.specId} />
         )}
@@ -80,6 +95,11 @@ export function EditorArea() {
         {active?.kind === 'skill' && active.filePath && (
           <SkillViewer key={active.id} path={active.filePath} />
         )}
+        {active?.kind === 'agents-studio' && <AgentsStudio key={active.id} />}
+        {active?.kind === 'skills-studio' && <SkillsStudio key={active.id} />}
+        {active?.kind === 'router-studio' && <RouterStudio key={active.id} />}
+        {active?.kind === 'hooks-studio' && <HooksStudio key={active.id} />}
+        {active?.kind === 'syntax-studio' && <SyntaxStudio key={active.id} />}
         {active?.kind === 'run' && active.runId && (
           <RunViewer key={active.id} runId={active.runId} />
         )}

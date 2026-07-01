@@ -15,6 +15,7 @@ import {
 import { useChat } from '../stores/chat';
 import { useWorkspace } from '../stores/workspace';
 import { useOrchestrator } from '../stores/orchestrator';
+import { useModels } from '../stores/models';
 import { skillSystemBlock } from '../lib/agentRouter';
 import { renderMarkdown } from '../lib/markdown';
 import { cn } from '../lib/cn';
@@ -32,6 +33,8 @@ export function ChatPanel() {
   const clear = useChat((s) => s.clear);
   const selectedAgent = useChat((s) => s.selectedAgent);
   const setSelectedAgent = useChat((s) => s.setSelectedAgent);
+  const pendingPrompt = useChat((s) => s.pendingPrompt);
+  const setPendingPrompt = useChat((s) => s.setPendingPrompt);
   const agents = useWorkspace((s) => s.agents);
   const skills = useWorkspace((s) => s.skills);
   const root = useWorkspace((s) => s.root);
@@ -49,9 +52,20 @@ export function ChatPanel() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
   }, [messages]);
 
-  const send = () => {
-    if (!input.trim() || busy) return;
-    const text = input.trim();
+  // A prompt handed off from the Welcome command bar — send it once chat is idle.
+  useEffect(() => {
+    if (pendingPrompt && !busy) {
+      const text = pendingPrompt;
+      setPendingPrompt(null);
+      send(text);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingPrompt, busy]);
+
+  const send = (textArg?: string) => {
+    const raw = textArg ?? input;
+    if (!raw.trim() || busy) return;
+    const text = raw.trim();
     setInput('');
 
     let skillContext = '';
@@ -87,6 +101,7 @@ export function ChatPanel() {
       agent: selectedAgent ?? undefined,
     });
     setBusy(true, requestId);
+    const model = useModels.getState().modelFor('chat');
     startRun({
       requestId,
       agent: selectedAgent ?? null,
@@ -96,6 +111,7 @@ export function ChatPanel() {
       title: text.length > 80 ? text.slice(0, 80) + '…' : text,
       startedAt: Date.now(),
       status: 'running',
+      model,
       routeReason: selectedAgent ? 'chat-override' : null,
     });
 
@@ -144,6 +160,7 @@ export function ChatPanel() {
       agent: selectedAgent,
       kind: 'chat',
       skill: skillName,
+      model,
       routeReason: selectedAgent ? 'chat-override' : null,
     });
   };
@@ -163,7 +180,7 @@ export function ChatPanel() {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex items-center justify-between px-3 h-9 border-b border-ink-800 shrink-0">
+      <div className="flex items-center justify-between px-3 h-9 shrink-0">
         <h2 className="text-[11px] uppercase tracking-wider text-ink-400 font-semibold">Chat</h2>
         <div className="flex items-center gap-1">
           <button
@@ -177,7 +194,7 @@ export function ChatPanel() {
       </div>
 
       {selectedAgent && (
-        <div className="px-3 py-1.5 border-b border-ink-800 flex items-center gap-2 bg-ink-900/60">
+        <div className="px-3 py-1.5 flex items-center gap-2 bg-ink-900/60">
           <Bot size={12} className="text-accent" />
           <span className="text-[11px] text-ink-200">
             Speaking as <b className="text-ink-50">{selectedAgent}</b>
@@ -204,8 +221,8 @@ export function ChatPanel() {
         ))}
       </div>
 
-      <div className="border-t border-ink-800 p-3">
-        <div className="rounded-lg border border-ink-800 bg-ink-950 focus-within:border-ink-700 transition">
+      <div className="border-t border-ink-800/40 p-3">
+        <div className="rounded-lg bg-ink-950 ring-1 ring-ink-800/40 focus-within:ring-ink-700 transition">
           <textarea
             ref={inputRef}
             value={input}
@@ -220,7 +237,7 @@ export function ChatPanel() {
             rows={3}
             className="w-full bg-transparent text-sm px-3 py-2 resize-none outline-none placeholder:text-ink-500"
           />
-          <div className="flex items-center justify-between px-2 py-1.5 border-t border-ink-800/60">
+          <div className="flex items-center justify-between px-2 py-1.5 border-t border-ink-800/30">
             <div className="flex items-center gap-1.5 text-[10px] text-ink-500">
               <kbd className="px-1.5 py-0.5 rounded bg-ink-800 text-ink-300">Enter</kbd>
               send
@@ -236,7 +253,7 @@ export function ChatPanel() {
               </button>
             ) : (
               <button
-                onClick={send}
+                onClick={() => send()}
                 disabled={!input.trim()}
                 className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-md bg-accent text-accent-fg hover:opacity-90 disabled:opacity-40"
               >
@@ -308,9 +325,7 @@ function Message({
     <div
       className={cn(
         'rounded-lg px-3 py-2.5 text-sm leading-relaxed',
-        role === 'user'
-          ? 'bg-accent/10 border border-accent/20'
-          : 'bg-ink-900 border border-ink-800'
+        role === 'user' ? 'bg-accent/10' : 'bg-ink-850'
       )}
     >
       <div className="flex items-center gap-1.5 mb-1 text-[10px] uppercase tracking-wider text-ink-400 font-semibold">

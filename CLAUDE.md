@@ -83,12 +83,35 @@ renderer can't reach it. Streaming is fire-and-forget: `claude.stream(payload)` 
 results arrive through `claude.onEvent(handler)`.
 
 ### Renderer — `src/` (React 18 + Tailwind + Zustand)
-- **State** lives in three Zustand stores (`src/stores/`): `workspace` (root path, specs,
-  agents, skills), `chat` (message list, streaming state, selected agent), `ui` (active
-  view, panel layout). Components subscribe to these — there is no other global state.
-- **Layout** is a VS Code-style shell: `ActivityBar` → `Sidebar` (Explorer, Specs,
-  Agents, Skills, History, Settings views) → `EditorArea` (tabbed viewers) → dockable
-  `ChatPanel` → `StatusBar`.
+- **State** lives in Zustand stores (`src/stores/`): `workspace` (root path, specs,
+  agents, skills), `chat` (message list, streaming state, selected agent, `pendingPrompt`
+  handoff), `ui` (active view, panel layout), `orchestrator` (global run registry), and
+  `theme` (active palette). Components subscribe to these — there is no other global state.
+- **Theming** is variable-driven: every Tailwind colour is `rgb(var(--x) / <alpha-value>)`,
+  with three palettes (Abyss [default], Bioluminescent, Daylight) selected by `<html data-theme>`
+  (see `docs/renderer.md` → Theming). `--accent-fg` is themeable; fonts are Hanken Grotesk (body) /
+  Space Grotesk (`font-display`) / JetBrains Mono. Surfaces are **mostly borderless** — regions are
+  separated by background-shade differences rather than borders. The **Welcome view** is the
+  data-driven home screen (command bar, Continue-working spec cards, agent fleet) wired to real
+  specs/agents/skills.
+- **Layout** is the **Mission Control shell** (`App.tsx`): `CommandBar` (brand + ⌘K
+  `CommandPalette` + live-agents + project/model status) → `SpecRail` (unified left rail: 13-tab
+  destination nav + the active-spec hero card / other specs, re-homing the `sidebar/*View`s) →
+  `EditorArea` (tabbed viewers) → `ActivityStream` (live orchestrator feed + chat). It replaced the
+  old VS Code-style shell (`TitleBar`/`ActivityBar`/`Sidebar`/`ChatPanel`/`StatusBar`, now removed).
+  Opening a spec step enters **focus mode** (rail + activity collapse so the step fills the screen,
+  toggleable); the `SpecPhaseStrip` is a clickable pipeline between phases; Requirements/Design
+  render as spacious structured **section cards** (`SpecDocument`, the Read view), Tasks as the
+  kanban runner. **Agents, Skills, Hooks, and Orchestration are full-page "studio" modules**
+  (`views/{AgentsStudio,SkillsStudio,HooksStudio,RouterStudio}.tsx`, shared chrome in
+  `ModuleShell.tsx`) opened from the rail nav / ⌘K — each teaches how the subsystem works, shows what's
+  best for a task, lets you create new items, and exposes its config. All module configuration is
+  centralized in the `moduleConfig` store (`src/stores/moduleConfig.ts`, localStorage-persisted) and
+  pushed into the router via `setRouterConfig`, so runs honour it without any IPC change. The
+  **Explorer's file viewer** does real syntax highlighting via `lib/prism.ts` + `lib/fileLang.ts`,
+  themeable and language-extensible from the **Syntax** studio (`views/SyntaxStudio.tsx`, config in
+  `src/stores/syntax.ts`): installable color themes (built-in + custom) and on-demand language
+  grammars (lazy Prism chunks, with a just-in-time "Install <lang>" prompt in the viewer).
 - **Agent routing** (`src/lib/agentRouter.ts`) is content-aware. Precedence: per-task
   `@agent` > chat `@agent` override > best-matching **installed** agent for the action.
   "Best match" tries the bundled default by name, then scores every agent in `.claude/agents`
@@ -98,7 +121,11 @@ results arrive through `claude.onEvent(handler)`.
   (`IMPLEMENTER_SIGNALS`) plus a **workspace-scope bonus**, and task execution is **local-first**:
   if nothing matches it still picks the first project-local agent rather than going generic.
   Generic is reached only when the project has no installed agents at all. `routeAgent` returns
-  a `RouteReason` for transparency.
+  a `RouteReason` for transparency. Routing is **tunable + previewable** via the `moduleConfig`
+  store: per-step agent **pins** (reason `'pinned'`), the workspace bonus / specialist threshold /
+  local-first fallback, and skill-injection toggles. `explainRoute` / `scoreAgents` expose the full
+  decision (chosen agent + injected skills + ranked candidates) that drives the Orchestration
+  studio's routing playground.
 - **Skills are injected, not just labelled.** `SkillMeta.body` carries the full `SKILL.md`
   text; `skillSystemBlock`/`skillSystemBlocks` build prompt blocks that are prepended to the
   system prompt. The SDD skill (`sdd-feature`/`sdd-bugfix`, by spec kind) governs spec drafting
@@ -147,20 +174,23 @@ at the end. `specs:set-phase` allows reopening a phase (Re-sync); the **Audit** 
 to `spec-doctor` for drift detection.
 
 ### Layout & resizing (`App.tsx` + `ResizeHandle` + `ui` store)
-The sidebar and chat panels are drag-resizable via `ResizeHandle` (pointer-capture divider);
-widths live in the `ui` store (`sidebarWidth`/`chatWidth`, clamped + persisted to `localStorage`).
-`sidebarOpen`/`chatOpen` toggle visibility; the ActivityBar tab set (incl. Source Control,
-Orchestrator) is the `ActivityTab` union in `ui.ts`.
+The `SpecRail` and `ActivityStream` panels are drag-resizable via `ResizeHandle` (pointer-capture
+divider); widths live in the `ui` store (`sidebarWidth` = rail, `chatWidth` = activity stream,
+clamped + persisted to `localStorage`). The rail is always shown; `chatOpen` toggles the activity
+stream. The rail's destination nav is driven by `ui.activity`; the `ActivityTab` union in `ui.ts`
+(incl. Source Control, Orchestrator) is the full set of destinations, surfaced both in the
+`SpecRail` nav and the `CommandPalette`.
 
 ### Git & GitHub — `electron/git.ts`, `electron/github.ts`
 Per-workspace git helpers (status, current-branch, create-branch, commit-push, push-current)
 surfaced through `git:*` IPC. `github.ts` is a dependency-free GitHub REST client (token via
 `safeStorage`, same pattern as the API key) exposed through `github:*` IPC — repo resolution
 from the `origin` remote, token validation, and PR list/create/merge. Both are driven from the
-dedicated **Source Control** sidebar panel (`SourceControlView`), which is spec-aware (it reads
-the active editor tab's spec for branch/commit/PR defaults and writes branch/commit/PR state
-back into `SpecMeta`). The current project + branch are also shown in the `TitleBar` and
-`StatusBar`, which deep-link into this panel.
+dedicated full-page **Source Control** tab (`SourceControlView` with `variant="page"` — opened from
+the rail nav / command-bar project pill / ⌘K, a tab not a side panel), which is spec-aware (resolves
+the active or last-viewed spec via `ui.lastSpecId` for branch/commit/PR defaults and writes
+branch/commit/PR state back into `SpecMeta`). The current project + branch are also shown in the
+`CommandBar`, which deep-links into this tab.
 
 ### Terminals — interactive PTY sessions (`electron/terminal.ts` + `TerminalView`/`TerminalsView`)
 Where `claude:stream` is one-shot and fire-and-forget (`-p`, no stdin), terminals are a **fully

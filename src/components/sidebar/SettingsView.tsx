@@ -21,20 +21,18 @@ import {
   FolderOpen,
   GitBranch,
 } from 'lucide-react';
+import { Settings as SettingsIcon } from 'lucide-react';
 import { SidebarHeader } from '../SidebarShell';
 import { cn } from '../../lib/cn';
 import { useOrchestrator } from '../../stores/orchestrator';
 import { useWorkspace } from '../../stores/workspace';
+import { useModels, MODEL_OPTIONS, STEPS } from '../../stores/models';
 import type {
   McpServerMeta,
   GitHubTokenStatus,
 } from '../../../electron/shared/types';
 
-const MODELS = [
-  { id: 'claude-opus-4-7', label: 'Opus 4.7 (best reasoning)' },
-  { id: 'claude-sonnet-4-6', label: 'Sonnet 4.6 (balanced)' },
-  { id: 'claude-haiku-4-5-20251001', label: 'Haiku 4.5 (fast)' },
-];
+const MODELS = MODEL_OPTIONS.map((m) => ({ id: m.id, label: `${m.label} · ${m.price}` }));
 
 type Backend = 'cli' | 'api';
 type PermissionMode = 'default' | 'acceptEdits' | 'bypassPermissions';
@@ -52,7 +50,9 @@ interface Permissions {
   allowBash: boolean;
 }
 
-export function SettingsView() {
+export function SettingsView({ variant = 'panel' }: { variant?: 'panel' | 'page' } = {}) {
+  const stepModels = useModels((s) => s.stepModels);
+  const setStepModel = useModels((s) => s.setStep);
   const [backend, setBackend] = useState<Backend>('cli');
   const [cli, setCli] = useState<CliStatus | null>(null);
   const [hasKey, setHasKey] = useState(false);
@@ -154,10 +154,8 @@ export function SettingsView() {
     await window.kraken.settings.setModel(m);
   };
 
-  return (
-    <>
-      <SidebarHeader title="Settings" />
-      <div className="flex-1 overflow-y-auto p-3 space-y-5">
+  const inner = (
+    <div className="space-y-5">
         <section>
           <h3 className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-ink-300 font-semibold mb-2">
             <FolderGit2 size={12} /> Project directory
@@ -345,6 +343,38 @@ export function SettingsView() {
               Passed as <code className="text-ink-300">--model</code> to the CLI.
             </p>
           )}
+        </section>
+
+        <section>
+          <h3 className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-ink-300 font-semibold mb-2">
+            <Cpu size={12} /> Model per step
+          </h3>
+          <p className="text-[10px] text-ink-500 leading-snug mb-2">
+            Optimize spending — pick a cheaper model for simple steps and a stronger one where it
+            counts. <b className="text-ink-300">Default</b> uses the model chosen above.
+          </p>
+          <div className="rounded-md border border-ink-800 bg-ink-900/60 divide-y divide-ink-800/60">
+            {STEPS.map((s) => (
+              <div key={s.key} className="flex items-center gap-3 px-3 py-2">
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-medium text-ink-100">{s.label}</div>
+                  <div className="text-[10px] text-ink-500 leading-snug">{s.hint}</div>
+                </div>
+                <select
+                  value={stepModels[s.key] ?? ''}
+                  onChange={(e) => setStepModel(s.key, e.target.value)}
+                  className="shrink-0 text-[11px] bg-ink-950 border border-ink-800 rounded-md px-2 py-1.5 text-ink-100 focus:border-accent outline-none max-w-[190px]"
+                >
+                  <option value="">Default</option>
+                  {MODEL_OPTIONS.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.label} · {m.price}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ))}
+          </div>
         </section>
 
         {backend === 'cli' && perms && (
@@ -558,7 +588,36 @@ export function SettingsView() {
             <code className="text-ink-300">.claude/skills/</code> — the standard Claude Code locations, so existing definitions work as-is.
           </p>
         </section>
+    </div>
+  );
+
+  if (variant === 'page') {
+    return (
+      <div className="h-full overflow-y-auto bg-ink-950">
+        <div className="max-w-[900px] mx-auto px-8 py-8">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 grid place-items-center rounded-xl bg-accent/12 text-accent shrink-0">
+              <SettingsIcon size={19} />
+            </div>
+            <div>
+              <h1 className="font-display text-[24px] font-bold text-ink-50 leading-tight">
+                Settings
+              </h1>
+              <p className="font-mono text-[11px] text-faint">
+                backend · models · permissions · integrations
+              </p>
+            </div>
+          </div>
+          {inner}
+        </div>
       </div>
+    );
+  }
+
+  return (
+    <>
+      <SidebarHeader title="Settings" />
+      <div className="flex-1 overflow-y-auto p-3">{inner}</div>
     </>
   );
 }

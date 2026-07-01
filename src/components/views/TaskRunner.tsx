@@ -3,7 +3,6 @@ import {
   Play,
   CheckCircle2,
   Loader2,
-  Lock,
   Unlock,
   Sparkles,
   ListChecks,
@@ -11,15 +10,20 @@ import {
   Wand2,
   X,
   Rocket,
+  FileText,
+  ArrowRight,
+  Maximize2,
 } from 'lucide-react';
 import { parseTasks, isTaskRunnable, summarize, type ParsedTask } from '../../lib/tasks';
 import { routeAgent, routeSkill, bestSkillByText, skillSystemBlocks } from '../../lib/agentRouter';
 import { resolveAgent, resolveSkill } from '../../lib/verifyLibrary';
 import { useChat } from '../../stores/chat';
 import { useWorkspace } from '../../stores/workspace';
+import { useUi } from '../../stores/ui';
+import { useModels } from '../../stores/models';
 import { useOrchestrator, isOrchestrated } from '../../stores/orchestrator';
-import { CompletionSummary } from './CompletionSummary';
 import { cn } from '../../lib/cn';
+import { TaskInspector } from './TaskInspector';
 import type { SpecMeta } from '../../../electron/shared/types';
 
 interface Props {
@@ -35,6 +39,7 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload }
   const stats = useMemo(() => summarize(doc), [doc]);
   const [refiningTaskId, setRefiningTaskId] = useState<string | null>(null);
   const [refineFeedback, setRefineFeedback] = useState('');
+  const [inspectId, setInspectId] = useState<string | null>(null);
 
   const push = useChat((s) => s.push);
   const appendDelta = useChat((s) => s.appendDelta);
@@ -54,6 +59,7 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload }
   const setMaxConcurrency = useOrchestrator((s) => s.setMaxConcurrency);
   const startRun = useOrchestrator((s) => s.startRun);
   const finishRun = useOrchestrator((s) => s.finishRun);
+  const openTab = useUi((s) => s.openTab);
 
   // Only this spec's orchestrated runs (task/refine/polish) drive the wave UI.
   const activeRuns = Object.values(runs).filter(
@@ -90,6 +96,14 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload }
 
   const specRel = root ? meta.path.replace(root + '/', '') : meta.path;
 
+  const openSummary = () =>
+    openTab({
+      id: `spec:${meta.id}:summary`,
+      title: `${meta.name} / Summary`,
+      kind: 'summary',
+      specId: meta.id,
+    });
+
   /** Start one Claude run, tracked in the orchestrator store (one requestId each). */
   const launchRun = (opts: {
     task?: ParsedTask;
@@ -104,6 +118,7 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload }
     agentBody: string;
     systemText: string;
     userText: string;
+    model?: string;
     fireComplete?: boolean;
     onSettled?: (ok: boolean) => void;
     // routing/audit metadata for the agent graph
@@ -140,6 +155,7 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload }
       skill: opts.skill,
       wave: opts.wave,
       startedAt: Date.now(),
+      model: opts.model,
       routeReason: opts.routeReason ?? null,
       agentScope: opts.agentScope ?? null,
       skillScope: opts.skillScope ?? null,
@@ -193,6 +209,7 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload }
       skillScope: opts.skillScope,
       routeReason: opts.routeReason,
       agentScope: opts.agentScope,
+      model: opts.model,
     });
   };
 
@@ -217,6 +234,7 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload }
       agentBody: routed.body,
       systemText: buildExecutorSystem(meta, specRel, task, requirementsMd, designMd, tasksMd),
       userText: `Execute task **${task.id}**: ${task.description}`,
+      model: useModels.getState().modelFor('task'),
       fireComplete: true,
       onSettled,
       routeReason: routed.reason,
@@ -296,6 +314,7 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload }
       agentBody: routed.body,
       systemText: buildRefineSystem(meta, specRel, task, feedback, requirementsMd, designMd, tasksMd),
       userText: `Refine task **${task.id}**: ${task.description}\n\n**Feedback:** ${feedback}`,
+      model: useModels.getState().modelFor('refine'),
       routeReason: routed.reason,
       agentScope: resolveAgent(routed.name, agents).scope ?? null,
       skillScope: resolveSkill(chosenSkill?.name, skills).scope ?? null,
@@ -349,6 +368,7 @@ Reference \`${specRel}/requirements.md\`${
       agentBody: routed.body,
       systemText: buildPolishSystem(meta, specRel),
       userText: text,
+      model: useModels.getState().modelFor('polish'),
       routeReason: routed.reason,
       agentScope: resolveAgent(routed.name, agents).scope ?? null,
     });
@@ -538,166 +558,224 @@ Reference \`${specRel}/requirements.md\`${
 
   return (
     <div className="h-full flex flex-col bg-ink-950">
-      <div className="px-6 py-3 space-y-2 border-b border-ink-800/80 bg-ink-900/30 shrink-0">
-      <div className="flex items-center gap-2">
-        <ListChecks size={13} className="text-accent" />
-        <h3 className="text-[11px] uppercase tracking-wider text-ink-300 font-semibold">
-          Tasks · {stats.done}/{stats.total} done
-        </h3>
-        <div className="flex-1 h-1 bg-ink-800 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-accent transition-all"
-            style={{ width: `${stats.pctDone}%` }}
-          />
-        </div>
-        <div className="flex items-center gap-1">
-          {waitingOnHook && (
-            <button
-              onClick={unblockHook}
-              title="A blocking hook is running. Unblock cancels it and lets the run continue."
-              className="text-[11px] flex items-center gap-1 px-2 py-1 rounded-md bg-amber-500/20 text-amber-300 hover:bg-amber-500/30"
-            >
-              <Unlock size={11} /> Unblock
-            </button>
-          )}
-          {autopilotOn ? (
-            <button
-              onClick={stopAutopilot}
-              className="text-[11px] flex items-center gap-1 px-2 py-1 rounded-md bg-bad/20 text-bad hover:bg-bad/30"
-            >
-              <Square size={11} /> Stop autopilot
-            </button>
-          ) : anyRunning ? (
-            <button
-              onClick={cancel}
-              className="text-[11px] flex items-center gap-1 px-2 py-1 rounded-md bg-bad/20 text-bad hover:bg-bad/30"
-            >
-              <Square size={11} /> Stop {runningCount > 1 ? `(${runningCount})` : ''}
-            </button>
-          ) : stats.allDone ? (
-            <button
-              onClick={polish}
-              className="text-[11px] flex items-center gap-1 px-2 py-1 rounded-md bg-gradient-to-r from-accent to-accent/70 text-accent-fg hover:opacity-90"
-              title="Have Claude review and refine the implementation"
-            >
-              <Sparkles size={11} /> Polish
-            </button>
-          ) : (
-            <>
-              <button
-                onClick={autopilot}
-                title="Run all remaining waves autonomously, with hooks firing between"
-                className="text-[11px] flex items-center gap-1 px-2 py-1 rounded-md bg-ink-800 text-ink-100 hover:bg-ink-700"
-              >
-                <Rocket size={11} /> Autopilot
-              </button>
-              <button
-                onClick={runNext}
-                className="text-[11px] flex items-center gap-1 px-2 py-1 rounded-md bg-accent text-accent-fg hover:opacity-90"
-              >
-                <Play size={11} /> Run next
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-
-      {waitingOnHook && (
-        <div className="flex items-center gap-2 text-[11px] text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-md px-2.5 py-1.5">
-          <Loader2 size={12} className="animate-spin shrink-0" />
-          <span className="flex-1">
-            Waiting on a blocking hook to finish before the next wave. If it's stuck, click{' '}
-            <b>Unblock</b> to cancel it and continue, or <b>Stop autopilot</b> to halt.
-          </span>
-        </div>
-      )}
-
-      {stats.allDone && <CompletionSummary meta={meta} specRel={specRel} />}
-
-      <p className="text-[11px] text-ink-500 leading-snug">
-        Click <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-accent/15 text-accent font-semibold">
-          <Play size={9} /> Run
-        </span> on a task, or <b className="text-ink-300">Run wave</b> to launch its tasks in
-        parallel (up to {maxConcurrency} at once — set in Settings). Each task can name a
-        specialized agent with <code className="text-ink-300">@agent-name</code>.
-      </p>
-
-      {activeRuns.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {activeRuns.map((r) => (
-            <span
-              key={r.requestId}
-              className="flex items-center gap-1.5 text-[10px] px-2 py-1 rounded-md bg-accent/10 text-ink-200 ring-1 ring-accent/30"
-            >
-              <Loader2 size={10} className="text-accent animate-spin" />
-              {r.taskId ? <span className="font-mono text-ink-400">{r.taskId}</span> : null}
-              <span className="text-accent">{r.agent ?? 'claude'}</span>
-              <button
-                onClick={() => window.kraken.claude.cancel(r.requestId)}
-                title="Stop this run"
-                className="text-ink-500 hover:text-bad"
-              >
-                <X size={10} />
-              </button>
-            </span>
-          ))}
-        </div>
-      )}
-      </div>
-      <div className="flex-1 overflow-y-auto px-6 py-3 space-y-3">
-        {groups.map(([num, tasks]) => {
-          const wavePending = tasks.some(
-            (t) => !t.done && isTaskRunnable(t, doc.tasks)
-          );
-          const allWaveDone = tasks.every((t) => t.done);
-          return (
-            <div key={num}>
-              <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-ink-500 mb-1">
-                <span>Wave {num}</span>
-                {allWaveDone && <CheckCircle2 size={10} className="text-ok" />}
-                {wavePending && (
-                  <button
-                    onClick={() => runWave(num)}
-                    className="ml-auto text-[10px] text-accent hover:underline"
-                  >
-                    Run wave
-                  </button>
-                )}
-              </div>
-              <div className="space-y-0.5">
-                {tasks.map((t) => (
-                  <TaskRow
-                    key={t.id}
-                    task={t}
-                    runnable={isTaskRunnable(t, doc.tasks)}
-                    running={runningTaskIds.has(t.id)}
-                    disabled={runningCount >= maxConcurrency && !runningTaskIds.has(t.id)}
-                    refining={refiningTaskId === t.id}
-                    refineFeedback={refineFeedback}
-                    onRun={() => runTask(t)}
-                    onRefineStart={() => startRefine(t)}
-                    onRefineChange={setRefineFeedback}
-                    onRefineSubmit={() => submitRefine(t)}
-                    onRefineCancel={cancelRefine}
-                  />
-                ))}
+      <div className="px-6 pt-4 pb-3.5 shrink-0 bg-ink-900/40 space-y-3">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 grid place-items-center rounded-lg bg-accent/15 text-accent shrink-0">
+              <ListChecks size={15} />
+            </div>
+            <div className="min-w-0">
+              <h3 className="font-display text-[15px] font-semibold text-ink-50 leading-tight">
+                Task waves
+              </h3>
+              <div className="font-mono text-[11px] text-faint">
+                {groups.length} wave{groups.length === 1 ? '' : 's'} · {stats.total} task
+                {stats.total === 1 ? '' : 's'}
               </div>
             </div>
-          );
-        })}
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {waitingOnHook && (
+              <button
+                onClick={unblockHook}
+                title="A blocking hook is running. Unblock cancels it and lets the run continue."
+                className="text-[11px] flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 hover:bg-amber-500/30"
+              >
+                <Unlock size={11} /> Unblock
+              </button>
+            )}
+            {autopilotOn ? (
+              <button
+                onClick={stopAutopilot}
+                className="text-[11px] flex items-center gap-1 px-3 py-1.5 rounded-lg bg-bad/20 text-bad hover:bg-bad/30"
+              >
+                <Square size={11} /> Stop autopilot
+              </button>
+            ) : anyRunning ? (
+              <button
+                onClick={cancel}
+                className="text-[11px] flex items-center gap-1 px-3 py-1.5 rounded-lg bg-bad/20 text-bad hover:bg-bad/30"
+              >
+                <Square size={11} /> Stop {runningCount > 1 ? `(${runningCount})` : ''}
+              </button>
+            ) : stats.allDone ? (
+              <>
+                <button
+                  onClick={openSummary}
+                  title="Open the changed-files + AI summary in its own tab"
+                  className="text-[11px] flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-elev text-ink-100 hover:bg-line transition"
+                >
+                  <FileText size={11} /> Summary
+                </button>
+                <button
+                  onClick={polish}
+                  title="Have Claude review and refine the implementation"
+                  className="text-[11px] flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent text-accent-fg font-semibold hover:opacity-90 shadow-glow transition"
+                >
+                  <Sparkles size={11} /> Polish
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={runNext}
+                  className="text-[11px] flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-elev text-ink-100 hover:bg-line transition"
+                >
+                  <Play size={11} /> Run next
+                </button>
+                <button
+                  onClick={autopilot}
+                  title="Run all remaining waves autonomously, with hooks firing between"
+                  className="text-[11px] flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent text-accent-fg font-semibold hover:opacity-90 shadow-glow transition"
+                >
+                  <Rocket size={11} /> Run all waves
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Dashboard stat tiles */}
+        <div className="grid grid-cols-4 gap-2.5">
+          <StatTile label="DONE" value={`${stats.done}/${stats.total}`} tone="good" />
+          <StatTile
+            label="RUNNING"
+            value={String(runningCount)}
+            tone={runningCount > 0 ? 'accent' : 'muted'}
+          />
+          <StatTile label="REMAINING" value={String(stats.total - stats.done)} tone="muted" />
+          <StatTile
+            label="PROGRESS"
+            value={`${stats.pctDone}%`}
+            tone="accent"
+            progress={stats.pctDone}
+          />
+        </div>
+
+        {waitingOnHook && (
+          <div className="flex items-center gap-2 text-[11px] text-amber-300 bg-amber-500/10 rounded-lg px-2.5 py-1.5">
+            <Loader2 size={12} className="animate-spin shrink-0" />
+            <span className="flex-1">
+              Waiting on a blocking hook to finish before the next wave. If it's stuck, click{' '}
+              <b>Unblock</b> to cancel it and continue, or <b>Stop autopilot</b> to halt.
+            </span>
+          </div>
+        )}
+
+        {stats.allDone && (
+          <button
+            onClick={openSummary}
+            className="w-full flex items-center gap-2.5 rounded-xl bg-ok/[0.08] px-4 py-2.5 text-left hover:bg-ok/[0.13] transition"
+          >
+            <CheckCircle2 size={15} className="text-ok shrink-0" />
+            <span className="flex-1 text-[12.5px] text-ink-100">
+              All tasks complete — view the changed-files summary
+            </span>
+            <ArrowRight size={14} className="text-ok shrink-0" />
+          </button>
+        )}
       </div>
+      {/* Kanban dashboard — each wave is a bounded lane grouping its task cards */}
+      <div className="flex-1 overflow-x-auto overflow-y-hidden px-6 pb-5 pt-1">
+        <div className="h-full flex gap-4" style={{ minWidth: 'min-content' }}>
+          {groups.map(([num, tasks]) => {
+            const wavePending = tasks.some((t) => !t.done && isTaskRunnable(t, doc.tasks));
+            const waveDone = tasks.filter((t) => t.done).length;
+            const allWaveDone = waveDone === tasks.length;
+            const waveRunning = tasks.filter((t) => runningTaskIds.has(t.id)).length;
+            const wavePct = Math.round((waveDone / tasks.length) * 100);
+            return (
+              <div
+                key={num}
+                className="w-[320px] shrink-0 flex flex-col rounded-2xl bg-panel overflow-hidden"
+              >
+                <div
+                  className={cn(
+                    'flex items-center gap-2 px-4 py-3 shrink-0',
+                    waveRunning > 0
+                      ? 'bg-accent/[0.12]'
+                      : allWaveDone
+                        ? 'bg-good/[0.10]'
+                        : 'bg-card'
+                  )}
+                >
+                  <span className="font-display text-[14px] font-bold text-ink-50">Wave {num}</span>
+                  {allWaveDone ? (
+                    <span className="w-[18px] h-[18px] grid place-items-center rounded-full bg-good/20 text-ok">
+                      <CheckCircle2 size={11} />
+                    </span>
+                  ) : waveRunning > 0 ? (
+                    <span className="flex items-center gap-1 font-mono text-[10px] text-accent">
+                      <span className="w-2 h-2 rounded-full bg-accent animate-pulse-dot" />
+                      {waveRunning} running
+                    </span>
+                  ) : null}
+                  <span className="ml-auto font-mono text-[11px] text-faint tabular-nums">
+                    {waveDone}/{tasks.length}
+                  </span>
+                  {wavePending && (
+                    <button
+                      onClick={() => runWave(num)}
+                      title="Run this wave's tasks in parallel"
+                      className="flex items-center gap-1 px-2 py-1 rounded-md bg-accent text-accent-fg text-[11px] font-semibold hover:opacity-90 transition"
+                    >
+                      <Play size={10} /> Run
+                    </button>
+                  )}
+                </div>
+                <div className="h-[3px] bg-elev shrink-0">
+                  <div
+                    className={cn('h-full transition-all', allWaveDone ? 'bg-good' : 'bg-accent')}
+                    style={{ width: `${wavePct}%` }}
+                  />
+                </div>
+                <div className="flex-1 overflow-y-auto flex flex-col gap-2.5 p-3">
+                  {tasks.map((t) => (
+                    <TaskCard
+                      key={t.id}
+                      task={t}
+                      runnable={isTaskRunnable(t, doc.tasks)}
+                      running={runningTaskIds.has(t.id)}
+                      agent={activeRuns.find((r) => r.taskId === t.id)?.agent ?? null}
+                      disabled={runningCount >= maxConcurrency && !runningTaskIds.has(t.id)}
+                      refining={refiningTaskId === t.id}
+                      refineFeedback={refineFeedback}
+                      onRun={() => runTask(t)}
+                      onInspect={() => setInspectId(t.id)}
+                      onRefineStart={() => startRefine(t)}
+                      onRefineChange={setRefineFeedback}
+                      onRefineSubmit={() => submitRefine(t)}
+                      onRefineCancel={cancelRefine}
+                    />
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {inspectId &&
+        (() => {
+          const t = doc.tasks.find((x) => x.id === inspectId);
+          return t ? (
+            <TaskInspector task={t} meta={meta} onClose={() => setInspectId(null)} />
+          ) : null;
+        })()}
     </div>
   );
 }
 
-function TaskRow({
+function TaskCard({
   task,
   runnable,
   running,
+  agent,
   disabled,
   refining,
   refineFeedback,
   onRun,
+  onInspect,
   onRefineStart,
   onRefineChange,
   onRefineSubmit,
@@ -706,108 +784,131 @@ function TaskRow({
   task: ParsedTask;
   runnable: boolean;
   running: boolean;
+  agent: string | null;
   disabled: boolean;
   refining: boolean;
   refineFeedback: string;
   onRun: () => void;
+  onInspect: () => void;
   onRefineStart: () => void;
   onRefineChange: (v: string) => void;
   onRefineSubmit: () => void;
   onRefineCancel: () => void;
 }) {
+  const state = task.done ? 'done' : running ? 'running' : runnable ? 'ready' : 'locked';
   return (
-    <div className="space-y-1">
+    <div
+      onClick={onInspect}
+      title="Inspect task — agent, run details & transcript"
+      className={cn(
+        'rounded-xl p-3 transition cursor-pointer group',
+        state === 'running' && 'bg-accent/[0.08] shadow-[0_0_22px_-12px_rgb(var(--accent))]',
+        state === 'done' && 'bg-card opacity-60 hover:opacity-90',
+        state === 'ready' && 'bg-elev hover:bg-elev/70',
+        state === 'locked' && 'bg-card/40 hover:bg-card/60'
+      )}
+    >
+      <div className="flex items-center gap-2 mb-1.5">
+        <span
+          className={cn(
+            'font-mono text-[11px] font-semibold',
+            state === 'done'
+              ? 'text-ok'
+              : state === 'running'
+                ? 'text-accent'
+                : state === 'locked'
+                  ? 'text-ink-600'
+                  : 'text-faint'
+          )}
+        >
+          {task.id}
+          {state === 'done'
+            ? ' ✓'
+            : state === 'running'
+              ? ' · running'
+              : state === 'locked'
+                ? ' · blocked'
+                : ''}
+        </span>
+        {task.agent && (
+          <span className="font-mono text-[10px] text-accent/80">@{task.agent}</span>
+        )}
+        <span className="ml-auto flex items-center gap-2 shrink-0">
+          {running && agent && (
+            <span className="font-mono text-[10px] text-faint truncate max-w-[110px]">{agent}</span>
+          )}
+          <Maximize2 size={12} className="text-faint opacity-0 group-hover:opacity-100 transition" />
+        </span>
+      </div>
+
       <div
         className={cn(
-          'flex items-start gap-2 px-2 py-1.5 rounded-md text-xs group',
-          task.done
-            ? 'bg-ok/5 text-ink-400'
-            : running
-              ? 'bg-accent/10 ring-1 ring-accent/40'
-              : 'bg-ink-900/40 hover:bg-ink-800/50'
+          'text-[12.5px] leading-snug',
+          task.done ? 'line-through decoration-ink-700 text-faint' : 'text-ink-100'
         )}
       >
-        <span className="mt-0.5 shrink-0">
-          {task.done ? (
-            <CheckCircle2 size={13} className="text-ok" />
-          ) : running ? (
-            <Loader2 size={13} className="text-accent animate-spin" />
-          ) : !runnable ? (
-            <Lock size={13} className="text-ink-600" />
-          ) : (
-            <Play size={13} className="text-ink-400 group-hover:text-accent" />
-          )}
-        </span>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5">
-            <span className="font-mono text-[10px] text-ink-500">{task.id}</span>
-            {task.agent && (
-              <span className="text-[9px] text-accent/80 font-mono">@{task.agent}</span>
-            )}
-            {task.dependencies.length > 0 && (
-              <span className="text-[9px] text-ink-600">deps: {task.dependencies.join(', ')}</span>
-            )}
-          </div>
-          <div
-            className={cn(
-              'text-[12px] leading-snug',
-              task.done ? 'line-through text-ink-500' : 'text-ink-100'
-            )}
-          >
-            {task.description || '(no description)'}
-          </div>
-        </div>
-        {!task.done && (
-          <button
-            onClick={onRun}
-            disabled={!runnable || disabled || running}
-            title={
-              !runnable
-                ? 'Blocked by an earlier wave or unfinished dependency'
-                : disabled
-                  ? 'Another task is running'
-                  : 'Execute this task with Claude'
-            }
-            className={cn(
-              'shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold transition',
-              running
-                ? 'bg-accent/20 text-accent'
-                : runnable && !disabled
-                  ? 'bg-accent text-accent-fg hover:opacity-90 shadow-glow'
-                  : 'bg-ink-800 text-ink-500 cursor-not-allowed'
-            )}
-          >
-            {running ? (
-              <>
-                <Loader2 size={11} className="animate-spin" /> Running
-              </>
-            ) : (
-              <>
-                <Play size={11} /> Run
-              </>
-            )}
-          </button>
-        )}
-        {task.done && !refining && (
-          <button
-            onClick={onRefineStart}
-            disabled={disabled}
-            title="The output isn't right? Give Claude targeted feedback to adjust this task's work."
-            className={cn(
-              'shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold transition',
-              disabled
-                ? 'bg-ink-800 text-ink-500 cursor-not-allowed'
-                : 'bg-ink-800 text-ink-200 hover:bg-ink-700'
-            )}
-          >
-            <Wand2 size={11} /> Refine
-          </button>
-        )}
+        {task.description || '(no description)'}
       </div>
+
+      {task.dependencies.length > 0 && !task.done && (
+        <div className="mt-1.5 font-mono text-[9.5px] text-ink-600">
+          deps: {task.dependencies.join(', ')}
+        </div>
+      )}
+
+      {state === 'running' && (
+        <div className="mt-2.5 h-[3px] rounded-full bg-elev overflow-hidden">
+          <div
+            className="h-full w-1/2 animate-flow"
+            style={{
+              background:
+                'linear-gradient(90deg, rgb(var(--accent)), rgb(var(--accent2)) 50%, rgb(var(--accent)))',
+              backgroundSize: '200% 100%',
+            }}
+          />
+        </div>
+      )}
+
+      {state === 'ready' && !refining && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onRun();
+          }}
+          disabled={disabled}
+          title={disabled ? 'At max concurrency — another task is running' : 'Execute this task with Claude'}
+          className={cn(
+            'mt-2.5 w-full flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition',
+            disabled
+              ? 'bg-elev text-faint cursor-not-allowed'
+              : 'bg-accent text-accent-fg hover:opacity-90 shadow-glow'
+          )}
+        >
+          <Play size={11} /> Run task
+        </button>
+      )}
+
+      {state === 'done' && !refining && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onRefineStart();
+          }}
+          disabled={disabled}
+          title="The output isn't right? Give Claude targeted feedback to adjust this task's work."
+          className="mt-2.5 w-full flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-elev text-dim hover:text-ink-100 transition disabled:opacity-50"
+        >
+          <Wand2 size={11} /> Refine
+        </button>
+      )}
+
       {refining && (
-        <div className="ml-6 rounded-md border border-accent/30 bg-ink-900/70 p-2 space-y-2">
-          <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-accent font-semibold">
-            <Wand2 size={11} /> Refine {task.id}
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="mt-2.5 rounded-lg bg-bg/60 p-2 space-y-2"
+        >
+          <div className="flex items-center gap-1.5 font-mono text-[10px] tracking-wider text-accent font-semibold">
+            <Wand2 size={11} /> REFINE {task.id}
           </div>
           <textarea
             autoFocus
@@ -817,30 +918,56 @@ function TaskRow({
               if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) onRefineSubmit();
               if (e.key === 'Escape') onRefineCancel();
             }}
-            placeholder="What needs to change? e.g. 'use strict TypeScript types, not any', 'split the helper into its own module', 'add a test for the empty case'…"
+            placeholder="What needs to change? e.g. 'use strict TypeScript types', 'add a test for the empty case'…"
             rows={3}
-            className="w-full text-[12px] px-2 py-1.5 rounded-md bg-ink-950 border border-ink-800 focus:border-accent outline-none resize-y"
+            className="w-full text-[12px] px-2 py-1.5 rounded-md bg-bg focus:ring-1 focus:ring-accent outline-none resize-y"
           />
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] text-ink-500">
-              Claude will re-read the spec + your previous changes, then apply your feedback.
-            </span>
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={onRefineCancel}
-                className="text-[11px] px-2 py-1 rounded-md text-ink-300 hover:bg-ink-800"
-              >
-                <X size={11} className="inline -mt-0.5" /> Cancel
-              </button>
-              <button
-                onClick={onRefineSubmit}
-                disabled={!refineFeedback.trim()}
-                className="text-[11px] flex items-center gap-1 px-2.5 py-1 rounded-md bg-accent text-accent-fg hover:opacity-90 disabled:opacity-40 shadow-glow"
-              >
-                <Wand2 size={11} /> Apply refinement
-              </button>
-            </div>
+          <div className="flex items-center justify-end gap-1.5">
+            <button
+              onClick={onRefineCancel}
+              className="text-[11px] px-2 py-1 rounded-md text-dim hover:bg-elev"
+            >
+              <X size={11} className="inline -mt-0.5" /> Cancel
+            </button>
+            <button
+              onClick={onRefineSubmit}
+              disabled={!refineFeedback.trim()}
+              className="text-[11px] flex items-center gap-1 px-2.5 py-1 rounded-md bg-accent text-accent-fg hover:opacity-90 disabled:opacity-40 shadow-glow"
+            >
+              <Wand2 size={11} /> Apply
+            </button>
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StatTile({
+  label,
+  value,
+  tone,
+  progress,
+}: {
+  label: string;
+  value: string;
+  tone: 'good' | 'accent' | 'muted';
+  progress?: number;
+}) {
+  return (
+    <div className="rounded-xl bg-card px-3.5 py-2.5">
+      <div className="font-mono text-[10px] tracking-[0.12em] text-faint mb-1.5">{label}</div>
+      <div
+        className={cn(
+          'font-display text-[20px] font-bold leading-none tabular-nums',
+          tone === 'good' ? 'text-ok' : tone === 'accent' ? 'text-accent' : 'text-ink-100'
+        )}
+      >
+        {value}
+      </div>
+      {progress !== undefined && (
+        <div className="mt-2 h-1 rounded-full bg-elev overflow-hidden">
+          <div className="h-full bg-accent transition-all" style={{ width: `${progress}%` }} />
         </div>
       )}
     </div>
