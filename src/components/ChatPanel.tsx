@@ -15,6 +15,7 @@ import {
 import { useChat } from '../stores/chat';
 import { useWorkspace } from '../stores/workspace';
 import { useOrchestrator } from '../stores/orchestrator';
+import { useModels } from '../stores/models';
 import { skillSystemBlock } from '../lib/agentRouter';
 import { renderMarkdown } from '../lib/markdown';
 import { cn } from '../lib/cn';
@@ -100,6 +101,7 @@ export function ChatPanel() {
       agent: selectedAgent ?? undefined,
     });
     setBusy(true, requestId);
+    const model = useModels.getState().modelFor('chat');
     startRun({
       requestId,
       agent: selectedAgent ?? null,
@@ -109,6 +111,7 @@ export function ChatPanel() {
       title: text.length > 80 ? text.slice(0, 80) + '…' : text,
       startedAt: Date.now(),
       status: 'running',
+      model,
       routeReason: selectedAgent ? 'chat-override' : null,
     });
 
@@ -157,6 +160,7 @@ export function ChatPanel() {
       agent: selectedAgent,
       kind: 'chat',
       skill: skillName,
+      model,
       routeReason: selectedAgent ? 'chat-override' : null,
     });
   };

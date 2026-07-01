@@ -49,10 +49,17 @@ export interface OpenTab {
   title: string;
   kind:
     | 'spec'
+    | 'summary'
+    | 'source-control'
     | 'questions'
     | 'file'
     | 'agent'
     | 'skill'
+    | 'agents-studio'
+    | 'skills-studio'
+    | 'router-studio'
+    | 'hooks-studio'
+    | 'syntax-studio'
     | 'welcome'
     | 'settings'
     | 'run'
@@ -86,6 +93,16 @@ interface UiStore {
   chatWidth: number;
   setChatWidth: (n: number) => void;
 
+  // Focus mode — collapses the spec rail + activity stream so a step fills the
+  // screen. Auto-engages when a spec tab is active; toggled from the chrome.
+  focusMode: boolean;
+  toggleFocus: () => void;
+  setFocus: (b: boolean) => void;
+
+  // The most recently active spec — lets spec-less surfaces (e.g. the Source
+  // Control tab) still resolve "the spec you're working on" for their defaults.
+  lastSpecId: string | null;
+
   tabs: OpenTab[];
   activeTabId: string | null;
   openTab: (tab: OpenTab) => void;
@@ -115,16 +132,25 @@ export const useUi = create<UiStore>((set, get) => ({
     set({ chatWidth: w });
   },
 
+  focusMode: false,
+  toggleFocus: () => set((s) => ({ focusMode: !s.focusMode })),
+  setFocus: (b) => set({ focusMode: b }),
+
+  lastSpecId: null,
+
   tabs: [{ id: 'welcome', title: 'Welcome', kind: 'welcome' }],
   activeTabId: 'welcome',
 
   openTab: (tab) => {
     const existing = get().tabs.find((t) => t.id === tab.id);
+    // A spec step takes over the screen; anything else shows the full shell.
+    const focusMode = tab.kind === 'spec';
+    const lastSpecId = tab.kind === 'spec' && tab.specId ? tab.specId : get().lastSpecId;
     if (existing) {
-      set({ activeTabId: tab.id });
+      set({ activeTabId: tab.id, focusMode, lastSpecId });
       return;
     }
-    set((s) => ({ tabs: [...s.tabs, tab], activeTabId: tab.id }));
+    set((s) => ({ tabs: [...s.tabs, tab], activeTabId: tab.id, focusMode, lastSpecId }));
   },
 
   closeTab: (id) => {
@@ -134,9 +160,18 @@ export const useUi = create<UiStore>((set, get) => ({
       if (activeTabId === id) {
         activeTabId = tabs.length ? tabs[tabs.length - 1].id : null;
       }
-      return { tabs, activeTabId };
+      const active = tabs.find((t) => t.id === activeTabId);
+      return { tabs, activeTabId, focusMode: active?.kind === 'spec' };
     });
   },
 
-  setActiveTab: (id) => set({ activeTabId: id }),
+  setActiveTab: (id) =>
+    set((s) => {
+      const tab = s.tabs.find((t) => t.id === id);
+      return {
+        activeTabId: id,
+        focusMode: tab?.kind === 'spec',
+        lastSpecId: tab?.kind === 'spec' && tab.specId ? tab.specId : s.lastSpecId,
+      };
+    }),
 }));

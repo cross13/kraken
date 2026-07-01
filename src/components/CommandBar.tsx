@@ -8,7 +8,8 @@ import {
   Check,
   AlertCircle,
   Contrast,
-  PanelLeft,
+  PanelLeftClose,
+  PanelLeftOpen,
   Activity,
 } from 'lucide-react';
 import { useUi } from '../stores/ui';
@@ -28,8 +29,13 @@ export function CommandBar() {
   const root = useWorkspace((s) => s.root);
   const pickWorkspace = useWorkspace((s) => s.pickWorkspace);
   const setActivity = useUi((s) => s.setActivity);
+  const openTab = useUi((s) => s.openTab);
   const toggleChat = useUi((s) => s.toggleChat);
   const chatOpen = useUi((s) => s.chatOpen);
+  const focusMode = useUi((s) => s.focusMode);
+  const toggleFocus = useUi((s) => s.toggleFocus);
+  const openSourceControl = () =>
+    openTab({ id: 'source-control', title: 'Source Control', kind: 'source-control' });
   const theme = useTheme((s) => s.theme);
   const cycleTheme = useTheme((s) => s.cycleTheme);
 
@@ -131,7 +137,7 @@ export function CommandBar() {
 
         {/* project · branch */}
         <button
-          onClick={() => (root ? setActivity('source-control') : pickWorkspace())}
+          onClick={() => (root ? openSourceControl() : pickWorkspace())}
           title={root ? `${root}\nClick to open Source Control` : 'Open a project'}
           className="titlebar-nodrag flex items-center gap-1.5 font-mono text-[12px] text-faint hover:text-ink-100 transition max-w-[260px]"
         >
@@ -149,7 +155,7 @@ export function CommandBar() {
 
         {/* model + backend */}
         <button
-          onClick={() => setActivity('settings')}
+          onClick={() => openTab({ id: 'settings', title: 'Settings', kind: 'settings' })}
           title="Open Settings"
           className="titlebar-nodrag flex items-center gap-2 font-mono text-[12px] text-faint hover:text-ink-100 transition"
         >
@@ -169,12 +175,18 @@ export function CommandBar() {
           <IconButton onClick={cycleTheme} title={`Theme: ${THEME_LABEL[theme]}`}>
             <Contrast size={15} />
           </IconButton>
-          <IconButton onClick={() => setActivity('specs')} title="Focus spec rail">
-            <PanelLeft size={15} />
+          <IconButton
+            active={focusMode}
+            onClick={toggleFocus}
+            title={focusMode ? 'Exit focus — show rail + activity' : 'Focus mode — hide rail + activity'}
+          >
+            {focusMode ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
           </IconButton>
-          <IconButton active={chatOpen} onClick={toggleChat} title="Toggle activity stream">
-            <Activity size={15} />
-          </IconButton>
+          {!focusMode && (
+            <IconButton active={chatOpen} onClick={toggleChat} title="Toggle activity stream">
+              <Activity size={15} />
+            </IconButton>
+          )}
         </div>
       </header>
 

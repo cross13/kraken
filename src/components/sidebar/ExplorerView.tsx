@@ -1,4 +1,4 @@
-import { ChevronRight, ChevronDown, File, Folder, FolderOpen, RefreshCw } from 'lucide-react';
+import { ChevronRight, ChevronDown, File, Folder, FolderOpen, RefreshCw, Palette } from 'lucide-react';
 import { useState } from 'react';
 import { useWorkspace } from '../../stores/workspace';
 import { useUi } from '../../stores/ui';
@@ -10,15 +10,24 @@ export function ExplorerView() {
   const tree = useWorkspace((s) => s.tree);
   const refreshAll = useWorkspace((s) => s.refreshAll);
   const pickWorkspace = useWorkspace((s) => s.pickWorkspace);
+  const openTab = useUi((s) => s.openTab);
 
   return (
     <>
       <SidebarHeader
         title="Explorer"
         actions={
-          <SidebarButton onClick={refreshAll} title="Refresh">
-            <RefreshCw size={13} />
-          </SidebarButton>
+          <>
+            <SidebarButton
+              onClick={() => openTab({ id: 'syntax-studio', title: 'Syntax', kind: 'syntax-studio' })}
+              title="Syntax settings — themes & languages"
+            >
+              <Palette size={13} />
+            </SidebarButton>
+            <SidebarButton onClick={refreshAll} title="Refresh">
+              <RefreshCw size={13} />
+            </SidebarButton>
+          </>
         }
       />
       <div className="flex-1 overflow-y-auto py-1">

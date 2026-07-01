@@ -2,6 +2,9 @@ import { useEffect, useState, useRef } from 'react';
 import {
   Eye,
   Pencil,
+  BookOpen,
+  Maximize2,
+  Minimize2,
   ArrowRight,
   Sparkles,
   Loader2,
@@ -21,9 +24,11 @@ import { useWorkspace } from '../../stores/workspace';
 import { useChat } from '../../stores/chat';
 import { useOrchestrator } from '../../stores/orchestrator';
 import { useUi } from '../../stores/ui';
+import { useModels } from '../../stores/models';
 import { renderMarkdown } from '../../lib/markdown';
 import { cn } from '../../lib/cn';
 import { TaskRunner } from './TaskRunner';
+import { SpecDocument } from './SpecDocument';
 import { routeAgent, routeSkill, skillSystemBlock } from '../../lib/agentRouter';
 import { resolveAgent, resolveSkill } from '../../lib/verifyLibrary';
 import { parseOpenQuestions, addQuestion } from '../../lib/openQuestions';
@@ -32,8 +37,9 @@ import type { SpecMeta, SpecPhase } from '../../../electron/shared/types';
 
 const phaseOrder: SpecPhase[] = ['requirements', 'design', 'tasks', 'done'];
 
-// 'board' is the interactive task runner; only offered for the tasks file.
-type SpecView = 'board' | 'edit' | 'preview';
+// 'board' is the interactive task runner (tasks file); 'read' is the structured
+// section-card document view (requirements/bugfix/design); 'edit' is raw markdown.
+type SpecView = 'board' | 'read' | 'edit' | 'preview';
 
 interface Props {
   specId: string;
@@ -45,8 +51,8 @@ export function SpecEditor({ specId, file }: Props) {
   const refreshAll = useWorkspace((s) => s.refreshAll);
   const [meta, setMeta] = useState<SpecMeta | null>(null);
   const [files, setFiles] = useState<Record<string, string>>({});
-  // Tasks open on the interactive Board by default; everything else on Edit.
-  const [view, setView] = useState<SpecView>(file === 'tasks' ? 'board' : 'edit');
+  // Tasks open on the interactive Board; documents open on the structured Read view.
+  const [view, setView] = useState<SpecView>(file === 'tasks' ? 'board' : 'read');
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const debounceRef = useRef<number | null>(null);
@@ -269,6 +275,8 @@ export function SpecEditor({ specId, file }: Props) {
             requirementsMd={files.requirements ?? files.bugfix ?? ''}
             onReload={load}
           />
+        ) : view === 'read' ? (
+          <SpecDocument md={content} onEdit={() => setView('edit')} />
         ) : view === 'preview' ? (
           <div
             className="md w-full px-8 py-6 h-full overflow-y-auto"
@@ -347,20 +355,28 @@ function SpecHeader({
       <div className="flex items-center gap-3 shrink-0">
         <SaveStatus saving={saving} savedAt={savedAt} />
 
-        {/* View mode — tasks add an interactive Board alongside the raw markdown */}
+        {/* View mode — tasks get the interactive Board + Preview; documents get
+            the structured Read view. Both keep raw Edit. */}
         <div className="flex rounded-lg bg-ink-900/60 p-0.5">
-          {canBoard && (
+          {canBoard ? (
             <SegBtn active={view === 'board'} onClick={() => setView('board')}>
               <ListChecks size={11} /> Board
+            </SegBtn>
+          ) : (
+            <SegBtn active={view === 'read'} onClick={() => setView('read')}>
+              <BookOpen size={11} /> Read
             </SegBtn>
           )}
           <SegBtn active={view === 'edit'} onClick={() => setView('edit')}>
             <Pencil size={11} /> Edit
           </SegBtn>
-          <SegBtn active={view === 'preview'} onClick={() => setView('preview')}>
-            <Eye size={11} /> Preview
-          </SegBtn>
+          {canBoard && (
+            <SegBtn active={view === 'preview'} onClick={() => setView('preview')}>
+              <Eye size={11} /> Preview
+            </SegBtn>
+          )}
         </div>
+        <FocusToggle />
 
         {/* AI assist */}
         <div className="flex items-center gap-1.5">
@@ -455,6 +471,23 @@ function SegBtn({
       )}
     >
       {children}
+    </button>
+  );
+}
+
+function FocusToggle() {
+  const focusMode = useUi((s) => s.focusMode);
+  const toggleFocus = useUi((s) => s.toggleFocus);
+  return (
+    <button
+      onClick={toggleFocus}
+      title={focusMode ? 'Exit focus — show rail + activity' : 'Focus mode — fill the screen'}
+      className={cn(
+        'text-xs flex items-center justify-center w-8 h-8 rounded-lg transition',
+        focusMode ? 'text-accent bg-accent/10' : 'text-ink-300 hover:text-ink-50 hover:bg-ink-800'
+      )}
+    >
+      {focusMode ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
     </button>
   );
 }
@@ -707,6 +740,9 @@ ${editInstruction}`,
       agent: routed.name ?? undefined,
     });
     setBusy(true, requestId);
+    const stepModel = useModels
+      .getState()
+      .modelFor(file === 'design' ? 'design' : file === 'tasks' ? 'tasks' : 'requirements');
     startRun({
       requestId,
       agent: routed.name,
@@ -717,6 +753,7 @@ ${editInstruction}`,
       startedAt: Date.now(),
       status: 'running',
       skill: routeSkill(meta.kind, skills)?.name ?? null,
+      model: stepModel,
       routeReason: routed.reason,
       agentScope: resolveAgent(routed.name, agents).scope ?? null,
     });
@@ -761,6 +798,7 @@ ${editInstruction}`,
       skillScope: resolveSkill(specSkill?.name, skills).scope ?? null,
       routeReason: routed.reason,
       agentScope: resolveAgent(routed.name, agents).scope ?? null,
+      model: stepModel,
     });
   };
 }

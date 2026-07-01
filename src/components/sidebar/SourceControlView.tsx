@@ -48,17 +48,22 @@ interface GitStatus {
 
 type Filter = 'open' | 'all';
 
-/** Find the spec backing the currently active editor tab, if any. */
+/** The spec backing the active editor tab, falling back to the last spec viewed
+ *  (so the full-page Source Control tab still knows which spec you're on). */
 function useActiveSpec(): SpecMeta | null {
   const activeTabId = useUi((s) => s.activeTabId);
   const tabs = useUi((s) => s.tabs);
+  const lastSpecId = useUi((s) => s.lastSpecId);
   const specs = useWorkspace((s) => s.specs);
   const tab = tabs.find((t) => t.id === activeTabId);
-  if (tab?.kind !== 'spec' || !tab.specId) return null;
-  return specs.find((s) => s.id === tab.specId) ?? null;
+  const id = tab?.kind === 'spec' ? tab.specId : lastSpecId;
+  if (!id) return null;
+  return specs.find((s) => s.id === id) ?? null;
 }
 
-export function SourceControlView() {
+export function SourceControlView({
+  variant = 'panel',
+}: { variant?: 'panel' | 'page' } = {}) {
   const root = useWorkspace((s) => s.root);
   const refreshAll = useWorkspace((s) => s.refreshAll);
   const spec = useActiveSpec();
@@ -118,6 +123,23 @@ export function SourceControlView() {
   }, [refreshToken, loadPrs]);
 
   if (!root) {
+    if (variant === 'page') {
+      return (
+        <div className="h-full grid place-items-center bg-ink-950 px-6">
+          <div className="text-center max-w-sm">
+            <div className="w-12 h-12 mx-auto grid place-items-center rounded-2xl bg-accent/12 text-accent mb-4">
+              <GitBranch size={22} />
+            </div>
+            <h3 className="font-display text-base font-semibold text-ink-50 mb-1.5">
+              No project open
+            </h3>
+            <p className="text-[13px] text-dim leading-relaxed">
+              Open a project directory to manage branches, commits, and pull requests.
+            </p>
+          </div>
+        </div>
+      );
+    }
     return (
       <>
         <SidebarHeader title="Source Control" />
@@ -129,96 +151,119 @@ export function SourceControlView() {
     );
   }
 
+  const doRefresh = () => {
+    refreshStatus();
+    refreshToken();
+    loadPrs(filter);
+  };
+  const onChanged = () => {
+    refreshStatus();
+    refreshAll();
+  };
+
+  const statusEl = <StatusStrip status={status} spec={spec} />;
+  const syncEl = <SyncSection root={root} status={status} onChanged={onChanged} />;
+  const branchEl = <BranchSection root={root} spec={spec} status={status} onChanged={onChanged} />;
+  const changesEl = <ChangesSection root={root} status={status} onChanged={onChanged} />;
+  const commitEl = <CommitSection root={root} spec={spec} status={status} onChanged={onChanged} />;
+  const prsEl = (
+    <PullRequestSection
+      root={root}
+      spec={spec}
+      repo={repo}
+      tokenStatus={tokenStatus}
+      prs={prs}
+      filter={filter}
+      loading={loadingPrs}
+      onFilter={(f) => {
+        setFilter(f);
+        loadPrs(f);
+      }}
+      onTokenSaved={() => refreshToken().then(() => loadPrs(filter))}
+      onCreate={() => setCreating(true)}
+      onChanged={() => loadPrs(filter)}
+    />
+  );
+  const dialogEl =
+    creating && repo?.ok ? (
+      <CreatePrDialog
+        repo={repo}
+        cwd={root}
+        spec={spec}
+        onClose={() => setCreating(false)}
+        onCreated={() => {
+          setCreating(false);
+          loadPrs(filter);
+          refreshAll();
+        }}
+      />
+    ) : null;
+
+  if (variant === 'page') {
+    const repoLabel = repo?.ok ? `${repo.owner}/${repo.repo}` : root.split('/').filter(Boolean).pop();
+    return (
+      <div className="h-full overflow-y-auto bg-ink-950">
+        <div className="max-w-[1120px] mx-auto px-8 py-8">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-10 h-10 grid place-items-center rounded-xl bg-accent/12 text-accent shrink-0">
+              <GitBranch size={19} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h1 className="font-display text-[24px] font-bold text-ink-50 leading-tight">
+                Source Control
+              </h1>
+              <p className="font-mono text-[11px] text-faint truncate">
+                {repoLabel}
+                {status?.branch ? ` · ${status.branch}` : ''}
+                {spec ? ` · ${spec.name}` : ''}
+              </p>
+            </div>
+            <button
+              onClick={doRefresh}
+              className="flex items-center gap-1.5 text-[12px] px-3 py-1.5 rounded-lg bg-elev text-ink-100 hover:bg-line transition shrink-0"
+            >
+              <RefreshCw size={13} className={loadingPrs ? 'animate-spin' : ''} /> Refresh
+            </button>
+          </div>
+
+          <div className="rounded-2xl bg-card overflow-hidden mb-5">{statusEl}</div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+            <div className="rounded-2xl bg-card overflow-hidden">
+              {syncEl}
+              {changesEl}
+              {commitEl}
+            </div>
+            <div className="rounded-2xl bg-card overflow-hidden">
+              {branchEl}
+              {prsEl}
+            </div>
+          </div>
+        </div>
+        {dialogEl}
+      </div>
+    );
+  }
+
   return (
     <>
       <SidebarHeader
         title="Source Control"
         actions={
-          <SidebarButton
-            title="Refresh"
-            onClick={() => {
-              refreshStatus();
-              refreshToken();
-              loadPrs(filter);
-            }}
-          >
+          <SidebarButton title="Refresh" onClick={doRefresh}>
             <RefreshCw size={13} className={loadingPrs ? 'animate-spin' : ''} />
           </SidebarButton>
         }
       />
-
       <div className="flex-1 overflow-y-auto">
-        <StatusStrip status={status} spec={spec} />
-
-        <SyncSection
-          root={root}
-          status={status}
-          onChanged={() => {
-            refreshStatus();
-            refreshAll();
-          }}
-        />
-
-        <BranchSection
-          root={root}
-          spec={spec}
-          status={status}
-          onChanged={() => {
-            refreshStatus();
-            refreshAll();
-          }}
-        />
-
-        <ChangesSection
-          root={root}
-          status={status}
-          onChanged={() => {
-            refreshStatus();
-            refreshAll();
-          }}
-        />
-
-        <CommitSection
-          root={root}
-          spec={spec}
-          status={status}
-          onChanged={() => {
-            refreshStatus();
-            refreshAll();
-          }}
-        />
-
-        <PullRequestSection
-          root={root}
-          spec={spec}
-          repo={repo}
-          tokenStatus={tokenStatus}
-          prs={prs}
-          filter={filter}
-          loading={loadingPrs}
-          onFilter={(f) => {
-            setFilter(f);
-            loadPrs(f);
-          }}
-          onTokenSaved={() => refreshToken().then(() => loadPrs(filter))}
-          onCreate={() => setCreating(true)}
-          onChanged={() => loadPrs(filter)}
-        />
+        {statusEl}
+        {syncEl}
+        {branchEl}
+        {changesEl}
+        {commitEl}
+        {prsEl}
       </div>
-
-      {creating && repo?.ok && (
-        <CreatePrDialog
-          repo={repo}
-          cwd={root}
-          spec={spec}
-          onClose={() => setCreating(false)}
-          onCreated={() => {
-            setCreating(false);
-            loadPrs(filter);
-            refreshAll();
-          }}
-        />
-      )}
+      {dialogEl}
     </>
   );
 }

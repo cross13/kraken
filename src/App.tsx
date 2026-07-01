@@ -11,6 +11,7 @@ import { useOrchestrator } from './stores/orchestrator';
 export default function App() {
   const restoreLast = useWorkspace((s) => s.restoreLast);
   const chatOpen = useUi((s) => s.chatOpen);
+  const focusMode = useUi((s) => s.focusMode);
   const sidebarWidth = useUi((s) => s.sidebarWidth);
   const setSidebarWidth = useUi((s) => s.setSidebarWidth);
   const chatWidth = useUi((s) => s.chatWidth);
@@ -51,11 +52,16 @@ export default function App() {
     <div className="h-full w-full flex flex-col bg-ink-950 text-ink-100 font-sans">
       <CommandBar />
       <div className="flex-1 min-h-0 flex">
-        {/* Spec rail — the Mission Control left rail (nav + active spec) */}
-        <div className="shrink-0" style={{ width: sidebarWidth }}>
-          <SpecRail />
-        </div>
-        <ResizeHandle width={sidebarWidth} side="right" onResize={setSidebarWidth} />
+        {/* Spec rail — the Mission Control left rail (nav + active spec).
+            Hidden in focus mode so a step can use the full screen. */}
+        {!focusMode && (
+          <>
+            <div className="shrink-0" style={{ width: sidebarWidth }}>
+              <SpecRail />
+            </div>
+            <ResizeHandle width={sidebarWidth} side="right" onResize={setSidebarWidth} />
+          </>
+        )}
 
         {/* Main stage — tabbed runner / editor */}
         <main className="flex-1 min-w-0 flex flex-col">
@@ -63,7 +69,7 @@ export default function App() {
         </main>
 
         {/* Activity stream — fused live agents + chat */}
-        {chatOpen && (
+        {chatOpen && !focusMode && (
           <>
             <ResizeHandle width={chatWidth} side="left" onResize={setChatWidth} />
             <div className="shrink-0" style={{ width: chatWidth }}>

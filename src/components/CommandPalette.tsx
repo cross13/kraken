@@ -16,11 +16,22 @@ import {
   History,
   Settings,
   Plus,
+  Palette,
   CornerDownLeft,
 } from 'lucide-react';
 import { useWorkspace } from '../stores/workspace';
-import { useUi, type ActivityTab } from '../stores/ui';
+import { useUi, type ActivityTab, type OpenTab } from '../stores/ui';
 import { cn } from '../lib/cn';
+
+// Destinations that open as full-page module tabs instead of rail panels.
+const FULL_PAGE_TABS: Partial<Record<ActivityTab, OpenTab>> = {
+  agents: { id: 'agents-studio', title: 'Agents', kind: 'agents-studio' },
+  skills: { id: 'skills-studio', title: 'Skills', kind: 'skills-studio' },
+  orchestrator: { id: 'router-studio', title: 'Orchestration', kind: 'router-studio' },
+  hooks: { id: 'hooks-studio', title: 'Hooks', kind: 'hooks-studio' },
+  'source-control': { id: 'source-control', title: 'Source Control', kind: 'source-control' },
+  settings: { id: 'settings', title: 'Settings', kind: 'settings' },
+};
 
 interface Item {
   id: string;
@@ -97,6 +108,14 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
       group: 'Commands',
       run: () => openTab({ id: 'welcome', title: 'Welcome', kind: 'welcome' }),
     });
+    out.push({
+      id: 'cmd:syntax',
+      label: 'File syntax settings…',
+      hint: 'themes & languages',
+      icon: <Palette size={15} />,
+      group: 'Commands',
+      run: () => openTab({ id: 'syntax-studio', title: 'Syntax', kind: 'syntax-studio' }),
+    });
     for (const d of DEST) {
       out.push({
         id: `dest:${d.tab}`,
@@ -104,6 +123,11 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
         icon: d.icon,
         group: 'Go to',
         run: () => {
+          const page = FULL_PAGE_TABS[d.tab];
+          if (page) {
+            openTab(page);
+            return;
+          }
           setActivity(d.tab);
           if (d.tab === 'graph') openTab({ id: 'agent-graph', title: 'Agent Graph', kind: 'graph' });
         },

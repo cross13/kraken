@@ -16,7 +16,7 @@ import {
   Plus,
   Bug,
 } from 'lucide-react';
-import { useUi, type ActivityTab } from '../stores/ui';
+import { useUi, type ActivityTab, type OpenTab } from '../stores/ui';
 import { useWorkspace } from '../stores/workspace';
 import { useOrchestrator } from '../stores/orchestrator';
 import { cn } from '../lib/cn';
@@ -29,13 +29,11 @@ import { SkillsView } from './sidebar/SkillsView';
 import { AgentsView } from './sidebar/AgentsView';
 import { SteeringView } from './sidebar/SteeringView';
 import { HooksView } from './sidebar/HooksView';
-import { SourceControlView } from './sidebar/SourceControlView';
 import { OrchestratorView } from './sidebar/OrchestratorView';
 import { GraphView } from './sidebar/GraphView';
 import { TasksView } from './sidebar/TasksView';
 import { TerminalsView } from './sidebar/TerminalsView';
 import { HistoryView } from './sidebar/HistoryView';
-import { SettingsView } from './sidebar/SettingsView';
 
 const PHASE_INDEX: Record<SpecPhase, number> = {
   requirements: 0,
@@ -59,6 +57,16 @@ const NAV: { tab: ActivityTab; icon: React.ReactNode; label: string }[] = [
   { tab: 'history', icon: <History size={17} />, label: 'History' },
   { tab: 'settings', icon: <Settings size={17} />, label: 'Settings' },
 ];
+
+// Destinations that open as full-page module tabs instead of rail panels.
+const FULL_PAGE_TABS: Partial<Record<ActivityTab, OpenTab>> = {
+  agents: { id: 'agents-studio', title: 'Agents', kind: 'agents-studio' },
+  skills: { id: 'skills-studio', title: 'Skills', kind: 'skills-studio' },
+  orchestrator: { id: 'router-studio', title: 'Orchestration', kind: 'router-studio' },
+  hooks: { id: 'hooks-studio', title: 'Hooks', kind: 'hooks-studio' },
+  'source-control': { id: 'source-control', title: 'Source Control', kind: 'source-control' },
+  settings: { id: 'settings', title: 'Settings', kind: 'settings' },
+};
 
 function ago(iso?: string) {
   if (!iso) return '';
@@ -92,6 +100,12 @@ export function SpecRail() {
     tab === 'orchestrator' || tab === 'graph' ? running : tab === 'tasks' ? runningTasks : 0;
 
   const onSelect = (tab: ActivityTab) => {
+    // These destinations are full-page "studio" modules, not rail panels.
+    const page = FULL_PAGE_TABS[tab];
+    if (page) {
+      openTab(page);
+      return;
+    }
     setActivity(tab);
     if (tab === 'graph') openTab({ id: 'agent-graph', title: 'Agent Graph', kind: 'graph' });
   };
@@ -138,13 +152,11 @@ export function SpecRail() {
             {activity === 'agents' && <AgentsView />}
             {activity === 'steering' && <SteeringView />}
             {activity === 'hooks' && <HooksView />}
-            {activity === 'source-control' && <SourceControlView />}
             {activity === 'orchestrator' && <OrchestratorView />}
             {activity === 'graph' && <GraphView />}
             {activity === 'tasks' && <TasksView />}
             {activity === 'terminal' && <TerminalsView />}
             {activity === 'history' && <HistoryView />}
-            {activity === 'settings' && <SettingsView />}
           </div>
         )}
       </div>

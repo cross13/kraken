@@ -116,6 +116,12 @@ body {
   background: transparent;
 }
 
+/* Shared form input for the studio modules (Agents / Skills / Orchestration) */
+.lib-input {
+  @apply w-full bg-ink-900 ring-1 ring-ink-700/70 rounded-lg px-3 py-2 text-[13px] text-ink-50
+    outline-none placeholder:text-faint focus:ring-accent/50;
+}
+
 /* Markdown styling inside chat & editor previews */
 .md h1,
 .md h2,
@@ -140,6 +146,15 @@ body {
 .md a { @apply text-accent underline decoration-accent/40 hover:decoration-accent; }
 .md hr { @apply border-ink-800 my-3; }
 .md blockquote { @apply border-l-2 border-ink-700 pl-3 italic text-ink-300; }
+
+/* EARS acceptance-criteria keywords highlighted in SpecDocument checklists */
+.ears-kw {
+  font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  font-size: 0.82em;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: rgb(var(--accent2));
+}
 
 /* Editor textarea look */
 .code-input {
@@ -231,6 +246,64 @@ body {
 .language-markdown .token.url { color: #89ddff; }
 .language-markdown .token.code,
 .language-markdown .token.code-snippet { color: #c3e88d; }
+
+/* File-viewer syntax highlighting — themeable via `--syn-*` custom properties
+   set on the `.code-view` container (built-in or user-installed theme). Scoped
+   so it never disturbs the markdown/editor token colors above. */
+.code-view {
+  color: var(--syn-base, #e7ebf3);
+  background: var(--syn-bg, transparent);
+  font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  font-size: 13px;
+  line-height: 1.65;
+  tab-size: 2;
+}
+.code-view .token.comment,
+.code-view .token.prolog,
+.code-view .token.doctype,
+.code-view .token.cdata { color: var(--syn-comment); font-style: italic; }
+.code-view .token.punctuation { color: var(--syn-punct); }
+.code-view .token.namespace { opacity: 0.7; }
+.code-view .token.property,
+.code-view .token.tag,
+.code-view .token.boolean,
+.code-view .token.number,
+.code-view .token.constant,
+.code-view .token.symbol,
+.code-view .token.deleted { color: var(--syn-num); }
+.code-view .token.selector,
+.code-view .token.attr-name,
+.code-view .token.string,
+.code-view .token.char,
+.code-view .token.builtin,
+.code-view .token.inserted { color: var(--syn-string); }
+.code-view .token.operator,
+.code-view .token.entity,
+.code-view .token.url,
+.code-view .language-css .token.string { color: var(--syn-operator); }
+.code-view .token.atrule,
+.code-view .token.attr-value,
+.code-view .token.keyword { color: var(--syn-keyword); }
+.code-view .token.function,
+.code-view .token.class-name { color: var(--syn-function); }
+.code-view .token.regex,
+.code-view .token.important,
+.code-view .token.variable { color: var(--syn-variable); }
+.code-view .token.important,
+.code-view .token.bold { font-weight: 700; }
+.code-view .token.italic { font-style: italic; }
+/* line-number gutter */
+.code-line { display: flex; }
+.code-ln {
+  user-select: none;
+  text-align: right;
+  min-width: 3ch;
+  padding-right: 1.25rem;
+  color: var(--syn-comment);
+  opacity: 0.5;
+}
+.code-lc { flex: 1; white-space: pre; }
+.code-view.wrap .code-lc { white-space: pre-wrap; word-break: break-word; }
 
 /* Tool-use lines emitted by the streaming Claude CLI */
 .tool-line {

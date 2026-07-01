@@ -18,7 +18,65 @@ export type Action =
   | { kind: 'audit' };
 
 /** Why an agent was chosen — surfaced in the UI so routing is transparent. */
-export type RouteReason = 'per-task' | 'chat-override' | 'default' | 'specialist' | 'generic';
+export type RouteReason =
+  | 'per-task'
+  | 'chat-override'
+  | 'pinned'
+  | 'default'
+  | 'specialist'
+  | 'generic';
+
+/**
+ * User-tunable routing knobs. Defaults reproduce the built-in behavior, so the
+ * router works untouched; the renderer's module-config store pushes overrides in
+ * via `setRouterConfig`, and every call site picks them up automatically.
+ */
+export interface RouterConfig {
+  /** score bonus applied to workspace (project-local) agents */
+  workspaceBonus: number;
+  /** minimum score for a non-preferred specialist to win a task outright */
+  specialistThreshold: number;
+  /** when no agent matches a task, fall back to the first project-local agent */
+  localFirst: boolean;
+  /** action key (see `actionKey`) → pinned agent name */
+  pinnedAgents: Record<string, string>;
+  /** inject the governing SDD skill into spec/task prompts */
+  skillInjection: boolean;
+  /** additionally inject a confident domain skill (e.g. a frontend skill) */
+  domainSkillInjection: boolean;
+  /** minimum keyword score for a domain skill to be injected */
+  domainSkillThreshold: number;
+  /** skill names excluded from auto-injection */
+  disabledSkills: string[];
+}
+
+const DEFAULT_ROUTER_CONFIG: RouterConfig = {
+  workspaceBonus: 0.5,
+  specialistThreshold: 2,
+  localFirst: true,
+  pinnedAgents: {},
+  skillInjection: true,
+  domainSkillInjection: true,
+  domainSkillThreshold: 2,
+  disabledSkills: [],
+};
+
+let activeConfig: RouterConfig = { ...DEFAULT_ROUTER_CONFIG };
+
+/** Merge user overrides into the active routing config (renderer calls this). */
+export function setRouterConfig(cfg: Partial<RouterConfig>): void {
+  activeConfig = { ...DEFAULT_ROUTER_CONFIG, ...cfg };
+}
+
+/** Current effective routing config. */
+export function getRouterConfig(): RouterConfig {
+  return activeConfig;
+}
+
+/** Stable key for an action, used for per-action agent pins. */
+export function actionKey(action: Action): string {
+  return action.kind === 'spec-file' ? action.file : action.kind;
+}
 
 export interface RoutedAgent {
   name: string | null;
@@ -67,7 +125,7 @@ const IMPLEMENTER_SIGNALS = [
 ];
 
 /** Capability keywords implied by a task description. */
-function keywordsFromText(text: string): string[] {
+export function keywordsFromText(text: string): string[] {
   const t = text.toLowerCase();
   const out = new Set<string>();
   for (const [tag, words] of Object.entries(CAPABILITY_TAGS)) {
@@ -81,7 +139,7 @@ function keywordsFromText(text: string): string[] {
   return [...out];
 }
 
-function actionProfile(action: Action): ActionProfile {
+export function actionProfile(action: Action): ActionProfile {
   switch (action.kind) {
     case 'spec-file':
       if (action.file === 'requirements')
@@ -107,28 +165,40 @@ function actionProfile(action: Action): ActionProfile {
   }
 }
 
-interface ScoredAgent {
+export interface ScoredAgent {
   agent: AgentMeta;
   score: number;
+  /** keywords that matched the agent's name/description */
+  hits: string[];
+  /** workspace bonus folded into the score (0 for global agents) */
+  bonus: number;
 }
 
 /**
- * Highest-scoring installed agent for a set of capability keywords. Project-local
- * (workspace) agents get a bonus so they win over global ones — "best agent from
- * the local .claude folder" is the priority.
+ * Score every installed agent against a set of capability keywords, ranked
+ * high→low. Project-local (workspace) agents get a configurable bonus so they win
+ * over global ones. Exposed so the Orchestration studio can show the full
+ * breakdown behind a routing decision.
+ */
+export function scoreAgents(agents: AgentMeta[], keywords: string[]): ScoredAgent[] {
+  const bonus = activeConfig.workspaceBonus;
+  const out: ScoredAgent[] = [];
+  for (const a of agents) {
+    const hay = `${a.name} ${a.description}`.toLowerCase();
+    const hits = keywords.filter((kw) => hay.includes(kw));
+    if (!hits.length) continue;
+    const b = a.scope === 'workspace' ? bonus : 0;
+    out.push({ agent: a, hits, bonus: b, score: hits.length + b });
+  }
+  return out.sort((x, y) => y.score - x.score);
+}
+
+/**
+ * Highest-scoring installed agent for a set of capability keywords.
  */
 function bestByKeywords(agents: AgentMeta[], keywords: string[]): ScoredAgent | null {
   if (!keywords.length) return null;
-  let best: ScoredAgent | null = null;
-  for (const a of agents) {
-    const hay = `${a.name} ${a.description}`.toLowerCase();
-    let hits = 0;
-    for (const kw of keywords) if (hay.includes(kw)) hits += 1;
-    if (hits === 0) continue;
-    const score = hits + (a.scope === 'workspace' ? 0.5 : 0);
-    if (!best || score > best.score) best = { agent: a, score };
-  }
-  return best;
+  return scoreAgents(agents, keywords)[0] ?? null;
 }
 
 /** First project-local (workspace) agent, used as a local-first fallback. */
@@ -165,26 +235,41 @@ export function routeAgent(
       : { name: userOverride, body: '', fromOverride: true, reason: 'chat-override' };
   }
 
+  // 3. User-pinned agent for this action (from the Orchestration studio).
+  const pinned = activeConfig.pinnedAgents[actionKey(action)];
+  if (pinned) {
+    const m = agents.find((a) => a.name === pinned);
+    return m
+      ? found(m, 'pinned')
+      : { name: pinned, body: '', fromOverride: false, reason: 'pinned' };
+  }
+
   const profile = actionProfile(action);
   const isTask = action.kind === 'task-execute' || action.kind === 'task-refine';
   const match = bestByKeywords(agents, profile.keywords);
 
   if (isTask) {
-    // 3a. Strongly-matching specialist (incl. workspace bonus) wins outright.
-    if (match && match.score >= 2 && !profile.preferred.includes(match.agent.name)) {
+    // 4a. Strongly-matching specialist (incl. workspace bonus) wins outright.
+    if (
+      match &&
+      match.score >= activeConfig.specialistThreshold &&
+      !profile.preferred.includes(match.agent.name)
+    ) {
       return found(match.agent, 'specialist');
     }
-    // 3b. The bundled task executor, if the user seeded it.
+    // 4b. The bundled task executor, if the user seeded it.
     for (const name of profile.preferred) {
       const m = agents.find((a) => a.name === name);
       if (m) return found(m, 'default');
     }
-    // 3c. Any keyword match at all.
+    // 4c. Any keyword match at all.
     if (match) return found(match.agent, 'specialist');
-    // 3d. Local-first: rather than going generic, use a project-local agent.
-    const local = firstWorkspaceAgent(agents);
-    if (local) return found(local, 'specialist');
-    // 3e. Truly nothing installed.
+    // 4d. Local-first: rather than going generic, use a project-local agent.
+    if (activeConfig.localFirst) {
+      const local = firstWorkspaceAgent(agents);
+      if (local) return found(local, 'specialist');
+    }
+    // 4e. Truly nothing installed.
     return { name: null, body: '', fromOverride: false, reason: 'generic' };
   }
 
@@ -201,7 +286,9 @@ export function routeSkill(
   specKind: SpecKind,
   skills: SkillMeta[]
 ): SkillMeta | null {
+  if (!activeConfig.skillInjection) return null;
   const name = specKind === 'feature' ? 'sdd-feature' : 'sdd-bugfix';
+  if (activeConfig.disabledSkills.includes(name)) return null;
   return skills.find((s) => s.name === name) ?? null;
 }
 
@@ -216,16 +303,18 @@ export function findSkill(name: string | null | undefined, skills: SkillMeta[]):
  * Only returns a confident match so we don't inject an irrelevant skill.
  */
 export function bestSkillByText(text: string, skills: SkillMeta[]): SkillMeta | null {
+  if (!activeConfig.domainSkillInjection) return null;
   const keywords = keywordsFromText(text);
   if (!keywords.length) return null;
   let best: { skill: SkillMeta; score: number } | null = null;
   for (const s of skills) {
+    if (activeConfig.disabledSkills.includes(s.name)) continue;
     const hay = `${s.name} ${s.description}`.toLowerCase();
     let score = 0;
     for (const kw of keywords) if (hay.includes(kw)) score += 1;
     if (score > 0 && (!best || score > best.score)) best = { skill: s, score };
   }
-  return best && best.score >= 2 ? best.skill : null;
+  return best && best.score >= activeConfig.domainSkillThreshold ? best.skill : null;
 }
 
 /** Build a system-prompt block that actually injects a skill's instructions. */
@@ -247,4 +336,43 @@ export function skillSystemBlocks(list: (SkillMeta | null | undefined)[]): strin
     if (b) blocks.push(b);
   }
   return blocks.join('\n\n---\n\n');
+}
+
+/**
+ * Full explanation of how the router would resolve an action — the chosen agent
+ * and skills plus the ranked candidate breakdown behind that decision. Powers the
+ * Orchestration studio's routing playground, using the exact same logic as a real
+ * run so what you preview is what you get.
+ */
+export interface RouteExplanation {
+  agent: RoutedAgent;
+  /** governing skill (SDD feature/bugfix) that would be injected */
+  governingSkill: SkillMeta | null;
+  /** confident domain skill match, if any */
+  domainSkill: SkillMeta | null;
+  keywords: string[];
+  preferred: string[];
+  candidates: ScoredAgent[];
+}
+
+export function explainRoute(
+  action: Action,
+  agents: AgentMeta[],
+  skills: SkillMeta[],
+  specKind: SpecKind,
+  userOverride?: string | null
+): RouteExplanation {
+  const profile = actionProfile(action);
+  const text =
+    (action.kind === 'task-execute' || action.kind === 'task-refine'
+      ? action.taskText
+      : '') ?? '';
+  return {
+    agent: routeAgent(action, agents, userOverride),
+    governingSkill: routeSkill(specKind, skills),
+    domainSkill: bestSkillByText(text, skills),
+    keywords: profile.keywords,
+    preferred: profile.preferred,
+    candidates: scoreAgents(agents, profile.keywords),
+  };
 }
