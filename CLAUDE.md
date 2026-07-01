@@ -95,17 +95,21 @@ results arrive through `claude.onEvent(handler)`.
   data-driven home screen (command bar, Continue-working spec cards, agent fleet) wired to real
   specs/agents/skills.
 - **Layout** is the **Mission Control shell** (`App.tsx`): `CommandBar` (brand + ⌘K
-  `CommandPalette` + live-agents + project/model status) → `SpecRail` (unified left rail: 13-tab
+  `CommandPalette` + live-agents + project/model status) → `SpecRail` (unified left rail: multi-tab
   destination nav + the active-spec hero card / other specs, re-homing the `sidebar/*View`s) →
   `EditorArea` (tabbed viewers) → `ActivityStream` (live orchestrator feed + chat). It replaced the
   old VS Code-style shell (`TitleBar`/`ActivityBar`/`Sidebar`/`ChatPanel`/`StatusBar`, now removed).
   Opening a spec step enters **focus mode** (rail + activity collapse so the step fills the screen,
   toggleable); the `SpecPhaseStrip` is a clickable pipeline between phases; Requirements/Design
   render as spacious structured **section cards** (`SpecDocument`, the Read view), Tasks as the
-  kanban runner. **Agents, Skills, Hooks, and Orchestration are full-page "studio" modules**
-  (`views/{AgentsStudio,SkillsStudio,HooksStudio,RouterStudio}.tsx`, shared chrome in
+  kanban runner. **Agents, Skills, Hooks, Steering, Orchestration, and the Spec Manager are
+  full-page "studio" modules** (`views/{AgentsStudio,SkillsStudio,HooksStudio,SteeringStudio,
+  RouterStudio,SpecsStudio}.tsx`, shared chrome in
   `ModuleShell.tsx`) opened from the rail nav / ⌘K — each teaches how the subsystem works, shows what's
-  best for a task, lets you create new items, and exposes its config. All module configuration is
+  best for a task, lets you create new items, and exposes its config. The **Spec Manager**
+  (`SpecsStudio`, `spec-manager` destination) is the analytics + cleanup view: per-phase/kind counts,
+  run/error/time aggregates (from `history.specRunStats`), per-spec run + timeline review, and
+  permanent **delete** (`specs:delete` → on-disk folder + cascaded DB history). All module configuration is
   centralized in the `moduleConfig` store (`src/stores/moduleConfig.ts`, localStorage-persisted) and
   pushed into the router via `setRouterConfig`, so runs honour it without any IPC change. The
   **Explorer's file viewer** does real syntax highlighting via `lib/prism.ts` + `lib/fileLang.ts`,
@@ -155,7 +159,13 @@ plus a per-hook cooldown (`hookCooldown`). `seedDefaultHooks` ships `code-valida
 Markdown in `.kraken/steering/*.md` (+ global, + root AGENTS.md/CLAUDE.md as implicit
 `always`). `composeSteeringSystem` resolves inclusion modes (always / fileMatch / manual /
 auto) and is prepended to `payload.system` **inside `streamClaude`**, so every run (chat,
-task, hook) gets steering uniformly. UI: `SteeringView`.
+task, hook) gets steering uniformly. Docs can be **pinned** (persisted per workspace in
+`electron-store` as `steeringPins`, merged into `manualRefs` inside `streamClaude`) to
+force-include them in every run regardless of mode. The primary UI is the full-page
+**`SteeringStudio`** (`views/SteeringStudio.tsx`, opened from the rail nav / ⌘K) — full CRUD,
+inclusion-mode + fileMatch + scope editing, pinning, and a live injection preview; backed by
+`steering:{list,write,delete,preview,get-pins,set-pins}` IPC. (The old sidebar `SteeringView`
+is retired.)
 
 ### Multi-agent orchestration (`src/stores/orchestrator.ts` + `TaskRunner.tsx` + `OrchestratorView`)
 Tasks in a wave run as parallel concurrent Claude subprocesses (one `requestId` each), capped

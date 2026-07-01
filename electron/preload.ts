@@ -9,10 +9,12 @@ import type {
   SpecFileChange,
   SkillMeta,
   SpecEventRow,
+  SpecRunStat,
   SpecKind,
   SpecMeta,
   SpecPhase,
   SteeringFile,
+  SteeringWriteInput,
   HookConfig,
   HookRunRow,
   HookFireEvent,
@@ -58,6 +60,8 @@ const api = {
       ipcRenderer.invoke('specs:advance', root, id) as Promise<SpecMeta>,
     setPhase: (root: string, id: string, phase: SpecPhase) =>
       ipcRenderer.invoke('specs:set-phase', root, id, phase) as Promise<SpecMeta>,
+    delete: (root: string, id: string) =>
+      ipcRenderer.invoke('specs:delete', root, id) as Promise<void>,
   },
   skills: {
     list: (root: string) => ipcRenderer.invoke('skills:list', root) as Promise<SkillMeta[]>,
@@ -76,6 +80,16 @@ const api = {
       ipcRenderer.invoke('steering:list', root) as Promise<SteeringFile[]>,
     seedDefaults: (root: string) =>
       ipcRenderer.invoke('steering:create-default', root) as Promise<void>,
+    write: (root: string, input: SteeringWriteInput) =>
+      ipcRenderer.invoke('steering:write', root, input) as Promise<SteeringFile>,
+    remove: (root: string, filePath: string) =>
+      ipcRenderer.invoke('steering:delete', root, filePath) as Promise<void>,
+    preview: (root: string, opts: { files?: string[]; manualRefs?: string[] }) =>
+      ipcRenderer.invoke('steering:preview', root, opts) as Promise<string>,
+    getPins: (root: string) =>
+      ipcRenderer.invoke('steering:get-pins', root) as Promise<string[]>,
+    setPins: (root: string, names: string[]) =>
+      ipcRenderer.invoke('steering:set-pins', root, names) as Promise<string[]>,
   },
   hooks: {
     list: (root: string) => ipcRenderer.invoke('hooks:list', root) as Promise<HookConfig[]>,
@@ -311,6 +325,8 @@ const api = {
         cancelled: number;
         avgDurationMs: number | null;
       }>,
+    specRunStats: (workspacePath: string) =>
+      ipcRenderer.invoke('history:spec-run-stats', workspacePath) as Promise<SpecRunStat[]>,
     listSpecEvents: (workspacePath: string, specId: string) =>
       ipcRenderer.invoke(
         'history:list-spec-events',

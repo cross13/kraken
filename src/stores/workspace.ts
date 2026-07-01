@@ -6,6 +6,7 @@ import type {
   SpecMeta,
   SpecKind,
   SteeringFile,
+  SteeringWriteInput,
   HookConfig,
 } from '../../electron/shared/types';
 
@@ -16,6 +17,7 @@ interface WorkspaceStore {
   skills: SkillMeta[];
   agents: AgentMeta[];
   steering: SteeringFile[];
+  steeringPins: string[];
   hooks: HookConfig[];
   loading: boolean;
 
@@ -24,7 +26,11 @@ interface WorkspaceStore {
   restoreLast: () => Promise<void>;
   refreshAll: () => Promise<void>;
   createSpec: (name: string, kind: SpecKind) => Promise<SpecMeta>;
+  deleteSpec: (id: string) => Promise<void>;
   seedDefaults: () => Promise<void>;
+  saveSteering: (input: SteeringWriteInput) => Promise<SteeringFile>;
+  deleteSteering: (filePath: string) => Promise<void>;
+  togglePin: (name: string) => Promise<void>;
 }
 
 export const useWorkspace = create<WorkspaceStore>((set, get) => ({
@@ -34,6 +40,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
   skills: [],
   agents: [],
   steering: [],
+  steeringPins: [],
   hooks: [],
   loading: false,
 
@@ -58,15 +65,16 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
   refreshAll: async () => {
     const root = get().root;
     if (!root) return;
-    const [tree, specs, skills, agents, steering, hooks] = await Promise.all([
+    const [tree, specs, skills, agents, steering, steeringPins, hooks] = await Promise.all([
       window.kraken.workspace.listTree(root),
       window.kraken.specs.list(root),
       window.kraken.skills.list(root),
       window.kraken.agents.list(root),
       window.kraken.steering.list(root),
+      window.kraken.steering.getPins(root),
       window.kraken.hooks.list(root),
     ]);
-    set({ tree, specs, skills, agents, steering, hooks });
+    set({ tree, specs, skills, agents, steering, steeringPins, hooks });
   },
 
   createSpec: async (name, kind) => {
@@ -74,6 +82,13 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     const spec = await window.kraken.specs.create(root, name, kind);
     await get().refreshAll();
     return spec;
+  },
+
+  deleteSpec: async (id) => {
+    const root = get().root;
+    if (!root) return;
+    await window.kraken.specs.delete(root, id);
+    await get().refreshAll();
   },
 
   seedDefaults: async () => {
@@ -86,5 +101,29 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
       window.kraken.hooks.seedDefaults(root),
     ]);
     await get().refreshAll();
+  },
+
+  saveSteering: async (input) => {
+    const root = get().root!;
+    const saved = await window.kraken.steering.write(root, input);
+    await get().refreshAll();
+    return saved;
+  },
+
+  deleteSteering: async (filePath) => {
+    const root = get().root!;
+    await window.kraken.steering.remove(root, filePath);
+    await get().refreshAll();
+  },
+
+  togglePin: async (name) => {
+    const root = get().root;
+    if (!root) return;
+    const current = get().steeringPins;
+    const next = current.includes(name)
+      ? current.filter((n) => n !== name)
+      : [...current, name];
+    const saved = await window.kraken.steering.setPins(root, next);
+    set({ steeringPins: saved });
   },
 }));

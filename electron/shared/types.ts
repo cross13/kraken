@@ -216,6 +216,16 @@ export interface SpecEventRow {
   created_at: string;
 }
 
+/** Per-spec run aggregate for the Spec Manager analytics (one row per spec_id). */
+export interface SpecRunStat {
+  spec_id: string;
+  runs: number;
+  errors: number;
+  cancelled: number;
+  total_duration_ms: number;
+  last_run_at: string | null;
+}
+
 // ---------- Hooks (event-driven agent hooks) ----------
 
 export type HookTrigger =
@@ -299,6 +309,25 @@ export interface SteeringFile {
   scope: 'workspace' | 'global';
   path: string;
   body: string;
+  /**
+   * Whether this doc can be edited/deleted from the Steering Studio. Implicit
+   * root files (CLAUDE.md / AGENTS.md) are surfaced read-only (`false`);
+   * `.kraken/steering/*.md` docs are editable (`true`).
+   */
+  editable?: boolean;
+}
+
+/** Payload for creating/updating a steering doc from the Steering Studio. */
+export interface SteeringWriteInput {
+  name: string;
+  description?: string;
+  inclusion: SteeringInclusion;
+  /** glob for fileMatch inclusion mode */
+  fileMatch?: string;
+  body: string;
+  scope: 'workspace' | 'global';
+  /** Prior on-disk path when editing; deleted if the resolved path changes. */
+  prevPath?: string;
 }
 
 // ---------- Multi-agent orchestration ----------

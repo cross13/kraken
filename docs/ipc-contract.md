@@ -49,8 +49,10 @@ workspace root and its file tree.
 
 ### `specs`
 `list(root)`, `create(root, name, kind)`, `read(root, id)`, `writeFile(root, id, file, content)`,
-`advance(root, id)`, `setPhase(root, id, phase)` — the SDD spec lifecycle. `advance` walks
-`requirements → design → tasks → done`; `setPhase` can reopen a phase (Re-sync). See
+`advance(root, id)`, `setPhase(root, id, phase)`, `delete(root, id)` — the SDD spec lifecycle.
+`advance` walks `requirements → design → tasks → done`; `setPhase` can reopen a phase (Re-sync).
+`delete` permanently removes the on-disk spec folder **and** cascades every mirrored DB row
+(`spec_events`, `runs` + their `run_files`/`errors`, `hook_runs`). See
 [`data-model.md`](./data-model.md) for the on-disk shape.
 
 ### `skills` / `agents`
@@ -59,6 +61,11 @@ workspace root and its file tree.
 
 ### `steering`
 `list(root)`, `seedDefaults(root)` — project-context markdown in `.kraken/steering/`.
+`write(root, input: SteeringWriteInput)` — create/update a doc (frontmatter `.md`; renames via
+`input.prevPath`). `remove(root, path)` — delete a doc (rejects paths outside `.kraken/steering`).
+`preview(root, { files?, manualRefs? })` — returns the exact steering block that would be injected
+(pins merged in). `getPins(root)` / `setPins(root, names)` — pinned doc names (force-included in
+every run), persisted per workspace in `electron-store`.
 
 ### `hooks`
 `list`, `read`, `write`, `delete`, `toggle`, `fire(trigger, ctx)`, `fireOne(root, id, ctx)`,
@@ -93,7 +100,9 @@ typeahead), `listPrs(args)`, `createPr(args)`, `mergePr(args)`. Backed by `elect
 
 ### `history`
 `listRuns`, `getRun`, `listRunFiles`, `runFileCounts`, `listSpecFiles`, `listErrors`, `stats`,
-`listSpecEvents`. Read-only queries over the SQLite mirror (`electron/db.ts`). See
+`specRunStats`, `listSpecEvents`. Read-only queries over the SQLite mirror (`electron/db.ts`).
+`specRunStats(root)` returns per-spec run aggregates (`runs`, `errors`, `cancelled`,
+`total_duration_ms`, `last_run_at`) powering the Spec Manager analytics. See
 [`data-model.md`](./data-model.md).
 
 ### `claude`

@@ -3,6 +3,7 @@ import { create } from 'zustand';
 export type ActivityTab =
   | 'explorer'
   | 'specs'
+  | 'spec-manager'
   | 'skills'
   | 'agents'
   | 'steering'
@@ -59,6 +60,8 @@ export interface OpenTab {
     | 'skills-studio'
     | 'router-studio'
     | 'hooks-studio'
+    | 'steering-studio'
+    | 'specs-studio'
     | 'syntax-studio'
     | 'welcome'
     | 'settings'

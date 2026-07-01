@@ -45,8 +45,20 @@ Fire Claude runs automatically on app-level events.
   `CLAUDE.md` as implicit `always` context.
 - **Inclusion modes** (`SteeringInclusion`): `always | fileMatch | manual | auto`.
 - **`composeSteeringSystem`** resolves which files apply and is prepended to `payload.system`
-  **inside `streamClaude`** — so every run (chat, task, hook) gets steering uniformly.
-- **UI:** `SteeringView`.
+  **inside `streamClaude`** — so every run (chat, task, hook) gets steering uniformly. A doc whose
+  name is in `manualRefs` (i.e. **pinned**) is force-included regardless of its mode.
+- **Pins** — the user can pin any doc to force-include it in every run. Pins are persisted per
+  workspace via `electron-store` (`steeringPins`) and merged into `manualRefs` inside
+  `streamClaude`, so **no per-call-site change** is needed for pins to apply everywhere.
+- **CRUD + preview IPC:** `steering:list`, `steering:create-default`, `steering:write`
+  (create/update a frontmatter `.md`, handles rename via `prevPath`), `steering:delete` (guarded to
+  `.kraken/steering` only — root `CLAUDE.md`/`AGENTS.md` are read-only), `steering:preview`
+  (returns the exact injected block for given file hints + pins), `steering:get-pins` /
+  `steering:set-pins`. `SteeringFile.editable` flags whether a doc can be edited/deleted.
+- **UI:** the full-page **`SteeringStudio`** (`views/SteeringStudio.tsx`) — Library tab (list +
+  editor: name, description, inclusion mode, fileMatch glob, scope, body, pin) and an Injection
+  Preview tab. Opened from the rail nav / ⌘K (`steering` → `steering-studio` tab). The old sidebar
+  `SteeringView` has been retired.
 
 ## Multi-agent orchestration
 

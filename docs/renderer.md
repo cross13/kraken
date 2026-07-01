@@ -140,16 +140,17 @@ App
 │   │                    (all 13 `ActivityTab`s, with running-count badges) + a body.
 │   ├─ SpecRailBody      the `specs` destination — ACTIVE SPEC hero card (4-segment phase spine,
 │   │                    clickable) + OTHER SPECS list. The active spec = the open tab's spec.
-│   └─ (other dests)     re-home the existing sidebar/*View components: Explorer, Steering, Graph,
-│                        Tasks, Terminals, History. **Agents, Skills, Hooks, Orchestrator, Source
-│                        Control, and Settings open as full-page EditorArea *studio* tabs** (via the
+│   └─ (other dests)     re-home the existing sidebar/*View components: Explorer, Graph,
+│                        Tasks, Terminals, History. **Agents, Skills, Hooks, Steering, Spec Manager,
+│                        Orchestrator, Source Control, and Settings open as full-page EditorArea *studio*
+│                        tabs** (via the
 │                        `FULL_PAGE_TABS` map in `SpecRail`/`CommandPalette`), not rail panels — the
 │                        compact `AgentsView`/`SkillsView`/`HooksView`/`OrchestratorView` panels remain
 │                        as a fallback if their `activity` is set directly.
 ├─ EditorArea            tabbed main stage; renders a views/*Viewer by active tab kind
 │   ├─ WelcomeView  SpecEditor  SpecDocument  SpecSummaryView  QuestionsView  FileViewer
 │   ├─ AgentViewer  SkillViewer  RunViewer  HookEditor  AgentGraphView  TerminalView
-│   ├─ AgentsStudio  SkillsStudio  RouterStudio  HooksStudio  SyntaxStudio  ← full-page module studios
+│   ├─ AgentsStudio  SkillsStudio  RouterStudio  HooksStudio  SteeringStudio  SpecsStudio  SyntaxStudio  ← full-page module studios
 │       (SpecEditor's `SpecPhaseStrip` is a clickable **pipeline spine** — each step opens that
 │        phase's file (requirements/bugfix → design → tasks), with the current view ringed, completed
 │        phases checked, and the Advance/Re-sync workflow action on the right. View modes are

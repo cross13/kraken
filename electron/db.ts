@@ -8,6 +8,7 @@ import type {
   RunRow,
   ErrorRow,
   SpecEventRow,
+  SpecRunStat,
   HookRunRow,
   RunFileRow,
   RunFileCount,
@@ -226,9 +227,47 @@ export function upsertSpec(workspacePath: string, meta: SpecMeta) {
   });
 }
 
+/**
+ * Delete a spec and every mirrored row that belongs to it — spec_events, runs
+ * (+ their run_files/errors), and hook_runs. There are no FK cascades between
+ * these tables, so we clear them explicitly inside one transaction.
+ */
 export function deleteSpec(workspacePath: string, id: string) {
   const d = require_db();
-  d.prepare(`DELETE FROM specs WHERE workspace_path = ? AND id = ?`).run(workspacePath, id);
+  const runsForSpec = `SELECT id FROM runs WHERE workspace_path IS ? AND spec_id IS ?`;
+  const tx = d.transaction(() => {
+    d.prepare(`DELETE FROM errors WHERE run_id IN (${runsForSpec})`).run(workspacePath, id);
+    d.prepare(`DELETE FROM run_files WHERE run_id IN (${runsForSpec})`).run(workspacePath, id);
+    d.prepare(`DELETE FROM runs WHERE workspace_path IS ? AND spec_id IS ?`).run(workspacePath, id);
+    d.prepare(`DELETE FROM spec_events WHERE workspace_path IS ? AND spec_id IS ?`).run(
+      workspacePath,
+      id
+    );
+    d.prepare(`DELETE FROM hook_runs WHERE workspace_path IS ? AND spec_id IS ?`).run(
+      workspacePath,
+      id
+    );
+    d.prepare(`DELETE FROM specs WHERE workspace_path = ? AND id = ?`).run(workspacePath, id);
+  });
+  tx();
+}
+
+/** Per-spec run aggregates (runs, errors, cancelled, total time, last activity). */
+export function specRunStats(workspacePath: string): SpecRunStat[] {
+  const d = require_db();
+  return d
+    .prepare(
+      `SELECT spec_id,
+              COUNT(*) AS runs,
+              SUM(CASE WHEN status = 'error' THEN 1 ELSE 0 END) AS errors,
+              SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled,
+              COALESCE(SUM(duration_ms), 0) AS total_duration_ms,
+              MAX(started_at) AS last_run_at
+         FROM runs
+        WHERE workspace_path IS ? AND spec_id IS NOT NULL
+        GROUP BY spec_id`
+    )
+    .all(workspacePath) as SpecRunStat[];
 }
 
 export function recordSpecEvent(

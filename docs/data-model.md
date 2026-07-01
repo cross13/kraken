@@ -97,7 +97,12 @@ an edited `CREATE`. Tables:
 
 Rows are surfaced to the renderer as typed `*Row` interfaces in `shared/types.ts`
 (`RunRow`, `ErrorRow`, `RunFileRow`, `RunFileCount`, `SpecEventRow`, `HookRunRow`, …), read via
-the `history` IPC namespace.
+the `history` IPC namespace. `specRunStats(root)` returns a `SpecRunStat[]` aggregate (one row per
+`spec_id`: `runs`, `errors`, `cancelled`, `total_duration_ms`, `last_run_at`) for the Spec Manager.
+
+**Deleting a spec** (`deleteSpec`, exposed via `specs:delete`) is a single transaction that clears
+every table for that `spec_id` — `errors`/`run_files` for its runs, then `runs`, `spec_events`,
+`hook_runs`, and finally the `specs` row — since there are no FK cascades between these tables.
 
 `beginRun` inserts a row as `running`; `finishRun` settles it to `done`/`error`/`cancelled`. If
 the app closes mid-run that row never settles, so `initDb` runs a **startup reconciliation** that
@@ -124,5 +129,7 @@ the agent graph would treat the stale row as live and spin a finished task forev
 - `ActiveRun` / `FinishedRun` — the in-flight and recent-activity shapes used by the orchestrator
   store. See [`renderer.md`](./renderer.md).
 - `HookConfig`, `HookTrigger`, `HookFireContext`, `HookFireEvent`, `HookRunRow` — hooks.
-- `SteeringFile`, `SteeringInclusion` — steering.
+- `SteeringFile` (incl. `editable`), `SteeringInclusion`, `SteeringWriteInput` — steering. Pinned
+  doc names are persisted per workspace in `electron-store` under `steeringPins`
+  (`Record<workspacePath, string[]>`) — force-included in every run.
 - `GitHubRepoInfo`, `GitHubTokenStatus`, `PullRequestMeta`, `GitHubOpResult<T>` — GitHub.

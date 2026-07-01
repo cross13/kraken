@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import {
   Folder,
   FileCode2,
+  LayoutDashboard,
   Sparkles,
   Bot,
   Compass,
@@ -27,7 +28,6 @@ import type { SpecMeta, SpecPhase } from '../../electron/shared/types';
 import { ExplorerView } from './sidebar/ExplorerView';
 import { SkillsView } from './sidebar/SkillsView';
 import { AgentsView } from './sidebar/AgentsView';
-import { SteeringView } from './sidebar/SteeringView';
 import { HooksView } from './sidebar/HooksView';
 import { OrchestratorView } from './sidebar/OrchestratorView';
 import { GraphView } from './sidebar/GraphView';
@@ -44,6 +44,7 @@ const PHASE_INDEX: Record<SpecPhase, number> = {
 
 const NAV: { tab: ActivityTab; icon: React.ReactNode; label: string }[] = [
   { tab: 'specs', icon: <FileCode2 size={17} />, label: 'Specs' },
+  { tab: 'spec-manager', icon: <LayoutDashboard size={17} />, label: 'Spec Manager' },
   { tab: 'explorer', icon: <Folder size={17} />, label: 'Explorer' },
   { tab: 'agents', icon: <Bot size={17} />, label: 'Agents' },
   { tab: 'skills', icon: <Sparkles size={17} />, label: 'Skills' },
@@ -60,10 +61,12 @@ const NAV: { tab: ActivityTab; icon: React.ReactNode; label: string }[] = [
 
 // Destinations that open as full-page module tabs instead of rail panels.
 const FULL_PAGE_TABS: Partial<Record<ActivityTab, OpenTab>> = {
+  'spec-manager': { id: 'specs-studio', title: 'Spec Manager', kind: 'specs-studio' },
   agents: { id: 'agents-studio', title: 'Agents', kind: 'agents-studio' },
   skills: { id: 'skills-studio', title: 'Skills', kind: 'skills-studio' },
   orchestrator: { id: 'router-studio', title: 'Orchestration', kind: 'router-studio' },
   hooks: { id: 'hooks-studio', title: 'Hooks', kind: 'hooks-studio' },
+  steering: { id: 'steering-studio', title: 'Steering', kind: 'steering-studio' },
   'source-control': { id: 'source-control', title: 'Source Control', kind: 'source-control' },
   settings: { id: 'settings', title: 'Settings', kind: 'settings' },
 };
@@ -85,6 +88,9 @@ export function SpecRail() {
   const activity = useUi((s) => s.activity);
   const setActivity = useUi((s) => s.setActivity);
   const openTab = useUi((s) => s.openTab);
+  // The active center tab's kind — so full-page "studio" destinations light up
+  // in the nav while they're focused (they open a tab, they don't set `activity`).
+  const activeKind = useUi((s) => s.tabs.find((t) => t.id === s.activeTabId)?.kind);
 
   const running = useOrchestrator(
     (s) =>
@@ -98,6 +104,13 @@ export function SpecRail() {
   );
   const badgeFor = (tab: ActivityTab) =>
     tab === 'orchestrator' || tab === 'graph' ? running : tab === 'tasks' ? runningTasks : 0;
+
+  // When a full-page studio tab is focused, only that destination is "active";
+  // otherwise the rail-panel destination (`activity`) is.
+  const fullPageKinds = new Set(
+    (Object.values(FULL_PAGE_TABS) as OpenTab[]).map((p) => p.kind)
+  );
+  const centerIsStudio = activeKind ? fullPageKinds.has(activeKind) : false;
 
   const onSelect = (tab: ActivityTab) => {
     // These destinations are full-page "studio" modules, not rail panels.
@@ -115,7 +128,10 @@ export function SpecRail() {
       {/* destination nav */}
       <nav className="w-[52px] shrink-0 flex flex-col items-center py-2 gap-0.5 overflow-y-auto">
         {NAV.map((it) => {
-          const active = activity === it.tab;
+          const page = FULL_PAGE_TABS[it.tab];
+          const active = page
+            ? activeKind === page.kind
+            : !centerIsStudio && activity === it.tab;
           const count = badgeFor(it.tab);
           return (
             <button
@@ -150,7 +166,6 @@ export function SpecRail() {
             {activity === 'explorer' && <ExplorerView />}
             {activity === 'skills' && <SkillsView />}
             {activity === 'agents' && <AgentsView />}
-            {activity === 'steering' && <SteeringView />}
             {activity === 'hooks' && <HooksView />}
             {activity === 'orchestrator' && <OrchestratorView />}
             {activity === 'graph' && <GraphView />}

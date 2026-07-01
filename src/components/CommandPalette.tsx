@@ -17,6 +17,7 @@ import {
   Settings,
   Plus,
   Palette,
+  LayoutDashboard,
   CornerDownLeft,
 } from 'lucide-react';
 import { useWorkspace } from '../stores/workspace';
@@ -28,7 +29,9 @@ const FULL_PAGE_TABS: Partial<Record<ActivityTab, OpenTab>> = {
   agents: { id: 'agents-studio', title: 'Agents', kind: 'agents-studio' },
   skills: { id: 'skills-studio', title: 'Skills', kind: 'skills-studio' },
   orchestrator: { id: 'router-studio', title: 'Orchestration', kind: 'router-studio' },
+  'spec-manager': { id: 'specs-studio', title: 'Spec Manager', kind: 'specs-studio' },
   hooks: { id: 'hooks-studio', title: 'Hooks', kind: 'hooks-studio' },
+  steering: { id: 'steering-studio', title: 'Steering', kind: 'steering-studio' },
   'source-control': { id: 'source-control', title: 'Source Control', kind: 'source-control' },
   settings: { id: 'settings', title: 'Settings', kind: 'settings' },
 };
@@ -45,6 +48,7 @@ interface Item {
 const DEST: { tab: ActivityTab; label: string; icon: React.ReactNode }[] = [
   { tab: 'explorer', label: 'Explorer', icon: <Folder size={15} /> },
   { tab: 'specs', label: 'Specs', icon: <FileCode2 size={15} /> },
+  { tab: 'spec-manager', label: 'Spec Manager', icon: <LayoutDashboard size={15} /> },
   { tab: 'skills', label: 'Skills', icon: <Sparkles size={15} /> },
   { tab: 'agents', label: 'Agents', icon: <Bot size={15} /> },
   { tab: 'steering', label: 'Steering', icon: <Compass size={15} /> },

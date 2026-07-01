@@ -14,6 +14,8 @@ import { AgentsStudio } from './views/AgentsStudio';
 import { SkillsStudio } from './views/SkillsStudio';
 import { RouterStudio } from './views/RouterStudio';
 import { HooksStudio } from './views/HooksStudio';
+import { SteeringStudio } from './views/SteeringStudio';
+import { SpecsStudio } from './views/SpecsStudio';
 import { SyntaxStudio } from './views/SyntaxStudio';
 import { RunViewer } from './views/RunViewer';
 import { HookEditor } from './views/HookEditor';
@@ -99,6 +101,8 @@ export function EditorArea() {
         {active?.kind === 'skills-studio' && <SkillsStudio key={active.id} />}
         {active?.kind === 'router-studio' && <RouterStudio key={active.id} />}
         {active?.kind === 'hooks-studio' && <HooksStudio key={active.id} />}
+        {active?.kind === 'steering-studio' && <SteeringStudio key={active.id} />}
+        {active?.kind === 'specs-studio' && <SpecsStudio key={active.id} />}
         {active?.kind === 'syntax-studio' && <SyntaxStudio key={active.id} />}
         {active?.kind === 'run' && active.runId && (
           <RunViewer key={active.id} runId={active.runId} />

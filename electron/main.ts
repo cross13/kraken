@@ -52,6 +52,7 @@ import {
   recordError,
   listErrors,
   getStats,
+  specRunStats,
   recordHookRun,
   listHookRuns,
 } from './db.js';
@@ -64,6 +65,7 @@ import type {
   SpecPhase,
   SteeringFile,
   SteeringInclusion,
+  SteeringWriteInput,
   HookConfig,
   HookTrigger,
   HookFireContext,
@@ -99,6 +101,8 @@ interface StoreSchema {
   permissionMode?: PermissionMode;
   allowBash?: boolean;
   maxConcurrency?: number;
+  /** Pinned manual-steering doc names, keyed by workspace path. Force-included in every run. */
+  steeringPins?: Record<string, string[]>;
 }
 
 const store = new Store<StoreSchema>({
@@ -231,6 +235,7 @@ function registerIpc() {
   ipcMain.handle('specs:set-phase', (_e, root: string, id: string, phase: SpecPhase) =>
     setSpecPhase(root, id, phase)
   );
+  ipcMain.handle('specs:delete', (_e, root: string, id: string) => removeSpec(root, id));
 
   ipcMain.handle('skills:list', (_e, root: string) => listSkills(root));
   ipcMain.handle('skills:read', (_e, p: string) => fs.readFile(p, 'utf8'));
@@ -242,6 +247,24 @@ function registerIpc() {
 
   ipcMain.handle('steering:list', (_e, root: string) => listSteering(root));
   ipcMain.handle('steering:create-default', (_e, root: string) => seedDefaultSteering(root));
+  ipcMain.handle('steering:write', (_e, root: string, input: SteeringWriteInput) =>
+    writeSteering(root, input)
+  );
+  ipcMain.handle('steering:delete', (_e, _root: string, filePath: string) =>
+    deleteSteering(filePath)
+  );
+  ipcMain.handle(
+    'steering:preview',
+    (_e, root: string, opts: { files?: string[]; manualRefs?: string[] }) =>
+      composeSteeringSystem(root, {
+        files: opts?.files,
+        manualRefs: [...getSteeringPins(root), ...(opts?.manualRefs ?? [])],
+      })
+  );
+  ipcMain.handle('steering:get-pins', (_e, root: string) => getSteeringPins(root));
+  ipcMain.handle('steering:set-pins', (_e, root: string, names: string[]) =>
+    setSteeringPins(root, names)
+  );
 
   ipcMain.handle('hooks:list', (_e, root: string) => listHooks(root));
   ipcMain.handle('hooks:read', (_e, p: string) => fs.readFile(p, 'utf8'));
@@ -540,6 +563,9 @@ function registerIpc() {
   ipcMain.handle('history:list-spec-files', (_e, opts) => listSpecFiles(opts));
   ipcMain.handle('history:list-errors', (_e, opts) => listErrors(opts ?? {}));
   ipcMain.handle('history:stats', (_e, workspacePath) => getStats(workspacePath));
+  ipcMain.handle('history:spec-run-stats', (_e, workspacePath: string) =>
+    specRunStats(workspacePath)
+  );
   ipcMain.handle('history:list-spec-events', (_e, workspacePath, specId) =>
     listSpecEvents(workspacePath, specId)
   );
@@ -809,6 +835,24 @@ async function setSpecPhase(root: string, id: string, phase: SpecPhase) {
   return meta;
 }
 
+/**
+ * Permanently delete a spec: remove its on-disk directory
+ * (`.kraken/specs/<id>/`) and every mirrored DB row (events, runs + run
+ * files/errors, hook runs). Disk is the source of truth; the DB cascade keeps
+ * history/analytics from dangling.
+ */
+async function removeSpec(root: string, id: string): Promise<void> {
+  const specPath = path.join(root, '.kraken', 'specs', id);
+  if (existsSync(specPath)) {
+    await fs.rm(specPath, { recursive: true, force: true });
+  }
+  try {
+    deleteSpec(root, id);
+  } catch {
+    // DB mirror is best-effort; the on-disk removal is what matters.
+  }
+}
+
 function featureRequirementsTemplate(name: string) {
   return `# Requirements — ${name}
 
@@ -1039,6 +1083,7 @@ async function listSteering(root: string): Promise<SteeringFile[]> {
           scope: 'workspace',
           path: fp,
           body,
+          editable: false,
         });
         seen.add(implicit);
       } catch {
@@ -1067,6 +1112,7 @@ async function listSteering(root: string): Promise<SteeringFile[]> {
           scope,
           path: path.join(dir, f),
           body: fm.content,
+          editable: true,
         });
       } catch {
         // skip
@@ -1102,6 +1148,12 @@ async function composeSteeringSystem(
   const autoMenu: string[] = [];
 
   for (const s of steering) {
+    // A pinned/manual-referenced doc is force-included regardless of its mode —
+    // "keep this in context now". This is what the Steering Studio's pin does.
+    if (manualRefs.includes(s.name)) {
+      included.push(`# Steering: ${s.name}\n\n${s.body.trim()}`);
+      continue;
+    }
     if (s.inclusion === 'always') {
       included.push(`# Steering: ${s.name}\n\n${s.body.trim()}`);
     } else if (s.inclusion === 'fileMatch' && s.fileMatch) {
@@ -1174,6 +1226,73 @@ _Outline how the codebase is organized._
     const fp = path.join(dir, name);
     if (!existsSync(fp)) await fs.writeFile(fp, body, 'utf8');
   }
+}
+
+/** Resolve the `.kraken/steering` directory for a scope. */
+function steeringDir(root: string, scope: 'workspace' | 'global'): string {
+  return scope === 'global'
+    ? path.join(app.getPath('home'), '.kraken', 'steering')
+    : path.join(root, '.kraken', 'steering');
+}
+
+/** Create or update a steering doc as a frontmatter markdown file. */
+async function writeSteering(root: string, input: SteeringWriteInput): Promise<SteeringFile> {
+  const scope = input.scope;
+  const dir = steeringDir(root, scope);
+  await ensureDir(dir);
+  const slug = slugify(input.name) || `steering-${Date.now()}`;
+  const file = path.join(dir, `${slug}.md`);
+
+  // gray-matter frontmatter; drop empty optional fields for a clean file.
+  const data: Record<string, unknown> = { inclusion: input.inclusion };
+  if (input.description) data.description = input.description;
+  if (input.inclusion === 'fileMatch' && input.fileMatch) data.fileMatch = input.fileMatch;
+  if (input.name !== slug) data.name = input.name;
+  const contents = matter.stringify(`\n${input.body.trim()}\n`, data);
+  await fs.writeFile(file, contents, 'utf8');
+
+  // On rename/scope change, remove the previous file (only within a steering dir).
+  if (input.prevPath && input.prevPath !== file && isInSteeringDir(input.prevPath)) {
+    if (existsSync(input.prevPath)) await fs.rm(input.prevPath);
+  }
+
+  return {
+    name: input.name,
+    description: input.description ?? '',
+    inclusion: input.inclusion,
+    fileMatch: input.inclusion === 'fileMatch' ? input.fileMatch : undefined,
+    scope,
+    path: file,
+    body: input.body,
+    editable: true,
+  };
+}
+
+/** True when a path lives under any `.kraken/steering` directory (guards deletes). */
+function isInSteeringDir(p: string): boolean {
+  const norm = p.replace(/\\/g, '/');
+  return norm.includes('/.kraken/steering/');
+}
+
+/** Delete a steering doc. Refuses paths outside `.kraken/steering` (e.g. root CLAUDE.md). */
+async function deleteSteering(filePath: string): Promise<void> {
+  if (!isInSteeringDir(filePath)) {
+    throw new Error('Refusing to delete a file outside .kraken/steering');
+  }
+  if (existsSync(filePath)) await fs.rm(filePath);
+}
+
+/** Pinned manual-steering doc names for a workspace. */
+function getSteeringPins(root: string | null | undefined): string[] {
+  if (!root) return [];
+  return store.get('steeringPins')?.[root] ?? [];
+}
+
+function setSteeringPins(root: string, names: string[]): string[] {
+  const all = store.get('steeringPins') ?? {};
+  const deduped = Array.from(new Set(names));
+  store.set('steeringPins', { ...all, [root]: deduped });
+  return deduped;
 }
 
 // ---------- Hooks (Kraken-native agent hooks) ----------
@@ -1691,7 +1810,9 @@ async function streamClaude(sender: Electron.WebContents, payload: ClaudePayload
   try {
     const steering = await composeSteeringSystem(payload.cwd, {
       files: payload.fileHints,
-      manualRefs: payload.manualRefs,
+      // Force-include any docs the user pinned in the Steering Studio, on top of
+      // per-run manual refs — so pins apply to every run (chat/task/hook/spec).
+      manualRefs: [...getSteeringPins(payload.cwd), ...(payload.manualRefs ?? [])],
     });
     if (steering) {
       payload = {
