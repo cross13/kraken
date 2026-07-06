@@ -268,10 +268,30 @@ render as a parallel gutter column (hidden while wrapping); files over ~400 kB s
 - `fileLang.ts` — maps a filename/extension to a Prism language id + label (`detectLanguage`).
 - `syntaxThemes.ts` — the `SyntaxTheme` shape (10 token slots), `BUILTIN_THEMES`, `THEME_SLOTS`
   (custom-theme editor fields), and `themeToCssVars` (theme → `--syn-*` CSS custom properties).
-- `graphModel.ts` — builds the agent-graph node/edge model (`@xyflow/react`).
+- `graphModel.ts` — the agent-graph data layer: `indexRuns`/`verifyRun` (merge live + persisted
+  runs per task) plus the **run-grouping taxonomy** — `RunGroup` (`execution` | `spec` | `hook` |
+  `audit` | `chat`), `KIND_TO_GROUP`/`runGroup` (map a `RunKind` to its group), `GROUP_META`
+  (label/hint/colour per group), `LOOSE_GROUPS`, and `deriveKind` (falls back to the `source` tag,
+  so pre-`kind` hook rows still classify as `hook`). `RunInfo` carries `kind`/`title`/`source`.
 - `library.ts` — module-studio helpers: slug/paths, agent/skill scaffolds, `buildAction`,
   `actionsRoutingTo` (which SDD steps route to a given agent).
 - `cn.ts` — `clsx` class-name helper.
+
+## Agent Graph
+
+`AgentGraphView` (editor tab `kind: 'graph'`, opened from the sidebar `GraphView`) is a
+`@xyflow/react` flow chart of every run for the selected spec, **grouped by kind**. Task-execution
+runs (`task`/`refine`/`polish`) render as the wave columns (`WaveNode` header + `TaskNode`s, laid out
+left-to-right by wave). Everything else — the "loose" runs not tied to a task — fans out into one
+**labeled swimlane per `RunGroup`** to the *left* of the waves (`GroupNode` header with a count +
+colour + hint, then `MiscNode`s), so **hook runs are visually separated from spec-generation, audit,
+and chat runs**. Each `MiscNode` shows its kind badge, title/agent, skill, model, and a status-tinted
+border. The toolbar's **Groups** bar is a legend + filter: `execution` is static (the waves), while
+`spec`/`hook`/`audit`/`chat` are toggle chips that hide/show their lane (driven by `hiddenGroups`).
+Grouping comes from `graphModel`'s `runGroup`/`GROUP_META`; classification uses the persisted `kind`
+column with a `source`-tag fallback (`deriveKind`) so historical hook rows still land in the Hooks
+lane. Clicking any node opens the `DetailDrawer` (routing incl. group/kind + title, model, invocation,
+output files, prompt/system/error).
 
 ## Open Questions module
 

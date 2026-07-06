@@ -1499,6 +1499,7 @@ async function fireHook(hook: HookConfig, trigger: HookTrigger, ctx: HookFireCon
   void streamClaude(sender, {
     requestId,
     source: `hook:${hook.id}:${trigger}`,
+    kind: 'hook',
     specId: ctx.specId ?? null,
     agent: hook.agent ?? null,
     cwd: root,

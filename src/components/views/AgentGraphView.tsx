@@ -27,6 +27,11 @@ import {
   FileText,
   FilePlus2,
   FilePen,
+  ListChecks,
+  Wand2,
+  MessageSquare,
+  Stethoscope,
+  Zap,
 } from 'lucide-react';
 import { useWorkspace } from '../../stores/workspace';
 import { useOrchestrator } from '../../stores/orchestrator';
@@ -36,13 +41,47 @@ import {
   verifyRun,
   fmtDuration,
   STATUS_COLOR,
+  GROUP_META,
+  LOOSE_GROUPS,
+  runGroup,
   type RunInfo,
+  type RunGroup,
   type NodeStatus,
   type Warning,
 } from '../../lib/graphModel';
 import { scopeLabel } from '../../lib/verifyLibrary';
-import type { RunRow, RunFileRow, SpecMeta } from '../../../electron/shared/types';
+import type { RunRow, RunFileRow, SpecMeta, RunKind } from '../../../electron/shared/types';
 import { cn } from '../../lib/cn';
+
+// Icon per run group — kept in the view (JSX) rather than the pure data layer.
+const GROUP_ICON: Record<RunGroup, (p: { size?: number }) => JSX.Element> = {
+  execution: (p) => <ListChecks {...p} />,
+  spec: (p) => <FileText {...p} />,
+  hook: (p) => <Zap {...p} />,
+  audit: (p) => <Stethoscope {...p} />,
+  chat: (p) => <MessageSquare {...p} />,
+};
+
+// Icon per RunKind, for the compact badge on a loose-run node.
+const KIND_ICON: Record<RunKind, (p: { size?: number }) => JSX.Element> = {
+  task: (p) => <ListChecks {...p} />,
+  refine: (p) => <Wand2 {...p} />,
+  polish: (p) => <Sparkles {...p} />,
+  chat: (p) => <MessageSquare {...p} />,
+  spec: (p) => <FileText {...p} />,
+  audit: (p) => <Stethoscope {...p} />,
+  hook: (p) => <Zap {...p} />,
+};
+
+const KIND_LABEL: Record<RunKind, string> = {
+  task: 'Task',
+  refine: 'Refine',
+  polish: 'Polish',
+  chat: 'Chat',
+  spec: 'Spec',
+  audit: 'Audit',
+  hook: 'Hook',
+};
 
 // ---------- Node data ----------
 
@@ -63,6 +102,11 @@ interface WaveNodeData {
 interface MiscNodeData {
   info: RunInfo;
   onOpen: (taskId: string | null, info?: RunInfo) => void;
+  [key: string]: unknown;
+}
+interface GroupNodeData {
+  group: RunGroup;
+  count: number;
   [key: string]: unknown;
 }
 
@@ -162,17 +206,67 @@ function WaveNode({ data }: NodeProps) {
   );
 }
 
+/** Header node that titles a loose-run swimlane (Hooks / Spec / Audit / Chat). */
+function GroupNode({ data }: NodeProps) {
+  const d = data as GroupNodeData;
+  const meta = GROUP_META[d.group];
+  const Icon = GROUP_ICON[d.group];
+  return (
+    <div
+      className="w-[210px] rounded-md px-3 py-2"
+      style={{
+        background: 'rgba(24,24,27,0.85)',
+        borderLeft: `3px solid ${meta.color}`,
+      }}
+    >
+      <div className="flex items-center gap-1.5" style={{ color: meta.color }}>
+        <Icon size={13} />
+        <span className="text-[11px] font-semibold uppercase tracking-wide">{meta.label}</span>
+        <span className="ml-auto text-[10px] font-mono text-ink-400">{d.count}</span>
+      </div>
+      <div className="text-[9px] text-ink-500 mt-0.5 leading-snug">{meta.hint}</div>
+      <Handle type="source" position={Position.Bottom} style={{ background: meta.color }} />
+    </div>
+  );
+}
+
 function MiscNode({ data }: NodeProps) {
   const d = data as MiscNodeData;
   const status = d.info.status;
+  const color = STATUS_COLOR[status];
+  const live = status === 'running' || status === 'queued';
+  const group = runGroup(d.info.kind);
+  const groupColor = GROUP_META[group].color;
+  const kind = d.info.kind ?? null;
+  const KindIcon = kind ? KIND_ICON[kind] : null;
+  const label = d.info.title || d.info.agent || (kind ? KIND_LABEL[kind] : 'run');
+
   return (
     <div
       onClick={() => d.onOpen(null, d.info)}
-      className="w-[200px] rounded-lg border border-ink-700 bg-ink-900 px-2.5 py-2 cursor-pointer hover:border-accent/60"
+      className="w-[210px] rounded-lg border bg-ink-900 px-2.5 py-2 cursor-pointer transition hover:border-accent/60"
+      style={{ borderColor: live ? color : 'rgba(82,82,91,0.5)', borderLeft: `3px solid ${groupColor}` }}
     >
+      <Handle type="target" position={Position.Top} style={{ background: groupColor }} />
       <div className="flex items-center gap-1.5">
         <StatusGlyph status={status} />
-        <span className="text-[10px] text-ink-300">{d.info.agent ?? 'chat / spec'}</span>
+        {KindIcon && <KindIcon size={10} />}
+        <span className="text-[10px] font-medium text-ink-200">
+          {kind ? KIND_LABEL[kind] : 'Run'}
+        </span>
+      </div>
+      <div className="text-[11px] text-ink-100 leading-snug mt-1 line-clamp-2">{label}</div>
+      <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+        <span className="text-[9px] px-1.5 py-0.5 rounded flex items-center gap-1 bg-accent/15 text-accent">
+          <Bot size={9} />
+          {d.info.agent ?? 'generic'}
+        </span>
+        {d.info.skill && (
+          <span className="text-[9px] px-1.5 py-0.5 rounded flex items-center gap-1 bg-sky-500/15 text-sky-300">
+            <Sparkles size={9} />
+            {d.info.skill}
+          </span>
+        )}
       </div>
       {(d.info.resolvedModel || d.info.model) && (
         <div className="text-[9px] text-ink-500 mt-1 font-mono truncate">
@@ -184,7 +278,7 @@ function MiscNode({ data }: NodeProps) {
   );
 }
 
-const nodeTypes = { task: TaskNode, wave: WaveNode, misc: MiscNode };
+const nodeTypes = { task: TaskNode, wave: WaveNode, misc: MiscNode, group: GroupNode };
 
 // ---------- Graph builder ----------
 
@@ -193,6 +287,7 @@ function buildGraph(
   index: ReturnType<typeof indexRuns>,
   verify: (info?: RunInfo) => Warning[],
   fileCounts: Map<string, number>,
+  hiddenGroups: Set<RunGroup>,
   onOpen: (taskId: string | null, info?: RunInfo) => void
 ): { nodes: Node[]; edges: Edge[] } {
   const nodes: Node[] = [];
@@ -266,16 +361,49 @@ function buildGraph(
     }
   }
 
-  // loose (chat / spec / audit) runs in a left lane
-  index.loose.slice(0, 12).forEach((info, i) => {
+  // Loose runs (spec drafting / hooks / audits / chat) fan out into one labeled
+  // swimlane per group to the LEFT of the wave columns, so hook runs are visually
+  // separated from spec-generation runs. Empty or filtered-out groups are skipped.
+  const MISC_ROW_H = 118;
+  const byGroup = new Map<RunGroup, RunInfo[]>();
+  for (const info of index.loose) {
+    const g = runGroup(info.kind);
+    if (hiddenGroups.has(g)) continue;
+    const arr = byGroup.get(g);
+    if (arr) arr.push(info);
+    else byGroup.set(g, [info]);
+  }
+  let laneIdx = 0;
+  for (const g of LOOSE_GROUPS) {
+    const items = byGroup.get(g);
+    if (!items || items.length === 0) continue;
+    const x = -(laneIdx + 1) * COL_W;
+    const groupId = `group-${g}`;
     nodes.push({
-      id: `misc-${info.runId ?? i}`,
-      type: 'misc',
-      position: { x: -COL_W, y: i * 90 },
-      data: { info, onOpen },
+      id: groupId,
+      type: 'group',
+      position: { x, y: 0 },
+      data: { group: g, count: items.length },
       draggable: true,
     });
-  });
+    items.slice(0, 20).forEach((info, i) => {
+      const id = `misc-${g}-${info.runId ?? i}`;
+      nodes.push({
+        id,
+        type: 'misc',
+        position: { x, y: 92 + i * MISC_ROW_H },
+        data: { info, onOpen },
+        draggable: true,
+      });
+      edges.push({
+        id: `ge-${g}-${i}`,
+        source: groupId,
+        target: id,
+        style: { stroke: '#27272a' },
+      });
+    });
+    laneIdx++;
+  }
 
   return { nodes, edges };
 }
@@ -377,6 +505,11 @@ function DetailDrawer({
           <h4 className="text-[10px] uppercase tracking-wider text-ink-500 font-semibold mb-1">
             Routing
           </h4>
+          <Row label="Group">
+            {GROUP_META[runGroup(info.kind)].label}
+            {info.kind ? <span className="text-ink-500"> ({KIND_LABEL[info.kind]})</span> : ''}
+          </Row>
+          {info.title && <Row label="Title">{info.title}</Row>}
           <Row label="Agent">
             {info.agent ?? 'generic'}{' '}
             {info.agentScope && <span className="text-ink-500">({scopeLabel(info.agentScope)})</span>}
@@ -511,6 +644,15 @@ export function AgentGraphView() {
   const [history, setHistory] = useState<RunRow[]>([]);
   const [fileCounts, setFileCounts] = useState<Map<string, number>>(new Map());
   const [selected, setSelected] = useState<{ info: RunInfo; warnings: Warning[] } | null>(null);
+  const [hiddenGroups, setHiddenGroups] = useState<Set<RunGroup>>(new Set());
+
+  const toggleGroup = useCallback((g: RunGroup) => {
+    setHiddenGroups((prev) => {
+      const next = new Set(prev);
+      next.has(g) ? next.delete(g) : next.add(g);
+      return next;
+    });
+  }, []);
 
   // Keep a valid spec selected as the spec list changes.
   useEffect(() => {
@@ -570,8 +712,16 @@ export function AgentGraphView() {
   );
 
   const computed = useMemo(
-    () => buildGraph(doc, index, (info) => verifyRun(info, agents, skills), fileCounts, onOpen),
-    [doc, index, agents, skills, fileCounts, onOpen]
+    () =>
+      buildGraph(
+        doc,
+        index,
+        (info) => verifyRun(info, agents, skills),
+        fileCounts,
+        hiddenGroups,
+        onOpen
+      ),
+    [doc, index, agents, skills, fileCounts, hiddenGroups, onOpen]
   );
 
   const [nodes, setNodes, onNodesChange] = useNodesState(computed.nodes);
@@ -583,7 +733,8 @@ export function AgentGraphView() {
     setEdges(computed.edges);
   }, [computed, setNodes, setEdges]);
 
-  // Verification summary stats.
+  // Verification summary stats + per-group counts (task execution vs the loose
+  // hook/spec/audit/chat lanes) so the toolbar can show the breakdown + filter.
   const stats = useMemo(() => {
     let warns = 0;
     const models = new Map<string, number>();
@@ -592,7 +743,15 @@ export function AgentGraphView() {
       const m = info.resolvedModel ?? info.model;
       if (m) models.set(m, (models.get(m) ?? 0) + 1);
     }
-    return { warns, runs: index.byTask.size, models: [...models.entries()] };
+    const groups: Record<RunGroup, number> = {
+      execution: index.byTask.size,
+      spec: 0,
+      hook: 0,
+      audit: 0,
+      chat: 0,
+    };
+    for (const info of index.loose) groups[runGroup(info.kind)]++;
+    return { warns, runs: index.byTask.size, models: [...models.entries()], groups };
   }, [index, agents, skills]);
 
   if (specs.length === 0) {
@@ -652,6 +811,48 @@ export function AgentGraphView() {
             </span>
           )}
         </div>
+      </div>
+
+      {/* Group legend + loose-lane filter. Execution is the wave columns (always
+          shown); the rest are toggleable swimlanes so you can isolate, e.g., hooks. */}
+      <div className="h-9 px-3 flex items-center gap-1.5 border-b border-ink-800/60 shrink-0 overflow-x-auto">
+        <span className="text-[10px] uppercase tracking-wider text-ink-500 font-semibold mr-1 shrink-0">
+          Groups
+        </span>
+        {(['execution', ...LOOSE_GROUPS] as RunGroup[]).map((g) => {
+          const meta = GROUP_META[g];
+          const Icon = GROUP_ICON[g];
+          const count = stats.groups[g];
+          const toggleable = g !== 'execution';
+          const hidden = hiddenGroups.has(g);
+          return (
+            <button
+              key={g}
+              disabled={!toggleable}
+              onClick={() => toggleable && toggleGroup(g)}
+              title={
+                toggleable
+                  ? `${meta.hint} — click to ${hidden ? 'show' : 'hide'}`
+                  : `${meta.hint} (the wave columns)`
+              }
+              className={cn(
+                'shrink-0 flex items-center gap-1.5 text-[11px] px-2 py-1 rounded-md border transition',
+                toggleable ? 'cursor-pointer' : 'cursor-default',
+                hidden
+                  ? 'border-ink-800 bg-transparent text-ink-600'
+                  : 'border-ink-700 bg-ink-900 text-ink-200 hover:border-ink-600'
+              )}
+            >
+              <span
+                className="w-2 h-2 rounded-full shrink-0"
+                style={{ background: hidden ? '#3f3f46' : meta.color }}
+              />
+              <Icon size={11} />
+              <span className={cn(hidden && 'line-through')}>{meta.label}</span>
+              <span className="text-[10px] font-mono text-ink-500">{count}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Canvas */}

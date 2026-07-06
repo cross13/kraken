@@ -3,7 +3,7 @@ import { SidebarHeader, SidebarEmpty } from '../SidebarShell';
 import { useUi } from '../../stores/ui';
 import { useOrchestrator } from '../../stores/orchestrator';
 import { useWorkspace } from '../../stores/workspace';
-import { STATUS_COLOR } from '../../lib/graphModel';
+import { STATUS_COLOR, GROUP_META, type RunGroup } from '../../lib/graphModel';
 
 const GRAPH_TAB_ID = 'agent-graph';
 
@@ -15,6 +15,9 @@ const LEGEND: { label: string; color: string }[] = [
   { label: 'Cancelled', color: STATUS_COLOR.cancelled },
   { label: 'Pending', color: STATUS_COLOR.pending },
 ];
+
+// Run groups explain which nodes are task execution vs spec generation, hooks, etc.
+const GROUP_ORDER: RunGroup[] = ['execution', 'spec', 'hook', 'audit', 'chat'];
 
 export function GraphView() {
   const openTab = useUi((s) => s.openTab);
@@ -35,9 +38,9 @@ export function GraphView() {
       <div className="flex-1 overflow-y-auto">
         <div className="px-3 py-3 border-b border-ink-800/60 space-y-3">
           <p className="text-[11px] text-ink-400 leading-snug">
-            An interactive flow chart of every agent run — waves, task dependencies, the agent and
-            skill the orchestrator assigned, and the model actually used. Click a node to verify and
-            audit a run.
+            An interactive flow chart of every agent run, grouped by kind — task execution waves plus
+            separate lanes for spec generation, hooks, audits, and chat. Shows the agent and skill the
+            orchestrator assigned and the model actually used. Click a node to verify and audit a run.
           </p>
           <button
             onClick={openGraph}
@@ -66,10 +69,34 @@ export function GraphView() {
           )}
         </section>
 
-        {/* Legend */}
+        {/* Run groups */}
         <section className="px-3 py-3 border-b border-ink-800/60">
           <h3 className="text-[10px] uppercase tracking-wider text-ink-400 font-semibold mb-2">
-            Legend
+            Run groups
+          </h3>
+          <div className="space-y-1.5">
+            {GROUP_ORDER.map((g) => {
+              const m = GROUP_META[g];
+              return (
+                <div key={g} className="flex items-start gap-1.5 text-[11px]">
+                  <span
+                    className="w-2.5 h-2.5 rounded-full shrink-0 mt-0.5"
+                    style={{ background: m.color }}
+                  />
+                  <div className="min-w-0">
+                    <span className="text-ink-200">{m.label}</span>
+                    <span className="text-ink-500"> — {m.hint}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Status legend */}
+        <section className="px-3 py-3 border-b border-ink-800/60">
+          <h3 className="text-[10px] uppercase tracking-wider text-ink-400 font-semibold mb-2">
+            Status
           </h3>
           <div className="grid grid-cols-2 gap-1.5">
             {LEGEND.map((l) => (

@@ -3,7 +3,14 @@
 // warnings (did the orchestrator assign a real, installed agent/skill, and did
 // the model we asked for match what the backend reported?).
 
-import type { ActiveRun, FinishedRun, RunRow, AgentMeta, SkillMeta } from '../../electron/shared/types';
+import type {
+  ActiveRun,
+  FinishedRun,
+  RunRow,
+  AgentMeta,
+  SkillMeta,
+  RunKind,
+} from '../../electron/shared/types';
 import { resolveAgent, resolveSkill } from './verifyLibrary';
 
 export type NodeStatus = 'running' | 'queued' | 'done' | 'error' | 'cancelled' | 'pending';
@@ -23,6 +30,71 @@ export interface RunInfo {
   /** true when sourced from the in-flight orchestrator store */
   live: boolean;
   startedAt?: number;
+  /** what kind of work this run is (task/spec/hook/audit/chat/…) */
+  kind?: RunKind | null;
+  /** human one-liner of what the run is doing (live runs only) */
+  title?: string | null;
+  /** raw source tag, e.g. "hook:<id>:<trigger>" — used to classify old rows */
+  source?: string | null;
+}
+
+// ---------- Run grouping (hooks vs spec-flow vs chat …) ----------
+
+/**
+ * Coarse display group a run belongs to. This is what lets the graph answer
+ * "which nodes are hooks and which are spec-flow generation?": task execution
+ * (the wave lanes) is distinct from spec drafting, hooks, audits, and chat.
+ */
+export type RunGroup = 'execution' | 'spec' | 'hook' | 'audit' | 'chat';
+
+/** RunKind → display group. Task/refine/polish are all "execution". */
+export const KIND_TO_GROUP: Record<RunKind, RunGroup> = {
+  task: 'execution',
+  refine: 'execution',
+  polish: 'execution',
+  spec: 'spec',
+  hook: 'hook',
+  audit: 'audit',
+  chat: 'chat',
+};
+
+export interface GroupMeta {
+  label: string;
+  /** one-line explainer of what runs in this group */
+  hint: string;
+  /** accent colour for lane headers / node borders */
+  color: string;
+}
+
+export const GROUP_META: Record<RunGroup, GroupMeta> = {
+  execution: { label: 'Task execution', hint: 'Wave tasks from tasks.md', color: '#38bdf8' },
+  spec: { label: 'Spec generation', hint: 'Drafting requirements / design / tasks', color: '#a78bfa' },
+  hook: { label: 'Hooks', hint: 'Event-triggered agent runs', color: '#fbbf24' },
+  audit: { label: 'Audit', hint: 'Drift detection (spec-doctor)', color: '#2dd4bf' },
+  chat: { label: 'Chat', hint: 'Interactive chat runs', color: '#94a3b8' },
+};
+
+/** The groups that live in the "loose" lanes (everything except wave tasks). */
+export const LOOSE_GROUPS: RunGroup[] = ['spec', 'hook', 'audit', 'chat'];
+
+/**
+ * Derive a run's kind. Prefer the explicit column; fall back to the `source`
+ * tag so rows written before the kind was persisted (notably hook runs, whose
+ * source is `hook:<id>:<trigger>`) still classify correctly.
+ */
+export function deriveKind(
+  kind: RunKind | string | null | undefined,
+  source: string | null | undefined
+): RunKind | null {
+  if (kind) return kind as RunKind;
+  if (source?.startsWith('hook:')) return 'hook';
+  return null;
+}
+
+/** Classify a run into a display group; anything unrecognised falls to chat. */
+export function runGroup(kind?: RunKind | string | null): RunGroup {
+  if (kind && (kind as RunKind) in KIND_TO_GROUP) return KIND_TO_GROUP[kind as RunKind];
+  return 'chat';
 }
 
 function statusFromRow(s: RunRow['status']): NodeStatus {
@@ -41,6 +113,9 @@ function infoFromActive(r: ActiveRun): RunInfo {
     status: r.status === 'queued' ? 'queued' : 'running',
     live: true,
     startedAt: r.startedAt,
+    kind: deriveKind(r.kind, r.source),
+    title: r.title ?? null,
+    source: r.source ?? null,
   };
 }
 
@@ -56,6 +131,9 @@ function infoFromFinished(r: FinishedRun): RunInfo {
     status: r.status,
     live: true,
     startedAt: r.startedAt,
+    kind: deriveKind(r.kind, r.source),
+    title: r.title ?? null,
+    source: r.source ?? null,
   };
 }
 
@@ -72,6 +150,9 @@ function infoFromRow(r: RunRow): RunInfo {
     status: statusFromRow(r.status),
     live: false,
     startedAt: r.started_at ? Date.parse(r.started_at) : undefined,
+    kind: deriveKind(r.kind, r.source),
+    title: null,
+    source: r.source ?? null,
   };
 }
 
