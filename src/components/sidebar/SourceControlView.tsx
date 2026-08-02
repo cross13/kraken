@@ -48,15 +48,10 @@ interface GitStatus {
 
 type Filter = 'open' | 'all';
 
-/** The spec backing the active editor tab, falling back to the last spec viewed
- *  (so the full-page Source Control tab still knows which spec you're on). */
+/** The spec you're working on — the spec surface's active spec. */
 function useActiveSpec(): SpecMeta | null {
-  const activeTabId = useUi((s) => s.activeTabId);
-  const tabs = useUi((s) => s.tabs);
-  const lastSpecId = useUi((s) => s.lastSpecId);
+  const id = useUi((s) => s.activeSpecId);
   const specs = useWorkspace((s) => s.specs);
-  const tab = tabs.find((t) => t.id === activeTabId);
-  const id = tab?.kind === 'spec' ? tab.specId : lastSpecId;
   if (!id) return null;
   return specs.find((s) => s.id === id) ?? null;
 }
@@ -203,7 +198,7 @@ export function SourceControlView({
     const repoLabel = repo?.ok ? `${repo.owner}/${repo.repo}` : root.split('/').filter(Boolean).pop();
     return (
       <div className="h-full overflow-y-auto bg-ink-950">
-        <div className="max-w-[1120px] mx-auto px-8 py-8">
+        <div className="k-wide py-8">
           <div className="flex items-center gap-3 mb-5">
             <div className="w-10 h-10 grid place-items-center rounded-xl bg-accent/12 text-accent shrink-0">
               <GitBranch size={19} />

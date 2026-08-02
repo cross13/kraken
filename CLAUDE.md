@@ -85,37 +85,58 @@ results arrive through `claude.onEvent(handler)`.
 ### Renderer — `src/` (React 18 + Tailwind + Zustand)
 - **State** lives in Zustand stores (`src/stores/`): `workspace` (root path, specs,
   agents, skills), `chat` (message list, streaming state, selected agent, `pendingPrompt`
-  handoff), `ui` (active view, panel layout), `orchestrator` (global run registry), and
-  `theme` (active palette). Components subscribe to these — there is no other global state.
+  handoff), `ui` (surface + drawers + overlay + terminals), `orchestrator` (global run
+  registry), `models` (planning model + **discovered** model list), `moduleConfig` (routing
+  pins/skill toggles), `syntax`, and `theme` (active palette). Components subscribe to these —
+  there is no other global state.
+- **Models are discovered, not hardcoded.** `models:list` merges the Anthropic Models API (only
+  when an API key is stored; called over raw `fetch` because the pinned SDK predates
+  `client.models`) with the ids named in the local Claude Code config, falling back to a bundled
+  catalog. Each entry carries a `ModelOrigin` (`api` / `cli-config` / `catalog`) and Settings
+  shows it, so the UI never implies availability it hasn't verified. There is deliberately **no
+  per-model CLI probe** — the CLI only validates `--model` by starting a real billable run. See
+  `docs/backends.md` → Model discovery.
+- **Space is a design constraint.** Surfaces use the window instead of parking content in a fixed
+  centred column. Three fluid containers in `styles.css` — `.k-wide` (dashboards/lists/settings,
+  ≤ `--k-wide-max`), `.k-read` (long-form markdown, bounded by 78ch reading measure), `.k-full`
+  (code/diff, edge-to-edge) — plus `.k-cards` (auto-fitting card grid), `.k-split`
+  (primary + collapsing aside), and `.k-listpane` (viewport-scaled master pane). **Never add a new
+  `max-w-[NNNpx] mx-auto`;** pick a container. Wide content scrolls inside its own container so a
+  surface never scrolls horizontally. See `docs/renderer.md` → Layout & space.
 - **Theming** is variable-driven: every Tailwind colour is `rgb(var(--x) / <alpha-value>)`,
   with three palettes (Abyss [default], Bioluminescent, Daylight) selected by `<html data-theme>`
   (see `docs/renderer.md` → Theming). `--accent-fg` is themeable; fonts are Hanken Grotesk (body) /
-  Space Grotesk (`font-display`) / JetBrains Mono. Surfaces are **mostly borderless** — regions are
-  separated by background-shade differences rather than borders. The **Welcome view** is the
-  data-driven home screen (command bar, Continue-working spec cards, agent fleet) wired to real
-  specs/agents/skills.
-- **Layout** is the **Mission Control shell** (`App.tsx`): `CommandBar` (brand + ⌘K
-  `CommandPalette` + live-agents + project/model status) → `SpecRail` (unified left rail: multi-tab
-  destination nav + the active-spec hero card / other specs, re-homing the `sidebar/*View`s) →
-  `EditorArea` (tabbed viewers) → `ActivityStream` (live orchestrator feed + chat). It replaced the
-  old VS Code-style shell (`TitleBar`/`ActivityBar`/`Sidebar`/`ChatPanel`/`StatusBar`, now removed).
-  Opening a spec step enters **focus mode** (rail + activity collapse so the step fills the screen,
-  toggleable); the `SpecPhaseStrip` is a clickable pipeline between phases; Requirements/Design
-  render as spacious structured **section cards** (`SpecDocument`, the Read view), Tasks as the
-  kanban runner. **Agents, Skills, Hooks, Steering, Orchestration, and the Spec Manager are
-  full-page "studio" modules** (`views/{AgentsStudio,SkillsStudio,HooksStudio,SteeringStudio,
-  RouterStudio,SpecsStudio}.tsx`, shared chrome in
-  `ModuleShell.tsx`) opened from the rail nav / ⌘K — each teaches how the subsystem works, shows what's
-  best for a task, lets you create new items, and exposes its config. The **Spec Manager**
-  (`SpecsStudio`, `spec-manager` destination) is the analytics + cleanup view: per-phase/kind counts,
-  run/error/time aggregates (from `history.specRunStats`), per-spec run + timeline review, and
-  permanent **delete** (`specs:delete` → on-disk folder + cascaded DB history). All module configuration is
-  centralized in the `moduleConfig` store (`src/stores/moduleConfig.ts`, localStorage-persisted) and
-  pushed into the router via `setRouterConfig`, so runs honour it without any IPC change. The
-  **Explorer's file viewer** does real syntax highlighting via `lib/prism.ts` + `lib/fileLang.ts`,
-  themeable and language-extensible from the **Syntax** studio (`views/SyntaxStudio.tsx`, config in
-  `src/stores/syntax.ts`): installable color themes (built-in + custom) and on-demand language
-  grammars (lazy Prism chunks, with a just-in-time "Install <lang>" prompt in the viewer).
+  Space Grotesk (`font-display`) / JetBrains Mono. The visual language is **frame + floating
+  panels** (Kiro-style): `--rail` is the near-black app frame, surfaces float on it as rounded
+  panels with a hairline ring; greys are neutral and the purple lives only in the accent.
+- **Layout** is the **four-surface shell** (`App.tsx`): `CommandBar` (brand + ⌘K
+  `CommandPalette` + the one live-runs pill + project/model status) → `SurfaceNav` (4 icons) →
+  one of **Home · Spec · Activity · Library**, plus the **Assistant** chat drawer (⌘J,
+  `AssistantDrawer`), the **Explorer** drawer (⌘⇧E), and a right slide-over **`OverlayPanel`**
+  for detail views (file/agent/skill/run viewers, Open Questions, hook editor, the repo panel).
+  There is **no global tab bar and no focus mode** — surfaces are singletons. **Home** (`HomeView`) is
+  the launchpad: its composer **creates specs** (`lib/specActions.ts` — **Plan** streams the
+  requirements draft into the gated flow; **Quick Plan** drafts all three docs with no stops;
+  `?`-suffixed input goes to the Assistant), plus in-flight spec cards, Shipped recents, a
+  Manage mode embedding `SpecsStudio` (analytics + `specs:delete`), and a one-time
+  "Set up Kraken defaults" seeding card. **Spec** (`SpecFlow`) is one continuous guided flow
+  framed like an editor: file tabs (`requirements.md`/`design.md`/`tasks.md`/`summary.md`) +
+  breadcrumb + the spec strip (numbered phase chips: Requirements → Design → Task List → **Ship**),
+  doc stages as line-numbered **Source** (default) / section **Cards** / raw **Edit** over a
+  **gate bar** whose *Approve* advances the phase **and navigates** (*Revise with feedback*
+  re-drafts inline; *Improve with Claude* runs a critical self-review that refines the doc in
+  place — every step has one, incl. *Improve plan* on Tasks), Tasks as **inline task blocks**
+  with Kiro-style Start-task actions
+  (`TaskRunner` engine, Run all = autopilot as the primary CTA), and **Ship** (`ShipView`) — the
+  automatic payoff:
+  the spec auto-advances to `done` when the last task completes, `CompletionSummary`
+  auto-generates into `summary.md`, and branch/Commit all/Create PR sit right there. **Activity**
+  (`ActivitySurface`) is the single "what's running" center (Runs = `OrchestratorView`, History,
+  Terminals, Graph). **Library** (`LibrarySurface`) consolidates config: Agents · Skills · Hooks ·
+  Steering · Routing (`RouterStudio`, now a read-only routing explainer + Advanced pins) ·
+  Appearance (`SyntaxStudio`) · Settings (regrouped: Connection / Models incl. the **planning
+  model** / Repository / Advanced). Module config lives in the `moduleConfig` store and is pushed
+  into the router via `setRouterConfig`; the old routing-weight knobs are invisible defaults.
 - **Agent routing** (`src/lib/agentRouter.ts`) is content-aware. Precedence: per-task
   `@agent` > chat `@agent` override > best-matching **installed** agent for the action.
   "Best match" tries the bundled default by name, then scores every agent in `.claude/agents`
@@ -125,11 +146,11 @@ results arrive through `claude.onEvent(handler)`.
   (`IMPLEMENTER_SIGNALS`) plus a **workspace-scope bonus**, and task execution is **local-first**:
   if nothing matches it still picks the first project-local agent rather than going generic.
   Generic is reached only when the project has no installed agents at all. `routeAgent` returns
-  a `RouteReason` for transparency. Routing is **tunable + previewable** via the `moduleConfig`
-  store: per-step agent **pins** (reason `'pinned'`), the workspace bonus / specialist threshold /
-  local-first fallback, and skill-injection toggles. `explainRoute` / `scoreAgents` expose the full
-  decision (chosen agent + injected skills + ranked candidates) that drives the Orchestration
-  studio's routing playground.
+  a `RouteReason` for transparency. Per-step agent **pins** (reason `'pinned'`) and one
+  skill-injection toggle live under Library › Routing › Advanced; the scoring weights are
+  invisible defaults in `moduleConfig.ts`. `explainRoute` / `scoreAgents` expose the full
+  decision (chosen agent + injected skills + ranked candidates) that drives the Routing
+  playground.
 - **Skills are injected, not just labelled.** `SkillMeta.body` carries the full `SKILL.md`
   text; `skillSystemBlock`/`skillSystemBlocks` build prompt blocks that are prepended to the
   system prompt. The SDD skill (`sdd-feature`/`sdd-bugfix`, by spec kind) governs spec drafting
@@ -153,7 +174,7 @@ file-save-in-app; TaskRunner → task-complete/wave-complete; manual). `fireHook
 `streamClaude` (so hook runs appear in History) via `getMainSender()`. **Loop-guard:** hook
 runs write through the CLI, not the `fs:write` IPC, so they can't retrigger file-save hooks;
 plus a per-hook cooldown (`hookCooldown`). `seedDefaultHooks` ships `code-validate-improve`
-(wave-complete) and `docs-changelog` (spec-done). Hooks UI: `HooksView` + `HookEditor`.
+(wave-complete) and `docs-changelog` (spec-done). Hooks UI: Library › Hooks (`HooksStudio`) + the overlay `HookEditor`.
 
 ### Steering — project context injection (`electron/main.ts` steering section)
 Markdown in `.kraken/steering/*.md` (+ global, + root AGENTS.md/CLAUDE.md as implicit
@@ -162,45 +183,42 @@ auto) and is prepended to `payload.system` **inside `streamClaude`**, so every r
 task, hook) gets steering uniformly. Docs can be **pinned** (persisted per workspace in
 `electron-store` as `steeringPins`, merged into `manualRefs` inside `streamClaude`) to
 force-include them in every run regardless of mode. The primary UI is the full-page
-**`SteeringStudio`** (`views/SteeringStudio.tsx`, opened from the rail nav / ⌘K) — full CRUD,
+**`SteeringStudio`** (`views/SteeringStudio.tsx`, mounted at Library › Steering) — full CRUD,
 inclusion-mode + fileMatch + scope editing, pinning, and a live injection preview; backed by
-`steering:{list,write,delete,preview,get-pins,set-pins}` IPC. (The old sidebar `SteeringView`
-is retired.)
+`steering:{list,write,delete,preview,get-pins,set-pins}` IPC.
 
-### Multi-agent orchestration (`src/stores/orchestrator.ts` + `TaskRunner.tsx` + `OrchestratorView`)
+### Multi-agent orchestration (`src/stores/orchestrator.ts` + `TaskRunner.tsx` + Activity)
 Tasks in a wave run as parallel concurrent Claude subprocesses (one `requestId` each), capped
-by `maxConcurrency` (Settings → Orchestration, or the Orchestrator panel). The `orchestrator`
+by `maxConcurrency` (one control, mirrored on the tasks board and Activity › Runs). The `orchestrator`
 store is the **global registry of every in-flight run** — chat, spec drafting, audits, and wave
 tasks all `startRun`/`finishRun` here (each tagged with a `RunKind` + human `title`), decoupled
 from the chat store's single `busy`. It keeps a recent-activity `log` (finished runs) and exposes
 `taskRunningCount()` (task/refine/polish only) so chat/spec runs don't throttle wave scheduling.
-The **Orchestrator** sidebar panel (`OrchestratorView`) shows live agents with elapsed time +
-per-run/stop-all cancel, the concurrency control, and the activity log; the ActivityBar and
-StatusBar show a live running-count badge. Per-task agent specialization via
-`- [ ] T1 @agent-name: ...` (parsed in `tasks.ts`, precedence in `agentRouter.ts`: per-task >
-chat override > action default). `runWave`/`pump` schedule with failure isolation; **Autopilot**
-runs all waves autonomously, waiting for blocking hooks between waves and advancing to `done`
-at the end. `specs:set-phase` allows reopening a phase (Re-sync); the **Audit** action routes
-to `spec-doctor` for drift detection.
+**Activity › Runs** (`OrchestratorView`) shows live agents with elapsed time + per-run/stop-all
+cancel, the concurrency control, and the activity log; the top bar and `SurfaceNav` show a live
+running-count badge. Per-task agent specialization via `- [ ] T1 @agent-name: ...` (parsed in
+`tasks.ts`, precedence in `agentRouter.ts`: per-task > chat override > action default).
+`runWave`/`pump` schedule with failure isolation; **Autopilot** ("Run all", the tasks stage's
+primary CTA) runs all waves autonomously, waiting for blocking hooks between waves. When the last
+task completes the spec **auto-advances to `done` and lands on the Ship stage** (auto-generated
+summary + commit/PR). `specs:set-phase` allows reopening a phase (Re-sync); the **Audit** action
+routes to `spec-doctor` for drift detection.
 
 ### Layout & resizing (`App.tsx` + `ResizeHandle` + `ui` store)
-The `SpecRail` and `ActivityStream` panels are drag-resizable via `ResizeHandle` (pointer-capture
-divider); widths live in the `ui` store (`sidebarWidth` = rail, `chatWidth` = activity stream,
-clamped + persisted to `localStorage`). The rail is always shown; `chatOpen` toggles the activity
-stream. The rail's destination nav is driven by `ui.activity`; the `ActivityTab` union in `ui.ts`
-(incl. Source Control, Orchestrator) is the full set of destinations, surfaced both in the
-`SpecRail` nav and the `CommandPalette`.
+The Assistant drawer is drag-resizable via `ResizeHandle` (`assistantWidth`, clamped + persisted
+to `localStorage`). Navigation state is `ui.surface` plus per-surface fields (`activeSpecId` +
+`specStage`, `activityTab`, `librarySection`) and the `overlay` slide-over — all surfaced in the
+`SurfaceNav` and the `CommandPalette`.
 
 ### Git & GitHub — `electron/git.ts`, `electron/github.ts`
 Per-workspace git helpers (status, current-branch, create-branch, commit-push, push-current)
 surfaced through `git:*` IPC. `github.ts` is a dependency-free GitHub REST client (token via
 `safeStorage`, same pattern as the API key) exposed through `github:*` IPC — repo resolution
 from the `origin` remote, token validation, and PR list/create/merge. Both are driven from the
-dedicated full-page **Source Control** tab (`SourceControlView` with `variant="page"` — opened from
-the rail nav / command-bar project pill / ⌘K, a tab not a side panel), which is spec-aware (resolves
-the active or last-viewed spec via `ui.lastSpecId` for branch/commit/PR defaults and writes
-branch/commit/PR state back into `SpecMeta`). The current project + branch are also shown in the
-`CommandBar`, which deep-links into this tab.
+spec's **Ship stage** (`ShipView`: branch → Commit all → Create PR, prefilled from the
+auto-generated summary) and from the global **repo panel** (`SourceControlView variant="page"`,
+opened as an overlay from the command-bar project pill / ⌘K). Both are spec-aware (`ui.activeSpecId`
+resolves "the spec you're working on") and write branch/commit/PR state back into `SpecMeta`.
 
 ### Terminals — interactive PTY sessions (`electron/terminal.ts` + `TerminalView`/`TerminalsView`)
 Where `claude:stream` is one-shot and fire-and-forget (`-p`, no stdin), terminals are a **fully
@@ -210,10 +228,23 @@ processes keyed by `termId`; `createTerminal` in `main.ts` resolves the spawn po
 always with `expandedPath()` + workspace cwd. This gives **AskUserQuestion answers, permission
 prompts, and real CLI slash commands** natively, "as in the cli". IPC: `terminal:create` (invoke)
 + `terminal:write`/`terminal:resize`/`terminal:kill` (send) + `terminal:data`/`terminal:exit`
-events. The renderer uses **xterm.js** (`TerminalView`, kept mounted across tab switches so the PTY
-survives) with the web-links addon routing URL clicks to `shell:openUrl`, which **opens URLs Claude
+events. The renderer uses **xterm.js** (`TerminalView`, panes kept mounted under Activity › Terminals so
+the PTY survives navigation) with the web-links addon routing URL clicks to `shell:openUrl`, which **opens URLs Claude
 emits in Google Chrome** (default-browser fallback). node-pty ships an N-API prebuilt binary (no
 from-source rebuild; `asarUnpack`-ed for packaging). Sidebar: **Terminals** panel (`TerminalsView`).
+
+### Travel Display — a wide second window (`main.ts` window section + `src/components/wide/WideApp.tsx`)
+An optional **compact fleet monitor** for a secondary ultrawide bar display (e.g. a Corsair Xeneon
+Edge, ~2560×720), toggled from the CommandBar (`MonitorSmartphone` icon) or ⌘K *Open Travel
+Display*. `createWideWindow()` opens a single `frame:false` second `BrowserWindow` (`wideWindow`),
+placed via the `screen` module on a non-primary display (`pickTravelDisplay()`; compact-bar
+fallback on the primary), loading the same bundle with a `#wide` hash so `src/main.tsx` renders
+`WideApp` instead of `App`. State is **one-directional**: the main window is authoritative and
+pushes a serialized `FleetSnapshot` (`ActiveRun[]` from the `orchestrator` store) via `fleet:push`
+→ forwarded over `fleet:sync`; the travel window is a **read-only mirror** that cancels through the
+existing `claude:cancel`. IPC: `window:{toggle-wide,is-wide-open,wide-state,focus-main}` +
+`fleet:{push,sync}`. Teardown is guarded (closing the main window or unplugging the display closes
+it). See `docs/subsystems.md` → Travel Display.
 
 ## Conventions worth knowing
 

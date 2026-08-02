@@ -148,7 +148,7 @@ export function SpecsStudio() {
           ) : (
             <div className="flex-1 min-h-0 flex">
               {/* list */}
-              <div className="w-[320px] shrink-0 border-r border-ink-800/40 flex flex-col min-h-0">
+              <div className="k-listpane border-r border-ink-800/40 flex flex-col min-h-0">
                 <div className="p-3">
                   <div className="flex items-center gap-2 px-2.5 h-8 rounded-lg bg-elev">
                     <Search size={13} className="text-faint" />
@@ -175,7 +175,7 @@ export function SpecsStudio() {
 
               {/* detail */}
               <div className="flex-1 min-w-0 overflow-y-auto">
-                <div className="max-w-3xl mx-auto px-7 py-6">
+                <div className="k-wide py-6">
                   <Explainer points={EXPLAINER} />
                   {selected ? (
                     <SpecDetail
@@ -243,7 +243,7 @@ function OverviewTab({
 
   return (
     <div className="flex-1 min-h-0 overflow-y-auto">
-      <div className="max-w-4xl mx-auto px-7 py-6">
+      <div className="k-wide py-6">
         <Explainer points={EXPLAINER} />
 
         {/* stat cards */}
@@ -429,7 +429,7 @@ function SpecDetail({
 }) {
   const root = useWorkspace((s) => s.root)!;
   const deleteSpec = useWorkspace((s) => s.deleteSpec);
-  const openTab = useUi((s) => s.openTab);
+  const openOverlay = useUi((s) => s.openOverlay);
   const [runs, setRuns] = useState<RunRow[]>([]);
   const [events, setEvents] = useState<SpecEventRow[]>([]);
   const [deleting, setDeleting] = useState(false);
@@ -526,9 +526,7 @@ function SpecDetail({
             {runs.map((r) => (
               <button
                 key={r.id}
-                onClick={() =>
-                  openTab({ id: `run:${r.id}`, title: `run: ${r.id.slice(0, 8)}`, kind: 'run', runId: r.id })
-                }
+                onClick={() => openOverlay({ kind: 'run', runId: r.id })}
                 className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg bg-elev/40 hover:bg-elev text-left transition"
               >
                 <StatusDot status={r.status} />

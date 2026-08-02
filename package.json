@@ -13,6 +13,7 @@
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
+    "icon": "electron scripts/render-icon.mjs",
     "postinstall": "electron-builder install-app-deps",
     "package:mac": "npm run build && electron-builder --mac --dir",
     "package:win": "npm run build && electron-builder --win --dir",

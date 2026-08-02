@@ -18,7 +18,7 @@ import {
   Wand2,
   Trash2,
 } from 'lucide-react';
-import { SidebarHeader, SidebarButton, SidebarEmpty } from '../SidebarShell';
+import { KrakenLogo } from '../KrakenLogo';
 import { cn } from '../../lib/cn';
 import { useOrchestrator } from '../../stores/orchestrator';
 import type { ActiveRun, FinishedRun, RunKind } from '../../../electron/shared/types';
@@ -45,6 +45,12 @@ function fmtDuration(ms: number): string {
   return `${m}m ${s % 60}s`;
 }
 
+/**
+ * Activity › Runs — the live fleet. This is a full surface, not a sidebar
+ * panel: the running agents fill the width as an auto-fitting card grid and
+ * the recent-activity log sits in a side rail once the window is wide enough
+ * (it collapses under the grid on narrow windows).
+ */
 export function OrchestratorView() {
   const runs = useOrchestrator((s) => s.runs);
   const log = useOrchestrator((s) => s.log);
@@ -85,122 +91,134 @@ export function OrchestratorView() {
   };
 
   return (
-    <>
-      <SidebarHeader
-        title="Orchestrator"
-        actions={
-          active.length > 0 ? (
-            <button
-              onClick={stopAll}
-              className="text-[10px] flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-bad/20 text-bad hover:bg-bad/30"
-            >
-              <Square size={10} /> Stop all
-            </button>
-          ) : undefined
-        }
-      />
-
-      <div className="flex-1 overflow-y-auto">
-        {/* Control strip */}
-        <div className="px-3 py-2.5 border-b border-ink-800/60 space-y-2.5">
-          <div className="flex items-center gap-2">
-            <div
-              className={cn(
-                'w-7 h-7 grid place-items-center rounded-lg shrink-0',
-                active.length > 0 ? 'bg-accent/15 text-accent' : 'bg-ink-800 text-ink-400'
-              )}
-            >
-              {active.length > 0 ? (
-                <Loader2 size={14} className="animate-spin" />
-              ) : (
-                <Network size={14} />
-              )}
+    <div className="k-scroll">
+      <div className="k-wide pb-10 pt-1">
+        {/* Status strip — spans the surface instead of stacking in a column */}
+        <div className="flex flex-wrap items-center gap-4 rounded-xl bg-elev/40 ring-1 ring-ink-800/50 px-4 py-3 mb-6">
+          <div
+            className={cn(
+              'w-9 h-9 grid place-items-center rounded-xl shrink-0',
+              active.length > 0 ? 'bg-accent/15 text-accent' : 'bg-ink-800 text-ink-400'
+            )}
+          >
+            {active.length > 0 ? (
+              <KrakenLogo animated className="w-4 h-5" />
+            ) : (
+              <Network size={16} />
+            )}
+          </div>
+          <div className="min-w-0">
+            <div className="text-[14px] font-semibold text-ink-50 leading-tight">
+              {active.length === 0
+                ? 'Idle'
+                : `${active.length} agent${active.length === 1 ? '' : 's'} running`}
             </div>
-            <div className="min-w-0">
-              <div className="text-sm font-semibold text-ink-50 leading-tight">
-                {active.length === 0
-                  ? 'Idle'
-                  : `${active.length} agent${active.length === 1 ? '' : 's'} running`}
-              </div>
-              <div className="text-[10px] text-ink-500">
-                {active.length} / {maxConcurrency} slots in use
-              </div>
+            <div className="text-[11px] text-faint">
+              {active.length} / {maxConcurrency} slots in use
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="min-w-0">
-              <div className="text-[11px] font-medium text-ink-200">Max parallel agents</div>
-              <div className="text-[10px] text-ink-500">Wave concurrency limit.</div>
+          <div className="flex-1" />
+
+          <div className="flex items-center gap-2.5 shrink-0">
+            <div className="text-right">
+              <div className="text-[11.5px] font-medium text-ink-200">Max parallel agents</div>
+              <div className="text-[10px] text-faint">Wave concurrency limit</div>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1.5">
               <button
                 onClick={() => changeConcurrency(maxConcurrency - 1)}
                 disabled={maxConcurrency <= 1}
-                className="w-6 h-6 grid place-items-center rounded-md bg-ink-800 text-ink-200 hover:bg-ink-700 disabled:opacity-40"
+                className="w-7 h-7 grid place-items-center rounded-md bg-ink-800 text-ink-200 hover:bg-ink-700 disabled:opacity-40"
               >
-                <Minus size={12} />
+                <Minus size={13} />
               </button>
-              <span className="text-sm font-mono text-ink-50 w-4 text-center">
+              <span className="text-sm font-mono text-ink-50 w-5 text-center">
                 {maxConcurrency}
               </span>
               <button
                 onClick={() => changeConcurrency(maxConcurrency + 1)}
                 disabled={maxConcurrency >= 8}
-                className="w-6 h-6 grid place-items-center rounded-md bg-ink-800 text-ink-200 hover:bg-ink-700 disabled:opacity-40"
+                className="w-7 h-7 grid place-items-center rounded-md bg-ink-800 text-ink-200 hover:bg-ink-700 disabled:opacity-40"
               >
-                <Plus size={12} />
+                <Plus size={13} />
               </button>
             </div>
           </div>
+
+          {active.length > 0 && (
+            <button
+              onClick={stopAll}
+              className="shrink-0 text-[12px] flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-bad/20 text-bad hover:bg-bad/30 transition"
+            >
+              <Square size={11} /> Stop all
+            </button>
+          )}
         </div>
 
-        {/* Running */}
-        <section className="px-3 py-3 border-b border-ink-800/60">
-          <h3 className="text-[10px] uppercase tracking-wider text-ink-400 font-semibold mb-2">
-            Running
-          </h3>
-          {active.length === 0 ? (
-            <p className="text-[11px] text-ink-500 leading-snug">
-              No agents in flight. Run a task wave, draft a spec, or chat — live agents
-              appear here with the option to cancel.
-            </p>
-          ) : (
-            <div className="space-y-1.5">
-              {active.map((r) => (
-                <RunCard key={r.requestId} run={r} onCancel={() => cancelOne(r)} />
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* Activity log */}
-        <section className="px-3 py-3">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-[10px] uppercase tracking-wider text-ink-400 font-semibold">
-              Recent activity
-            </h3>
-            {log.length > 0 && (
-              <SidebarButton title="Clear log" onClick={clearLog}>
-                <Trash2 size={12} />
-              </SidebarButton>
+        <div className="k-split">
+          <section className="min-w-0">
+            <SectionLabel>Running</SectionLabel>
+            {active.length === 0 ? (
+              <p className="text-[12.5px] text-faint leading-relaxed max-w-prose">
+                No agents in flight. Run a task wave, draft a spec, or chat — live agents appear
+                here with the option to cancel.
+              </p>
+            ) : (
+              <div className="k-cards" style={{ ['--k-card' as string]: '300px' }}>
+                {active.map((r) => (
+                  <RunCard key={r.requestId} run={r} onCancel={() => cancelOne(r)} />
+                ))}
+              </div>
             )}
-          </div>
-          {log.length === 0 ? (
-            <SidebarEmpty
-              title="Nothing yet"
-              description="Finished agent runs are recorded here for the session."
-            />
-          ) : (
-            <div className="space-y-1">
-              {log.map((entry) => (
-                <LogRow key={entry.requestId} entry={entry} />
-              ))}
-            </div>
-          )}
-        </section>
+          </section>
+
+          <aside className="min-w-0">
+            <SectionLabel
+              action={
+                log.length > 0 ? (
+                  <button
+                    onClick={clearLog}
+                    title="Clear log"
+                    className="p-1 rounded-md text-faint hover:text-ink-100 hover:bg-elev transition"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                ) : undefined
+              }
+            >
+              Recent activity
+            </SectionLabel>
+            {log.length === 0 ? (
+              <p className="text-[12px] text-faint leading-relaxed">
+                Finished agent runs are recorded here for the session.
+              </p>
+            ) : (
+              <div className="space-y-0.5 rounded-xl bg-elev/30 ring-1 ring-ink-800/40 p-1.5">
+                {log.map((entry) => (
+                  <LogRow key={entry.requestId} entry={entry} />
+                ))}
+              </div>
+            )}
+          </aside>
+        </div>
       </div>
-    </>
+    </div>
+  );
+}
+
+function SectionLabel({
+  children,
+  action,
+}: {
+  children: React.ReactNode;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between mb-2.5">
+      <h3 className="font-mono text-[10px] uppercase tracking-[0.16em] text-faint">{children}</h3>
+      {action}
+    </div>
   );
 }
 
@@ -209,14 +227,14 @@ function RunCard({ run, onCancel }: { run: ActiveRun; onCancel: () => void }) {
   const elapsed = run.startedAt ? fmtDuration(Date.now() - run.startedAt) : null;
 
   return (
-    <div className="rounded-md border border-accent/30 bg-accent/[0.06] p-2.5">
-      <div className="flex items-center gap-1.5 mb-1">
+    <div className="rounded-lg border border-accent/30 bg-accent/[0.06] p-3">
+      <div className="flex items-center gap-1.5 mb-1.5">
         <span className={cn('text-[9px] px-1.5 py-0.5 rounded flex items-center gap-1', meta.cls)}>
           {meta.icon}
           {meta.label}
         </span>
         {run.taskId && (
-          <span className="text-[10px] font-mono text-ink-500">{run.taskId}</span>
+          <span className="text-[10px] font-mono text-faint">{run.taskId}</span>
         )}
         <span className="text-[10px] text-accent ml-auto flex items-center gap-1">
           <Loader2 size={10} className="animate-spin" />
@@ -225,15 +243,15 @@ function RunCard({ run, onCancel }: { run: ActiveRun; onCancel: () => void }) {
         <button
           onClick={onCancel}
           title="Cancel this run"
-          className="text-ink-500 hover:text-bad"
+          className="text-faint hover:text-bad"
         >
           <X size={12} />
         </button>
       </div>
-      <div className="text-xs text-ink-100 leading-snug line-clamp-2">
+      <div className="text-[12.5px] text-ink-100 leading-snug line-clamp-2">
         {run.title ?? run.source}
       </div>
-      <div className="text-[10px] text-ink-500 mt-0.5">
+      <div className="text-[10px] text-faint mt-1 truncate">
         {run.agent ?? 'claude'}
         {run.specId ? ` · ${run.specId}` : ''}
       </div>
@@ -251,11 +269,11 @@ function LogRow({ entry }: { entry: FinishedRun }) {
     ) : entry.status === 'error' ? (
       <AlertCircle size={12} className="text-bad" />
     ) : (
-      <Ban size={12} className="text-ink-500" />
+      <Ban size={12} className="text-faint" />
     );
 
   return (
-    <div className="flex items-start gap-2 px-1.5 py-1 rounded-md hover:bg-ink-800/40">
+    <div className="flex items-start gap-2 px-2 py-1.5 rounded-md hover:bg-ink-800/40">
       <span className="mt-0.5 shrink-0">{statusIcon}</span>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
@@ -263,11 +281,11 @@ function LogRow({ entry }: { entry: FinishedRun }) {
             {meta.label}
           </span>
           {entry.taskId && (
-            <span className="text-[10px] font-mono text-ink-500">{entry.taskId}</span>
+            <span className="text-[10px] font-mono text-faint">{entry.taskId}</span>
           )}
           {duration && <span className="text-[10px] text-ink-600 ml-auto">{duration}</span>}
         </div>
-        <div className="text-[11px] text-ink-300 leading-snug truncate">
+        <div className="text-[11px] text-dim leading-snug truncate">
           {entry.title ?? entry.source}
         </div>
       </div>

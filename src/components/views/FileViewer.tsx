@@ -22,7 +22,7 @@ export function FileViewer({ path }: { path: string }) {
   const setLineNumbers = useSyntax((s) => s.setLineNumbers);
   const setWrap = useSyntax((s) => s.setWrap);
   const installLanguage = useSyntax((s) => s.installLanguage);
-  const openTab = useUi((s) => s.openTab);
+  const openLibrary = useUi((s) => s.openLibrary);
 
   const lang = useMemo(() => detectLanguage(path), [path]);
   const installed = lang ? config.languages.includes(lang.id) : false;
@@ -116,7 +116,7 @@ export function FileViewer({ path }: { path: string }) {
           </ToolbarToggle>
           <ToolbarToggle
             active={false}
-            onClick={() => openTab({ id: 'syntax-studio', title: 'Syntax', kind: 'syntax-studio' })}
+            onClick={() => openLibrary('appearance')}
             title="Syntax settings — themes & languages"
           >
             <Sparkles size={13} />

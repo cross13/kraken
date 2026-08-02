@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, shell, safeStorage } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell, safeStorage, screen } from 'electron';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import fs from 'node:fs/promises';
@@ -71,6 +71,8 @@ import type {
   HookFireContext,
   HookFireEvent,
   McpServerMeta,
+  ModelDiscovery,
+  ModelInfo,
   StreamChannel,
   TerminalCreateOpts,
   TerminalProfile,
@@ -126,6 +128,9 @@ function getEffectiveTools(): string[] {
 }
 
 let mainWindow: BrowserWindow | null = null;
+// The optional "Travel Display" — a second, compact window that mirrors the live
+// run registry onto an ultrawide secondary display (e.g. a Corsair Xeneon Edge).
+let wideWindow: BrowserWindow | null = null;
 
 const terminals = new TerminalManager();
 
@@ -162,7 +167,15 @@ function openUrlInChrome(rawUrl: string) {
   }
 }
 
+// Brand icon (resources/icon.png, rendered from icon.svg via `npm run icon`).
+// Packaged macOS builds get the .icns from electron-builder; this covers the
+// dev dock icon and the win/linux window icon.
+const brandIconPath = path.join(app.getAppPath(), 'resources', 'icon.png');
+
 function createWindow() {
+  if (process.platform === 'darwin' && !app.isPackaged && existsSync(brandIconPath)) {
+    app.dock?.setIcon(brandIconPath);
+  }
   mainWindow = new BrowserWindow({
     width: 1440,
     height: 900,
@@ -171,6 +184,7 @@ function createWindow() {
     backgroundColor: '#0c0e16',
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 14, y: 14 },
+    icon: existsSync(brandIconPath) ? brandIconPath : undefined,
     show: false,
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.mjs'),
@@ -195,7 +209,97 @@ function createWindow() {
 
   mainWindow.on('closed', () => {
     terminals.killAll();
+    // Don't orphan the travel window when the main window goes away.
+    if (wideWindow && !wideWindow.isDestroyed()) wideWindow.destroy();
+    wideWindow = null;
   });
+}
+
+/**
+ * Pick a display to host the Travel Display. Prefers a non-primary display,
+ * favouring a very-wide bar (the Xeneon Edge is ~2560×720, aspect > 3). Returns
+ * null when only the primary display is attached.
+ */
+function pickTravelDisplay(): Electron.Display | null {
+  const primary = screen.getPrimaryDisplay();
+  const others = screen.getAllDisplays().filter((d) => d.id !== primary.id);
+  if (others.length === 0) return null;
+  const wide = others.find((d) => d.bounds.width / Math.max(1, d.bounds.height) > 3);
+  return wide ?? others[0];
+}
+
+/** Tell the main window whether the travel window is currently open. */
+function notifyWideState() {
+  const open = !!wideWindow && !wideWindow.isDestroyed();
+  mainWindow?.webContents.send('window:wide-state', { open });
+}
+
+function createWideWindow() {
+  if (wideWindow && !wideWindow.isDestroyed()) {
+    wideWindow.focus();
+    return;
+  }
+
+  const target = pickTravelDisplay();
+  // On the travel display, fill its work area; otherwise fall back to a compact
+  // wide bar on the primary display so the mode is still usable on one screen.
+  let bounds: { x?: number; y?: number; width: number; height: number };
+  if (target) {
+    const { x, y, width, height } = target.workArea;
+    bounds = { x, y, width, height };
+  } else {
+    const primary = screen.getPrimaryDisplay().workArea;
+    const width = Math.min(2560, primary.width);
+    const height = 360;
+    bounds = {
+      x: primary.x + Math.round((primary.width - width) / 2),
+      y: primary.y + primary.height - height,
+      width,
+      height,
+    };
+  }
+
+  wideWindow = new BrowserWindow({
+    ...bounds,
+    frame: false,
+    backgroundColor: '#0c0e16',
+    icon: existsSync(brandIconPath) ? brandIconPath : undefined,
+    show: false,
+    webPreferences: {
+      preload: path.join(__dirname, '../preload/index.mjs'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: false,
+    },
+  });
+
+  wideWindow.once('ready-to-show', () => wideWindow?.show());
+
+  if (process.env.ELECTRON_RENDERER_URL) {
+    wideWindow.loadURL(`${process.env.ELECTRON_RENDERER_URL}#wide`);
+  } else {
+    wideWindow.loadFile(path.join(__dirname, '../renderer/index.html'), { hash: 'wide' });
+  }
+
+  wideWindow.webContents.setWindowOpenHandler(({ url }) => {
+    openUrlInChrome(url);
+    return { action: 'deny' };
+  });
+
+  wideWindow.on('closed', () => {
+    wideWindow = null;
+    notifyWideState();
+  });
+
+  notifyWideState();
+}
+
+function toggleWideWindow() {
+  if (wideWindow && !wideWindow.isDestroyed()) {
+    wideWindow.close();
+  } else {
+    createWideWindow();
+  }
 }
 
 app.whenReady().then(() => {
@@ -205,6 +309,13 @@ app.whenReady().then(() => {
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
+  });
+
+  // If the travel display is unplugged while the window is open, close it cleanly.
+  screen.on('display-removed', () => {
+    if (wideWindow && !wideWindow.isDestroyed() && !pickTravelDisplay()) {
+      wideWindow.close();
+    }
   });
 });
 
@@ -325,6 +436,10 @@ function registerIpc() {
   );
 
   ipcMain.handle('cli:detect', detectCli);
+
+  ipcMain.handle('models:list', (_e, workspacePath?: string | null) =>
+    discoverModels(workspacePath)
+  );
 
   ipcMain.handle('git:status', (_e, cwd: string) => gitStatus(cwd));
   ipcMain.handle('git:fetch', (_e, cwd: string) => gitFetch(cwd));
@@ -539,6 +654,18 @@ function registerIpc() {
 
   ipcMain.on('claude:stream', (e, payload) => streamClaude(e.sender, payload));
   ipcMain.handle('claude:cancel', (_e, requestId: string) => cancelClaude(requestId));
+
+  // ---- Travel Display (the wide second window) ----
+  ipcMain.handle('window:toggle-wide', () => toggleWideWindow());
+  ipcMain.handle('window:is-wide-open', () => !!wideWindow && !wideWindow.isDestroyed());
+  // The main window pushes its live run registry; forward it to the travel window.
+  ipcMain.on('fleet:push', (_e, runs) => {
+    if (wideWindow && !wideWindow.isDestroyed()) {
+      wideWindow.webContents.send('fleet:sync', runs);
+    }
+  });
+  // Let the travel window pull focus back to the main window ("reveal in main").
+  ipcMain.on('window:focus-main', () => mainWindow?.focus());
 
   // Interactive PTY terminals — run a shell or the real `claude` CLI so the user
   // can answer AskUserQuestion, run slash commands, etc. exactly as in a terminal.
@@ -1721,6 +1848,211 @@ function detectCli(): { found: boolean; binary?: string; version?: string; error
   return { found: false, error: 'Could not find `claude` on PATH.' };
 }
 
+// ---------- Model discovery ----------
+
+/**
+ * Bundled fallback catalog — the current Claude lineup with ids exactly as the
+ * API and the CLI accept them (no date suffixes). Used when the Models API
+ * can't be queried (CLI backend with no stored key), and as the source of the
+ * price/tier hints the API doesn't return.
+ *
+ * Keep in sync with docs/backends.md → Models.
+ */
+const MODEL_CATALOG: ModelInfo[] = [
+  {
+    id: 'claude-haiku-4-5',
+    label: 'Haiku 4.5',
+    tier: 'Fastest & cheapest',
+    price: '$1 / $5',
+    contextWindow: 200_000,
+    maxOutput: 64_000,
+    source: 'catalog',
+  },
+  {
+    id: 'claude-sonnet-5',
+    label: 'Sonnet 5',
+    tier: 'Balanced',
+    price: '$3 / $15',
+    contextWindow: 1_000_000,
+    maxOutput: 128_000,
+    source: 'catalog',
+  },
+  {
+    id: 'claude-opus-4-8',
+    label: 'Opus 4.8',
+    tier: 'Previous Opus',
+    price: '$5 / $25',
+    contextWindow: 1_000_000,
+    maxOutput: 128_000,
+    source: 'catalog',
+  },
+  {
+    id: 'claude-opus-5',
+    label: 'Opus 5',
+    tier: 'Most capable',
+    price: '$5 / $25',
+    contextWindow: 1_000_000,
+    maxOutput: 128_000,
+    source: 'catalog',
+  },
+  {
+    id: 'claude-fable-5',
+    label: 'Fable 5',
+    tier: 'Frontier',
+    price: '$10 / $50',
+    contextWindow: 1_000_000,
+    maxOutput: 128_000,
+    source: 'catalog',
+  },
+];
+
+interface ApiModelRow {
+  id: string;
+  display_name?: string;
+  max_input_tokens?: number;
+  max_tokens?: number;
+}
+
+/**
+ * `GET /v1/models` — the authoritative list for the stored key.
+ *
+ * Called over plain `fetch` rather than through the SDK: the pinned
+ * `@anthropic-ai/sdk` predates the `client.models` resource, and this keeps
+ * model discovery independent of the SDK version (same reasoning as the
+ * dependency-free GitHub client in `github.ts`).
+ */
+async function fetchApiModels(apiKey: string): Promise<ModelInfo[]> {
+  const out: ModelInfo[] = [];
+  let afterId: string | null = null;
+
+  // Paginated with `after_id` / `has_more`; bounded so a bad response can't spin.
+  for (let page = 0; page < 10; page++) {
+    const url = new URL('https://api.anthropic.com/v1/models');
+    url.searchParams.set('limit', '100');
+    if (afterId) url.searchParams.set('after_id', afterId);
+
+    const res = await fetch(url, {
+      headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status} ${res.statusText}`);
+    }
+    const body = (await res.json()) as {
+      data?: ApiModelRow[];
+      has_more?: boolean;
+      last_id?: string | null;
+    };
+
+    for (const m of body.data ?? []) {
+      out.push({
+        id: m.id,
+        label: m.display_name ?? m.id,
+        source: 'api',
+        contextWindow: m.max_input_tokens,
+        maxOutput: m.max_tokens,
+      });
+    }
+
+    if (!body.has_more || !body.last_id) break;
+    afterId = body.last_id;
+  }
+  return out;
+}
+
+/** Model ids/aliases named in the user's local Claude Code configuration. */
+function localClaudeModels(workspacePath?: string | null): ModelInfo[] {
+  const found: ModelInfo[] = [];
+  const seen = new Set<string>();
+
+  const add = (id: unknown, configuredIn: string) => {
+    if (typeof id !== 'string' || !id.trim() || seen.has(id)) return;
+    seen.add(id);
+    found.push({ id, label: id, source: 'cli-config', configuredIn });
+  };
+
+  const home = app.getPath('home');
+  const files: [string, string][] = [
+    [path.join(home, '.claude', 'settings.json'), '~/.claude/settings.json'],
+  ];
+  if (workspacePath) {
+    files.push(
+      [path.join(workspacePath, '.claude', 'settings.json'), '.claude/settings.json'],
+      [path.join(workspacePath, '.claude', 'settings.local.json'), '.claude/settings.local.json']
+    );
+  }
+
+  for (const [file, label] of files) {
+    try {
+      if (!existsSync(file)) continue;
+      const parsed = JSON.parse(readFileSync(file, 'utf8')) as { model?: unknown };
+      add(parsed.model, label);
+    } catch {
+      // malformed settings file — skip it rather than fail discovery
+    }
+  }
+
+  add(process.env.ANTHROPIC_MODEL, 'ANTHROPIC_MODEL env var');
+  return found;
+}
+
+/**
+ * What models can this machine actually reach?
+ *
+ * Two honest sources, merged — never a guess:
+ *  1. The Anthropic **Models API**, when an API key is stored. This is
+ *     authoritative for the user's account and returns real context windows.
+ *  2. The local **Claude Code configuration** (`settings.json`, `ANTHROPIC_MODEL`),
+ *     which tells us what the installed CLI is set up to use — including aliases
+ *     like `opus[1m]` that never appear in a catalog.
+ *
+ * The bundled catalog fills in anything neither source reported, clearly marked
+ * as unverified. There is deliberately no per-model probe: the CLI only
+ * validates `--model` by starting a real (billable) run.
+ */
+async function discoverModels(workspacePath?: string | null): Promise<ModelDiscovery> {
+  const byId = new Map<string, ModelInfo>();
+  const put = (m: ModelInfo) => {
+    const existing = byId.get(m.id);
+    // API facts win; catalog only fills gaps it uniquely knows (price/tier).
+    if (!existing) byId.set(m.id, m);
+    else byId.set(m.id, { ...m, ...existing, price: existing.price ?? m.price, tier: existing.tier ?? m.tier });
+  };
+
+  let apiChecked = false;
+  let apiError: string | undefined;
+
+  const apiKey = getApiKey();
+  if (apiKey) {
+    apiChecked = true;
+    try {
+      for (const m of await fetchApiModels(apiKey)) put(m);
+    } catch (err) {
+      apiError = err instanceof Error ? err.message : String(err);
+    }
+  }
+
+  for (const m of localClaudeModels(workspacePath)) put(m);
+  for (const m of MODEL_CATALOG) put(m);
+
+  // Enrich API entries with the catalog's price/tier hints where the id matches.
+  for (const c of MODEL_CATALOG) {
+    const hit = byId.get(c.id);
+    if (hit && hit.source !== 'catalog') {
+      byId.set(c.id, { ...hit, price: hit.price ?? c.price, tier: hit.tier ?? c.tier });
+    }
+  }
+
+  const cli = detectCli();
+  return {
+    models: [...byId.values()],
+    apiChecked,
+    apiError,
+    cli: { found: cli.found, binary: cli.binary, version: cli.version },
+    checkedAt: new Date().toISOString(),
+  };
+}
+
 // ---------- Terminals ----------
 
 function userShell(): string {
@@ -1882,7 +2214,13 @@ function emit(
   workspacePath?: string | null,
   channel: StreamChannel = 'text'
 ) {
-  sender.send('claude:event', { requestId, type, text, error, channel });
+  const event = { requestId, type, text, error, channel };
+  sender.send('claude:event', event);
+  // Mirror the live stream to the Travel Display so its run detail can show what
+  // each agent is doing in real time (the wide window is a separate renderer).
+  if (wideWindow && !wideWindow.isDestroyed() && wideWindow.webContents !== sender) {
+    wideWindow.webContents.send('claude:event', event);
+  }
   if (type === 'delta' && text) {
     try {
       // Keep the persisted run log readable: set thinking/tool/result blocks off

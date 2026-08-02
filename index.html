@@ -10,6 +10,52 @@
     <title>Kraken</title>
   </head>
   <body class="bg-ink-950 text-ink-100 antialiased select-none">
+    <!-- Boot splash (Octopus Brand Kit) — pure inline HTML/CSS so it animates
+         before the bundle loads. App.tsx fades it out once the workspace is
+         restored. Keyframes are a copy of the "Brand" block in styles.css. -->
+    <style>
+      @keyframes octo-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+      @keyframes octo-tent-sway { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
+      @keyframes octo-eye-scan { 0% { transform: translateX(-7px); } 40% { transform: translateX(7px); } 46% { transform: translateX(-7px); } 86% { transform: translateX(7px); } 92% { transform: translateX(-7px); } 100% { transform: translateX(-7px); } }
+      @keyframes octo-dot-pulse { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }
+      #boot-splash {
+        position: fixed; inset: 0; z-index: 9999;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px;
+        background: #060d16; transition: opacity 320ms ease;
+      }
+      #boot-splash.done { opacity: 0; pointer-events: none; }
+      #boot-splash .tent { transform-box: fill-box; transform-origin: 50% 0%; animation: octo-tent-sway 2.4s ease-in-out infinite; }
+      #boot-splash .dot { width: 6px; height: 6px; border-radius: 999px; background: #00bbdd; animation: octo-dot-pulse 1.2s infinite; }
+    </style>
+    <div id="boot-splash">
+      <div style="animation: octo-bob 2.6s ease-in-out infinite">
+        <svg viewBox="40 24 120 150" width="96" height="120" style="overflow: visible; filter: drop-shadow(0 0 9px rgba(0, 187, 221, 0.4))">
+          <defs>
+            <linearGradient id="bsRim" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#00BBDD" /><stop offset="1" stop-color="#003973" />
+            </linearGradient>
+            <linearGradient id="bsBody" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#001A33" /><stop offset="1" stop-color="#000A14" />
+            </linearGradient>
+          </defs>
+          <path class="tent" d="M 62,106 C 54,124 50,138 58,150" fill="none" stroke="url(#bsRim)" stroke-width="8" stroke-linecap="round" />
+          <path class="tent" style="animation-delay: -0.5s" d="M 80,112 C 76,132 74,148 80,162" fill="none" stroke="url(#bsRim)" stroke-width="8" stroke-linecap="round" />
+          <path class="tent" style="animation-delay: -1s" d="M 100,114 C 100,134 98,152 102,166" fill="none" stroke="url(#bsRim)" stroke-width="8" stroke-linecap="round" />
+          <path class="tent" style="animation-delay: -1.5s" d="M 120,112 C 124,132 126,148 120,162" fill="none" stroke="url(#bsRim)" stroke-width="8" stroke-linecap="round" />
+          <path class="tent" style="animation-delay: -2s" d="M 138,106 C 146,124 150,138 142,150" fill="none" stroke="url(#bsRim)" stroke-width="8" stroke-linecap="round" />
+          <path d="M 55,112 C 46,68 62,36 100,32 C 138,36 154,68 145,112 L 134,120 L 125,108 L 112,122 L 100,112 L 88,122 L 75,108 L 66,120 Z" fill="url(#bsBody)" stroke="url(#bsRim)" stroke-width="3" stroke-linejoin="round" />
+          <g style="animation: octo-eye-scan 3.2s linear infinite">
+            <path d="M 72,68 L 92,76 L 92,84 L 72,76 Z" fill="#7DF3FF" />
+            <path d="M 128,68 L 108,76 L 108,84 L 128,76 Z" fill="#7DF3FF" />
+          </g>
+        </svg>
+      </div>
+      <div style="display: flex; gap: 6px; align-items: center">
+        <div class="dot"></div>
+        <div class="dot" style="animation-delay: 0.2s"></div>
+        <div class="dot" style="animation-delay: 0.4s"></div>
+      </div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

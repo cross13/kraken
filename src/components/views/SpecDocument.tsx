@@ -41,7 +41,7 @@ export function SpecDocument({ md, onEdit }: { md: string; onEdit?: () => void }
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-[1000px] mx-auto px-8 py-10 space-y-5">
+      <div className="k-read py-10 space-y-5">
         {doc.title && (
           <h1 className="font-display text-[30px] font-bold text-ink-50 leading-tight mb-1">
             {doc.title}

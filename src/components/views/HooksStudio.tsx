@@ -54,10 +54,10 @@ export function HooksStudio() {
   const root = useWorkspace((s) => s.root);
   const hooks = useWorkspace((s) => s.hooks);
   const seedDefaults = useWorkspace((s) => s.seedDefaults);
-  const openTab = useUi((s) => s.openTab);
+  const openOverlay = useUi((s) => s.openOverlay);
   const [genOpen, setGenOpen] = useState(false);
 
-  const newHook = () => openTab({ id: `hook:new:${Date.now()}`, title: 'New hook', kind: 'hook' });
+  const newHook = () => openOverlay({ kind: 'hook' });
 
   return (
     <div className="h-full flex flex-col bg-ink-950">
@@ -90,7 +90,7 @@ export function HooksStudio() {
       />
 
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-3xl mx-auto px-7 py-6">
+        <div className="k-wide py-6">
           {!root ? (
             <div className="text-[13px] text-faint">Open a folder to manage hooks.</div>
           ) : (
@@ -140,10 +140,9 @@ export function HooksStudio() {
 function HookCard({ hook, triggerLabel }: { hook: HookConfig; triggerLabel: string }) {
   const root = useWorkspace((s) => s.root);
   const refreshAll = useWorkspace((s) => s.refreshAll);
-  const openTab = useUi((s) => s.openTab);
+  const openOverlay = useUi((s) => s.openOverlay);
 
-  const edit = () =>
-    openTab({ id: `hook:${hook.id}`, title: hook.title || hook.id, kind: 'hook', hookId: hook.id });
+  const edit = () => openOverlay({ kind: 'hook', hookId: hook.id });
 
   const toggle = async () => {
     if (!root) return;

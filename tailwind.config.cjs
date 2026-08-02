@@ -68,6 +68,7 @@ module.exports = {
         // Mission Control: shimmering progress fill + a steady status pulse.
         flow: 'flow 1.2s linear infinite',
         'pulse-dot': 'pulseDot 1.4s ease-in-out infinite',
+        'slide-in': 'slideIn 0.22s cubic-bezier(0.2, 0.8, 0.2, 1) both',
       },
       keyframes: {
         fadeIn: {
@@ -76,6 +77,10 @@ module.exports = {
         },
         rise: {
           '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'none' },
+        },
+        slideIn: {
+          '0%': { opacity: '0', transform: 'translateX(32px)' },
           '100%': { opacity: '1', transform: 'none' },
         },
         ping2: {

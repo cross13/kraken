@@ -1,32 +1,49 @@
 import { create } from 'zustand';
+import type { SpecMeta } from '../../electron/shared/types';
 
-export type ActivityTab =
-  | 'explorer'
-  | 'specs'
-  | 'spec-manager'
-  | 'skills'
+// The app is four singleton surfaces — no tab bar, no focus mode. Everything
+// else renders as a drawer (assistant, explorer) or a slide-over overlay.
+export type Surface = 'home' | 'spec' | 'activity' | 'library';
+
+/** Tabs inside the Activity surface (the single "what's running" center). */
+export type ActivityTab = 'runs' | 'history' | 'terminals' | 'graph';
+
+/** Sections inside the consolidated Library surface. */
+export type LibrarySection =
   | 'agents'
-  | 'steering'
+  | 'skills'
   | 'hooks'
-  | 'source-control'
-  | 'orchestrator'
-  | 'graph'
-  | 'tasks'
-  | 'terminal'
-  | 'history'
+  | 'steering'
+  | 'routing'
+  | 'appearance'
   | 'settings';
 
-// Panel sizing — persisted so the user's layout survives reloads.
-const SIDEBAR_MIN = 200;
-const SIDEBAR_MAX = 560;
-const CHAT_MIN = 300;
-const CHAT_MAX = 760;
+/** Stages of the spec flow. `requirements` covers bugfix analysis for bug specs. */
+export type SpecStage = 'requirements' | 'design' | 'tasks' | 'ship';
 
-function clampSidebar(n: number) {
-  return Math.round(Math.max(SIDEBAR_MIN, Math.min(SIDEBAR_MAX, n)));
+/** Right slide-over content — detail views that used to be center tabs. */
+export type Overlay =
+  | { kind: 'file'; path: string }
+  | { kind: 'agent'; path: string }
+  | { kind: 'skill'; path: string }
+  | { kind: 'run'; runId: string }
+  | { kind: 'questions'; specId: string }
+  | { kind: 'hook'; hookId?: string }
+  | { kind: 'repo' };
+
+/** A live PTY session, hosted app-wide so the process survives navigation. */
+export interface TerminalSession {
+  id: string;
+  title: string;
+  profile: 'shell' | 'claude';
 }
-function clampChat(n: number) {
-  return Math.round(Math.max(CHAT_MIN, Math.min(CHAT_MAX, n)));
+
+// Panel sizing — persisted so the user's layout survives reloads.
+const ASSISTANT_MIN = 300;
+const ASSISTANT_MAX = 760;
+
+function clampAssistant(n: number) {
+  return Math.round(Math.max(ASSISTANT_MIN, Math.min(ASSISTANT_MAX, n)));
 }
 
 function loadNum(key: string, fallback: number) {
@@ -45,136 +62,123 @@ function saveNum(key: string, n: number) {
   }
 }
 
-export interface OpenTab {
-  id: string;
-  title: string;
-  kind:
-    | 'spec'
-    | 'summary'
-    | 'source-control'
-    | 'questions'
-    | 'file'
-    | 'agent'
-    | 'skill'
-    | 'agents-studio'
-    | 'skills-studio'
-    | 'router-studio'
-    | 'hooks-studio'
-    | 'steering-studio'
-    | 'specs-studio'
-    | 'syntax-studio'
-    | 'welcome'
-    | 'settings'
-    | 'run'
-    | 'hook'
-    | 'graph'
-    | 'terminal';
-  // for hook tabs (hook id, or 'new' to create):
-  hookId?: string;
-  // for spec tabs:
-  specId?: string;
-  specFile?: 'requirements' | 'design' | 'tasks' | 'bugfix';
-  // generic file path:
-  filePath?: string;
-  // for run tabs:
-  runId?: string;
-  // for terminal tabs — the tab id doubles as the PTY id:
-  termProfile?: 'shell' | 'claude';
+/** The stage a spec should open on, given its phase. */
+export function stageForPhase(phase: SpecMeta['phase']): SpecStage {
+  return phase === 'done' ? 'ship' : phase;
 }
 
 interface UiStore {
-  activity: ActivityTab;
-  setActivity: (t: ActivityTab) => void;
+  surface: Surface;
+  setSurface: (s: Surface) => void;
 
-  sidebarOpen: boolean;
-  toggleSidebar: () => void;
-  sidebarWidth: number;
-  setSidebarWidth: (n: number) => void;
+  // ---- Spec surface (one continuous flow per spec) ----
+  activeSpecId: string | null;
+  specStage: SpecStage;
+  openSpec: (specId: string, stage?: SpecStage) => void;
+  setSpecStage: (stage: SpecStage) => void;
 
-  chatOpen: boolean;
-  toggleChat: () => void;
-  chatWidth: number;
-  setChatWidth: (n: number) => void;
+  // ---- Activity surface ----
+  activityTab: ActivityTab;
+  openActivity: (tab?: ActivityTab) => void;
 
-  // Focus mode — collapses the spec rail + activity stream so a step fills the
-  // screen. Auto-engages when a spec tab is active; toggled from the chrome.
-  focusMode: boolean;
-  toggleFocus: () => void;
-  setFocus: (b: boolean) => void;
+  // ---- Library surface ----
+  librarySection: LibrarySection;
+  openLibrary: (section?: LibrarySection) => void;
 
-  // The most recently active spec — lets spec-less surfaces (e.g. the Source
-  // Control tab) still resolve "the spec you're working on" for their defaults.
-  lastSpecId: string | null;
+  // ---- Assistant drawer (chat) ----
+  assistantOpen: boolean;
+  toggleAssistant: () => void;
+  setAssistantOpen: (b: boolean) => void;
+  assistantWidth: number;
+  setAssistantWidth: (n: number) => void;
 
-  tabs: OpenTab[];
-  activeTabId: string | null;
-  openTab: (tab: OpenTab) => void;
-  closeTab: (id: string) => void;
-  setActiveTab: (id: string) => void;
+  // ---- Explorer drawer (file tree) ----
+  explorerOpen: boolean;
+  toggleExplorer: () => void;
+
+  // ---- Slide-over overlay (file / agent / skill / run / questions / hook / repo) ----
+  overlay: Overlay | null;
+  openOverlay: (o: Overlay) => void;
+  closeOverlay: () => void;
+
+  // ---- Terminals (rendered in Activity, hosted app-wide) ----
+  terminals: TerminalSession[];
+  activeTerminalId: string | null;
+  addTerminal: (profile: 'shell' | 'claude') => void;
+  closeTerminal: (id: string) => void;
+  setActiveTerminal: (id: string) => void;
+
+  /** Bumped when something (⌘K "New spec") wants Home's composer focused. */
+  composerNonce: number;
+  focusComposer: () => void;
 }
 
 export const useUi = create<UiStore>((set, get) => ({
-  activity: 'specs',
-  setActivity: (t) => set({ activity: t, sidebarOpen: true }),
+  surface: 'home',
+  setSurface: (s) => set({ surface: s }),
 
-  sidebarOpen: true,
-  toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
-  sidebarWidth: loadNum('kraken.sidebarWidth', 288),
-  setSidebarWidth: (n) => {
-    const w = clampSidebar(n);
-    saveNum('kraken.sidebarWidth', w);
-    set({ sidebarWidth: w });
-  },
+  activeSpecId: null,
+  specStage: 'requirements',
+  openSpec: (specId, stage) =>
+    set((s) => ({
+      surface: 'spec',
+      activeSpecId: specId,
+      specStage: stage ?? (specId === s.activeSpecId ? s.specStage : 'requirements'),
+    })),
+  setSpecStage: (stage) => set({ specStage: stage }),
 
-  chatOpen: true,
-  toggleChat: () => set((s) => ({ chatOpen: !s.chatOpen })),
-  chatWidth: loadNum('kraken.chatWidth', 420),
-  setChatWidth: (n) => {
-    const w = clampChat(n);
+  activityTab: 'runs',
+  openActivity: (tab) =>
+    set((s) => ({ surface: 'activity', activityTab: tab ?? s.activityTab })),
+
+  librarySection: 'agents',
+  openLibrary: (section) =>
+    set((s) => ({ surface: 'library', librarySection: section ?? s.librarySection })),
+
+  assistantOpen: false,
+  toggleAssistant: () => set((s) => ({ assistantOpen: !s.assistantOpen })),
+  setAssistantOpen: (b) => set({ assistantOpen: b }),
+  assistantWidth: clampAssistant(loadNum('kraken.chatWidth', 420)),
+  setAssistantWidth: (n) => {
+    const w = clampAssistant(n);
     saveNum('kraken.chatWidth', w);
-    set({ chatWidth: w });
+    set({ assistantWidth: w });
   },
 
-  focusMode: false,
-  toggleFocus: () => set((s) => ({ focusMode: !s.focusMode })),
-  setFocus: (b) => set({ focusMode: b }),
+  explorerOpen: false,
+  toggleExplorer: () => set((s) => ({ explorerOpen: !s.explorerOpen })),
 
-  lastSpecId: null,
+  overlay: null,
+  openOverlay: (o) => set({ overlay: o }),
+  closeOverlay: () => set({ overlay: null }),
 
-  tabs: [{ id: 'welcome', title: 'Welcome', kind: 'welcome' }],
-  activeTabId: 'welcome',
-
-  openTab: (tab) => {
-    const existing = get().tabs.find((t) => t.id === tab.id);
-    // A spec step takes over the screen; anything else shows the full shell.
-    const focusMode = tab.kind === 'spec';
-    const lastSpecId = tab.kind === 'spec' && tab.specId ? tab.specId : get().lastSpecId;
-    if (existing) {
-      set({ activeTabId: tab.id, focusMode, lastSpecId });
-      return;
-    }
-    set((s) => ({ tabs: [...s.tabs, tab], activeTabId: tab.id, focusMode, lastSpecId }));
+  terminals: [],
+  activeTerminalId: null,
+  addTerminal: (profile) => {
+    const n = get().terminals.filter((t) => t.profile === profile).length + 1;
+    const id = `term-${crypto.randomUUID()}`;
+    set((s) => ({
+      surface: 'activity',
+      activityTab: 'terminals',
+      terminals: [
+        ...s.terminals,
+        { id, profile, title: profile === 'claude' ? `Claude ${n}` : `Terminal ${n}` },
+      ],
+      activeTerminalId: id,
+    }));
   },
-
-  closeTab: (id) => {
+  closeTerminal: (id) =>
     set((s) => {
-      const tabs = s.tabs.filter((t) => t.id !== id);
-      let activeTabId = s.activeTabId;
-      if (activeTabId === id) {
-        activeTabId = tabs.length ? tabs[tabs.length - 1].id : null;
-      }
-      const active = tabs.find((t) => t.id === activeTabId);
-      return { tabs, activeTabId, focusMode: active?.kind === 'spec' };
-    });
-  },
-
-  setActiveTab: (id) =>
-    set((s) => {
-      const tab = s.tabs.find((t) => t.id === id);
-      return {
-        activeTabId: id,
-        focusMode: tab?.kind === 'spec',
-        lastSpecId: tab?.kind === 'spec' && tab.specId ? tab.specId : s.lastSpecId,
-      };
+      const terminals = s.terminals.filter((t) => t.id !== id);
+      const activeTerminalId =
+        s.activeTerminalId === id
+          ? (terminals[terminals.length - 1]?.id ?? null)
+          : s.activeTerminalId;
+      return { terminals, activeTerminalId };
     }),
+  setActiveTerminal: (id) => set({ activeTerminalId: id }),
+
+  composerNonce: 0,
+  focusComposer: () =>
+    set((s) => ({ surface: 'home', composerNonce: s.composerNonce + 1 })),
 }));

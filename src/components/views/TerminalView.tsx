@@ -25,7 +25,9 @@ export function TerminalView({
   profile: 'shell' | 'claude';
 }) {
   const root = useWorkspace((s) => s.root);
-  const isActive = useUi((s) => s.activeTabId === tabId);
+  const isActive = useUi(
+    (s) => s.activeTerminalId === tabId && s.surface === 'activity' && s.activityTab === 'terminals'
+  );
   const hostRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
   // Latest root without re-running the mount effect (the PTY's cwd is fixed at

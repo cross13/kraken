@@ -9,32 +9,22 @@ import {
   Compass,
   Zap,
   GitBranch,
-  ListTodo,
   SquareTerminal,
   Network,
-  Workflow,
   History,
   Settings,
   Plus,
   Palette,
-  LayoutDashboard,
+  Home,
+  LibraryBig,
+  Route,
   CornerDownLeft,
+  MessageSquare,
+  MonitorSmartphone,
 } from 'lucide-react';
 import { useWorkspace } from '../stores/workspace';
-import { useUi, type ActivityTab, type OpenTab } from '../stores/ui';
+import { useUi, stageForPhase, type LibrarySection, type ActivityTab } from '../stores/ui';
 import { cn } from '../lib/cn';
-
-// Destinations that open as full-page module tabs instead of rail panels.
-const FULL_PAGE_TABS: Partial<Record<ActivityTab, OpenTab>> = {
-  agents: { id: 'agents-studio', title: 'Agents', kind: 'agents-studio' },
-  skills: { id: 'skills-studio', title: 'Skills', kind: 'skills-studio' },
-  orchestrator: { id: 'router-studio', title: 'Orchestration', kind: 'router-studio' },
-  'spec-manager': { id: 'specs-studio', title: 'Spec Manager', kind: 'specs-studio' },
-  hooks: { id: 'hooks-studio', title: 'Hooks', kind: 'hooks-studio' },
-  steering: { id: 'steering-studio', title: 'Steering', kind: 'steering-studio' },
-  'source-control': { id: 'source-control', title: 'Source Control', kind: 'source-control' },
-  settings: { id: 'settings', title: 'Settings', kind: 'settings' },
-};
 
 interface Item {
   id: string;
@@ -45,27 +35,33 @@ interface Item {
   run: () => void;
 }
 
-const DEST: { tab: ActivityTab; label: string; icon: React.ReactNode }[] = [
-  { tab: 'explorer', label: 'Explorer', icon: <Folder size={15} /> },
-  { tab: 'specs', label: 'Specs', icon: <FileCode2 size={15} /> },
-  { tab: 'spec-manager', label: 'Spec Manager', icon: <LayoutDashboard size={15} /> },
-  { tab: 'skills', label: 'Skills', icon: <Sparkles size={15} /> },
-  { tab: 'agents', label: 'Agents', icon: <Bot size={15} /> },
-  { tab: 'steering', label: 'Steering', icon: <Compass size={15} /> },
-  { tab: 'hooks', label: 'Hooks', icon: <Zap size={15} /> },
-  { tab: 'source-control', label: 'Source Control', icon: <GitBranch size={15} /> },
-  { tab: 'tasks', label: 'Running Tasks', icon: <ListTodo size={15} /> },
-  { tab: 'terminal', label: 'Terminals', icon: <SquareTerminal size={15} /> },
-  { tab: 'orchestrator', label: 'Orchestrator', icon: <Network size={15} /> },
-  { tab: 'graph', label: 'Agent Graph', icon: <Workflow size={15} /> },
-  { tab: 'history', label: 'History', icon: <History size={15} /> },
-  { tab: 'settings', label: 'Settings', icon: <Settings size={15} /> },
+const LIBRARY_DESTS: { section: LibrarySection; label: string; icon: React.ReactNode }[] = [
+  { section: 'agents', label: 'Agents', icon: <Bot size={15} /> },
+  { section: 'skills', label: 'Skills', icon: <Sparkles size={15} /> },
+  { section: 'hooks', label: 'Hooks', icon: <Zap size={15} /> },
+  { section: 'steering', label: 'Steering', icon: <Compass size={15} /> },
+  { section: 'routing', label: 'Routing', icon: <Route size={15} /> },
+  { section: 'appearance', label: 'Appearance', icon: <Palette size={15} /> },
+  { section: 'settings', label: 'Settings', icon: <Settings size={15} /> },
+];
+
+const ACTIVITY_DESTS: { tab: ActivityTab; label: string; icon: React.ReactNode }[] = [
+  { tab: 'runs', label: 'Activity — live runs', icon: <Network size={15} /> },
+  { tab: 'history', label: 'Activity — history', icon: <History size={15} /> },
+  { tab: 'terminals', label: 'Activity — terminals', icon: <SquareTerminal size={15} /> },
 ];
 
 export function CommandPalette({ onClose }: { onClose: () => void }) {
   const specs = useWorkspace((s) => s.specs);
-  const setActivity = useUi((s) => s.setActivity);
-  const openTab = useUi((s) => s.openTab);
+  const openSpec = useUi((s) => s.openSpec);
+  const setSurface = useUi((s) => s.setSurface);
+  const openLibrary = useUi((s) => s.openLibrary);
+  const openActivity = useUi((s) => s.openActivity);
+  const openOverlay = useUi((s) => s.openOverlay);
+  const focusComposer = useUi((s) => s.focusComposer);
+  const toggleAssistant = useUi((s) => s.toggleAssistant);
+  const toggleExplorer = useUi((s) => s.toggleExplorer);
+  const addTerminal = useUi((s) => s.addTerminal);
   const [q, setQ] = useState('');
   const [sel, setSel] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -77,68 +73,116 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
   const items = useMemo<Item[]>(() => {
     const out: Item[] = [];
     for (const s of specs) {
-      const isFeature = s.kind === 'feature';
-      const initial = isFeature ? 'requirements' : 'bugfix';
-      const target = s.phase === 'requirements' ? initial : s.phase === 'design' ? 'design' : 'tasks';
       out.push({
         id: `spec:${s.id}`,
         label: s.name,
         hint: `${s.kind} · ${s.phase}`,
-        icon: isFeature ? <FileCode2 size={15} /> : <Bug size={15} />,
+        icon: s.kind === 'feature' ? <FileCode2 size={15} /> : <Bug size={15} />,
         group: 'Specs',
-        run: () => {
-          setActivity('specs');
-          openTab({
-            id: `spec:${s.id}:${target}`,
-            title: `${s.name} / ${target}.md`,
-            kind: 'spec',
-            specId: s.id,
-            specFile: target as 'requirements' | 'design' | 'tasks' | 'bugfix',
-          });
-        },
+        run: () => openSpec(s.id, stageForPhase(s.phase)),
       });
     }
     out.push({
       id: 'cmd:new-spec',
       label: 'New spec…',
+      hint: 'describe it on Home',
       icon: <Plus size={15} />,
       group: 'Commands',
-      run: () => setActivity('specs'),
+      run: () => focusComposer(),
     });
     out.push({
-      id: 'cmd:welcome',
-      label: 'Go to Welcome',
+      id: 'cmd:assistant',
+      label: 'Toggle Assistant',
+      hint: '⌘J',
+      icon: <MessageSquare size={15} />,
+      group: 'Commands',
+      run: () => toggleAssistant(),
+    });
+    out.push({
+      id: 'cmd:explorer',
+      label: 'Browse files…',
+      hint: '⌘⇧E',
       icon: <Folder size={15} />,
       group: 'Commands',
-      run: () => openTab({ id: 'welcome', title: 'Welcome', kind: 'welcome' }),
+      run: () => toggleExplorer(),
     });
     out.push({
-      id: 'cmd:syntax',
-      label: 'File syntax settings…',
-      hint: 'themes & languages',
-      icon: <Palette size={15} />,
+      id: 'cmd:travel-display',
+      label: 'Open Travel Display',
+      hint: 'wide run monitor · second screen',
+      icon: <MonitorSmartphone size={15} />,
       group: 'Commands',
-      run: () => openTab({ id: 'syntax-studio', title: 'Syntax', kind: 'syntax-studio' }),
+      run: () => window.kraken.win.toggleWide(),
     });
-    for (const d of DEST) {
+    out.push({
+      id: 'cmd:new-terminal',
+      label: 'New terminal',
+      icon: <SquareTerminal size={15} />,
+      group: 'Commands',
+      run: () => addTerminal('shell'),
+    });
+    out.push({
+      id: 'cmd:new-claude',
+      label: 'New Claude session',
+      hint: 'interactive CLI',
+      icon: <Sparkles size={15} />,
+      group: 'Commands',
+      run: () => addTerminal('claude'),
+    });
+
+    out.push({
+      id: 'dest:home',
+      label: 'Home',
+      icon: <Home size={15} />,
+      group: 'Go to',
+      run: () => setSurface('home'),
+    });
+    for (const d of ACTIVITY_DESTS) {
       out.push({
-        id: `dest:${d.tab}`,
+        id: `dest:activity:${d.tab}`,
         label: d.label,
         icon: d.icon,
         group: 'Go to',
-        run: () => {
-          const page = FULL_PAGE_TABS[d.tab];
-          if (page) {
-            openTab(page);
-            return;
-          }
-          setActivity(d.tab);
-          if (d.tab === 'graph') openTab({ id: 'agent-graph', title: 'Agent Graph', kind: 'graph' });
-        },
+        run: () => openActivity(d.tab),
       });
     }
+    for (const d of LIBRARY_DESTS) {
+      out.push({
+        id: `dest:library:${d.section}`,
+        label: `Library — ${d.label}`,
+        icon: d.icon,
+        group: 'Go to',
+        run: () => openLibrary(d.section),
+      });
+    }
+    out.push({
+      id: 'dest:library',
+      label: 'Library',
+      icon: <LibraryBig size={15} />,
+      group: 'Go to',
+      run: () => openLibrary(),
+    });
+    out.push({
+      id: 'dest:repo',
+      label: 'Repository',
+      hint: 'git & pull requests',
+      icon: <GitBranch size={15} />,
+      group: 'Go to',
+      run: () => openOverlay({ kind: 'repo' }),
+    });
     return out;
-  }, [specs, setActivity, openTab]);
+  }, [
+    specs,
+    openSpec,
+    setSurface,
+    openLibrary,
+    openActivity,
+    openOverlay,
+    focusComposer,
+    toggleAssistant,
+    toggleExplorer,
+    addTerminal,
+  ]);
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -192,7 +236,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
             ref={inputRef}
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Jump to spec, task, or run a command…"
+            placeholder="Jump to spec or run a command…"
             className="flex-1 bg-transparent text-[14px] text-ink-50 outline-none placeholder:text-faint"
           />
           <kbd className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-elev text-faint">esc</kbd>

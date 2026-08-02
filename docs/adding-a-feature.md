@@ -48,10 +48,12 @@ Pick the surfaces you need:
 - **State:** add to an existing store (`workspace` / `chat` / `ui` / `orchestrator`) or create a
   new `src/stores/<name>.ts`. After a backend mutation, refresh from disk — don't trust optimistic
   local state.
-- **A sidebar view:** new `ActivityTab` in `ui.ts` → `src/components/sidebar/<Name>View.tsx` →
-  add to `ActivityBar` and the switch in `Sidebar.tsx`.
-- **An editor surface:** new `OpenTab.kind` in `ui.ts` → `src/components/views/<Name>Viewer.tsx`
-  → add a case in `EditorArea`.
+- **A detail view:** new `Overlay` kind in `ui.ts` → `src/components/views/<Name>Viewer.tsx`
+  → add a case in `OverlayPanel`.
+- **A config surface:** new `LibrarySection` in `ui.ts` → mount it in `LibrarySurface` (+ a
+  `CommandPalette` entry). Think twice before adding a fifth top-level surface.
+- **Something running-related:** it belongs on the Activity surface (new `ActivityTab`), with at
+  most an indicator elsewhere.
 - **Reusable logic:** `src/lib/<name>.ts`.
 
 Call the backend via `window.kraken.mything.do(...)`. See [`renderer.md`](./renderer.md).

@@ -44,6 +44,11 @@ Owns everything privileged. Handlers are registered in **`registerIpc()`** via
 - **Secrets** — API key and GitHub token are encrypted with Electron `safeStorage` (OS
   keychain) and persisted via `electron-store`. Never stored in plaintext.
 - **Subsystems** — hooks, steering, agents/skills seeding. See [`subsystems.md`](./subsystems.md).
+- **Windows** — the primary window (`createWindow`, 1440×900) plus an optional **Travel
+  Display** (`createWideWindow`): a second, frameless window placed on a detected secondary
+  display (`screen` module) that mirrors the live run registry. It loads the same renderer
+  bundle with a `#wide` hash; state is one-directional (`fleet:push` → `fleet:sync`). See
+  [`subsystems.md`](./subsystems.md) → Travel Display.
 
 > **Note:** `electron/main.ts` currently contains a stray NUL byte, so plain `grep`/`rg`
 > treat it as binary. Use `grep -a` (or read it with the editor/Read tool) when searching it.
@@ -52,17 +57,19 @@ Owns everything privileged. Handlers are registered in **`registerIpc()`** via
 
 Context-isolated bridge. Exposes a single typed object on `window.kraken`, namespaced:
 `workspace`, `specs`, `skills`, `agents`, `steering`, `hooks`, `fs`, `mcp`, `settings`,
-`cli`, `git`, `github`, `history`, `claude`. The exported `KrakenApi` type (`typeof api`) is
-the contract the renderer types against.
+`cli`, `git`, `github`, `history`, `claude`, `terminal`, `shell`, `win`, `fleet`. The exported
+`KrakenApi` type (`typeof api`) is the contract the renderer types against.
 
 **Rule:** when you add or change an IPC handler in `main.ts`, you must add/update the matching
 method here, or the renderer can't reach it. See [`ipc-contract.md`](./ipc-contract.md).
 
 ### Renderer — `src/`
 
-React 18 + Tailwind + Zustand. Four stores (`src/stores/`): `workspace`, `chat`, `ui`, and the
-`orchestrator` registry of in-flight runs. VS Code-style shell: `ActivityBar` → `Sidebar` →
-`EditorArea` (tabbed viewers) → dockable `ChatPanel` → `StatusBar`. See [`renderer.md`](./renderer.md).
+React 18 + Tailwind + Zustand. Stores (`src/stores/`): `workspace`, `chat`, `ui`, the
+`orchestrator` registry of in-flight runs, plus `models`/`moduleConfig`/`syntax`/`theme`.
+**Four-surface shell**: `CommandBar` → `SurfaceNav` (Home · Spec · Activity · Library) with the
+Assistant drawer (⌘J), Explorer drawer (⌘⇧E), and a slide-over `OverlayPanel` for detail views —
+no tab bar. See [`renderer.md`](./renderer.md).
 
 ## Two TypeScript projects
 

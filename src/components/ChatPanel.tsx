@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  Send,
-  Square,
-  Trash2,
+  ArrowUp,
   Sparkles,
   Bot,
   X,
@@ -12,6 +10,7 @@ import {
   ChevronRight,
   ChevronDown,
 } from 'lucide-react';
+import { KrakenLogo } from './KrakenLogo';
 import { useChat } from '../stores/chat';
 import { useWorkspace } from '../stores/workspace';
 import { useOrchestrator } from '../stores/orchestrator';
@@ -30,7 +29,6 @@ export function ChatPanel() {
   const finish = useChat((s) => s.finish);
   const fail = useChat((s) => s.fail);
   const setBusy = useChat((s) => s.setBusy);
-  const clear = useChat((s) => s.clear);
   const selectedAgent = useChat((s) => s.selectedAgent);
   const setSelectedAgent = useChat((s) => s.setSelectedAgent);
   const pendingPrompt = useChat((s) => s.pendingPrompt);
@@ -180,21 +178,8 @@ export function ChatPanel() {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex items-center justify-between px-3 h-9 shrink-0">
-        <h2 className="text-[11px] uppercase tracking-wider text-ink-400 font-semibold">Chat</h2>
-        <div className="flex items-center gap-1">
-          <button
-            onClick={clear}
-            title="Clear chat"
-            className="p-1 rounded-md text-ink-400 hover:text-ink-100 hover:bg-ink-800/60"
-          >
-            <Trash2 size={12} />
-          </button>
-        </div>
-      </div>
-
       {selectedAgent && (
-        <div className="px-3 py-1.5 flex items-center gap-2 bg-ink-900/60">
+        <div className="mx-3 mt-1 px-3 py-1.5 flex items-center gap-2 rounded-lg bg-accent/[0.08]">
           <Bot size={12} className="text-accent" />
           <span className="text-[11px] text-ink-200">
             Speaking as <b className="text-ink-50">{selectedAgent}</b>
@@ -208,7 +193,7 @@ export function ChatPanel() {
         </div>
       )}
 
-      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-3">
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-3.5 py-4 space-y-4">
         {messages.map((m) => (
           <Message
             key={m.id}
@@ -221,8 +206,22 @@ export function ChatPanel() {
         ))}
       </div>
 
-      <div className="border-t border-ink-800/40 p-3">
-        <div className="rounded-lg bg-ink-950 ring-1 ring-ink-800/40 focus-within:ring-ink-700 transition">
+      <div className="p-3 space-y-2">
+        {/* Working bar — the session's live status, with cancel */}
+        {busy && (
+          <div className="flex items-center gap-2.5 rounded-xl bg-card ring-1 ring-ink-50/[0.06] px-3.5 py-2.5">
+            <KrakenLogo animated className="w-[18px] h-[22px] shrink-0" />
+            <span className="text-[13px] text-ink-200">Working…</span>
+            <button
+              onClick={stop}
+              className="ml-auto text-[12px] px-3 py-1.5 rounded-lg bg-elev text-ink-100 hover:bg-line transition"
+            >
+              Cancel
+            </button>
+          </div>
+        )}
+
+        <div className="flex items-end gap-2 rounded-xl bg-card ring-1 ring-ink-50/[0.06] focus-within:ring-accent/40 transition pl-3.5 pr-2 py-2">
           <textarea
             ref={inputRef}
             value={input}
@@ -233,34 +232,18 @@ export function ChatPanel() {
                 send();
               }
             }}
-            placeholder="Ask Claude…  Type / for skills, @ for agents"
-            rows={3}
-            className="w-full bg-transparent text-sm px-3 py-2 resize-none outline-none placeholder:text-ink-500"
+            placeholder="Ask a question or describe a task"
+            rows={2}
+            className="flex-1 bg-transparent text-[13.5px] py-1 resize-none outline-none placeholder:text-faint"
           />
-          <div className="flex items-center justify-between px-2 py-1.5 border-t border-ink-800/30">
-            <div className="flex items-center gap-1.5 text-[10px] text-ink-500">
-              <kbd className="px-1.5 py-0.5 rounded bg-ink-800 text-ink-300">Enter</kbd>
-              send
-              <kbd className="ml-1 px-1.5 py-0.5 rounded bg-ink-800 text-ink-300">Shift+Enter</kbd>
-              newline
-            </div>
-            {busy ? (
-              <button
-                onClick={stop}
-                className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-md bg-bad/20 text-bad hover:bg-bad/30"
-              >
-                <Square size={11} /> Stop
-              </button>
-            ) : (
-              <button
-                onClick={() => send()}
-                disabled={!input.trim()}
-                className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-md bg-accent text-accent-fg hover:opacity-90 disabled:opacity-40"
-              >
-                <Send size={11} /> Send
-              </button>
-            )}
-          </div>
+          <button
+            onClick={() => send()}
+            disabled={!input.trim() || busy}
+            title="Send (Enter) — / for skills, @ for agents"
+            className="w-8 h-8 shrink-0 grid place-items-center rounded-full bg-accent text-accent-fg hover:opacity-90 disabled:opacity-30 transition"
+          >
+            <ArrowUp size={15} />
+          </button>
         </div>
         {showSkillMenu && skills.length > 0 && (
           <Popover title="Skills" icon={<Sparkles size={11} />}>
@@ -315,36 +298,45 @@ function Message({
 }) {
   if (role === 'system') {
     return (
-      <div className="text-[11px] text-ink-500 italic px-2 py-1.5 rounded-md bg-ink-900/40 border border-dashed border-ink-800">
+      <div className="text-[11px] text-ink-500 italic px-3 py-2 rounded-lg bg-ink-50/[0.03]">
         {content}
       </div>
     );
   }
-  const hasSegments = role === 'assistant' && segments && segments.length > 0;
+
+  // The user's ask reads as a raised card; the agent replies in the open,
+  // under an avatar + name row (Kiro-style session transcript).
+  if (role === 'user') {
+    return (
+      <div className="rounded-xl bg-card ring-1 ring-ink-50/[0.06] px-4 py-3 text-[13.5px] leading-relaxed">
+        <div className="whitespace-pre-wrap text-ink-100">{content}</div>
+      </div>
+    );
+  }
+
+  const hasSegments = segments && segments.length > 0;
   return (
-    <div
-      className={cn(
-        'rounded-lg px-3 py-2.5 text-sm leading-relaxed',
-        role === 'user' ? 'bg-accent/10' : 'bg-ink-850'
-      )}
-    >
-      <div className="flex items-center gap-1.5 mb-1 text-[10px] uppercase tracking-wider text-ink-400 font-semibold">
-        {role === 'user' ? 'You' : agent ?? 'Claude'}
+    <div className="px-0.5">
+      <div className="flex items-center gap-2.5 mb-2">
+        <span className="w-7 h-7 grid place-items-center rounded-full bg-elev shrink-0">
+          <KrakenLogo animated={streaming} className="w-[15px] h-[19px]" />
+        </span>
+        <span className="text-[13px] font-semibold text-ink-50">{agent ?? 'Kraken'}</span>
         {streaming && (
-          <span className="ml-1 w-1.5 h-1.5 rounded-full bg-accent animate-pulse-slow" />
+          <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse-slow" />
         )}
       </div>
-      {role === 'user' ? (
-        <div className="whitespace-pre-wrap text-ink-100">{content}</div>
-      ) : hasSegments ? (
-        <div className="space-y-1.5">
-          {segments!.map((seg, i) => (
-            <SegmentView key={i} seg={seg} />
-          ))}
-        </div>
-      ) : (
-        <div className="md" dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }} />
-      )}
+      <div className="pl-[38px] text-sm leading-relaxed">
+        {hasSegments ? (
+          <div className="space-y-2">
+            {segments!.map((seg, i) => (
+              <SegmentView key={i} seg={seg} />
+            ))}
+          </div>
+        ) : (
+          <div className="md" dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }} />
+        )}
+      </div>
     </div>
   );
 }
@@ -370,14 +362,15 @@ function SegmentView({ seg }: { seg: MessageSegment }) {
     );
   }
   if (seg.kind === 'tool') {
-    // The tool summary is markdown (incl. a fenced bash block for commands).
+    // A tool call as a quiet card, Kiro's "Read file(s)" style. The summary is
+    // markdown (incl. a fenced bash block for commands).
     return (
-      <div className="rounded-md border border-accent/25 border-l-2 border-l-accent bg-ink-950/70 overflow-hidden">
-        <div className="flex items-center gap-1.5 px-2 py-1 text-[10px] uppercase tracking-wider text-accent/90 font-semibold border-b border-ink-800/60">
-          <Terminal size={11} /> Command
+      <div className="rounded-lg bg-card ring-1 ring-ink-50/[0.06] overflow-hidden">
+        <div className="flex items-center gap-2 px-3 py-1.5 text-[11px] text-dim">
+          <Terminal size={11} className="text-accent" /> Tool
         </div>
         <div
-          className="md px-2.5 py-1.5 text-[12px]"
+          className="md px-3 pb-2 text-[12px]"
           dangerouslySetInnerHTML={{ __html: renderMarkdown(seg.text) }}
         />
       </div>

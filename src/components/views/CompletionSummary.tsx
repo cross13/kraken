@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import {
   PartyPopper,
   FilePlus2,
@@ -12,6 +12,7 @@ import {
 import { useWorkspace } from '../../stores/workspace';
 import { useOrchestrator } from '../../stores/orchestrator';
 import { renderMarkdown } from '../../lib/markdown';
+import { KrakenLoader } from '../KrakenLoader';
 import { cn } from '../../lib/cn';
 import type { SpecMeta, SpecFileChange } from '../../../electron/shared/types';
 
@@ -20,15 +21,34 @@ import type { SpecMeta, SpecFileChange } from '../../../electron/shared/types';
  * the spec's runs (captured in run_files) plus a brief, AI-generated description
  * of the completed work. The description is persisted to `<spec>/summary.md`.
  */
-export function CompletionSummary({ meta, specRel }: { meta: SpecMeta; specRel: string }) {
+export function CompletionSummary({
+  meta,
+  specRel,
+  auto = false,
+  onSummary,
+}: {
+  meta: SpecMeta;
+  specRel: string;
+  /** generate the summary automatically on arrival when none exists yet */
+  auto?: boolean;
+  /** reports the current summary text (loaded or generated) to the parent */
+  onSummary?: (text: string) => void;
+}) {
   const root = useWorkspace((s) => s.root);
   const startRun = useOrchestrator((s) => s.startRun);
   const finishRun = useOrchestrator((s) => s.finishRun);
 
   const [files, setFiles] = useState<SpecFileChange[]>([]);
-  const [summary, setSummary] = useState('');
+  const [summary, setSummaryRaw] = useState('');
   const [summarizing, setSummarizing] = useState(false);
   const [open, setOpen] = useState(true);
+  const [loaded, setLoaded] = useState(false);
+  const autoFiredRef = useRef(false);
+
+  const setSummary = (text: string) => {
+    setSummaryRaw(text);
+    onSummary?.(text);
+  };
 
   const summaryPath = `${meta.path}/summary.md`;
 
@@ -44,12 +64,30 @@ export function CompletionSummary({ meta, specRel }: { meta: SpecMeta; specRel: 
     let alive = true;
     window.kraken.fs
       .read(summaryPath)
-      .then((t) => alive && setSummary(t ?? ''))
-      .catch(() => alive && setSummary(''));
+      .then((t) => {
+        if (!alive) return;
+        setSummary(t ?? '');
+        setLoaded(true);
+      })
+      .catch(() => {
+        if (!alive) return;
+        setSummary('');
+        setLoaded(true);
+      });
     return () => {
       alive = false;
     };
   }, [loadFiles, summaryPath]);
+
+  // The automatic payoff: arriving on Ship with no saved summary generates one
+  // immediately — no opt-in click.
+  useEffect(() => {
+    if (!auto || !loaded || autoFiredRef.current) return;
+    if (summary.trim() || summarizing) return;
+    autoFiredRef.current = true;
+    generate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auto, loaded]);
 
   const generate = () => {
     if (!root || summarizing) return;
@@ -216,11 +254,11 @@ ${fileList}`;
                 )}
                 dangerouslySetInnerHTML={{ __html: renderMarkdown(summary) }}
               />
+            ) : summarizing ? (
+              <KrakenLoader size="sm" label="Generating summary…" className="py-4" />
             ) : (
               <p className="text-[11px] text-ink-500">
-                {summarizing
-                  ? 'Generating summary…'
-                  : 'Click Generate summary for a brief description of everything that changed.'}
+                Click Generate summary for a brief description of everything that changed.
               </p>
             )}
           </div>

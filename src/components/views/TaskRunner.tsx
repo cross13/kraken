@@ -4,25 +4,24 @@ import {
   CheckCircle2,
   Loader2,
   Unlock,
-  Sparkles,
   ListChecks,
   Square,
   Wand2,
   X,
   Rocket,
-  FileText,
   ArrowRight,
   Maximize2,
 } from 'lucide-react';
 import { parseTasks, isTaskRunnable, summarize, type ParsedTask } from '../../lib/tasks';
+import { draftSpecDoc, firstStageFile } from '../../lib/specActions';
 import { routeAgent, routeSkill, bestSkillByText, skillSystemBlocks } from '../../lib/agentRouter';
 import { resolveAgent, resolveSkill } from '../../lib/verifyLibrary';
 import { useChat } from '../../stores/chat';
 import { useWorkspace } from '../../stores/workspace';
-import { useUi } from '../../stores/ui';
 import { useModels } from '../../stores/models';
 import { useOrchestrator, isOrchestrated } from '../../stores/orchestrator';
 import { cn } from '../../lib/cn';
+import { KrakenLogo } from '../KrakenLogo';
 import { TaskInspector } from './TaskInspector';
 import type { SpecMeta } from '../../../electron/shared/types';
 
@@ -32,9 +31,11 @@ interface Props {
   designMd: string;
   requirementsMd: string;
   onReload: () => void;
+  /** called when the last task completes and the spec advances to Ship */
+  onShip?: () => void;
 }
 
-export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload }: Props) {
+export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload, onShip }: Props) {
   const doc = useMemo(() => parseTasks(tasksMd), [tasksMd]);
   const stats = useMemo(() => summarize(doc), [doc]);
   const [refiningTaskId, setRefiningTaskId] = useState<string | null>(null);
@@ -59,7 +60,6 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload }
   const setMaxConcurrency = useOrchestrator((s) => s.setMaxConcurrency);
   const startRun = useOrchestrator((s) => s.startRun);
   const finishRun = useOrchestrator((s) => s.finishRun);
-  const openTab = useUi((s) => s.openTab);
 
   // Only this spec's orchestrated runs (task/refine/polish) drive the wave UI.
   const activeRuns = Object.values(runs).filter(
@@ -73,6 +73,28 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload }
     activeRuns.map((r) => r.taskId).filter(Boolean) as string[]
   );
   const anyRunning = runningCount > 0;
+
+  // A live "Improve plan" pass over tasks.md (self-review, streamed like a draft).
+  const improvingPlan = Object.values(runs).some(
+    (r) =>
+      r.specId === meta.id &&
+      r.source === 'spec:tasks' &&
+      (r.status === 'running' || r.status === 'queued')
+  );
+
+  const improvePlan = () => {
+    if (improvingPlan || anyRunning) return;
+    void draftSpecDoc({
+      meta,
+      files: {
+        [firstStageFile(meta.kind)]: requirementsMd,
+        design: designMd,
+        tasks: tasksMd,
+      },
+      file: 'tasks',
+      improve: true,
+    }).then(() => onReload());
+  };
 
   // Load the configured concurrency once.
   useEffect(() => {
@@ -95,14 +117,6 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload }
   }, [doc.tasks]);
 
   const specRel = root ? meta.path.replace(root + '/', '') : meta.path;
-
-  const openSummary = () =>
-    openTab({
-      id: `spec:${meta.id}:summary`,
-      title: `${meta.name} / Summary`,
-      kind: 'summary',
-      specId: meta.id,
-    });
 
   /** Start one Claude run, tracked in the orchestrator store (one requestId each). */
   const launchRun = (opts: {
@@ -347,33 +361,6 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload }
     if (next) runTask(next);
   };
 
-  const polish = () => {
-    const text = `All tasks for **${meta.name}** are complete. Please polish the implementation:
-
-1. Review the diff for correctness and edge cases.
-2. Spot any missing tests or regressions vs the spec's acceptance criteria.
-3. Suggest cleanups: dead code, awkward abstractions, naming, comments.
-4. If anything is genuinely wrong, apply the fix directly using Edit/Write tools.
-
-Reference \`${specRel}/requirements.md\`${
-      meta.kind === 'bugfix' ? ` and \`${specRel}/bugfix.md\`` : ''
-    }, \`${specRel}/design.md\`, and \`${specRel}/tasks.md\`. Keep your chat reply concise.`;
-    const routed = routeAgent({ kind: 'polish' }, agents, selectedAgent);
-    launchRun({
-      source: 'polish',
-      kind: 'polish',
-      title: `Polish ${meta.name}`,
-      agentName: routed.name,
-      agentLabel: 'code-reviewer',
-      agentBody: routed.body,
-      systemText: buildPolishSystem(meta, specRel),
-      userText: text,
-      model: useModels.getState().modelFor('polish'),
-      routeReason: routed.reason,
-      agentScope: resolveAgent(routed.name, agents).scope ?? null,
-    });
-  };
-
   const cancel = () => {
     waveQueueRef.current = [];
     waveActiveRef.current = new Set();
@@ -525,6 +512,29 @@ Reference \`${specRel}/requirements.md\`${
     setAutopilotOn(false);
   };
 
+  // The automatic payoff: when the last task completes, the spec advances to
+  // `done` and the flow navigates to Ship — no opt-in clicks. (Autopilot's own
+  // advance is guarded the same way: once phase is `done` this never re-fires.)
+  const advancedRef = useRef(false);
+  useEffect(() => {
+    if (advancedRef.current || !root) return;
+    if (!stats.allDone || stats.total === 0 || anyRunning || autopilotOn) return;
+    if (meta.phase !== 'tasks') return;
+    advancedRef.current = true;
+    void (async () => {
+      await window.kraken.specs.advance(root, meta.id);
+      onReload();
+      onShip?.();
+    })();
+  });
+
+  // When autopilot (or anything else) flips the phase to done, land on Ship.
+  const prevPhaseRef = useRef(meta.phase);
+  useEffect(() => {
+    if (prevPhaseRef.current !== 'done' && meta.phase === 'done') onShip?.();
+    prevPhaseRef.current = meta.phase;
+  }, [meta.phase, onShip]);
+
   if (doc.tasks.length === 0) {
     const phaseHint =
       meta.phase === 'requirements'
@@ -556,24 +566,66 @@ Reference \`${specRel}/requirements.md\`${
     );
   }
 
+  const currentWaveIdx = groups.findIndex(([, tasks]) => tasks.some((t) => !t.done));
+  const waveProgress =
+    currentWaveIdx === -1 ? groups.length : currentWaveIdx + 1;
+
+  const changeConcurrency = async (n: number) => {
+    const clamped = Math.max(1, Math.min(8, n));
+    setMaxConcurrency(clamped);
+    await window.kraken.settings.setMaxConcurrency(clamped);
+  };
+
   return (
     <div className="h-full flex flex-col bg-ink-950">
-      <div className="px-6 pt-4 pb-3.5 shrink-0 bg-ink-900/40 space-y-3">
-        <div className="flex items-center justify-between gap-4">
+      {/* Progress header — one primary CTA: Run all (autopilot) */}
+      <div className="px-6 pt-3.5 pb-3 shrink-0 bg-ink-900/40 space-y-2.5">
+        <div className="flex items-center gap-4">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-8 h-8 grid place-items-center rounded-lg bg-accent/15 text-accent shrink-0">
               <ListChecks size={15} />
             </div>
             <div className="min-w-0">
-              <h3 className="font-display text-[15px] font-semibold text-ink-50 leading-tight">
-                Task waves
-              </h3>
-              <div className="font-mono text-[11px] text-faint">
-                {groups.length} wave{groups.length === 1 ? '' : 's'} · {stats.total} task
-                {stats.total === 1 ? '' : 's'}
+              <div className="font-mono text-[12px] text-ink-100 tabular-nums whitespace-nowrap">
+                {stats.done}/{stats.total} tasks · wave {waveProgress}/{groups.length}
+                {runningCount > 0 && (
+                  <span className="text-accent"> · {runningCount} running</span>
+                )}
+              </div>
+              <div className="mt-1.5 w-[260px] h-[4px] rounded-full bg-elev overflow-hidden">
+                <div
+                  className={cn('h-full transition-all', stats.allDone ? 'bg-good' : 'bg-accent')}
+                  style={{ width: `${stats.pctDone}%` }}
+                />
               </div>
             </div>
           </div>
+
+          <div className="flex-1" />
+
+          {/* concurrency — the single control, mirrored in Activity */}
+          <div
+            className="flex items-center gap-1.5 shrink-0 font-mono text-[11px] text-faint"
+            title="Max parallel agents (wave concurrency)"
+          >
+            <span>parallel</span>
+            <button
+              onClick={() => changeConcurrency(maxConcurrency - 1)}
+              disabled={maxConcurrency <= 1}
+              className="w-5 h-5 grid place-items-center rounded bg-elev text-ink-200 hover:bg-line disabled:opacity-40"
+            >
+              −
+            </button>
+            <span className="text-ink-50 w-3 text-center">{maxConcurrency}</span>
+            <button
+              onClick={() => changeConcurrency(maxConcurrency + 1)}
+              disabled={maxConcurrency >= 8}
+              className="w-5 h-5 grid place-items-center rounded bg-elev text-ink-200 hover:bg-line disabled:opacity-40"
+            >
+              +
+            </button>
+          </div>
+
           <div className="flex items-center gap-1.5 shrink-0">
             {waitingOnHook && (
               <button
@@ -599,24 +651,27 @@ Reference \`${specRel}/requirements.md\`${
                 <Square size={11} /> Stop {runningCount > 1 ? `(${runningCount})` : ''}
               </button>
             ) : stats.allDone ? (
-              <>
-                <button
-                  onClick={openSummary}
-                  title="Open the changed-files + AI summary in its own tab"
-                  className="text-[11px] flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-elev text-ink-100 hover:bg-line transition"
-                >
-                  <FileText size={11} /> Summary
-                </button>
-                <button
-                  onClick={polish}
-                  title="Have Claude review and refine the implementation"
-                  className="text-[11px] flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent text-accent-fg font-semibold hover:opacity-90 shadow-glow transition"
-                >
-                  <Sparkles size={11} /> Polish
-                </button>
-              </>
+              <button
+                onClick={onShip}
+                className="text-[11px] flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-good/20 text-ok font-semibold hover:bg-good/30 transition"
+              >
+                <CheckCircle2 size={12} /> All complete — open Ship <ArrowRight size={11} />
+              </button>
             ) : (
               <>
+                <button
+                  onClick={improvePlan}
+                  disabled={improvingPlan}
+                  title="Claude critically reviews the task plan — coverage, wave ordering, granularity — and refines tasks.md in place"
+                  className="text-[11px] flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-accent/12 text-accent hover:bg-accent/20 transition disabled:opacity-50"
+                >
+                  {improvingPlan ? (
+                    <Loader2 size={11} className="animate-spin" />
+                  ) : (
+                    <Wand2 size={11} />
+                  )}
+                  {improvingPlan ? 'Improving…' : 'Improve plan'}
+                </button>
                 <button
                   onClick={runNext}
                   className="text-[11px] flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-elev text-ink-100 hover:bg-line transition"
@@ -625,31 +680,14 @@ Reference \`${specRel}/requirements.md\`${
                 </button>
                 <button
                   onClick={autopilot}
-                  title="Run all remaining waves autonomously, with hooks firing between"
-                  className="text-[11px] flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent text-accent-fg font-semibold hover:opacity-90 shadow-glow transition"
+                  title="Run every remaining wave autonomously, with hooks firing between"
+                  className="text-[12px] flex items-center gap-1.5 px-4 py-2 rounded-lg bg-accent text-accent-fg font-semibold hover:opacity-90 shadow-glow transition"
                 >
-                  <Rocket size={11} /> Run all waves
+                  <Rocket size={12} /> Run all
                 </button>
               </>
             )}
           </div>
-        </div>
-
-        {/* Dashboard stat tiles */}
-        <div className="grid grid-cols-4 gap-2.5">
-          <StatTile label="DONE" value={`${stats.done}/${stats.total}`} tone="good" />
-          <StatTile
-            label="RUNNING"
-            value={String(runningCount)}
-            tone={runningCount > 0 ? 'accent' : 'muted'}
-          />
-          <StatTile label="REMAINING" value={String(stats.total - stats.done)} tone="muted" />
-          <StatTile
-            label="PROGRESS"
-            value={`${stats.pctDone}%`}
-            tone="accent"
-            progress={stats.pctDone}
-          />
         </div>
 
         {waitingOnHook && (
@@ -661,75 +699,57 @@ Reference \`${specRel}/requirements.md\`${
             </span>
           </div>
         )}
-
-        {stats.allDone && (
-          <button
-            onClick={openSummary}
-            className="w-full flex items-center gap-2.5 rounded-xl bg-ok/[0.08] px-4 py-2.5 text-left hover:bg-ok/[0.13] transition"
-          >
-            <CheckCircle2 size={15} className="text-ok shrink-0" />
-            <span className="flex-1 text-[12.5px] text-ink-100">
-              All tasks complete — view the changed-files summary
-            </span>
-            <ArrowRight size={14} className="text-ok shrink-0" />
-          </button>
-        )}
       </div>
-      {/* Kanban dashboard — each wave is a bounded lane grouping its task cards */}
-      <div className="flex-1 overflow-x-auto overflow-y-hidden px-6 pb-5 pt-1">
-        <div className="h-full flex gap-4" style={{ minWidth: 'min-content' }}>
+
+      {/* Waves inline — the tasks doc rendered as dependency waves */}
+      <div className="flex-1 overflow-y-auto px-6 pb-10 pt-3">
+        <div className="mx-auto w-full max-w-[var(--k-wide-max)] space-y-7">
           {groups.map(([num, tasks]) => {
             const wavePending = tasks.some((t) => !t.done && isTaskRunnable(t, doc.tasks));
             const waveDone = tasks.filter((t) => t.done).length;
             const allWaveDone = waveDone === tasks.length;
             const waveRunning = tasks.filter((t) => runningTaskIds.has(t.id)).length;
-            const wavePct = Math.round((waveDone / tasks.length) * 100);
+            const blockedBy =
+              !allWaveDone && !wavePending && waveRunning === 0 && num > 1
+                ? `blocked by wave ${num - 1}`
+                : null;
             return (
-              <div
-                key={num}
-                className="w-[320px] shrink-0 flex flex-col rounded-2xl bg-panel overflow-hidden"
-              >
-                <div
-                  className={cn(
-                    'flex items-center gap-2 px-4 py-3 shrink-0',
-                    waveRunning > 0
-                      ? 'bg-accent/[0.12]'
-                      : allWaveDone
-                        ? 'bg-good/[0.10]'
-                        : 'bg-card'
-                  )}
-                >
-                  <span className="font-display text-[14px] font-bold text-ink-50">Wave {num}</span>
+              <section key={num}>
+                <div className="flex items-center gap-2.5 mb-2.5">
+                  <span
+                    className={cn(
+                      'font-mono text-[11px] tracking-[0.14em] font-semibold',
+                      allWaveDone ? 'text-ok' : waveRunning > 0 ? 'text-accent' : 'text-faint'
+                    )}
+                  >
+                    WAVE {num}
+                  </span>
                   {allWaveDone ? (
-                    <span className="w-[18px] h-[18px] grid place-items-center rounded-full bg-good/20 text-ok">
-                      <CheckCircle2 size={11} />
-                    </span>
+                    <CheckCircle2 size={13} className="text-ok" />
                   ) : waveRunning > 0 ? (
                     <span className="flex items-center gap-1 font-mono text-[10px] text-accent">
                       <span className="w-2 h-2 rounded-full bg-accent animate-pulse-dot" />
                       {waveRunning} running
                     </span>
                   ) : null}
-                  <span className="ml-auto font-mono text-[11px] text-faint tabular-nums">
+                  <span className="font-mono text-[10.5px] text-faint tabular-nums">
                     {waveDone}/{tasks.length}
                   </span>
+                  {blockedBy && (
+                    <span className="font-mono text-[10px] text-ink-600">· {blockedBy}</span>
+                  )}
+                  <span className="flex-1 h-px bg-ink-800/70" />
                   {wavePending && (
                     <button
                       onClick={() => runWave(num)}
                       title="Run this wave's tasks in parallel"
-                      className="flex items-center gap-1 px-2 py-1 rounded-md bg-accent text-accent-fg text-[11px] font-semibold hover:opacity-90 transition"
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-accent/15 text-accent text-[11px] font-semibold hover:bg-accent/25 transition"
                     >
-                      <Play size={10} /> Run
+                      <Play size={10} /> Run wave
                     </button>
                   )}
                 </div>
-                <div className="h-[3px] bg-elev shrink-0">
-                  <div
-                    className={cn('h-full transition-all', allWaveDone ? 'bg-good' : 'bg-accent')}
-                    style={{ width: `${wavePct}%` }}
-                  />
-                </div>
-                <div className="flex-1 overflow-y-auto flex flex-col gap-2.5 p-3">
+                <div className="ml-2 pl-4 border-l border-ink-800/60 space-y-1">
                   {tasks.map((t) => (
                     <TaskCard
                       key={t.id}
@@ -749,7 +769,7 @@ Reference \`${specRel}/requirements.md\`${
                     />
                   ))}
                 </div>
-              </div>
+              </section>
             );
           })}
         </div>
@@ -801,63 +821,92 @@ function TaskCard({
       onClick={onInspect}
       title="Inspect task — agent, run details & transcript"
       className={cn(
-        'rounded-xl p-3 transition cursor-pointer group',
-        state === 'running' && 'bg-accent/[0.08] shadow-[0_0_22px_-12px_rgb(var(--accent))]',
-        state === 'done' && 'bg-card opacity-60 hover:opacity-90',
-        state === 'ready' && 'bg-elev hover:bg-elev/70',
-        state === 'locked' && 'bg-card/40 hover:bg-card/60'
+        'group relative rounded-lg px-3 py-2 transition cursor-pointer font-mono',
+        state === 'running' ? 'bg-accent/[0.06]' : 'hover:bg-ink-50/[0.03]',
+        state === 'done' && 'opacity-60 hover:opacity-90'
       )}
     >
-      <div className="flex items-center gap-2 mb-1.5">
-        <span
-          className={cn(
-            'font-mono text-[11px] font-semibold',
-            state === 'done'
-              ? 'text-ok'
-              : state === 'running'
-                ? 'text-accent'
-                : state === 'locked'
-                  ? 'text-ink-600'
-                  : 'text-faint'
-          )}
-        >
-          {task.id}
-          {state === 'done'
-            ? ' ✓'
-            : state === 'running'
-              ? ' · running'
-              : state === 'locked'
-                ? ' · blocked'
-                : ''}
-        </span>
-        {task.agent && (
-          <span className="font-mono text-[10px] text-accent/80">@{task.agent}</span>
-        )}
+      {/* Kiro-style inline action line above the task text */}
+      <div className="flex items-center gap-2 mb-1 text-[12px]">
+        {state === 'running' ? (
+          <span className="flex items-center gap-1.5 text-accent">
+            <KrakenLogo animated className="w-3.5 h-[17px]" /> Task in progress
+          </span>
+        ) : state === 'ready' && !refining ? (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onRun();
+            }}
+            disabled={disabled}
+            title={
+              disabled ? 'At max concurrency — another task is running' : 'Execute this task with Claude'
+            }
+            className={cn(
+              'flex items-center gap-1.5 transition',
+              disabled ? 'text-ink-600 cursor-not-allowed' : 'text-accent hover:text-accent-2'
+            )}
+          >
+            <Play size={11} /> Start task
+          </button>
+        ) : state === 'done' && !refining ? (
+          <span className="flex items-center gap-2">
+            <span className="flex items-center gap-1.5 text-ok">
+              <CheckCircle2 size={12} /> Completed
+            </span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onRefineStart();
+              }}
+              disabled={disabled}
+              title="The output isn't right? Give Claude targeted feedback to adjust this task's work."
+              className="flex items-center gap-1 text-faint hover:text-ink-100 transition disabled:opacity-50"
+            >
+              <Wand2 size={11} /> Refine
+            </button>
+          </span>
+        ) : state === 'locked' ? (
+          <span className="text-ink-600">
+            Blocked{task.dependencies.length > 0 ? ` by ${task.dependencies.join(', ')}` : ''}
+          </span>
+        ) : null}
         <span className="ml-auto flex items-center gap-2 shrink-0">
           {running && agent && (
-            <span className="font-mono text-[10px] text-faint truncate max-w-[110px]">{agent}</span>
+            <span className="text-[10px] text-faint truncate max-w-[130px]">{agent}</span>
           )}
-          <Maximize2 size={12} className="text-faint opacity-0 group-hover:opacity-100 transition" />
+          {task.agent && <span className="text-[10px] text-accent/80">@{task.agent}</span>}
+          <Maximize2
+            size={12}
+            className="text-faint opacity-0 group-hover:opacity-100 transition"
+          />
         </span>
       </div>
 
+      {/* the task as it reads in tasks.md */}
       <div
         className={cn(
-          'text-[12.5px] leading-snug',
+          'text-[13px] leading-relaxed',
           task.done ? 'line-through decoration-ink-700 text-faint' : 'text-ink-100'
         )}
       >
+        <span className={cn('mr-2', task.done ? 'text-ok' : 'text-faint')}>
+          [{task.done ? 'x' : ' '}]
+        </span>
+        <span className={cn('mr-1.5', state === 'running' ? 'text-accent' : 'text-accent-2/90')}>
+          {task.id}:
+        </span>
         {task.description || '(no description)'}
       </div>
 
-      {task.dependencies.length > 0 && !task.done && (
-        <div className="mt-1.5 font-mono text-[9.5px] text-ink-600">
-          deps: {task.dependencies.join(', ')}
+      {task.dependencies.length > 0 && !task.done && state !== 'locked' && (
+        <div className="mt-0.5 pl-8 text-[11px] italic text-accent-2/60">
+          _Depends on: {task.dependencies.join(', ')}_
         </div>
       )}
 
       {state === 'running' && (
-        <div className="mt-2.5 h-[3px] rounded-full bg-elev overflow-hidden">
+        <div className="mt-2 h-[2px] rounded-full bg-elev overflow-hidden">
           <div
             className="h-full w-1/2 animate-flow"
             style={{
@@ -867,39 +916,6 @@ function TaskCard({
             }}
           />
         </div>
-      )}
-
-      {state === 'ready' && !refining && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onRun();
-          }}
-          disabled={disabled}
-          title={disabled ? 'At max concurrency — another task is running' : 'Execute this task with Claude'}
-          className={cn(
-            'mt-2.5 w-full flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition',
-            disabled
-              ? 'bg-elev text-faint cursor-not-allowed'
-              : 'bg-accent text-accent-fg hover:opacity-90 shadow-glow'
-          )}
-        >
-          <Play size={11} /> Run task
-        </button>
-      )}
-
-      {state === 'done' && !refining && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onRefineStart();
-          }}
-          disabled={disabled}
-          title="The output isn't right? Give Claude targeted feedback to adjust this task's work."
-          className="mt-2.5 w-full flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-elev text-dim hover:text-ink-100 transition disabled:opacity-50"
-        >
-          <Wand2 size={11} /> Refine
-        </button>
       )}
 
       {refining && (
@@ -937,37 +953,6 @@ function TaskCard({
               <Wand2 size={11} /> Apply
             </button>
           </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function StatTile({
-  label,
-  value,
-  tone,
-  progress,
-}: {
-  label: string;
-  value: string;
-  tone: 'good' | 'accent' | 'muted';
-  progress?: number;
-}) {
-  return (
-    <div className="rounded-xl bg-card px-3.5 py-2.5">
-      <div className="font-mono text-[10px] tracking-[0.12em] text-faint mb-1.5">{label}</div>
-      <div
-        className={cn(
-          'font-display text-[20px] font-bold leading-none tabular-nums',
-          tone === 'good' ? 'text-ok' : tone === 'accent' ? 'text-accent' : 'text-ink-100'
-        )}
-      >
-        {value}
-      </div>
-      {progress !== undefined && (
-        <div className="mt-2 h-1 rounded-full bg-elev overflow-hidden">
-          <div className="h-full bg-accent transition-all" style={{ width: `${progress}%` }} />
         </div>
       )}
     </div>
@@ -1060,19 +1045,3 @@ ${designMd || '(empty)'}
 ${tasksMd}`;
 }
 
-function buildPolishSystem(meta: SpecMeta, specRel: string): string {
-  return `You are polishing the implementation of the spec "${meta.name}" (${meta.kind}).
-
-All tasks in \`${specRel}/tasks.md\` are marked done. The user wants a critical review:
-
-- **Correctness** — bugs, races, off-by-ones, missing edge cases, integration mismatches.
-- **Regressions** — interactions with Unchanged Behavior (for bugfix specs) or untouched code paths.
-- **Coverage** — every acceptance criterion (every EARS statement) should be exercised by at least one test.
-- **Cleanups** — dead code, awkward abstractions, naming, missing types or docs.
-
-When you find something genuinely wrong, apply the fix directly using the Edit/Write tools. For optional suggestions, list them in chat. Be specific: cite file:line.
-
-Reference \`${specRel}/${
-    meta.kind === 'feature' ? 'requirements.md' : 'bugfix.md'
-  }\`, \`${specRel}/design.md\`, and \`${specRel}/tasks.md\` before forming opinions.`;
-}

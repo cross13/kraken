@@ -110,7 +110,7 @@ export function AgentsStudio() {
       ) : (
         <div className="flex-1 min-h-0 flex">
           {/* list */}
-          <div className="w-[300px] shrink-0 border-r border-ink-800/40 flex flex-col min-h-0">
+          <div className="k-listpane border-r border-ink-800/40 flex flex-col min-h-0">
             <div className="p-3">
               <div className="flex items-center gap-2 px-2.5 h-8 rounded-lg bg-elev">
                 <Search size={13} className="text-faint" />
@@ -154,7 +154,7 @@ export function AgentsStudio() {
 
           {/* detail */}
           <div className="flex-1 min-w-0 overflow-y-auto">
-            <div className="max-w-3xl mx-auto px-7 py-6">
+            <div className="k-wide py-6">
               <Explainer points={EXPLAINER} />
               {selected ? (
                 <AgentDetail agent={selected} agents={agents} />
@@ -230,7 +230,7 @@ function AgentDetail({ agent, agents }: { agent: AgentMeta; agents: AgentMeta[] 
   const [body, setBody] = useState('');
   const selectedAgent = useChat((s) => s.selectedAgent);
   const setSelectedAgent = useChat((s) => s.setSelectedAgent);
-  const openTab = useUi((s) => s.openTab);
+  const openOverlay = useUi((s) => s.openOverlay);
   const config = useModuleConfig((s) => s.config);
   const pinAgent = useModuleConfig((s) => s.pinAgent);
 
@@ -272,14 +272,7 @@ function AgentDetail({ agent, agents }: { agent: AgentMeta; agents: AgentMeta[] 
           </span>
         )}
         <button
-          onClick={() =>
-            openTab({
-              id: `agent:${agent.path}`,
-              title: `agent: ${agent.name}`,
-              kind: 'agent',
-              filePath: agent.path,
-            })
-          }
+          onClick={() => openOverlay({ kind: 'agent', path: agent.path })}
           className="flex items-center gap-1.5 text-[11.5px] text-dim px-2.5 py-1 rounded-lg bg-elev hover:text-ink-50"
         >
           <FileCode2 size={12} /> Open file <ExternalLink size={10} />

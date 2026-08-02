@@ -133,7 +133,7 @@ export function SteeringStudio() {
           {tab === 'library' ? (
             <div className="flex-1 min-h-0 flex">
               {/* list */}
-              <div className="w-[300px] shrink-0 border-r border-ink-800/40 flex flex-col min-h-0">
+              <div className="k-listpane border-r border-ink-800/40 flex flex-col min-h-0">
                 <div className="p-3">
                   <div className="flex items-center gap-2 px-2.5 h-8 rounded-lg bg-elev">
                     <Search size={13} className="text-faint" />
@@ -185,7 +185,7 @@ export function SteeringStudio() {
 
               {/* detail / editor */}
               <div className="flex-1 min-w-0 overflow-y-auto">
-                <div className="max-w-3xl mx-auto px-7 py-6">
+                <div className="k-wide py-6">
                   <Explainer points={EXPLAINER} />
                   {creating ? (
                     <SteeringEditor
@@ -297,7 +297,7 @@ function DocGroup({
 
 /** Read-only detail for the implicit root CLAUDE.md / AGENTS.md. */
 function RootDocDetail({ doc }: { doc: SteeringFile }) {
-  const openTab = useUi((s) => s.openTab);
+  const openOverlay = useUi((s) => s.openOverlay);
   return (
     <div>
       <div className="flex items-start gap-3 mb-4">
@@ -319,9 +319,7 @@ function RootDocDetail({ doc }: { doc: SteeringFile }) {
         This is a root project file, always injected into every run. Edit it directly — it isn't
         managed as a steering doc.{' '}
         <button
-          onClick={() =>
-            openTab({ id: `file:${doc.path}`, title: doc.name, kind: 'file', filePath: doc.path })
-          }
+          onClick={() => openOverlay({ kind: 'file', path: doc.path })}
           className="text-accent hover:underline inline-flex items-center gap-1"
         >
           Open file <ExternalLink size={10} />
@@ -577,7 +575,7 @@ function PreviewPane() {
 
   return (
     <div className="flex-1 min-h-0 overflow-y-auto">
-      <div className="max-w-3xl mx-auto px-7 py-6">
+      <div className="k-wide py-6">
         <ModuleSection
           title="What gets injected"
           desc="The exact steering block prepended to a run's system prompt, given the current always-docs, your pins, and any file the run touches."

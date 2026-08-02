@@ -99,3 +99,29 @@ stay accurate. See the exact shape in `electron/preload.ts` → `claude.stream`.
   and constrains the API tool set.
 - Model resolution is surfaced for transparency via `ModelSource`
   (`explicit | settings-default | cli-default | api-default`) and `resolved_model` on the run row.
+
+## Model discovery (`models:list`)
+
+The Settings model menu is **discovered, not hardcoded**. `discoverModels()` in `main.ts` merges
+three sources into `ModelInfo[]`, each entry tagged with the `ModelOrigin` that produced it:
+
+| `source` | Where it comes from | Trust |
+| --- | --- | --- |
+| `'api'` | `GET /v1/models` with the stored key | Authoritative for the user's account; carries real `max_input_tokens` / `max_tokens` |
+| `'cli-config'` | `model` in `~/.claude/settings.json`, `<workspace>/.claude/settings.json`, `settings.local.json`, or `$ANTHROPIC_MODEL` | The id the installed CLI is configured to use — includes aliases (`opus[1m]`) no catalog contains |
+| `'catalog'` | `MODEL_CATALOG` in `main.ts` | A known-good id. Availability **not** verified — the UI says so |
+
+Two implementation notes that are load-bearing:
+
+- **The Models API is called over raw `fetch`, not the SDK.** The pinned `@anthropic-ai/sdk`
+  (`^0.32.1`) predates the `client.models` resource. `fetchApiModels()` does the paginated
+  `after_id` walk itself, keeping discovery independent of the SDK version — the same
+  dependency-free approach as `github.ts`.
+- **There is deliberately no per-model probe on the CLI backend.** The CLI only validates
+  `--model` by *starting a real run*: an invalid id fails fast (~2s, free), but a valid one issues
+  a live billable request (measured ~$0.03 and ~5s each, dominated by system-prompt cache
+  creation). Probing a catalog would silently spend the user's credits to populate a dropdown, so
+  CLI-only setups get config + catalog with an honest "not verified" badge instead.
+
+Discovery re-runs on workspace change and after the API key is saved or cleared. Keep
+`MODEL_CATALOG` in sync with the current Claude lineup when models ship or retire.

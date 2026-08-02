@@ -10,23 +10,25 @@
 :root,
 :root[data-theme='abyss'] {
   color-scheme: dark;
-  /* Surface ladder — widened steps so borderless panels/cards read with contrast:
-     bg (deepest) → rail → panel → card → elev (most raised). */
-  --bg: 9 9 14;
-  --rail: 16 16 24;
-  --panel: 21 20 31;
-  --card: 29 27 42;
-  --elev: 42 39 60;
-  --line: 60 55 82;
-  --ink-600: 84 78 108;
-  --faint: 132 127 152;
-  --ink-400: 158 152 176;
-  --dim: 188 183 205;
-  --ink-200: 216 212 230;
-  --ink-100: 241 240 249;
-  --ink-50: 251 250 255;
-  --accent: 132 102 255;
-  --accent2: 168 145 255;
+  /* Kiro-style surface ladder: `rail` is the near-black app FRAME (title bar,
+     icon rail, canvas behind the floating panels); `bg` is the interior of a
+     floating panel; panel → card → elev step up from there. Neutral greys —
+     the purple lives only in the accent. */
+  --rail: 10 10 13;
+  --bg: 19 19 24;
+  --panel: 25 25 31;
+  --card: 32 32 40;
+  --elev: 45 45 55;
+  --line: 62 62 74;
+  --ink-600: 94 94 108;
+  --faint: 136 136 150;
+  --ink-400: 160 160 173;
+  --dim: 191 191 202;
+  --ink-200: 219 219 228;
+  --ink-100: 240 240 246;
+  --ink-50: 250 250 253;
+  --accent: 139 122 249;
+  --accent2: 173 159 255;
   --accent-fg: 255 255 255;
   --good: 62 222 168;
   --warn: 246 186 94;
@@ -35,12 +37,12 @@
 
 :root[data-theme='bioluminescent'] {
   color-scheme: dark;
-  --bg: 4 15 13;
-  --rail: 8 24 19;
-  --panel: 11 30 23;
-  --card: 16 39 30;
-  --elev: 24 52 40;
-  --line: 34 70 52;
+  --rail: 3 11 9;
+  --bg: 9 25 20;
+  --panel: 13 32 25;
+  --card: 18 41 32;
+  --elev: 26 54 42;
+  --line: 36 72 54;
   --ink-600: 58 100 84;
   --faint: 106 144 130;
   --ink-400: 130 166 154;
@@ -58,8 +60,8 @@
 
 :root[data-theme='daylight'] {
   color-scheme: light;
-  --bg: 243 242 239;
-  --rail: 236 234 230;
+  --rail: 233 231 227;
+  --bg: 249 249 247;
   --panel: 255 255 255;
   --card: 255 255 255;
   --elev: 237 236 232;
@@ -114,6 +116,85 @@ body {
 }
 ::-webkit-scrollbar-track {
   background: transparent;
+}
+
+/* ============================================================================
+   Layout primitives — the app is a desktop window that ranges from ~1100px to
+   ultrawide. Surfaces must USE that width instead of parking content in a
+   fixed centred column. Three containers, picked by content type:
+
+     .k-wide  dashboards, lists, settings, tables → fill, with a sane ceiling
+     .k-read  long-form markdown → bounded by reading measure, not by px
+     .k-full  code / source / diff views → edge-to-edge, padding only
+
+   Horizontal padding is fluid so the gutter grows with the window instead of
+   the content column staying pinned. Use with `.k-scroll` on the scroller.
+   ========================================================================== */
+:root {
+  --k-gutter: clamp(20px, 2.6vw, 44px);
+  /* Ceiling for dashboard-style content. Wide enough for 4 card columns on a
+     1440px window; stops text runs from getting silly on a 5K display. */
+  --k-wide-max: 1680px;
+  /* ~90 characters at 15px — the upper bound of comfortable prose. */
+  --k-read-max: 78ch;
+}
+
+.k-scroll {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.k-wide,
+.k-read,
+.k-full {
+  width: 100%;
+  margin-inline: auto;
+  padding-inline: var(--k-gutter);
+}
+.k-wide {
+  max-width: var(--k-wide-max);
+}
+.k-read {
+  max-width: calc(var(--k-read-max) + 2 * var(--k-gutter));
+}
+.k-full {
+  max-width: none;
+}
+
+/* Vertical rhythm for a surface's first/last block. */
+.k-pad-y {
+  padding-block: clamp(18px, 2.2vh, 34px);
+}
+
+/* Auto-fitting card grid — the single biggest space win. Columns are added as
+   the window grows instead of one column stretching to an unreadable width.
+   `--k-card` is the minimum card width; override per call site. */
+.k-cards {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--k-card, 320px)), 1fr));
+}
+
+/* Two-column split that collapses to one on narrow windows. Used where a
+   primary list wants a secondary rail (runs + activity log, settings groups). */
+.k-split {
+  display: grid;
+  gap: clamp(16px, 1.8vw, 28px);
+  grid-template-columns: 1fr;
+  align-items: start;
+}
+@media (min-width: 1180px) {
+  .k-split {
+    grid-template-columns: minmax(0, 1fr) minmax(280px, var(--k-aside, 340px));
+  }
+}
+
+/* Master/detail list pane inside the Library studios. Scales with the window
+   instead of sitting at a hardcoded 300px on every display. */
+.k-listpane {
+  width: clamp(240px, 22vw, 380px);
+  flex-shrink: 0;
 }
 
 /* Shared form input for the studio modules (Agents / Skills / Orchestration) */
@@ -317,4 +398,50 @@ body {
   border: 1px solid rgba(124, 92, 255, 0.2);
   padding: 2px 6px;
   border-radius: 4px;
+}
+
+/* ---- Brand (Octopus Brand Kit) ------------------------------------------
+   Keyframes for the KrakenLogo / KrakenLoader animations. The boot splash in
+   index.html duplicates these inline so it can animate before the bundle
+   loads — keep the two in sync. */
+@keyframes octo-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+@keyframes octo-tent-sway {
+  0%, 100% { transform: rotate(-4deg); }
+  50% { transform: rotate(4deg); }
+}
+@keyframes octo-eye-scan {
+  0% { transform: translateX(-7px); }
+  40% { transform: translateX(7px); }
+  46% { transform: translateX(-7px); }
+  86% { transform: translateX(7px); }
+  92% { transform: translateX(-7px); }
+  100% { transform: translateX(-7px); }
+}
+@keyframes octo-code-scroll {
+  from { transform: translateY(0); }
+  to { transform: translateY(-50%); }
+}
+@keyframes octo-dot-pulse {
+  0%, 80%, 100% { opacity: 0.25; }
+  40% { opacity: 1; }
+}
+@keyframes octo-glow-pulse {
+  0%, 100% { filter: drop-shadow(0 0 3px rgba(0, 187, 221, 0.5)); }
+  50% { filter: drop-shadow(0 0 9px rgba(0, 187, 221, 0.75)); }
+}
+
+/* App-tile behind the mark (nav rail, welcome hero). Daylight swaps to the
+   kit's white tile; KrakenLogo's 'auto' variant swaps the mark to match. */
+.octo-tile {
+  background: linear-gradient(180deg, #001224, #001a33);
+  box-shadow:
+    0 0 0 1px rgba(0, 187, 221, 0.2),
+    0 2px 12px rgba(0, 187, 221, 0.25);
+}
+[data-theme='daylight'] .octo-tile {
+  background: #ffffff;
+  box-shadow: 0 0 0 1px #e8edf2;
 }

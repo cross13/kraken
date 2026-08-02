@@ -19,7 +19,7 @@ export function LibBadge({
 }) {
   const agents = useWorkspace((s) => s.agents);
   const skills = useWorkspace((s) => s.skills);
-  const openTab = useUi((s) => s.openTab);
+  const openOverlay = useUi((s) => s.openOverlay);
 
   const Icon = kind === 'agent' ? Bot : Sparkles;
 
@@ -56,14 +56,7 @@ export function LibBadge({
 
   const inRoot = res.scope === 'workspace';
 
-  const open = () =>
-    res.path &&
-    openTab({
-      id: `${kind}:${res.path}`,
-      title: `${kind}: ${name}`,
-      kind,
-      filePath: res.path,
-    });
+  const open = () => res.path && openOverlay({ kind, path: res.path });
 
   return (
     <button

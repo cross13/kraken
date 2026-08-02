@@ -479,3 +479,58 @@ export interface TerminalExitEvent {
   exitCode: number;
   signal?: number;
 }
+
+// ---------- Travel Display (the wide second window) ----------
+
+/**
+ * The serialized run snapshot the main window pushes to the travel window.
+ * It is `ActiveRun[]` verbatim — the travel monitor is a read-only mirror of the
+ * main window's orchestrator registry, so no separate shape is needed.
+ */
+export type FleetSnapshot = ActiveRun[];
+
+/** Open/closed state of the travel window, broadcast to the main window. */
+export interface WideState {
+  open: boolean;
+}
+
+// ---------- Model discovery ----------
+
+/**
+ * Where a model entry came from. Kraken never invents availability — each entry
+ * says how it was learned:
+ *  - `api`      the Anthropic Models API answered for the stored key. Authoritative.
+ *  - `cli-config` the id is named in a local Claude Code settings file / env var,
+ *                 so the installed CLI is configured to use it.
+ *  - `catalog`  Kraken's bundled list. A known-good id, availability unverified.
+ */
+export type ModelOrigin = 'api' | 'cli-config' | 'catalog';
+
+export interface ModelInfo {
+  /** exact id passed to `--model` / the API `model` field */
+  id: string;
+  /** human label — `display_name` from the API when available */
+  label: string;
+  source: ModelOrigin;
+  /** context window in tokens (`max_input_tokens`), when known */
+  contextWindow?: number;
+  /** max output tokens, when known */
+  maxOutput?: number;
+  /** input / output USD per 1M tokens, for catalog entries */
+  price?: string;
+  /** short tier hint for catalog entries ("Balanced", "Fastest", …) */
+  tier?: string;
+  /** for `cli-config`: which file or env var named this model */
+  configuredIn?: string;
+}
+
+export interface ModelDiscovery {
+  models: ModelInfo[];
+  /** how the authoritative list was obtained, for the UI to explain itself */
+  apiChecked: boolean;
+  apiError?: string;
+  /** detected local Claude Code CLI, if any */
+  cli: { found: boolean; binary?: string; version?: string };
+  /** ISO timestamp of this discovery run */
+  checkedAt: string;
+}

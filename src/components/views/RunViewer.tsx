@@ -55,7 +55,7 @@ export function RunViewer({ runId }: { runId: string }) {
 
   return (
     <div className="h-full overflow-y-auto bg-ink-950">
-      <div className="max-w-4xl mx-auto px-8 py-6 space-y-5">
+      <div className="k-wide py-6 space-y-5">
         <header className="space-y-2">
           <div className="flex items-center gap-2">
             <StatusBadge status={run.status} />

@@ -10,7 +10,8 @@ export function ExplorerView() {
   const tree = useWorkspace((s) => s.tree);
   const refreshAll = useWorkspace((s) => s.refreshAll);
   const pickWorkspace = useWorkspace((s) => s.pickWorkspace);
-  const openTab = useUi((s) => s.openTab);
+  const openLibrary = useUi((s) => s.openLibrary);
+  const toggleExplorer = useUi((s) => s.toggleExplorer);
 
   return (
     <>
@@ -19,8 +20,11 @@ export function ExplorerView() {
         actions={
           <>
             <SidebarButton
-              onClick={() => openTab({ id: 'syntax-studio', title: 'Syntax', kind: 'syntax-studio' })}
-              title="Syntax settings — themes & languages"
+              onClick={() => {
+                toggleExplorer();
+                openLibrary('appearance');
+              }}
+              title="Appearance — syntax themes & languages"
             >
               <Palette size={13} />
             </SidebarButton>
@@ -58,7 +62,7 @@ export function ExplorerView() {
 
 function TreeNode({ entry, depth }: { entry: DirEntry; depth: number }) {
   const [open, setOpen] = useState(depth < 1 && entry.name === '.kraken');
-  const openTab = useUi((s) => s.openTab);
+  const openOverlay = useUi((s) => s.openOverlay);
 
   if (entry.type === 'dir') {
     return (
@@ -78,14 +82,7 @@ function TreeNode({ entry, depth }: { entry: DirEntry; depth: number }) {
   }
   return (
     <button
-      onClick={() =>
-        openTab({
-          id: `file:${entry.path}`,
-          title: entry.name,
-          kind: 'file',
-          filePath: entry.path,
-        })
-      }
+      onClick={() => openOverlay({ kind: 'file', path: entry.path })}
       className="w-full flex items-center gap-1 text-xs text-ink-300 hover:bg-ink-800/60 rounded-md px-1.5 py-1"
       style={{ paddingLeft: 18 + depth * 12 }}
     >

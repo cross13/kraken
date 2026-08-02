@@ -35,13 +35,13 @@ const EMPTY: Omit<HookConfig, 'scope' | 'path'> = {
   blocking: false,
 };
 
-export function HookEditor({ tabId, hookId }: { tabId: string; hookId?: string }) {
+export function HookEditor({ hookId }: { hookId?: string }) {
   const root = useWorkspace((s) => s.root);
   const hooks = useWorkspace((s) => s.hooks);
   const agents = useWorkspace((s) => s.agents);
   const refreshAll = useWorkspace((s) => s.refreshAll);
-  const openTab = useUi((s) => s.openTab);
-  const closeTab = useUi((s) => s.closeTab);
+  const openOverlay = useUi((s) => s.openOverlay);
+  const closeOverlay = useUi((s) => s.closeOverlay);
 
   const [draft, setDraft] = useState<Omit<HookConfig, 'scope' | 'path'>>(EMPTY);
   const [nl, setNl] = useState('');
@@ -72,17 +72,14 @@ export function HookEditor({ tabId, hookId }: { tabId: string; hookId?: string }
     await window.kraken.hooks.write(root, hook);
     await refreshAll();
     setSaved(true);
-    if (isNew) {
-      closeTab(tabId);
-      openTab({ id: `hook:${id}`, title: hook.title || id, kind: 'hook', hookId: id });
-    }
+    if (isNew) openOverlay({ kind: 'hook', hookId: id });
   };
 
   const remove = async () => {
     if (!root || !draft.id) return;
     await window.kraken.hooks.delete(root, draft.id);
     await refreshAll();
-    closeTab(tabId);
+    closeOverlay();
   };
 
   const runNow = async () => {
@@ -102,7 +99,7 @@ export function HookEditor({ tabId, hookId }: { tabId: string; hookId?: string }
 
   return (
     <div className="h-full overflow-y-auto bg-ink-950">
-      <div className="max-w-2xl mx-auto px-8 py-6 space-y-4">
+      <div className="k-wide py-6 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-ink-200">
             <Zap size={16} className="text-accent" />

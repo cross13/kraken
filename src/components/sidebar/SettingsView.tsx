@@ -12,9 +12,6 @@ import {
   Shield,
   FileEdit,
   TerminalSquare,
-  Layers,
-  Minus,
-  Plus,
   Server,
   Github,
   FolderGit2,
@@ -24,15 +21,13 @@ import {
 import { Settings as SettingsIcon } from 'lucide-react';
 import { SidebarHeader } from '../SidebarShell';
 import { cn } from '../../lib/cn';
-import { useOrchestrator } from '../../stores/orchestrator';
 import { useWorkspace } from '../../stores/workspace';
-import { useModels, MODEL_OPTIONS, STEPS } from '../../stores/models';
+import { useModels } from '../../stores/models';
 import type {
   McpServerMeta,
   GitHubTokenStatus,
+  ModelInfo,
 } from '../../../electron/shared/types';
-
-const MODELS = MODEL_OPTIONS.map((m) => ({ id: m.id, label: `${m.label} · ${m.price}` }));
 
 type Backend = 'cli' | 'api';
 type PermissionMode = 'default' | 'acceptEdits' | 'bypassPermissions';
@@ -51,8 +46,12 @@ interface Permissions {
 }
 
 export function SettingsView({ variant = 'panel' }: { variant?: 'panel' | 'page' } = {}) {
-  const stepModels = useModels((s) => s.stepModels);
-  const setStepModel = useModels((s) => s.setStep);
+  const planningModel = useModels((s) => s.planningModel);
+  const setPlanningModel = useModels((s) => s.setPlanningModel);
+  const available = useModels((s) => s.available);
+  const discovery = useModels((s) => s.discovery);
+  const modelsLoading = useModels((s) => s.loading);
+  const refreshModels = useModels((s) => s.refresh);
   const [backend, setBackend] = useState<Backend>('cli');
   const [cli, setCli] = useState<CliStatus | null>(null);
   const [hasKey, setHasKey] = useState(false);
@@ -66,8 +65,6 @@ export function SettingsView({ variant = 'panel' }: { variant?: 'panel' | 'page'
   const [github, setGithub] = useState<GitHubTokenStatus | null>(null);
   const [ghTokenInput, setGhTokenInput] = useState('');
   const [ghEditing, setGhEditing] = useState(false);
-  const maxConcurrency = useOrchestrator((s) => s.maxConcurrency);
-  const setMaxConcurrency = useOrchestrator((s) => s.setMaxConcurrency);
   const root = useWorkspace((s) => s.root);
   const pickWorkspace = useWorkspace((s) => s.pickWorkspace);
   const openWorkspace = useWorkspace((s) => s.openWorkspace);
@@ -79,11 +76,16 @@ export function SettingsView({ variant = 'panel' }: { variant?: 'panel' | 'page'
     window.kraken.settings.getModel().then(setModel);
     window.kraken.settings.getBackend().then(setBackend);
     window.kraken.settings.getPermissions().then(setPerms);
-    window.kraken.settings.getMaxConcurrency().then(setMaxConcurrency);
     window.kraken.mcp.list().then(setMcp).catch(() => setMcp([]));
     window.kraken.github.tokenStatus().then(setGithub).catch(() => setGithub(null));
     redetectCli();
-  }, [setMaxConcurrency]);
+  }, []);
+
+  // Model discovery re-runs when the workspace changes (project settings.json
+  // can name a different model) and after the API key is saved or cleared.
+  useEffect(() => {
+    void refreshModels(root);
+  }, [root, hasKey, refreshModels]);
 
   useEffect(() => {
     window.kraken.workspace.getRecents().then(setRecents).catch(() => setRecents([]));
@@ -108,12 +110,6 @@ export function SettingsView({ variant = 'panel' }: { variant?: 'panel' | 'page'
   const clearGhToken = async () => {
     await window.kraken.github.clearToken();
     setGithub(await window.kraken.github.tokenStatus());
-  };
-
-  const changeConcurrency = async (n: number) => {
-    const clamped = Math.max(1, Math.min(8, n));
-    setMaxConcurrency(clamped);
-    await window.kraken.settings.setMaxConcurrency(clamped);
   };
 
   const savePerms = async (next: Partial<Permissions>) => {
@@ -154,76 +150,17 @@ export function SettingsView({ variant = 'panel' }: { variant?: 'panel' | 'page'
     await window.kraken.settings.setModel(m);
   };
 
+  // As a page, the sections flow into an auto-fitting multi-column grid — a
+  // settings form stretched across an ultrawide window is unreadable, and a
+  // single 900px column in the middle of one is wasted space.
   const inner = (
-    <div className="space-y-5">
-        <section>
-          <h3 className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-ink-300 font-semibold mb-2">
-            <FolderGit2 size={12} /> Project directory
-          </h3>
-          <div className="rounded-md border border-ink-800 bg-ink-900/60 p-3 space-y-2">
-            {root ? (
-              <>
-                <div className="flex items-start gap-2">
-                  <FolderGit2 size={13} className="text-accent mt-0.5 shrink-0" />
-                  <div className="min-w-0">
-                    <div className="text-xs font-medium text-ink-50 truncate">
-                      {root.split('/').filter(Boolean).pop()}
-                    </div>
-                    <div className="text-[10px] text-ink-500 font-mono break-all leading-snug">
-                      {root}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5 text-[11px] text-ink-400">
-                  <GitBranch size={11} className="shrink-0" />
-                  {branch ? (
-                    <span className="font-mono text-ink-200">{branch}</span>
-                  ) : (
-                    <span className="text-ink-500">not a git branch</span>
-                  )}
-                </div>
-              </>
-            ) : (
-              <p className="text-[11px] text-ink-400">No project open.</p>
-            )}
-            <button
-              onClick={pickWorkspace}
-              className="w-full text-xs flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md bg-accent text-accent-fg hover:opacity-90"
-            >
-              <FolderOpen size={12} /> Change directory…
-            </button>
-          </div>
-
-          {recents.filter((p) => p !== root).length > 0 && (
-            <div className="mt-2">
-              <div className="text-[10px] uppercase tracking-wider text-ink-400 mb-1">
-                Recent
-              </div>
-              <div className="rounded-md border border-ink-800 bg-ink-900/40 p-1 space-y-0.5">
-                {recents
-                  .filter((p) => p !== root)
-                  .slice(0, 6)
-                  .map((p) => (
-                    <button
-                      key={p}
-                      onClick={() => openWorkspace(p)}
-                      title={p}
-                      className="w-full flex items-center gap-2 text-left text-xs px-2 py-1 rounded text-ink-300 hover:bg-ink-800/60"
-                    >
-                      <FolderGit2 size={11} className="text-ink-500 shrink-0" />
-                      <span className="truncate">
-                        {p.split('/').filter(Boolean).pop()}
-                      </span>
-                      <span className="text-[9px] text-ink-600 font-mono truncate ml-auto">
-                        {p.split('/').filter(Boolean).slice(-2, -1)[0] ?? ''}
-                      </span>
-                    </button>
-                  ))}
-              </div>
-            </div>
-          )}
-        </section>
-
+    <div
+      className={cn(
+        variant === 'page'
+          ? 'grid gap-5 items-start [grid-template-columns:repeat(auto-fill,minmax(min(100%,400px),1fr))] [&>section:last-child]:col-span-full'
+          : 'space-y-5'
+      )}
+    >
         <section>
           <h3 className="text-[11px] uppercase tracking-wider text-ink-300 font-semibold mb-2">
             Backend
@@ -318,61 +255,72 @@ export function SettingsView({ variant = 'panel' }: { variant?: 'panel' | 'page'
         )}
 
         <section>
-          <h3 className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-ink-300 font-semibold mb-2">
-            <Cpu size={12} /> Model
-          </h3>
+          <div className="flex items-center gap-1.5 mb-2">
+            <h3 className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-ink-300 font-semibold">
+              <Cpu size={12} /> Model
+            </h3>
+            <div className="flex-1" />
+            <button
+              onClick={() => refreshModels(root)}
+              title="Re-detect models available on this machine"
+              className="p-1 rounded-md text-ink-400 hover:text-ink-100 hover:bg-ink-800/60 transition"
+            >
+              <RefreshCw size={12} className={cn(modelsLoading && 'animate-spin')} />
+            </button>
+          </div>
+
+          <ModelSourceNote discovery={discovery} backend={backend} />
+
           <div className="rounded-md border border-ink-800 bg-ink-900/60 p-1">
-            {MODELS.map((m) => (
-              <button
+            {available.map((m) => (
+              <ModelRow
                 key={m.id}
-                onClick={() => changeModel(m.id)}
-                className={cn(
-                  'w-full flex items-center justify-between text-xs px-2 py-1.5 rounded',
-                  model === m.id
-                    ? 'bg-accent/20 text-ink-50'
-                    : 'text-ink-300 hover:bg-ink-800/60'
-                )}
-              >
-                <span>{m.label}</span>
-                {model === m.id && <Check size={12} className="text-accent" />}
-              </button>
+                model={m}
+                selected={model === m.id}
+                onSelect={() => changeModel(m.id)}
+              />
             ))}
+            {available.length === 0 && (
+              <p className="text-[11px] text-ink-500 px-2 py-2">
+                {modelsLoading ? 'Detecting models…' : 'No models detected.'}
+              </p>
+            )}
           </div>
           {backend === 'cli' && (
             <p className="text-[10px] text-ink-500 mt-1">
-              Passed as <code className="text-ink-300">--model</code> to the CLI.
+              Passed as <code className="text-ink-300">--model</code> to the CLI. Aliases the CLI
+              understands (<code className="text-ink-300">opus</code>,{' '}
+              <code className="text-ink-300">sonnet</code>) also work.
             </p>
           )}
         </section>
 
         <section>
           <h3 className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-ink-300 font-semibold mb-2">
-            <Cpu size={12} /> Model per step
+            <Cpu size={12} /> Planning model
           </h3>
           <p className="text-[10px] text-ink-500 leading-snug mb-2">
-            Optimize spending — pick a cheaper model for simple steps and a stronger one where it
-            counts. <b className="text-ink-300">Default</b> uses the model chosen above.
+            Optional second model for the thinking-heavy planning steps (requirements, design,
+            tasks, audit). Execution always uses the model above.
           </p>
-          <div className="rounded-md border border-ink-800 bg-ink-900/60 divide-y divide-ink-800/60">
-            {STEPS.map((s) => (
-              <div key={s.key} className="flex items-center gap-3 px-3 py-2">
-                <div className="min-w-0 flex-1">
-                  <div className="text-xs font-medium text-ink-100">{s.label}</div>
-                  <div className="text-[10px] text-ink-500 leading-snug">{s.hint}</div>
-                </div>
-                <select
-                  value={stepModels[s.key] ?? ''}
-                  onChange={(e) => setStepModel(s.key, e.target.value)}
-                  className="shrink-0 text-[11px] bg-ink-950 border border-ink-800 rounded-md px-2 py-1.5 text-ink-100 focus:border-accent outline-none max-w-[190px]"
-                >
-                  <option value="">Default</option>
-                  {MODEL_OPTIONS.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.label} · {m.price}
-                    </option>
-                  ))}
-                </select>
-              </div>
+          <div className="rounded-md border border-ink-800 bg-ink-900/60 p-1">
+            <button
+              onClick={() => setPlanningModel('')}
+              className={cn(
+                'w-full flex items-center justify-between text-xs px-2 py-1.5 rounded',
+                !planningModel ? 'bg-accent/20 text-ink-50' : 'text-ink-300 hover:bg-ink-800/60'
+              )}
+            >
+              <span>Same as default</span>
+              {!planningModel && <Check size={12} className="text-accent" />}
+            </button>
+            {available.map((m) => (
+              <ModelRow
+                key={m.id}
+                model={m}
+                selected={planningModel === m.id}
+                onSelect={() => setPlanningModel(m.id)}
+              />
             ))}
           </div>
         </section>
@@ -431,42 +379,70 @@ export function SettingsView({ variant = 'panel' }: { variant?: 'panel' | 'page'
 
         <section>
           <h3 className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-ink-300 font-semibold mb-2">
-            <Layers size={12} /> Orchestration
+            <FolderGit2 size={12} /> Project directory
           </h3>
           <div className="rounded-md border border-ink-800 bg-ink-900/60 p-3 space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0">
-                <div className="text-xs font-medium text-ink-50">Max parallel agents</div>
-                <div className="text-[10px] text-ink-400 leading-snug">
-                  How many tasks run concurrently in a wave.
+            {root ? (
+              <>
+                <div className="flex items-start gap-2">
+                  <FolderGit2 size={13} className="text-accent mt-0.5 shrink-0" />
+                  <div className="min-w-0">
+                    <div className="text-xs font-medium text-ink-50 truncate">
+                      {root.split('/').filter(Boolean).pop()}
+                    </div>
+                    <div className="text-[10px] text-ink-500 font-mono break-all leading-snug">
+                      {root}
+                    </div>
+                  </div>
                 </div>
+                <div className="flex items-center gap-1.5 text-[11px] text-ink-400">
+                  <GitBranch size={11} className="shrink-0" />
+                  {branch ? (
+                    <span className="font-mono text-ink-200">{branch}</span>
+                  ) : (
+                    <span className="text-ink-500">not a git branch</span>
+                  )}
+                </div>
+              </>
+            ) : (
+              <p className="text-[11px] text-ink-400">No project open.</p>
+            )}
+            <button
+              onClick={pickWorkspace}
+              className="w-full text-xs flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md bg-accent text-accent-fg hover:opacity-90"
+            >
+              <FolderOpen size={12} /> Change directory…
+            </button>
+          </div>
+
+          {recents.filter((p) => p !== root).length > 0 && (
+            <div className="mt-2">
+              <div className="text-[10px] uppercase tracking-wider text-ink-400 mb-1">
+                Recent
               </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  onClick={() => changeConcurrency(maxConcurrency - 1)}
-                  className="w-6 h-6 grid place-items-center rounded-md bg-ink-800 text-ink-200 hover:bg-ink-700 disabled:opacity-40"
-                  disabled={maxConcurrency <= 1}
-                >
-                  <Minus size={12} />
-                </button>
-                <span className="text-sm font-mono text-ink-50 w-4 text-center">
-                  {maxConcurrency}
-                </span>
-                <button
-                  onClick={() => changeConcurrency(maxConcurrency + 1)}
-                  className="w-6 h-6 grid place-items-center rounded-md bg-ink-800 text-ink-200 hover:bg-ink-700 disabled:opacity-40"
-                  disabled={maxConcurrency >= 8}
-                >
-                  <Plus size={12} />
-                </button>
+              <div className="rounded-md border border-ink-800 bg-ink-900/40 p-1 space-y-0.5">
+                {recents
+                  .filter((p) => p !== root)
+                  .slice(0, 6)
+                  .map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => openWorkspace(p)}
+                      title={p}
+                      className="w-full flex items-center gap-2 text-left text-xs px-2 py-1 rounded text-ink-300 hover:bg-ink-800/60"
+                    >
+                      <FolderGit2 size={11} className="text-ink-500 shrink-0" />
+                      <span className="truncate">
+                        {p.split('/').filter(Boolean).pop()}
+                      </span>
+                      <span className="text-[9px] text-ink-600 font-mono truncate ml-auto">
+                        {p.split('/').filter(Boolean).slice(-2, -1)[0] ?? ''}
+                      </span>
+                    </button>
+                  ))}
               </div>
             </div>
-            <p className="text-[10px] text-ink-500 leading-snug">
-              Tasks in a wave should touch disjoint files — parallel edits to the same file can
-              conflict. Tag a task with <code className="text-ink-300">@agent-name</code> to pick a
-              specialized agent.
-            </p>
-          </div>
+          )}
         </section>
 
         <section>
@@ -594,7 +570,7 @@ export function SettingsView({ variant = 'panel' }: { variant?: 'panel' | 'page'
   if (variant === 'page') {
     return (
       <div className="h-full overflow-y-auto bg-ink-950">
-        <div className="max-w-[900px] mx-auto px-8 py-8">
+        <div className="k-wide py-8">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 grid place-items-center rounded-xl bg-accent/12 text-accent shrink-0">
               <SettingsIcon size={19} />
@@ -604,7 +580,7 @@ export function SettingsView({ variant = 'panel' }: { variant?: 'panel' | 'page'
                 Settings
               </h1>
               <p className="font-mono text-[11px] text-faint">
-                backend · models · permissions · integrations
+                connection · models · repository · advanced
               </p>
             </div>
           </div>
@@ -619,6 +595,92 @@ export function SettingsView({ variant = 'panel' }: { variant?: 'panel' | 'page'
       <SidebarHeader title="Settings" />
       <div className="flex-1 overflow-y-auto p-3">{inner}</div>
     </>
+  );
+}
+
+/** Chip that says *how* Kraken knows about a model — never implies more. */
+function SourceChip({ source }: { source: ModelInfo['source'] }) {
+  const meta = {
+    api: { label: 'your account', cls: 'bg-good/15 text-ok', title: 'Returned by the Anthropic Models API for your stored key.' },
+    'cli-config': { label: 'local config', cls: 'bg-accent/15 text-accent', title: 'Named in your local Claude Code settings.' },
+    catalog: { label: 'not verified', cls: 'bg-ink-700/70 text-ink-300', title: 'Known model id from Kraken’s bundled catalog. Availability not checked.' },
+  }[source];
+  return (
+    <span
+      title={meta.title}
+      className={cn('text-[9px] font-mono px-1.5 py-0.5 rounded uppercase tracking-wide shrink-0', meta.cls)}
+    >
+      {meta.label}
+    </span>
+  );
+}
+
+function ModelRow({
+  model,
+  selected,
+  onSelect,
+}: {
+  model: ModelInfo;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  const detail =
+    model.price ??
+    (model.contextWindow ? `${Math.round(model.contextWindow / 1000)}K context` : null);
+  return (
+    <button
+      onClick={onSelect}
+      title={model.configuredIn ? `Configured in ${model.configuredIn}` : model.id}
+      className={cn(
+        'w-full flex items-center gap-2 text-xs px-2 py-1.5 rounded text-left',
+        selected ? 'bg-accent/20 text-ink-50' : 'text-ink-300 hover:bg-ink-800/60'
+      )}
+    >
+      <span className="flex-1 min-w-0 truncate">
+        {model.label}
+        {detail && <span className="text-ink-500"> · {detail}</span>}
+      </span>
+      <SourceChip source={model.source} />
+      {selected && <Check size={12} className="text-accent shrink-0" />}
+    </button>
+  );
+}
+
+/** Explains which discovery sources actually answered. */
+function ModelSourceNote({
+  discovery,
+  backend,
+}: {
+  discovery: ReturnType<typeof useModels.getState>['discovery'];
+  backend: Backend;
+}) {
+  if (!discovery) return null;
+
+  if (discovery.apiError) {
+    return (
+      <p className="text-[10px] text-warn leading-snug mb-2 flex items-start gap-1.5">
+        <AlertCircle size={11} className="mt-0.5 shrink-0" />
+        <span>Models API check failed ({discovery.apiError}). Showing the bundled catalog.</span>
+      </p>
+    );
+  }
+
+  if (discovery.apiChecked) {
+    return (
+      <p className="text-[10px] text-ink-500 leading-snug mb-2">
+        Verified against the Anthropic Models API with your stored key. Entries marked{' '}
+        <b className="text-ink-300">not verified</b> are known ids Kraken hasn't confirmed you can
+        reach.
+      </p>
+    );
+  }
+
+  return (
+    <p className="text-[10px] text-ink-500 leading-snug mb-2">
+      {backend === 'cli'
+        ? 'Read from your local Claude Code config plus Kraken’s catalog. Add an API key to verify the full list against your account — the CLI has no way to list models without starting a billable run.'
+        : 'Add an API key to list the models your account can actually reach.'}
+    </p>
   );
 }
 

@@ -15,22 +15,14 @@ export function NewSpecDialog({
   const [kind, setKind] = useState<SpecKind>(defaultKind);
   const [name, setName] = useState('');
   const createSpec = useWorkspace((s) => s.createSpec);
-  const openTab = useUi((s) => s.openTab);
+  const openSpec = useUi((s) => s.openSpec);
   const [busy, setBusy] = useState(false);
 
   const submit = async () => {
     if (!name.trim() || busy) return;
     setBusy(true);
     const spec = await createSpec(name.trim(), kind);
-    const initialFile: 'requirements' | 'bugfix' =
-      kind === 'feature' ? 'requirements' : 'bugfix';
-    openTab({
-      id: `spec:${spec.id}:${initialFile}`,
-      title: `${spec.name} / ${initialFile}.md`,
-      kind: 'spec',
-      specId: spec.id,
-      specFile: initialFile,
-    });
+    openSpec(spec.id, 'requirements');
     onClose();
   };
 

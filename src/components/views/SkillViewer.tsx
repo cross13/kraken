@@ -10,7 +10,7 @@ export function SkillViewer({ path }: { path: string }) {
 
   return (
     <div className="h-full overflow-y-auto bg-ink-950">
-      <div className="max-w-3xl mx-auto px-8 py-6">
+      <div className="k-read py-6">
         <div className="flex items-center gap-2 text-ink-400 text-[11px] mb-4">
           <Sparkles size={13} className="text-accent" />
           <span className="font-mono">{path}</span>

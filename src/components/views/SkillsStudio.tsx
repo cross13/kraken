@@ -93,7 +93,7 @@ export function SkillsStudio() {
         </div>
       ) : (
         <div className="flex-1 min-h-0 flex">
-          <div className="w-[300px] shrink-0 border-r border-ink-800/40 flex flex-col min-h-0">
+          <div className="k-listpane border-r border-ink-800/40 flex flex-col min-h-0">
             <div className="p-3">
               <div className="flex items-center gap-2 px-2.5 h-8 rounded-lg bg-elev">
                 <Search size={13} className="text-faint" />
@@ -130,7 +130,7 @@ export function SkillsStudio() {
           </div>
 
           <div className="flex-1 min-w-0 overflow-y-auto">
-            <div className="max-w-3xl mx-auto px-7 py-6">
+            <div className="k-wide py-6">
               <Explainer points={EXPLAINER} />
               {selected ? (
                 <SkillDetail skill={selected} />
@@ -191,7 +191,7 @@ function SkillRow({
 
 function SkillDetail({ skill }: { skill: SkillMeta }) {
   const [body, setBody] = useState('');
-  const openTab = useUi((s) => s.openTab);
+  const openOverlay = useUi((s) => s.openOverlay);
   const disabled = useModuleConfig((s) => s.config.disabledSkills.includes(skill.name));
   const toggleSkill = useModuleConfig((s) => s.toggleSkill);
 
@@ -223,14 +223,7 @@ function SkillDetail({ skill }: { skill: SkillMeta }) {
 
       <div className="flex flex-wrap items-center gap-2 mb-5">
         <button
-          onClick={() =>
-            openTab({
-              id: `skill:${skill.path}`,
-              title: `skill: ${skill.name}`,
-              kind: 'skill',
-              filePath: skill.path,
-            })
-          }
+          onClick={() => openOverlay({ kind: 'skill', path: skill.path })}
           className="flex items-center gap-1.5 text-[11.5px] text-dim px-2.5 py-1 rounded-lg bg-elev hover:text-ink-50"
         >
           <FileCode2 size={12} /> Open file <ExternalLink size={10} />

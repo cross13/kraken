@@ -87,6 +87,13 @@ every run), persisted per workspace in `electron-store`.
 ### `cli`
 `detect()` — locate and version-check the local `claude` binary.
 
+### `models`
+`list(workspacePath?)` → `ModelDiscovery`. Answers "what models can this machine reach?" by
+merging the Anthropic **Models API** (`GET /v1/models`, only when an API key is stored) with the
+model ids named in the user's local Claude Code config, falling back to a bundled catalog. Every
+entry carries a `source` (`'api' | 'cli-config' | 'catalog'`) so the UI states how it knows.
+See [`backends.md`](./backends.md) → Model discovery.
+
 ### `git`
 `status`, `listChanges`, `stage`, `unstage`, `stageAll`, `unstageAll`, `fetch`, `pull`, `push`,
 `listBranches`, `checkout`, `createBranch`, `commitPush`. Backed by `electron/git.ts`. All return
@@ -124,6 +131,27 @@ See [`subsystems.md`](./subsystems.md) → Terminals.
 `openUrl(url)` (`invoke` on `shell:open-url`) — opens an http(s) URL in Google Chrome (falls back
 to the OS default browser). Used by the terminal's web-links addon and the window-open handler so
 URLs Claude emits land in Chrome.
+
+### `win` — the Travel Display (wide second window)
+`isWideRenderer()` is a **pure renderer check** (no IPC — reads `location.hash === '#wide'`), used
+by the renderer entry to decide whether to render `WideApp` instead of `App`. `toggleWide()`
+(`invoke` on `window:toggle-wide`) opens the travel window on a detected secondary display (or a
+compact wide bar on the primary as a fallback) and closes it if already open. `isWideOpen()`
+(`invoke` on `window:is-wide-open`) returns the current open state; `onWideState(handler)`
+subscribes to `window:wide-state` (`{ open }`), broadcast to the **main** window whenever the
+travel window opens/closes so the toggle stays in sync. `focusMain()` (`send` on
+`window:focus-main`) pulls focus back to the main window. `setZoom(z)` is **not IPC** — it calls
+`webFrame.setZoomFactor(z)` directly in the preload to crisply scale the current frame (used by the
+travel window's zoom control). See [`subsystems.md`](./subsystems.md) → Travel Display.
+
+### `fleet` — live-run mirror to the Travel Display
+`push(runs)` (`send` on `fleet:push`) is called by the **main** window with a serialized
+`FleetSnapshot` (`ActiveRun[]`, its orchestrator registry); the main process forwards it to the
+travel window via `fleet:sync`. `onSync(handler)` (subscribes to `fleet:sync`) is used by
+`WideApp` to mirror the registry. The travel window is read-only and issues cancellation through
+the existing `claude:cancel` — there is no separate cancel channel. Separately, `emit()` mirrors
+each `claude:event` to the travel window (when open) so its run detail can stream the live agent
+log; the main window still receives the same events unchanged.
 
 ## Gotchas
 

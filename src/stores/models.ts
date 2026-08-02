@@ -1,9 +1,18 @@
 import { create } from 'zustand';
+import type { ModelInfo, ModelDiscovery } from '../../electron/shared/types';
 
-// Per-step model routing — pick the best/cheapest model for each SDD step to
-// optimize spend. Purely renderer-side: the resolved id is passed as
-// `payload.model` on the Claude stream (CLI `--model` / API model), so no
-// backend change is needed. Persisted to localStorage.
+// Model routing, collapsed to two knobs: the global default model (Settings →
+// Models, persisted in the main process) and an optional **planning model**
+// used for the thinking-heavy spec steps (requirements / design / tasks /
+// audit). Execution steps (task / refine / polish / chat) always use the
+// global default. Purely renderer-side: the resolved id is passed as
+// `payload.model` on the Claude stream, so no backend change is needed.
+//
+// The list of *selectable* models is discovered, not hardcoded — see
+// `models:list` in main.ts. It merges the Anthropic Models API (authoritative
+// for the user's key) with the ids named in the local Claude Code config, and
+// falls back to a bundled catalog. Each entry carries its `source` so the UI
+// can say where it came from instead of implying availability it hasn't checked.
 
 export type StepKey =
   | 'requirements'
@@ -15,68 +24,78 @@ export type StepKey =
   | 'audit'
   | 'chat';
 
-export interface ModelOption {
-  id: string;
-  label: string;
-  tier: string;
-  /** input / output $ per 1M tokens */
-  price: string;
-}
+export type ModelOption = ModelInfo;
 
-// Current Claude lineup (see the claude-api skill for ids + pricing).
-export const MODEL_OPTIONS: ModelOption[] = [
-  { id: 'claude-haiku-4-5', label: 'Haiku 4.5', tier: 'Fast & cheap', price: '$1 / $5' },
-  { id: 'claude-sonnet-5', label: 'Sonnet 5', tier: 'Balanced', price: '$3 / $15' },
-  { id: 'claude-opus-4-8', label: 'Opus 4.8', tier: 'Most capable', price: '$5 / $25' },
-  { id: 'claude-fable-5', label: 'Fable 5', tier: 'Frontier', price: '$10 / $50' },
-];
+/** Steps that use the planning model when one is set. */
+const PLANNING_STEPS: ReadonlySet<StepKey> = new Set(['requirements', 'design', 'tasks', 'audit']);
 
-export const STEPS: { key: StepKey; label: string; hint: string }[] = [
-  { key: 'requirements', label: 'Requirements', hint: 'Draft & refine requirements / bug analysis' },
-  { key: 'design', label: 'Design', hint: 'Draft & refine the design document' },
-  { key: 'tasks', label: 'Tasks', hint: 'Break the design into dependency-ordered waves' },
-  { key: 'task', label: 'Task execution', hint: 'Run a task — the parallel workhorse (biggest spend)' },
-  { key: 'refine', label: 'Refine', hint: 'Adjust a completed task from feedback' },
-  { key: 'polish', label: 'Polish', hint: 'Final review pass when all tasks are done' },
-  { key: 'audit', label: 'Audit', hint: 'spec-doctor drift check (read-only)' },
-  { key: 'chat', label: 'Chat', hint: 'Freeform chat in the activity stream' },
-];
+const KEY = 'kraken.planningModel';
 
-const KEY = 'kraken.stepModels';
-
-function load(): Record<string, string> {
+function load(): string {
   try {
-    const v = localStorage.getItem(KEY);
-    if (v) return JSON.parse(v) as Record<string, string>;
+    return localStorage.getItem(KEY) ?? '';
+  } catch {
+    return '';
+  }
+}
+function save(m: string) {
+  try {
+    if (m) localStorage.setItem(KEY, m);
+    else localStorage.removeItem(KEY);
   } catch {
     // ignore
   }
-  return {};
 }
-function save(m: Record<string, string>) {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(m));
-  } catch {
-    // ignore
-  }
+
+/** Sort order: verified account models first, then local config, then catalog. */
+const SOURCE_RANK: Record<ModelInfo['source'], number> = {
+  api: 0,
+  'cli-config': 1,
+  catalog: 2,
+};
+
+function sortModels(models: ModelInfo[]): ModelInfo[] {
+  return [...models].sort(
+    (a, b) => SOURCE_RANK[a.source] - SOURCE_RANK[b.source] || a.label.localeCompare(b.label)
+  );
 }
 
 interface ModelsStore {
-  stepModels: Record<string, string>;
-  setStep: (step: StepKey, model: string) => void;
+  /** model id for planning steps; '' inherits the global default */
+  planningModel: string;
+  setPlanningModel: (model: string) => void;
   /** resolved model id for a step, or undefined to inherit the global default */
   modelFor: (step: StepKey) => string | undefined;
+
+  /** discovered models, best source first */
+  available: ModelInfo[];
+  discovery: ModelDiscovery | null;
+  loading: boolean;
+  /** re-run discovery; safe to call on mount and after the API key changes */
+  refresh: (workspacePath?: string | null) => Promise<void>;
 }
 
 export const useModels = create<ModelsStore>((set, get) => ({
-  stepModels: load(),
-  setStep: (step, model) =>
-    set((s) => {
-      const next = { ...s.stepModels };
-      if (model) next[step] = model;
-      else delete next[step];
-      save(next);
-      return { stepModels: next };
-    }),
-  modelFor: (step) => get().stepModels[step] || undefined,
+  planningModel: load(),
+  setPlanningModel: (model) => {
+    save(model);
+    set({ planningModel: model });
+  },
+  modelFor: (step) =>
+    PLANNING_STEPS.has(step) && get().planningModel ? get().planningModel : undefined,
+
+  available: [],
+  discovery: null,
+  loading: false,
+  refresh: async (workspacePath) => {
+    set({ loading: true });
+    try {
+      const discovery = await window.kraken.models.list(workspacePath ?? null);
+      set({ discovery, available: sortModels(discovery.models) });
+    } catch {
+      // Discovery is best-effort — leave whatever list we already had.
+    } finally {
+      set({ loading: false });
+    }
+  },
 }));

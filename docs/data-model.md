@@ -133,3 +133,8 @@ the agent graph would treat the stale row as live and spin a finished task forev
   doc names are persisted per workspace in `electron-store` under `steeringPins`
   (`Record<workspacePath, string[]>`) — force-included in every run.
 - `GitHubRepoInfo`, `GitHubTokenStatus`, `PullRequestMeta`, `GitHubOpResult<T>` — GitHub.
+- `ModelInfo`, `ModelDiscovery`, `ModelOrigin` — model discovery. `ModelOrigin`
+  (`'api' | 'cli-config' | 'catalog'`) records **how Kraken learned about a model**, and is
+  distinct from `ModelSource` (`explicit | settings-default | cli-default | api-default`), which
+  records **how a given run resolved its model**. Don't conflate them. Nothing is persisted —
+  discovery is recomputed on demand.

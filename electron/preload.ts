@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, webFrame } from 'electron';
 import type {
   AgentMeta,
   DirEntry,
@@ -19,6 +19,7 @@ import type {
   HookRunRow,
   HookFireEvent,
   McpServerMeta,
+  ModelDiscovery,
   GitHubRepoInfo,
   GitHubTokenStatus,
   PullRequestMeta,
@@ -27,6 +28,8 @@ import type {
   TerminalCreateResult,
   TerminalDataEvent,
   TerminalExitEvent,
+  FleetSnapshot,
+  WideState,
 } from './shared/types';
 
 type StreamHandler = (event: {
@@ -171,6 +174,11 @@ const api = {
         version?: string;
         error?: string;
       }>,
+  },
+  models: {
+    /** Models reachable from this machine — Models API + local Claude config. */
+    list: (workspacePath?: string | null) =>
+      ipcRenderer.invoke('models:list', workspacePath) as Promise<ModelDiscovery>,
   },
   git: {
     status: (cwd: string) =>
@@ -386,6 +394,36 @@ const api = {
   },
   shell: {
     openUrl: (url: string) => ipcRenderer.invoke('shell:open-url', url) as Promise<void>,
+  },
+  // Travel Display — the optional wide second window (the fleet monitor).
+  win: {
+    /** True when THIS renderer is the travel window (loaded with the #wide hash). */
+    isWideRenderer: () =>
+      (globalThis as { location?: { hash?: string } }).location?.hash === '#wide',
+    toggleWide: () => ipcRenderer.invoke('window:toggle-wide') as Promise<void>,
+    isWideOpen: () => ipcRenderer.invoke('window:is-wide-open') as Promise<boolean>,
+    // Zoom is a renderer concern — set it directly on this frame (no main-process
+    // handler needed). setZoomFactor re-rasterizes the page, so it stays crisp.
+    setZoom: (z: number) => webFrame.setZoomFactor(z),
+    focusMain: () => ipcRenderer.send('window:focus-main'),
+    onWideState: (handler: (ev: WideState) => void) => {
+      const listener = (_: unknown, ev: WideState) => handler(ev);
+      ipcRenderer.on('window:wide-state', listener);
+      return () => {
+        ipcRenderer.removeListener('window:wide-state', listener);
+      };
+    },
+  },
+  // Live-run mirror: the main window pushes, the travel window subscribes.
+  fleet: {
+    push: (runs: FleetSnapshot) => ipcRenderer.send('fleet:push', runs),
+    onSync: (handler: (runs: FleetSnapshot) => void) => {
+      const listener = (_: unknown, runs: FleetSnapshot) => handler(runs);
+      ipcRenderer.on('fleet:sync', listener);
+      return () => {
+        ipcRenderer.removeListener('fleet:sync', listener);
+      };
+    },
   },
 };
 

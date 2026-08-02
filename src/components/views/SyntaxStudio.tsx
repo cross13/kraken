@@ -72,7 +72,7 @@ export function SyntaxStudio() {
         subtitle={`${installedCount} languages available · file-viewer highlighting`}
       />
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-4xl mx-auto px-7 py-6">
+        <div className="k-wide py-6">
           <Explainer points={EXPLAINER} />
 
           {/* live preview */}
