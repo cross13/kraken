@@ -62,6 +62,12 @@ module.exports = {
         },
         bad: v('--danger'),
       },
+      // Themed motion: `transition` is 150ms on the legacy themes and 120ms on
+      // Signal, and `duration-bar` is the progress-fill timing.
+      transitionDuration: {
+        DEFAULT: 'var(--dur)',
+        bar: 'var(--dur-bar)',
+      },
       // Themed shape scale — `rounded-lg` is 8px on Abyss and 0 on Signal.
       // `full` stays literal so dots, avatars and circular pills survive.
       borderRadius: {
@@ -97,7 +103,7 @@ module.exports = {
         blink: 'blink 1.6s ease-in-out infinite',
         // Mission Control: shimmering progress fill + a steady status pulse.
         flow: 'flow 1.2s linear infinite',
-        'pulse-dot': 'pulseDot 1.4s ease-in-out infinite',
+        'pulse-dot': 'pulseDot 1.8s ease-in-out infinite',
         'slide-in': 'slideIn 0.22s cubic-bezier(0.2, 0.8, 0.2, 1) both',
       },
       keyframes: {

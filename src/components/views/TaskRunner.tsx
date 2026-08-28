@@ -594,7 +594,7 @@ export function TaskRunner({ meta, tasksMd, planMd, requirementsMd, onReload, on
               </div>
               <div className="mt-1.5 w-[260px] h-[4px] rounded-full bg-elev overflow-hidden">
                 <div
-                  className={cn('h-full transition-all', stats.allDone ? 'bg-good' : 'bg-accent')}
+                  className={cn('h-full transition-all duration-bar', stats.allDone ? 'bg-good' : 'bg-accent')}
                   style={{ width: `${stats.pctDone}%` }}
                 />
               </div>

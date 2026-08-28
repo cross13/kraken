@@ -209,6 +209,16 @@ accent — semantics only separate under Signal.
 - `styles.css` has no hardcoded radii left: the scrollbar thumb and the two Prism chips read
   `var(--radius-lg)` / `var(--radius)`.
 
+**Motion is themed too.** `transition` reads `--dur` (150ms legacy, **120ms** on Signal) and
+`duration-bar` reads `--dur-bar` (300ms / **250ms**) for progress fills; `animate-pulse-dot` runs at
+1.8s. Reach for `transition` and `duration-bar` rather than a literal `duration-150`.
+
+**Density.** Signal specifies a 4px scale with 26px padding on the active card, 14–15px on panels
+and a 16px column gap. Those numbers describe the source design's task board, not Octo's surfaces,
+so they were **not** retrofitted across existing components — a blind sweep would have been
+guesswork dressed as a system. Treat them as the rule for **new** Signal-native surfaces, and as
+the reference when a specific screen is reworked with the app in front of you.
+
 **When adding a shadow or a radius, add the variable to all four theme blocks** — a literal px or
 rgba value in a component is what this indirection exists to prevent.
 

@@ -57,6 +57,10 @@
   --radius-3xl: 24px;
   --radius-full: 9999px;
 
+  /* Motion. Signal specifies its own rhythm; the legacy themes keep Tailwind's. */
+  --dur: 150ms;
+  --dur-bar: 300ms;
+
   /* Elevation — themed so a flat brand can switch it off wholesale. */
   --shadow-panel: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 0 0 1px rgba(255, 255, 255, 0.04);
   --shadow-glow: 0 0 0 1px rgb(var(--accent) / 0.4), 0 0 40px -10px rgb(var(--accent) / 0.6);
@@ -188,6 +192,10 @@
   --radius-3xl: 0px;
   /* Even the status dots are squares in this system. */
   --radius-full: 0px;
+
+  /* Hover 120ms, progress bars 250ms — the palette's rhythm. */
+  --dur: 120ms;
+  --dur-bar: 250ms;
 
   /* No shadows: hierarchy is a lighter grey plus a 1px border. What was a glow
      becomes the accent halo the palette does allow — a 50% accent hairline. */

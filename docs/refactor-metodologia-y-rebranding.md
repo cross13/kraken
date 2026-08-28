@@ -3,13 +3,13 @@ goal: Reducir el loop de SDD de 4 fases a Definir · Plan · Construir, y rebran
 version: 1.1
 date_created: 2026-08-28
 owner: Lucas Borella
-status: In progress — methodology complete, rebranding B1–B4 pending
+status: Complete — methodology and rebranding both shipped
 tags: [architecture, refactor, design-system, migration]
 ---
 
 # Refactor — **Definir · Plan · Construir** + rebranding *Signal*
 
-![status](https://img.shields.io/badge/metodolog%C3%ADa-completa-brightgreen) ![fases](https://img.shields.io/badge/fases-7%2F7%20hechas-brightgreen) ![branding](https://img.shields.io/badge/branding-B4%20pendiente-yellow) ![riesgo](https://img.shields.io/badge/riesgo-bajo--medio-lightgrey)
+![status](https://img.shields.io/badge/plan-completo-brightgreen) ![fases](https://img.shields.io/badge/fases-7%2F7%20hechas-brightgreen) ![branding](https://img.shields.io/badge/branding-completo-brightgreen) ![riesgo](https://img.shields.io/badge/riesgo-bajo--medio-lightgrey)
 
 > **TL;DR** — Octo pide hoy **4 aprobaciones humanas** antes de la primera línea de
 > código. Este plan las baja a **2**, funde `design.md` + `tasks.md` en un único
@@ -48,7 +48,7 @@ fuente de verdad del progreso**.
 - [x] **B1** · sombras a token + `rounded-full` + radios hardcodeados de `styles.css`
 - [x] **B2** · semántica de acentos — `accent` → `agent` donde signifique agente/espera, y fuera los colores off-palette
 - [x] **B3** · identidad — logo, loader, splash, ícono
-- [ ] **B4** · densidad y ritmo — padding 26/14–15px, gap 16px, 120ms
+- [x] **B4** · ritmo y movimiento — 120ms / 250ms / 1,8s tokenizados. La densidad queda como regla para superficies nuevas, no como barrido a ciegas
 
 ### Decisiones pendientes
 
@@ -493,8 +493,8 @@ de plan que use la skill de mermaid.
 **Aceptación:** abrir un workspace con specs viejas no muestra ni una referencia a
 "Design"; ningún doc del proyecto describe ya el loop de cuatro fases.
 
-> **La metodología está completa.** Lo que queda del plan son los tramos de
-> rebranding **B1–B4**, que nunca dependieron del refactor.
+> **El plan está completo** — metodología y rebranding. Lo que queda no son fases
+> sino verificación: nada de esto se ejecutó en la app. Ver §10.
 
 ---
 
@@ -569,7 +569,7 @@ Abyss, `0` en Signal. `rounded-full` queda **fuera a propósito** (dots, avatare
 | **B1** | ✅ **hecha.** `boxShadow` → `var(--shadow-*)`: en Signal `panel` y `card` son `none`, y `glow` pasa a ser la hairline de acento al 50% que la paleta sí admite. **`rounded-full` tokenizado** (`--radius-full`) en vez de barrido a mano: 9999px en los temas legacy, 0 en Signal, y los ~40 puntos de estado, badges, píldoras y avatares quedan cuadrados de una — el marcador de estado de la paleta *es* un cuadrado de 6px, así que es el sistema, no una concesión. Sin radios hardcodeados en `styles.css` | bajo | ✅ |
 | **B2** | ✅ **hecha.** Violeta para la **identidad del agente** (chip de `LibBadge`, nodos de `AgentGraphView`, banner y marcador de tool-call de `ChatPanel`, `TaskInspector`) y para lo que **espera una decisión tuya** (Open Questions, *Awaiting approval* en Home). Verde intacto en primarios, progreso y "corriendo". **Y el hallazgo grande:** había **50 clases de color hardcodeadas** (`amber-500`, `emerald-400`, `sky-300`, `purple-300`) que nunca respondieron al tema — un tercer y cuarto acento fuera de sistema. Remapeadas a `warn` / `good` / `dim` / `agent`; en `src/` no queda ninguna | **medio** — es criterio, no mecánica | ✅ |
 | **B3** | ✅ **hecha.** La marca pasó a ser **theme-driven** en vez de cambiarle el cian por verde: rim `--accent2 → --accent/40`, cuerpo `--card → --rail`, ojos `--accent-num`, más el glow y `.octo-tile`. Verde en Signal, violeta en Abyss, turquesa en Bioluminescent — la app nunca lleva dos paletas puestas. Splash e ícono no pueden seguir al tema (uno pinta antes del bundle, el otro es un asset estático) y usan los literales de Signal; el ícono va **invertido a propósito** — tile verde y silueta `#0F1400` — porque a 32px en el dock un tile oscuro con rim fino desaparece. En `src/`, `index.html` y `resources/` no queda un solo cian | medio | ✅ |
-| **B4** | densidad y ritmo: tarjeta activa 26px, panel 14–15px, gap 16px, transiciones 120ms | bajo | ⬜ |
+| **B4** | ✅ **hecha, con un recorte declarado.** El **movimiento** sí se tokenizó: `transition` lee `--dur` (150ms legacy / **120ms** Signal), `duration-bar` lee `--dur-bar` (300 / **250ms**) para las barras de progreso, y `animate-pulse-dot` pasó a 1,8s. La **densidad** (26px en tarjeta activa, 14–15px en panel, gap 16px) **no** se retrofiteó: esos números describen el tablero del diseño original, no las superficies de Octo, y aplicarlos a ciegas habría sido adivinar disfrazado de sistema. Quedan documentados en `renderer.md` como la regla para superficies nuevas | bajo | ✅ |
 
 > **Nota de B2.** Un chequeo que hice y descartó una preocupación previa: el verde
 > `#76B900` como texto chico mide **6,5:1 sobre `--panel` `#232323`** — el 2,41:1 de
@@ -684,3 +684,23 @@ equivalente — filtra por sufijo `.md` y `readFile` sigue los links solo.
 estables, emojis de estado) + lo poco rescatable de awesome-copilot (front
 matter y badge)**, menos el zoo de identificadores. La skill de mermaid sí
 conviene instalarla y referenciarla desde el prompt de `spec-planner` en F4.
+
+---
+
+## 10 · Lo que falta verificar
+
+Cada fase pasó `typecheck` y `build`, y lo que se pudo probar aislado se probó
+—la migración de SQLite contra una base con el esquema viejo, 19 tests sobre la
+derivación plan → tareas, el ícono renderizado y mirado a 2048px—. Pero **la app
+nunca se corrió**. Antes de mergear conviene un `npm run dev` y mirar seis cosas:
+
+- [ ] Una spec nueva de punta a punta: dos gates, `plan.md` con su diagrama, aprobar Plan deriva `tasks.md`, correr una ola, llegar a Ship sin cambiar de pantalla.
+- [ ] El gate de Plan **bloqueado**: borrar la sección `## Tasks` del plan y confirmar que *Approve* se deshabilita y explica por qué.
+- [ ] Un diagrama Mermaid renderizando dentro de la etapa Plan, y sobreviviendo un cambio de tema.
+- [ ] Abrir un workspace con specs viejas: `.kraken/` → `.octo/`, `design.md` → `plan.md`, fases migradas, nada perdido.
+- [ ] "Seed defaults" en un workspace limpio: aparece `spec-planner`, no los dos agentes viejos.
+- [ ] El aspecto de Signal: sin esquinas redondeadas, sin sombras, verde en primarios, violeta en lo que espera tu decisión, la marca en verde.
+
+Y una cosa que **va a fallar y es esperado**: la API key de Anthropic y el token
+de GitHub hay que re-ingresarlos una vez, porque el Keychain de macOS ata la
+clave de `safeStorage` al nombre de la app y la app cambió de nombre.
