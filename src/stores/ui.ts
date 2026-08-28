@@ -18,8 +18,12 @@ export type LibrarySection =
   | 'appearance'
   | 'settings';
 
-/** Stages of the spec flow. `define` covers bugfix analysis for bug specs. */
-export type SpecStage = 'define' | 'plan' | 'build' | 'ship';
+/**
+ * Stages of the spec flow. `define` covers bugfix analysis for bug specs, and
+ * `build` covers both running the tasks and shipping — Ship is a panel inside
+ * that stage, not a stage of its own.
+ */
+export type SpecStage = 'define' | 'plan' | 'build';
 
 /** Right slide-over content — detail views that used to be center tabs. */
 export type Overlay =
@@ -66,7 +70,7 @@ const STAGE_FOR_PHASE: Record<SpecMeta['phase'], SpecStage> = {
   requirements: 'define',
   plan: 'plan',
   build: 'build',
-  done: 'ship',
+  done: 'build',
 };
 
 /** The stage a spec should open on, given its phase. */

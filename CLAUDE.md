@@ -120,15 +120,15 @@ results arrive through `claude.onEvent(handler)`.
   `?`-suffixed input goes to the Assistant), plus in-flight spec cards, Shipped recents, a
   Manage mode embedding `SpecsStudio` (analytics + `specs:delete`), and a one-time
   "Set up Kraken defaults" seeding card. **Spec** (`SpecFlow`) is one continuous guided flow
-  framed like an editor: file tabs (`requirements.md`/`plan.md`/`tasks.md`/`summary.md`) +
-  breadcrumb + the spec strip (numbered phase chips: Requirements → Plan → Task List → **Ship**),
+  framed like an editor: file tabs (`requirements.md`/`plan.md`/`tasks.md`) +
+  breadcrumb + the spec strip (numbered phase chips: Requirements → Plan → **Build**),
   doc stages as line-numbered **Source** (default) / section **Cards** / raw **Edit** over a
   **gate bar** whose *Approve* advances the phase **and navigates** (*Revise with feedback*
   re-drafts inline; *Improve with Claude* runs a critical self-review that refines the doc in
   place — every step has one, incl. *Improve plan* on Tasks), Tasks as **inline task blocks**
   with Kiro-style Start-task actions
-  (`TaskRunner` engine, Run all = autopilot as the primary CTA), and **Ship** (`ShipView`) — the
-  automatic payoff:
+  (`TaskRunner` engine, Run all = autopilot as the primary CTA), and **Ship** (`ShipView`) as a
+  panel *inside* Build — the automatic payoff:
   the spec auto-advances to `done` when the last task completes, `CompletionSummary`
   auto-generates into `summary.md`, and branch/Commit all/Create PR sit right there. **Activity**
   (`ActivitySurface`) is the single "what's running" center (Runs = `OrchestratorView`, History,
@@ -200,7 +200,7 @@ running-count badge. Per-task agent specialization via `- [ ] T1 @agent-name: ..
 `tasks.ts`, precedence in `agentRouter.ts`: per-task > chat override > action default).
 `runWave`/`pump` schedule with failure isolation; **Autopilot** ("Run all", the tasks stage's
 primary CTA) runs all waves autonomously, waiting for blocking hooks between waves. When the last
-task completes the spec **auto-advances to `done` and lands on the Ship stage** (auto-generated
+task completes the spec **auto-advances to `done` and the Ship panel opens inside Build** (auto-generated
 summary + commit/PR). `specs:set-phase` allows reopening a phase (Re-sync); the **Audit** action
 routes to `spec-doctor` for drift detection.
 
@@ -215,7 +215,7 @@ Per-workspace git helpers (status, current-branch, create-branch, commit-push, p
 surfaced through `git:*` IPC. `github.ts` is a dependency-free GitHub REST client (token via
 `safeStorage`, same pattern as the API key) exposed through `github:*` IPC — repo resolution
 from the `origin` remote, token validation, and PR list/create/merge. Both are driven from the
-spec's **Ship stage** (`ShipView`: branch → Commit all → Create PR, prefilled from the
+spec's **Ship panel** (`ShipView`: branch → Commit all → Create PR, prefilled from the
 auto-generated summary) and from the global **repo panel** (`SourceControlView variant="page"`,
 opened as an overlay from the command-bar project pill / ⌘K). Both are spec-aware (`ui.activeSpecId`
 resolves "the spec you're working on") and write branch/commit/PR state back into `SpecMeta`.

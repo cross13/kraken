@@ -9,7 +9,7 @@ tags: [architecture, refactor, design-system, migration]
 
 # Refactor — **Definir · Plan · Construir** + rebranding *Signal*
 
-![status](https://img.shields.io/badge/status-in--progress-yellow) ![fases](https://img.shields.io/badge/fases-2%2F6%20hechas-blue) ![riesgo](https://img.shields.io/badge/riesgo-bajo--medio-lightgrey)
+![status](https://img.shields.io/badge/status-in--progress-yellow) ![fases](https://img.shields.io/badge/fases-3%2F6%20hechas-blue) ![riesgo](https://img.shields.io/badge/riesgo-bajo--medio-lightgrey)
 
 > **TL;DR** — Kraken pide hoy **4 aprobaciones humanas** antes de la primera línea de
 > código. Este plan las baja a **2**, funde `design.md` + `tasks.md` en un único
@@ -36,7 +36,7 @@ fuente de verdad del progreso**.
 
 - [x] **F0 · Tokens de marca** — tema `signal`, tokens nuevos, escala de radios tokenizada
 - [x] **F1 · Contrato + persistencia** — `design→plan`, `tasks→build` en las 5 capas + migración SQLite + migrador de disco
-- [ ] **F2 · UI a tres etapas** — 3 chips, Ship adentro de Construir
+- [x] **F2 · UI a tres etapas** — 3 chips, Ship adentro de Construir
 - [ ] **F2b · Render de Mermaid** — sin esto el formato de plan no se ve dentro de la app
 - [ ] **F3 · El plan genera las tareas** — `## Tareas` en `plan.md` → `tasks.md`
 - [ ] **F4 · Biblioteca semilla + prompts** — `spec-planner`, hooks, skill `mermaid-diagrams`
@@ -263,7 +263,7 @@ y deja la app usable.
 |---|---|---|---|
 | F0 | Tokens de marca | bajo | ✅ **hecha** |
 | F1 | Contrato + persistencia + migración SQLite | bajo | ✅ **hecha** |
-| F2 | UI a tres etapas | bajo | ⬜ |
+| F2 | UI a tres etapas | bajo | ✅ **hecha** |
 | F2b | Render de Mermaid en el visor de specs | bajo | ⬜ |
 | F3 | El plan genera las tareas | **medio** — única lógica nueva | ⬜ |
 | F4 | Biblioteca semilla, hooks y prompts | bajo | ⬜ |
@@ -335,7 +335,7 @@ el CHECK nuevo rechaza `'design'` y acepta `'build'`, `integrity_check` ok.
 
 ---
 
-### ⬜ F2 — UI a tres etapas
+### ✅ F2 — UI a tres etapas *(hecha)*
 
 **Objetivo:** 3 chips en el stepper, Ship adentro de Construir.
 
@@ -346,14 +346,22 @@ el CHECK nuevo rechaza `'design'` y acepta `'build'`, `integrity_check` ok.
 | `SpecsStudio.tsx:51` | `PHASE_ORDER`, labels, `byPhase` |
 | `HomeView.tsx:40` | pesos de progreso `{requirements:0, plan:1, build:2}` + tooltip de Quick Plan |
 
-- [ ] T1: `STAGES` y `stageLabels` a 3 — feature: *Requerimientos · Plan · Construir*; bug: *Análisis · Plan · Construir*
-- [ ] T2: `stageFileNames` a 3 tabs
-- [ ] T3: `ShipView` embebido en `build` — **sin tocarlo por dentro**
-- [ ] T4: sacar el gate bar de `build` — ahí no hay "Aprobar", hay "Run all"
-- [ ] T5: analytics y progreso de Home
+- [x] T1: `SpecStage = 'define' | 'plan' | 'build'` — `ship` deja de ser una etapa; `STAGE_FOR_PHASE` manda `done → 'build'`
+- [x] T2: `STAGES`, `stageLabels` (*Requirements · Plan · Build* / *Bug analysis · Plan · Build*) y `stageFileNames` a 3
+- [x] T3: `ShipView` embebido en `build` **sin tocarlo por dentro**, detrás de un switcher `Task list` / `Ship` que sólo aparece cuando `phase === 'done'` y arranca en Ship
+- [x] T4: el gate bar ya no existe en `build` — ahí la CTA es "Run all"
+- [x] T5: `HomeView` (los Shipped abren `build`) y el `Stepper` (`complete` con 3 chips y fase `done`)
+- [x] T6: el breadcrumb muestra `summary.md` mientras el panel de Ship está abierto
+- [x] T7: docs — `renderer.md` (stages, spec flow, Ship como panel) y `CLAUDE.md`
 
 **Aceptación:** aprobar en Plan navega directo a Construir; al terminar la última
-tarea aparece Ship sin cambiar de pantalla.
+tarea aparece Ship sin cambiar de pantalla; Re-sync devuelve el switcher a la lista
+de tareas. `npm run typecheck` y `npm run build` verdes.
+
+> **Nota de implementación.** Ship como *panel* y no como cuarta pestaña (decisión
+> D2) mantiene el objetivo "menos pasos": el usuario nunca navega para entregar.
+> El switcher no se muestra antes de `done` porque hasta ahí no hay nada que
+> shippear.
 
 ---
 

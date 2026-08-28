@@ -36,15 +36,15 @@ import { parseOpenQuestions, addQuestion } from '../../lib/openQuestions';
 import type { SpecMeta, SpecPhase } from '../../../electron/shared/types';
 
 const PHASE_ORDER: SpecPhase[] = ['requirements', 'plan', 'build', 'done'];
-const STAGES: SpecStage[] = ['define', 'plan', 'build', 'ship'];
+const STAGES: SpecStage[] = ['define', 'plan', 'build'];
 
 /** How a doc stage renders: line-numbered source (default), section cards, or raw edit. */
 type DocView = 'source' | 'cards' | 'edit';
 
 function stageLabels(kind: 'feature' | 'bugfix') {
   return kind === 'feature'
-    ? ['Requirements', 'Plan', 'Task List', 'Ship']
-    : ['Bug analysis', 'Plan', 'Task List', 'Ship'];
+    ? ['Requirements', 'Plan', 'Build']
+    : ['Bug analysis', 'Plan', 'Build'];
 }
 
 function stageFileNames(kind: 'feature' | 'bugfix') {
@@ -52,7 +52,6 @@ function stageFileNames(kind: 'feature' | 'bugfix') {
     kind === 'feature' ? 'requirements.md' : 'bugfix.md',
     'plan.md',
     'tasks.md',
-    'summary.md',
   ];
 }
 
@@ -79,6 +78,10 @@ export function SpecFlow({ specId }: { specId: string }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [surfacing, setSurfacing] = useState(false);
+  // Ship lives inside the Build stage. Before the spec is done there is nothing
+  // to ship, so the switcher only appears at `done` — and lands on Ship, which
+  // is the payoff the user just earned.
+  const [buildTab, setBuildTab] = useState<'tasks' | 'ship'>('tasks');
   const debounceRef = useRef<number | null>(null);
   const dirtyRef = useRef(false);
 
@@ -105,6 +108,10 @@ export function SpecFlow({ specId }: { specId: string }) {
       off();
     };
   }, [root, specId]);
+
+  useEffect(() => {
+    if (meta?.phase === 'done') setBuildTab('ship');
+  }, [meta?.phase]);
 
   const audit = useAudit(meta, files, load);
 
@@ -138,7 +145,7 @@ export function SpecFlow({ specId }: { specId: string }) {
     setMeta(updated);
     await load();
     await refreshAll();
-    setStage(STAGES[Math.min(stageIdx + 1, 3)]);
+    setStage(STAGES[Math.min(stageIdx + 1, STAGES.length - 1)]);
   };
 
   const reopenTasks = async () => {
@@ -146,6 +153,7 @@ export function SpecFlow({ specId }: { specId: string }) {
     setMeta(updated);
     await load();
     await refreshAll();
+    setBuildTab('tasks');
     setStage('build');
   };
 
@@ -165,6 +173,8 @@ export function SpecFlow({ specId }: { specId: string }) {
 
   const labels = stageLabels(meta.kind);
   const fileNames = stageFileNames(meta.kind);
+  const shipReady = meta.phase === 'done';
+  const showingShip = stage === 'build' && shipReady && buildTab === 'ship';
 
   return (
     <div className="h-full flex flex-col bg-ink-950">
@@ -291,7 +301,7 @@ export function SpecFlow({ specId }: { specId: string }) {
         <ChevronRight size={11} className="text-ink-600 shrink-0" />
         <span className="truncate max-w-[220px]">{meta.id}</span>
         <ChevronRight size={11} className="text-ink-600 shrink-0" />
-        <span className="text-ink-200">{fileNames[stageIdx]}</span>
+        <span className="text-ink-200">{showingShip ? 'summary.md' : fileNames[stageIdx]}</span>
       </div>
 
       {/* Row 3 — spec strip: name + numbered phase chips */}
@@ -310,22 +320,32 @@ export function SpecFlow({ specId }: { specId: string }) {
 
       {/* Stage body */}
       <div className="flex-1 min-h-0 flex flex-col">
-        {stage === 'ship' ? (
-          meta.phase === 'done' ? (
-            <ShipView meta={meta} onReopen={reopenTasks} />
-          ) : (
-            <LockedStage label="Ship" hint="Finish the task waves first — Ship unlocks automatically when the last task completes." />
-          )
-        ) : stage === 'build' ? (
+        {stage === 'build' ? (
           stageIdx <= phaseIdx ? (
-            <TaskRunner
-              meta={meta}
-              tasksMd={files.tasks ?? ''}
-              planMd={files.plan ?? ''}
-              requirementsMd={files.requirements ?? files.bugfix ?? ''}
-              onReload={load}
-              onShip={() => setStage('ship')}
-            />
+            <div className="flex-1 min-h-0 flex flex-col">
+              {shipReady && (
+                <div className="flex items-center gap-1 px-5 pt-2 shrink-0">
+                  <BuildTab active={buildTab === 'tasks'} onClick={() => setBuildTab('tasks')}>
+                    Task list
+                  </BuildTab>
+                  <BuildTab active={buildTab === 'ship'} onClick={() => setBuildTab('ship')}>
+                    Ship
+                  </BuildTab>
+                </div>
+              )}
+              {showingShip ? (
+                <ShipView meta={meta} onReopen={reopenTasks} />
+              ) : (
+                <TaskRunner
+                  meta={meta}
+                  tasksMd={files.tasks ?? ''}
+                  planMd={files.plan ?? ''}
+                  requirementsMd={files.requirements ?? files.bugfix ?? ''}
+                  onReload={load}
+                  onShip={() => setBuildTab('ship')}
+                />
+              )}
+            </div>
           ) : (
             <LockedStage
               label="Tasks"
@@ -392,6 +412,30 @@ export function SpecFlow({ specId }: { specId: string }) {
 
 // ---------------------------------------------------------------------------
 
+/** Sub-tab inside the Build stage: the task list, or the Ship panel. */
+function BuildTab({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'px-3 py-1.5 text-[12px] rounded-md transition',
+        active ? 'bg-ink-50/[0.06] text-ink-50' : 'text-faint hover:text-ink-100'
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
 /** Kiro-style numbered phase chips — the active one reads as a raised pill. */
 function Stepper({
   labels,
@@ -407,7 +451,8 @@ function Stepper({
   return (
     <div className="flex items-center gap-1.5 min-w-0">
       {labels.map((s, i) => {
-        const complete = i < phaseIdx || (phaseIdx === 3 && i <= 3);
+        // `done` is phase 3 but there is no fourth stage — every chip is complete.
+        const complete = i < phaseIdx || phaseIdx === PHASE_ORDER.length - 1;
         const viewing = i === stageIdx;
         const reachable = i <= phaseIdx;
         return (

@@ -37,7 +37,7 @@ App                      (the dark FRAME: title bar + icon rail + canvas; panels
 │   │                  spec cards, Shipped list, Manage mode (embeds SpecsStudio), first-run
 │   │                  "Set up defaults" card.
 │   ├─ SpecFlow        one continuous guided flow per spec (stepper → gate bars → inline tasks
-│   │                  → Ship). See "The spec flow" below.
+│   │                  → Build). See "The spec flow" below.
 │   ├─ ActivitySurface the single "what's running" center: Runs (OrchestratorView) · History
 │   │                  (HistoryView) · Terminals (panes stay mounted) · Graph (AgentGraphView).
 │   └─ LibrarySurface  left sub-nav → Agents / Skills / Hooks / Steering / Routing / Appearance
@@ -69,7 +69,7 @@ chunks each become their own segment. `ChatPanel` renders assistant messages fro
 ### `ui.ts` — `useUi`
 The shell state. `surface: 'home' | 'spec' | 'activity' | 'library'` plus per-surface state:
 
-- **Spec**: `activeSpecId` + `specStage` (`'define' | 'plan' | 'build' | 'ship'`, mapped from the
+- **Spec**: `activeSpecId` + `specStage` (`'define' | 'plan' | 'build'`, mapped from the
   spec's phase by `stageForPhase`);
   `openSpec(specId, stage?)` navigates (use `stageForPhase(phase)` to land on the right stage).
 - **Activity**: `activityTab` (`'runs' | 'history' | 'terminals' | 'graph'`), `openActivity(tab?)`.
@@ -247,7 +247,7 @@ The launchpad. Its **composer creates specs** (the old Welcome bar only forwarde
   popovers still pick skills/agents.
 
 Below: **In flight** spec cards (kind stripe, live run count from the orchestrator, phase
-progress, Resume → `openSpec(id, stageForPhase(phase))`), **Shipped** recents (open the Ship
+progress, Resume → `openSpec(id, stageForPhase(phase))`), **Shipped** recents (open the Build
 stage), a **Manage** toggle that embeds `SpecsStudio` (analytics + per-spec runs/timeline +
 delete), and a one-time **"Set up Kraken defaults"** card that calls `workspace.seedDefaults()`
 (replaces the per-module Seed buttons; dismissal persisted in `localStorage`).
@@ -255,10 +255,10 @@ delete), and a one-time **"Set up Kraken defaults"** card that calls `workspace.
 ## The spec flow (`views/SpecFlow.tsx`)
 
 One continuous guided surface per spec — the whole lifecycle on one screen, framed like an
-editor (Kiro-style): **file tabs** (`requirements.md` / `plan.md` / `tasks.md` / `summary.md`,
-accent-underlined, locked stages dimmed), a mono **breadcrumb**
-(`.kraken › specs › <id> › <file>.md`), and the **spec strip** (`Spec: <name>` + numbered phase
-chips: ① Requirements ② Plan ③ Task List ④ Ship). The tab row also carries save status, the
+editor (Kiro-style): **file tabs** (`requirements.md` / `plan.md` / `tasks.md`, accent-underlined,
+locked stages dimmed), a mono **breadcrumb** (`.kraken › specs › <id> › <file>.md`, which shows
+`summary.md` while the Ship panel is open), and the **spec strip** (`Spec: <name>` + numbered
+phase chips: ① Requirements ② Plan ③ Build). The tab row also carries save status, the
 doc **view switcher** (Source · Cards · Edit), and **one overflow menu** (Audit · Surface open
 questions · Reopen tasks/Re-sync · Delete spec). Stage bodies:
 
@@ -279,9 +279,12 @@ questions · Reopen tasks/Re-sync · Delete spec). Stage bodies:
   line (`7/12 tasks · wave 2/4 · n running` + bar), the **single concurrency stepper**, and the
   primary CTA **Run all** (autopilot) with **Improve plan** (the tasks.md self-review pass) /
   Run next / Run wave / Stop / Unblock alongside. Clicking a block opens `TaskInspector`.
-- **Ship** (`views/ShipView.tsx`) — the automatic payoff. When the last task completes,
-  `TaskRunner` auto-advances the spec to `done` and navigates here (autopilot's own advance lands
-  here too via a phase-transition watcher). `CompletionSummary` **auto-generates** the recap on
+- **Ship** (`views/ShipView.tsx`) — the automatic payoff, and **a panel inside the Build stage,
+  not a stage of its own**. Until the spec is `done` there is nothing to ship, so nothing shows;
+  once the last task completes `TaskRunner` auto-advances the spec to `done` and a `Task list` /
+  `Ship` switcher appears at the top of Build, already on Ship (autopilot's own advance lands
+  here too via a phase-transition watcher). Reopening tasks (Re-sync) sends the switcher back to
+  the task list. `CompletionSummary` **auto-generates** the recap on
   arrival (`auto` prop; persisted to `<spec>/summary.md`) and reports its text up; below it, the
   ship actions: create branch (`feat/<specId>` when on main/master) → **Commit all** (message
   prefilled from the summary, pushes when an origin exists) → **Create PR** (title/body prefilled;
