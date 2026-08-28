@@ -45,18 +45,18 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
   loading: false,
 
   pickWorkspace: async () => {
-    const p = await window.kraken.workspace.pick();
+    const p = await window.octo.workspace.pick();
     if (p) await get().openWorkspace(p);
   },
 
   restoreLast: async () => {
-    const last = await window.kraken.workspace.getLast();
+    const last = await window.octo.workspace.getLast();
     if (last) await get().openWorkspace(last);
   },
 
   openWorkspace: async (path) => {
     set({ loading: true });
-    await window.kraken.workspace.open(path);
+    await window.octo.workspace.open(path);
     set({ root: path });
     await get().refreshAll();
     set({ loading: false });
@@ -66,20 +66,20 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     const root = get().root;
     if (!root) return;
     const [tree, specs, skills, agents, steering, steeringPins, hooks] = await Promise.all([
-      window.kraken.workspace.listTree(root),
-      window.kraken.specs.list(root),
-      window.kraken.skills.list(root),
-      window.kraken.agents.list(root),
-      window.kraken.steering.list(root),
-      window.kraken.steering.getPins(root),
-      window.kraken.hooks.list(root),
+      window.octo.workspace.listTree(root),
+      window.octo.specs.list(root),
+      window.octo.skills.list(root),
+      window.octo.agents.list(root),
+      window.octo.steering.list(root),
+      window.octo.steering.getPins(root),
+      window.octo.hooks.list(root),
     ]);
     set({ tree, specs, skills, agents, steering, steeringPins, hooks });
   },
 
   createSpec: async (name, kind) => {
     const root = get().root!;
-    const spec = await window.kraken.specs.create(root, name, kind);
+    const spec = await window.octo.specs.create(root, name, kind);
     await get().refreshAll();
     return spec;
   },
@@ -87,7 +87,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
   deleteSpec: async (id) => {
     const root = get().root;
     if (!root) return;
-    await window.kraken.specs.delete(root, id);
+    await window.octo.specs.delete(root, id);
     await get().refreshAll();
   },
 
@@ -95,24 +95,24 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     const root = get().root;
     if (!root) return;
     await Promise.all([
-      window.kraken.skills.seedDefaults(root),
-      window.kraken.agents.seedDefaults(root),
-      window.kraken.steering.seedDefaults(root),
-      window.kraken.hooks.seedDefaults(root),
+      window.octo.skills.seedDefaults(root),
+      window.octo.agents.seedDefaults(root),
+      window.octo.steering.seedDefaults(root),
+      window.octo.hooks.seedDefaults(root),
     ]);
     await get().refreshAll();
   },
 
   saveSteering: async (input) => {
     const root = get().root!;
-    const saved = await window.kraken.steering.write(root, input);
+    const saved = await window.octo.steering.write(root, input);
     await get().refreshAll();
     return saved;
   },
 
   deleteSteering: async (filePath) => {
     const root = get().root!;
-    await window.kraken.steering.remove(root, filePath);
+    await window.octo.steering.remove(root, filePath);
     await get().refreshAll();
   },
 
@@ -123,7 +123,7 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     const next = current.includes(name)
       ? current.filter((n) => n !== name)
       : [...current, name];
-    const saved = await window.kraken.steering.setPins(root, next);
+    const saved = await window.octo.steering.setPins(root, next);
     set({ steeringPins: saved });
   },
 }));

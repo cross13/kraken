@@ -2,7 +2,7 @@ import { app, BrowserWindow, ipcMain, dialog, shell, safeStorage, screen } from 
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import fs from 'node:fs/promises';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync, renameSync } from 'node:fs';
 import { spawn, spawnSync } from 'node:child_process';
 import Anthropic from '@anthropic-ai/sdk';
 import Store from 'electron-store';
@@ -82,10 +82,23 @@ import { tasksDocFromPlan } from './shared/planTasks.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Name the app early so userData (DB, settings) lives in a Kraken-named folder
+// Name the app early so userData (DB, settings) lives in an Octo-named folder
 // rather than the default "Electron" directory.
-app.setName('Kraken');
-app.setPath('userData', path.join(app.getPath('appData'), 'Kraken'));
+app.setName('Octo');
+const userDataDir = path.join(app.getPath('appData'), 'Octo');
+// The app was called Kraken until August 2026. That folder holds the history DB
+// and every electron-store setting, so carry it over rather than making a rename
+// look like a factory reset. One-shot: only when Octo's folder doesn't exist yet.
+const legacyUserDataDir = path.join(app.getPath('appData'), 'Kraken');
+if (!existsSync(userDataDir) && existsSync(legacyUserDataDir)) {
+  try {
+    renameSync(legacyUserDataDir, userDataDir);
+  } catch {
+    // Locked or partially copied — a fresh folder is a worse outcome than a
+    // crash here would be, so carry on with an empty one.
+  }
+}
+app.setPath('userData', userDataDir);
 
 type Backend = 'cli' | 'api';
 type PermissionMode = 'default' | 'acceptEdits' | 'bypassPermissions';
@@ -710,9 +723,28 @@ async function pickWorkspace() {
   return res.filePaths[0];
 }
 
+/**
+ * The data directory was `.kraken` until the app was renamed to Octo. Move it
+ * rather than leaving the user's specs, hooks and steering docs orphaned.
+ * One-shot and non-destructive: it only runs when there is no `.octo` to clobber.
+ */
+async function migrateLegacyDataDir(current: string, legacy: string) {
+  if (existsSync(current) || !existsSync(legacy)) return;
+  try {
+    await fs.rename(legacy, current);
+  } catch {
+    // Fall through — ensureDir will create a fresh one.
+  }
+}
+
 async function openWorkspace(rootPath: string) {
-  // Kraken-specific
-  await ensureDir(path.join(rootPath, '.kraken', 'specs'));
+  // Octo-specific
+  await migrateLegacyDataDir(path.join(rootPath, '.octo'), path.join(rootPath, '.kraken'));
+  await migrateLegacyDataDir(
+    path.join(app.getPath('home'), '.octo'),
+    path.join(app.getPath('home'), '.kraken')
+  );
+  await ensureDir(path.join(rootPath, '.octo', 'specs'));
   // Claude Code standard locations — also created so they show up in pickers
   await ensureDir(path.join(rootPath, '.claude', 'agents'));
   await ensureDir(path.join(rootPath, '.claude', 'skills'));
@@ -743,7 +775,7 @@ async function readDir(dir: string, depth: number): Promise<DirEntry[]> {
   const items = await fs.readdir(dir, { withFileTypes: true });
   const out: DirEntry[] = [];
   for (const item of items) {
-    if (item.name.startsWith('.') && item.name !== '.kraken' && item.name !== '.claude') continue;
+    if (item.name.startsWith('.') && item.name !== '.octo' && item.name !== '.claude') continue;
     if (item.name === 'node_modules' || item.name === 'out') continue;
     const p = path.join(dir, item.name);
     if (item.isDirectory()) {
@@ -766,7 +798,7 @@ async function readDir(dir: string, depth: number): Promise<DirEntry[]> {
 // ---------- Specs ----------
 
 async function listSpecs(root: string): Promise<SpecMeta[]> {
-  const specsDir = path.join(root, '.kraken', 'specs');
+  const specsDir = path.join(root, '.octo', 'specs');
   await ensureDir(specsDir);
   const items = await fs.readdir(specsDir, { withFileTypes: true });
   const out: SpecMeta[] = [];
@@ -835,7 +867,7 @@ async function migrateSpecDir(specPath: string): Promise<void> {
 
 async function createSpec(root: string, name: string, kind: SpecKind): Promise<SpecMeta> {
   const slug = slugify(name) || `spec-${Date.now()}`;
-  const specsDir = path.join(root, '.kraken', 'specs');
+  const specsDir = path.join(root, '.octo', 'specs');
   await ensureDir(specsDir);
 
   let folder = slug;
@@ -880,7 +912,7 @@ async function createSpec(root: string, name: string, kind: SpecKind): Promise<S
 }
 
 function patchSpecMeta(root: string, id: string, patch: Partial<SpecMeta>): SpecMeta | null {
-  const specPath = path.join(root, '.kraken', 'specs', id);
+  const specPath = path.join(root, '.octo', 'specs', id);
   const metaPath = path.join(specPath, 'spec.json');
   if (!existsSync(metaPath)) return null;
   const meta = JSON.parse(readFileSync(metaPath, 'utf8')) as SpecMeta;
@@ -900,7 +932,7 @@ function patchSpecMeta(root: string, id: string, patch: Partial<SpecMeta>): Spec
 }
 
 async function readSpec(root: string, id: string) {
-  const specPath = path.join(root, '.kraken', 'specs', id);
+  const specPath = path.join(root, '.octo', 'specs', id);
   await migrateSpecDir(specPath);
   const meta = JSON.parse(await fs.readFile(path.join(specPath, 'spec.json'), 'utf8')) as SpecMeta;
   const files: Record<string, string> = {};
@@ -912,7 +944,7 @@ async function readSpec(root: string, id: string) {
 }
 
 async function writeSpecFile(root: string, id: string, file: string, content: string) {
-  const specPath = path.join(root, '.kraken', 'specs', id);
+  const specPath = path.join(root, '.octo', 'specs', id);
   const filePath = path.join(specPath, `${file}.md`);
   await fs.writeFile(filePath, content, 'utf8');
   const metaPath = path.join(specPath, 'spec.json');
@@ -936,7 +968,7 @@ async function writeSpecFile(root: string, id: string, file: string, content: st
 }
 
 async function advanceSpec(root: string, id: string) {
-  const specPath = path.join(root, '.kraken', 'specs', id);
+  const specPath = path.join(root, '.octo', 'specs', id);
   const metaPath = path.join(specPath, 'spec.json');
   const meta = JSON.parse(await fs.readFile(metaPath, 'utf8')) as SpecMeta;
   const order: SpecPhase[] = ['requirements', 'plan', 'build', 'done'];
@@ -979,7 +1011,7 @@ async function advanceSpec(root: string, id: string) {
 
 /** Set a spec to an explicit phase (used by Re-sync to reopen a completed phase). */
 async function setSpecPhase(root: string, id: string, phase: SpecPhase) {
-  const specPath = path.join(root, '.kraken', 'specs', id);
+  const specPath = path.join(root, '.octo', 'specs', id);
   const metaPath = path.join(specPath, 'spec.json');
   const meta = JSON.parse(await fs.readFile(metaPath, 'utf8')) as SpecMeta;
   const order: SpecPhase[] = ['requirements', 'plan', 'build', 'done'];
@@ -1004,12 +1036,12 @@ async function setSpecPhase(root: string, id: string, phase: SpecPhase) {
 
 /**
  * Permanently delete a spec: remove its on-disk directory
- * (`.kraken/specs/<id>/`) and every mirrored DB row (events, runs + run
+ * (`.octo/specs/<id>/`) and every mirrored DB row (events, runs + run
  * files/errors, hook runs). Disk is the source of truth; the DB cascade keeps
  * history/analytics from dangling.
  */
 async function removeSpec(root: string, id: string): Promise<void> {
-  const specPath = path.join(root, '.kraken', 'specs', id);
+  const specPath = path.join(root, '.octo', 'specs', id);
   if (existsSync(specPath)) {
     await fs.rm(specPath, { recursive: true, force: true });
   }
@@ -1261,8 +1293,8 @@ function matchesGlob(filePath: string, glob: string): boolean {
 
 async function listSteering(root: string): Promise<SteeringFile[]> {
   const dirs = [
-    { dir: path.join(root, '.kraken', 'steering'), scope: 'workspace' as const },
-    { dir: path.join(app.getPath('home'), '.kraken', 'steering'), scope: 'global' as const },
+    { dir: path.join(root, '.octo', 'steering'), scope: 'workspace' as const },
+    { dir: path.join(app.getPath('home'), '.octo', 'steering'), scope: 'global' as const },
   ];
   const out: SteeringFile[] = [];
   const seen = new Set<string>();
@@ -1376,7 +1408,7 @@ async function composeSteeringSystem(
 }
 
 async function seedDefaultSteering(root: string) {
-  const dir = path.join(root, '.kraken', 'steering');
+  const dir = path.join(root, '.octo', 'steering');
   await ensureDir(dir);
   const files: Record<string, string> = {
     'product.md': `---
@@ -1425,11 +1457,11 @@ _Outline how the codebase is organized._
   }
 }
 
-/** Resolve the `.kraken/steering` directory for a scope. */
+/** Resolve the `.octo/steering` directory for a scope. */
 function steeringDir(root: string, scope: 'workspace' | 'global'): string {
   return scope === 'global'
-    ? path.join(app.getPath('home'), '.kraken', 'steering')
-    : path.join(root, '.kraken', 'steering');
+    ? path.join(app.getPath('home'), '.octo', 'steering')
+    : path.join(root, '.octo', 'steering');
 }
 
 /** Create or update a steering doc as a frontmatter markdown file. */
@@ -1465,16 +1497,16 @@ async function writeSteering(root: string, input: SteeringWriteInput): Promise<S
   };
 }
 
-/** True when a path lives under any `.kraken/steering` directory (guards deletes). */
+/** True when a path lives under any `.octo/steering` directory (guards deletes). */
 function isInSteeringDir(p: string): boolean {
   const norm = p.replace(/\\/g, '/');
-  return norm.includes('/.kraken/steering/');
+  return norm.includes('/.octo/steering/');
 }
 
-/** Delete a steering doc. Refuses paths outside `.kraken/steering` (e.g. root CLAUDE.md). */
+/** Delete a steering doc. Refuses paths outside `.octo/steering` (e.g. root CLAUDE.md). */
 async function deleteSteering(filePath: string): Promise<void> {
   if (!isInSteeringDir(filePath)) {
-    throw new Error('Refusing to delete a file outside .kraken/steering');
+    throw new Error('Refusing to delete a file outside .octo/steering');
   }
   if (existsSync(filePath)) await fs.rm(filePath);
 }
@@ -1492,7 +1524,7 @@ function setSteeringPins(root: string, names: string[]): string[] {
   return deduped;
 }
 
-// ---------- Hooks (Kraken-native agent hooks) ----------
+// ---------- Hooks (Octo-native agent hooks) ----------
 
 const HOOK_COOLDOWN_MS = 4000;
 const hookCooldown = new Map<string, number>(); // hookId -> last fire ms
@@ -1539,8 +1571,8 @@ function finalizeHookRun(requestId: string, type: 'done' | 'error', error?: stri
 
 async function listHooks(root: string): Promise<HookConfig[]> {
   const dirs = [
-    { dir: path.join(root, '.kraken', 'hooks'), scope: 'workspace' as const },
-    { dir: path.join(app.getPath('home'), '.kraken', 'hooks'), scope: 'global' as const },
+    { dir: path.join(root, '.octo', 'hooks'), scope: 'workspace' as const },
+    { dir: path.join(app.getPath('home'), '.octo', 'hooks'), scope: 'global' as const },
   ];
   const out: HookConfig[] = [];
   const seen = new Set<string>();
@@ -1565,7 +1597,7 @@ async function listHooks(root: string): Promise<HookConfig[]> {
 }
 
 async function writeHook(root: string, hook: HookConfig): Promise<HookConfig> {
-  const dir = path.join(root, '.kraken', 'hooks');
+  const dir = path.join(root, '.octo', 'hooks');
   await ensureDir(dir);
   const id = hook.id || `hook-${Date.now()}`;
   const file = path.join(dir, `${id}.json`);
@@ -1577,7 +1609,7 @@ async function writeHook(root: string, hook: HookConfig): Promise<HookConfig> {
 }
 
 async function deleteHook(root: string, id: string): Promise<void> {
-  const file = path.join(root, '.kraken', 'hooks', `${id}.json`);
+  const file = path.join(root, '.octo', 'hooks', `${id}.json`);
   if (existsSync(file)) await fs.rm(file);
 }
 
@@ -1594,7 +1626,7 @@ function composeHookSystem(hook: HookConfig, ctx: HookFireContext, agentBody: st
   parts.push(`# Hook: ${hook.title}`);
   if (hook.description) parts.push(hook.description);
   if (ctx.specId) {
-    const specRel = path.join('.kraken', 'specs', ctx.specId);
+    const specRel = path.join('.octo', 'specs', ctx.specId);
     parts.push(
       `This hook fired for spec \`${ctx.specId}\`. Relevant files live under \`${specRel}/\` ` +
         `(requirements.md / bugfix.md, plan.md, tasks.md).`
@@ -1736,9 +1768,9 @@ async function generateHookFromNl(root: string, description: string): Promise<vo
   const sender = getMainSender();
   if (!sender) return;
   const requestId = `hookgen-${Date.now()}`;
-  const system = `You generate a Kraken hook config from a description. Reply with ONLY a JSON object (no prose, no code fences) matching:
+  const system = `You generate a Octo hook config from a description. Reply with ONLY a JSON object (no prose, no code fences) matching:
 {"id": "kebab-id", "title": "...", "description": "...", "trigger": "spec-advance|spec-done|task-complete|wave-complete|file-save-in-app|manual", "enabled": true, "actionType": "ask-claude|run-command", "agent": "agent-name-or-null", "instructions": "prompt for ask-claude", "command": "shell for run-command", "blocking": false}
-Write the JSON file to .kraken/hooks/<id>.json using the Write tool, then stop.`;
+Write the JSON file to .octo/hooks/<id>.json using the Write tool, then stop.`;
   void streamClaude(sender, {
     requestId,
     source: 'hook:generate',
@@ -1749,7 +1781,7 @@ Write the JSON file to .kraken/hooks/<id>.json using the Write tool, then stop.`
 }
 
 async function seedDefaultHooks(root: string) {
-  const dir = path.join(root, '.kraken', 'hooks');
+  const dir = path.join(root, '.octo', 'hooks');
   await ensureDir(dir);
   const hooks = defaultHooksLibrary();
   for (const hook of hooks) {
@@ -1874,7 +1906,11 @@ function decryptSecret(stored: string | undefined): string | null {
   try {
     return safeStorage.decryptString(buf);
   } catch {
-    return buf.toString('utf8');
+    // On macOS the safeStorage key lives in the Keychain under the app name, so
+    // the Kraken → Octo rename made previously stored secrets undecryptable.
+    // Report "no secret" and let the user re-enter it — returning the raw bytes
+    // would hand the caller garbage and surface as a confusing 401.
+    return null;
   }
 }
 

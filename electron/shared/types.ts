@@ -318,7 +318,7 @@ export interface SteeringFile {
   /**
    * Whether this doc can be edited/deleted from the Steering Studio. Implicit
    * root files (CLAUDE.md / AGENTS.md) are surfaced read-only (`false`);
-   * `.kraken/steering/*.md` docs are editable (`true`).
+   * `.octo/steering/*.md` docs are editable (`true`).
    */
   editable?: boolean;
 }
@@ -503,12 +503,12 @@ export interface WideState {
 // ---------- Model discovery ----------
 
 /**
- * Where a model entry came from. Kraken never invents availability — each entry
+ * Where a model entry came from. Octo never invents availability — each entry
  * says how it was learned:
  *  - `api`      the Anthropic Models API answered for the stored key. Authoritative.
  *  - `cli-config` the id is named in a local Claude Code settings file / env var,
  *                 so the installed CLI is configured to use it.
- *  - `catalog`  Kraken's bundled list. A known-good id, availability unverified.
+ *  - `catalog`  Octo's bundled list. A known-good id, availability unverified.
  */
 export type ModelOrigin = 'api' | 'cli-config' | 'catalog';
 

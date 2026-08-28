@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import type { ActiveRun, RunKind, RunRow, StreamChannel } from '../../../electron/shared/types';
 import { useTheme, THEME_LABEL } from '../../stores/theme';
-import { KrakenLogo } from '../KrakenLogo';
+import { OctoLogo } from '../OctoLogo';
 import { cn } from '../../lib/cn';
 
 // A compact copy of the orchestrator's kind styling — the travel window is a
@@ -55,7 +55,7 @@ interface LogSeg {
 }
 const MAX_SEGS = 600; // cap the per-run log buffer
 
-const ZOOM_KEY = 'kraken.wideZoom';
+const ZOOM_KEY = 'octo.wideZoom';
 const ZOOM_MIN = 0.7;
 const ZOOM_MAX = 2.2;
 const ZOOM_STEP = 0.1;
@@ -103,7 +103,7 @@ export function WideApp() {
 
   // Apply (and persist) the crisp page zoom whenever it changes.
   useEffect(() => {
-    window.kraken.win.setZoom(zoom);
+    window.octo.win.setZoom(zoom);
     try {
       localStorage.setItem(ZOOM_KEY, String(zoom));
     } catch {
@@ -125,7 +125,7 @@ export function WideApp() {
   // Mirror the main window's registry, retaining metadata for finished runs.
   useEffect(
     () =>
-      window.kraken.fleet.onSync((snapshot) => {
+      window.octo.fleet.onSync((snapshot) => {
         setRuns(snapshot);
         setRunsById((prev) => {
           const next = { ...prev };
@@ -138,7 +138,7 @@ export function WideApp() {
 
   // Mirror the live token stream so the detail column shows what each agent does.
   useEffect(() => {
-    const off = window.kraken.claude.onEvent((ev) => {
+    const off = window.octo.claude.onEvent((ev) => {
       if (ev.type === 'delta' && ev.text) {
         const channel = (ev.channel ?? 'text') as StreamChannel;
         const text = ev.text;
@@ -162,8 +162,8 @@ export function WideApp() {
   }, []);
 
   useEffect(() => {
-    window.kraken.settings.getModel().then(setModel).catch(() => {});
-    window.kraken.workspace
+    window.octo.settings.getModel().then(setModel).catch(() => {});
+    window.octo.workspace
       .getLast()
       .then((p) => setProject(p ? p.split('/').filter(Boolean).pop() ?? null : null))
       .catch(() => {});
@@ -205,7 +205,7 @@ export function WideApp() {
   }, [running.length]);
 
   const cancelOne = (run: ActiveRun) => {
-    window.kraken.claude.cancel(run.requestId);
+    window.octo.claude.cancel(run.requestId);
     setFinished((prev) => ({ ...prev, [run.requestId]: 'cancelled' }));
     // Optimistic — the main window will also finish it and push a fresh snapshot.
     setRuns((rs) => rs.filter((r) => r.requestId !== run.requestId));
@@ -224,7 +224,7 @@ export function WideApp() {
       {/* Draggable top strip — the frame's status row */}
       <header className="titlebar-drag shrink-0 flex items-center gap-3 h-11 px-3.5 border-b border-ink-800/60">
         <div className="w-8 h-8 grid place-items-center rounded-[10px] octo-tile shrink-0">
-          <KrakenLogo animated={running.length > 0} className="w-4 h-5" />
+          <OctoLogo animated={running.length > 0} className="w-4 h-5" />
         </div>
         <div className="min-w-0">
           <div className="text-[13px] font-semibold text-ink-50 leading-tight truncate">
@@ -271,7 +271,7 @@ export function WideApp() {
           <IconBtn onClick={cycleTheme} title={`Theme: ${THEME_LABEL[theme]}`}>
             <Contrast size={15} />
           </IconBtn>
-          <IconBtn onClick={() => window.kraken.win.toggleWide()} title="Close Travel Display">
+          <IconBtn onClick={() => window.octo.win.toggleWide()} title="Close Travel Display">
             <Minimize2 size={15} />
           </IconBtn>
         </div>
@@ -451,7 +451,7 @@ function RunDetail({
     setRow(null);
     let alive = true;
     const fetchRow = () =>
-      window.kraken.history
+      window.octo.history
         .getRun(run.requestId)
         .then((r) => {
           if (alive) setRow(r);

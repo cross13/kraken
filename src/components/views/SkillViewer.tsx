@@ -5,7 +5,7 @@ import { Markdown } from '../Markdown';
 export function SkillViewer({ path }: { path: string }) {
   const [content, setContent] = useState('');
   useEffect(() => {
-    window.kraken.skills.read(path).then(setContent);
+    window.octo.skills.read(path).then(setContent);
   }, [path]);
 
   return (

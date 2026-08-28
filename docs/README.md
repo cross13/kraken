@@ -1,6 +1,6 @@
-# Kraken Developer Documentation
+# Octo Developer Documentation
 
-This folder is the **developer reference** for working on Kraken — read it before
+This folder is the **developer reference** for working on Octo — read it before
 changing an existing module or adding a new one. It complements the high-level
 `CLAUDE.md` at the repo root (which is the quick orientation map); the files here go
 deeper into *how to build*.
@@ -30,7 +30,7 @@ Data crosses between Electron layers **only** through the typed IPC bridge. A fe
 touches the backend is always a three-part change:
 
 ```
-electron/main.ts (registerIpc handler)  →  electron/preload.ts (window.kraken method)  →  src/ (store/component)
+electron/main.ts (registerIpc handler)  →  electron/preload.ts (window.octo method)  →  src/ (store/component)
 ```
 
 Shared types live in `electron/shared/types.ts` and are imported by both sides — keep that

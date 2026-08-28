@@ -31,7 +31,7 @@ the contract; define it first so both projects typecheck against it.
 
 ## 3. Preload — `electron/preload.ts`
 
-Expose a typed method under the right namespace on `window.kraken` (or add a new namespace):
+Expose a typed method under the right namespace on `window.octo` (or add a new namespace):
 ```ts
 mything: {
   do: (root: string, arg: string) =>
@@ -56,7 +56,7 @@ Pick the surfaces you need:
   most an indicator elsewhere.
 - **Reusable logic:** `src/lib/<name>.ts`.
 
-Call the backend via `window.kraken.mything.do(...)`. See [`renderer.md`](./renderer.md).
+Call the backend via `window.octo.mything.do(...)`. See [`renderer.md`](./renderer.md).
 
 ## 5. If it runs Claude
 

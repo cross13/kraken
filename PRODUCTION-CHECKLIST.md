@@ -1,6 +1,6 @@
-# Kraken — Production Readiness Checklist
+# Octo — Production Readiness Checklist
 
-Status of this file: **audit performed against `main` at commit `14ae7ec`** (Kraken `0.1.0`).
+Status of this file: **audit performed against `main` at commit `14ae7ec`** (Octo `0.1.0`).
 Every item below was verified against the actual source, not assumed. Boxes are unchecked unless
 the work is genuinely done today.
 
@@ -28,7 +28,7 @@ test runner and no linter configured (`package.json` has neither).
       `.github/workflows/ci.yml` running `typecheck` → `lint` → `test` → `build` on push and PR.
 - [ ] **P1 — Integration test for the IPC contract.** The main↔preload↔renderer boundary is the
       load-bearing invariant; a test that asserts every `ipcMain.handle` channel has a matching
-      `window.kraken` method (and vice versa) would catch the most common breakage in this repo.
+      `window.octo` method (and vice versa) would catch the most common breakage in this repo.
 - [ ] **P2 — Smoke test the packaged app** (Playwright + Electron) for: launch, open folder,
       create spec, stream a mocked response.
 
@@ -104,7 +104,7 @@ Open items:
 - [ ] **P1 — Orphaned child processes.** `activeStreams` tracks CLI children and
       `terminals.killAll()` runs on window close — verify the *quit* and *crash* paths too, and
       that a hard kill of Electron doesn't leave `claude` processes behind.
-- [ ] **P2 — DB growth policy.** `kraken.db` accumulates every run's full prompt and response with
+- [ ] **P2 — DB growth policy.** `octo.db` accumulates every run's full prompt and response with
       no retention limit. Add a size/age cap and a "clear history" action.
 - [ ] **P2 — Structured logging** with a user-accessible log file and a "Reveal logs" action.
 
@@ -115,9 +115,9 @@ Open items:
       `ALTER TABLE ... ADD COLUMN` failures. That pattern works but is unauditable — you can't
       tell which schema version a given database is on. Version the schema explicitly before the
       first public release, while the install base is still zero.
-- [ ] **P1 — Spec-format forward compatibility.** `.kraken/specs/<id>/spec.json` has no version
+- [ ] **P1 — Spec-format forward compatibility.** `.octo/specs/<id>/spec.json` has no version
       field. Add one now so a future format change can migrate rather than guess.
-- [ ] **P2 — Handle a corrupt/locked `kraken.db`** by rebuilding rather than failing to launch.
+- [ ] **P2 — Handle a corrupt/locked `octo.db`** by rebuilding rather than failing to launch.
 
 ## 7. UX & accessibility — **P1**
 
@@ -146,7 +146,7 @@ Settings as a multi-column grid). Remaining:
 - [ ] **P1 — Offline / API-down.** Verify the streaming error path surfaces to the user in every
       entry point (chat, spec drafting, task waves, hooks).
 - [ ] **P1 — Empty/invalid workspace.** Opening a folder without write permission, or one already
-      containing a malformed `.kraken/specs/<id>/spec.json`, must not crash the surface.
+      containing a malformed `.octo/specs/<id>/spec.json`, must not crash the surface.
 - [ ] **P2 — Cancellation.** Confirm `claude:cancel` reliably kills the child on all three
       platforms, including mid-wave with several runs in flight.
 

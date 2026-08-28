@@ -427,6 +427,6 @@ const api = {
   },
 };
 
-contextBridge.exposeInMainWorld('kraken', api);
+contextBridge.exposeInMainWorld('octo', api);
 
-export type KrakenApi = typeof api;
+export type OctoApi = typeof api;

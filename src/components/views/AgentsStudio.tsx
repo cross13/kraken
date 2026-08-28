@@ -40,7 +40,7 @@ import {
 const EXPLAINER = [
   {
     heading: 'What an agent is',
-    body: 'A markdown file in .claude/agents/ with front-matter (name, description, model, tools) and a body that becomes the system prompt. Kraken loads workspace agents first, then global ~/.claude ones.',
+    body: 'A markdown file in .claude/agents/ with front-matter (name, description, model, tools) and a body that becomes the system prompt. Octo loads workspace agents first, then global ~/.claude ones.',
   },
   {
     heading: 'How one gets picked',
@@ -235,7 +235,7 @@ function AgentDetail({ agent, agents }: { agent: AgentMeta; agents: AgentMeta[] 
   const pinAgent = useModuleConfig((s) => s.pinAgent);
 
   useEffect(() => {
-    window.kraken.agents.read(agent.path).then(setBody);
+    window.octo.agents.read(agent.path).then(setBody);
   }, [agent.path]);
 
   const isChatAgent = selectedAgent === agent.name;
@@ -396,7 +396,7 @@ function NewAgentDialog({
     setErr(null);
     try {
       const path = agentPath(root, slug);
-      await window.kraken.fs.write(path, agentScaffold(slug, description.trim()));
+      await window.octo.fs.write(path, agentScaffold(slug, description.trim()));
       await refreshAll();
       onCreated(path);
     } catch (e) {

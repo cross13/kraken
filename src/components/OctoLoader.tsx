@@ -1,4 +1,4 @@
-import { KrakenLogo } from './KrakenLogo';
+import { OctoLogo } from './OctoLogo';
 import { cn } from '../lib/cn';
 
 // "Reading code" shimmer lines from the brand kit: [width %, indent px, color].
@@ -24,7 +24,7 @@ const MARK_SIZE = {
  * mark over a scrolling code shimmer and three pulsing dots. Use it for
  * blocking/large loading states; small inline spinners stay `Loader2`.
  */
-export function KrakenLoader({
+export function OctoLoader({
   label,
   size = 'md',
   showCode = true,
@@ -37,7 +37,7 @@ export function KrakenLoader({
 }) {
   return (
     <div className={cn('flex flex-col items-center gap-4', className)}>
-      <KrakenLogo animated glow variant="dark" className={MARK_SIZE[size]} />
+      <OctoLogo animated glow variant="dark" className={MARK_SIZE[size]} />
 
       {showCode && (
         <div className="w-[220px] h-[96px] rounded-[10px] overflow-hidden relative bg-[#000A14] ring-1 ring-[#00BBDD]/[0.14]">

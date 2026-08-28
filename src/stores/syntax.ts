@@ -21,7 +21,7 @@ export interface SyntaxConfig {
   wrap: boolean;
 }
 
-const KEY = 'kraken.syntax';
+const KEY = 'octo.syntax';
 
 const DEFAULTS: SyntaxConfig = {
   theme: DEFAULT_THEME_ID,

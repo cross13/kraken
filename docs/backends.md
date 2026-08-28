@@ -1,6 +1,6 @@
 # Claude Backends
 
-Kraken drives Claude through **two interchangeable backends**, chosen at runtime in
+Octo drives Claude through **two interchangeable backends**, chosen at runtime in
 Settings (`settings.getBackend()` → `'cli' | 'api'`):
 
 - **Local Claude CLI** (default) — spawns the user's `claude` binary. Free if they already pay
@@ -57,11 +57,11 @@ Active child processes are tracked in **`activeStreams`** (keyed by `requestId`)
 Renderer side is fire-and-forget + subscription:
 
 ```ts
-window.kraken.claude.stream(payload)            // ipcRenderer.send('claude:stream', …)
-const off = window.kraken.claude.onEvent(ev => { // subscribes to 'claude:event'
+window.octo.claude.stream(payload)            // ipcRenderer.send('claude:stream', …)
+const off = window.octo.claude.onEvent(ev => { // subscribes to 'claude:event'
   // ev = { requestId, type: 'delta'|'done'|'error', text?, error?, channel? }
 })
-window.kraken.claude.cancel(requestId)          // stops the tracked child / stream
+window.octo.claude.cancel(requestId)          // stops the tracked child / stream
 ```
 
 The renderer correlates events back to the originating run by **`requestId`** and updates the

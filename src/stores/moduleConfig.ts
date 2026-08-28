@@ -43,7 +43,7 @@ export const DEFAULTS: ModuleConfig = {
   disabledSkills: [],
 };
 
-const KEY = 'kraken.moduleConfig';
+const KEY = 'octo.moduleConfig';
 
 function load(): ModuleConfig {
   try {

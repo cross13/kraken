@@ -15,7 +15,7 @@
 
 ## 1. Why
 
-Kraken's SDD pipeline (spec → requirements → design → tasks → parallel execution) is
+Octo's SDD pipeline (spec → requirements → design → tasks → parallel execution) is
 coherent, but it is wrapped in an IDE-shaped shell that buries it: **14 rail
 destinations, 20 center-tab kinds, ~40+ configuration controls, and six overlapping
 "what's running" surfaces**. A happy-path feature takes 10–14 deliberate clicks across
@@ -30,7 +30,7 @@ the weakest:
   `CompletionSummary.tsx`) and has **no path onward to commit or PR**. Done-state and
   ship-state are disconnected.
 
-This proposal inverts the app's identity: Kraken today reads as *an IDE with a spec
+This proposal inverts the app's identity: Octo today reads as *an IDE with a spec
 feature*; the redesign makes it *a spec pipeline with an IDE-grade engine behind it*.
 Reference for several patterns: [Kiro](https://kiro.dev) (gated three-doc specs, Quick
 Plan escape hatch, task execution inline in the tasks doc, diff-centric review,
@@ -126,7 +126,7 @@ are singletons, files open in a slide-over viewer, the phase stepper is the navi
 
 | Surface | Contents |
 |---|---|
-| **Home** | The launchpad. The NL command bar **actually creates specs**. "In flight" spec cards (live phase + run status, Resume), "Shipped" recents linking to their Ship summaries, all-specs list with Spec Manager analytics/delete behind a "Manage" toggle. A first-run "Set up Kraken defaults" card seeds agents + skills + hooks once. |
+| **Home** | The launchpad. The NL command bar **actually creates specs**. "In flight" spec cards (live phase + run status, Resume), "Shipped" recents linking to their Ship summaries, all-specs list with Spec Manager analytics/delete behind a "Manage" toggle. A first-run "Set up Octo defaults" card seeds agents + skills + hooks once. |
 | **Spec** | One continuous guided surface per spec — the entire lifecycle on one screen with a phase stepper (§3.3). A spec switcher (dropdown + ⌘K) changes which spec it shows. |
 | **Activity** | The single command center for "what's running": live runs grouped by spec → wave (cancel / Stop all), the **one** concurrency control, tabs for History and Terminals, optional list ⇄ graph toggle (absorbs Agent Graph). Everywhere else shows only indicators (top-bar pill, in-situ task chips). |
 | **Library** | Consolidated background config: Agents · Skills · Hooks · Steering · Routing · Appearance · Settings (§3.5). |
@@ -234,7 +234,7 @@ load-bearing pillar of the layout.
 One `ModuleShell`-style surface with a left sub-nav: **Agents · Skills · Hooks ·
 Steering · Routing · Appearance · Settings**. Only the full-page studios survive; the
 rail-panel twins (`sidebar/AgentsView`, `SkillsView`, `HooksView`) are deleted — the
-dual-UI problem dies here. One first-run **"Set up Kraken defaults"** action (a Home
+dual-UI problem dies here. One first-run **"Set up Octo defaults"** action (a Home
 card until dismissed) replaces the three per-module "Seed defaults" buttons.
 
 | Tier | Knobs |
@@ -251,7 +251,7 @@ card until dismissed) replaces the three per-module "Seed defaults" buttons.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│ 🐙 kraken   ⌘K Search/actions        my-app ⎇ main    ◉ 2 running   │
+│ 🐙 octo   ⌘K Search/actions        my-app ⎇ main    ◉ 2 running   │
 ├───┬──────────────────────────────────────────────────────────────────┤
 │ ⌂ │                                                                  │
 │ ▤ │   ┌────────────────────────────────────────────────────────┐    │

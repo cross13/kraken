@@ -5,7 +5,7 @@ this doc explains the behavior and where the code lives.
 
 ## Agents & Skills
 
-Kraken reads agents and skills in **Claude Code's exact format and precedence** — don't invent a
+Octo reads agents and skills in **Claude Code's exact format and precedence** — don't invent a
 parallel format.
 
 - **Locations:** agents are flat markdown in `.claude/agents/*.md`; skills are a directory per
@@ -32,7 +32,7 @@ parallel format.
 
 Fire Claude runs automatically on app-level events.
 
-- **Config:** JSON files in `.kraken/hooks/*.json` (+ global `~/.kraken/hooks/`), shape =
+- **Config:** JSON files in `.octo/hooks/*.json` (+ global `~/.octo/hooks/`), shape =
   `HookConfig`. Action types: `'ask-claude' | 'run-command'`.
 - **Triggers** (`HookTrigger`): spec-advance, spec-done, file-save-in-app, task-complete,
   wave-complete, manual.
@@ -50,7 +50,7 @@ Fire Claude runs automatically on app-level events.
 
 ## Steering — project context injection
 
-- **Source:** markdown in `.kraken/steering/*.md` (+ global), **plus** root `AGENTS.md` /
+- **Source:** markdown in `.octo/steering/*.md` (+ global), **plus** root `AGENTS.md` /
   `CLAUDE.md` as implicit `always` context.
 - **Inclusion modes** (`SteeringInclusion`): `always | fileMatch | manual | auto`.
 - **`composeSteeringSystem`** resolves which files apply and is prepended to `payload.system`
@@ -61,7 +61,7 @@ Fire Claude runs automatically on app-level events.
   `streamClaude`, so **no per-call-site change** is needed for pins to apply everywhere.
 - **CRUD + preview IPC:** `steering:list`, `steering:create-default`, `steering:write`
   (create/update a frontmatter `.md`, handles rename via `prevPath`), `steering:delete` (guarded to
-  `.kraken/steering` only — root `CLAUDE.md`/`AGENTS.md` are read-only), `steering:preview`
+  `.octo/steering` only — root `CLAUDE.md`/`AGENTS.md` are read-only), `steering:preview`
   (returns the exact injected block for given file hints + pins), `steering:get-pins` /
   `steering:set-pins`. `SteeringFile.editable` flags whether a doc can be edited/deleted.
 - **UI:** the full-page **`SteeringStudio`** (`views/SteeringStudio.tsx`) — Library tab (list +
@@ -171,7 +171,7 @@ layout on the primary screen — handy when travelling with a second display.
   automatically because `data-theme` is persisted in per-origin `localStorage` shared by both
   windows.
 - **Crisp zoom.** A dense panel rendered ~1:1 (2560×720, `devicePixelRatio ≈ 1`) makes the compact
-  UI hard to read. The header carries a zoom control (−/%/+, persisted to `kraken.wideZoom`,
+  UI hard to read. The header carries a zoom control (−/%/+, persisted to `octo.wideZoom`,
   defaulting off `devicePixelRatio`) wired to `win.setZoom`, which calls `webFrame.setZoomFactor`
   **directly in the preload** (zoom is a renderer concern — no main-process handler). `setZoomFactor`
   **re-rasterizes** the page at the new scale, so text stays sharp (unlike a bitmap upscale) while

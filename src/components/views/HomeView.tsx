@@ -18,7 +18,7 @@ import { useChat } from '../../stores/chat';
 import { useOrchestrator } from '../../stores/orchestrator';
 import { planSpec, quickPlanSpec, specKindFromText } from '../../lib/specActions';
 import { SpecsStudio } from './SpecsStudio';
-import { KrakenLogo } from '../KrakenLogo';
+import { OctoLogo } from '../OctoLogo';
 import { cn } from '../../lib/cn';
 import type { SpecMeta, SpecKind } from '../../../electron/shared/types';
 
@@ -42,7 +42,7 @@ const PHASE_INDEX: Record<SpecMeta['phase'], number> = {
   done: 3,
 };
 
-const FIRST_RUN_KEY = 'kraken.firstRunDismissed';
+const FIRST_RUN_KEY = 'octo.firstRunDismissed';
 
 /**
  * Home — the launchpad. The composer creates specs (Plan = gated flow,
@@ -160,15 +160,15 @@ export function HomeView() {
       <div className="h-full overflow-y-auto bg-ink-950 grid place-items-center px-6">
         <div className="max-w-md w-full text-center">
           <div className="w-16 h-16 mx-auto grid place-items-center rounded-2xl octo-tile">
-            <KrakenLogo animated glow className="w-9 h-11" />
+            <OctoLogo animated glow className="w-9 h-11" />
           </div>
           <h1 className="mt-5 text-2xl font-semibold tracking-tight text-ink-50">
-            Welcome to Kraken
+            Welcome to Octo
           </h1>
           <p className="mt-2 text-sm text-dim leading-relaxed">
             Open any folder to begin. Specs live in{' '}
             <code className="font-mono text-[12px] text-accent-2 bg-accent/15 px-1.5 py-0.5 rounded">
-              .kraken/specs/
+              .octo/specs/
             </code>
             ; your existing{' '}
             <code className="font-mono text-[12px] text-accent-2 bg-accent/15 px-1.5 py-0.5 rounded">
@@ -349,11 +349,11 @@ export function HomeView() {
           <div className="flex items-center gap-4 border border-accent/30 rounded-[14px] bg-accent/[0.06] px-5 py-4 mb-8">
             <span className="text-xl">🐙</span>
             <div className="flex-1 min-w-0">
-              <div className="text-[13px] font-semibold text-ink-50">Set up Kraken defaults</div>
+              <div className="text-[13px] font-semibold text-ink-50">Set up Octo defaults</div>
               <div className="text-[11.5px] text-faint">
                 Installs the bundled SDD agents, skills, steering docs, and hooks into this
                 workspace's <code className="font-mono">.claude/</code> and{' '}
-                <code className="font-mono">.kraken/</code> — one click, fully editable later in
+                <code className="font-mono">.octo/</code> — one click, fully editable later in
                 the Library.
               </div>
             </div>

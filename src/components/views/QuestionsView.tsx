@@ -50,14 +50,14 @@ export function QuestionsView({ specId }: { specId: string }) {
     return () => {
       for (const [requestId, off] of active) {
         off();
-        void window.kraken.claude.cancel(requestId);
+        void window.octo.claude.cancel(requestId);
       }
       active.clear();
     };
   }, []);
 
   const load = async () => {
-    const res = await window.kraken.specs.read(root, specId);
+    const res = await window.octo.specs.read(root, specId);
     setMeta(res.meta);
     setFilesMd(res.files);
     setLoading(false);
@@ -82,7 +82,7 @@ export function QuestionsView({ specId }: { specId: string }) {
   const decisionsSynced = hasDecisionsSection(reqMd);
 
   const writeReq = async (newMd: string) => {
-    await window.kraken.specs.writeFile(root, specId, reqFile, newMd);
+    await window.octo.specs.writeFile(root, specId, reqFile, newMd);
     await load();
   };
 
@@ -150,7 +150,7 @@ export function QuestionsView({ specId }: { specId: string }) {
     const userText = `Requirements for "${meta?.name ?? specId}":\n\n${reqMd}\n\n---\n\nOpen question: ${q.text}\n\nRecommended answer:`;
 
     return new Promise<void>((resolveP) => {
-      const off = window.kraken.claude.onEvent((ev) => {
+      const off = window.octo.claude.onEvent((ev) => {
         if (ev.requestId !== requestId) return;
         if (ev.type === 'delta' && ev.text) {
           setDrafts((d) => ({ ...d, [key]: (d[key] ?? '') + ev.text }));
@@ -164,7 +164,7 @@ export function QuestionsView({ specId }: { specId: string }) {
         }
       });
       activeRef.current.set(requestId, off);
-      window.kraken.claude.stream({
+      window.octo.claude.stream({
         requestId,
         system,
         messages: [{ role: 'user', content: userText }],

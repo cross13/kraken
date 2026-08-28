@@ -27,7 +27,7 @@ import { TaskRunner } from './TaskRunner';
 import { SpecDocument } from './SpecDocument';
 import { ShipView } from './ShipView';
 import { MarkdownEditor } from '../MarkdownEditor';
-import { KrakenLogo } from '../KrakenLogo';
+import { OctoLogo } from '../OctoLogo';
 import { draftSpecDoc, firstStageFile, type SpecDocFile } from '../../lib/specActions';
 import { highlight } from '../../lib/prism';
 import { routeAgent } from '../../lib/agentRouter';
@@ -87,7 +87,7 @@ export function SpecFlow({ specId }: { specId: string }) {
   const dirtyRef = useRef(false);
 
   const load = async () => {
-    const res = await window.kraken.specs.read(root, specId);
+    const res = await window.octo.specs.read(root, specId);
     setMeta(res.meta);
     setFiles(res.files);
   };
@@ -100,7 +100,7 @@ export function SpecFlow({ specId }: { specId: string }) {
   // Reload from disk whenever any Claude run finishes, unless the user has
   // unsaved local edits.
   useEffect(() => {
-    const off = window.kraken.claude.onEvent((ev) => {
+    const off = window.octo.claude.onEvent((ev) => {
       if (ev.type !== 'done' && ev.type !== 'error') return;
       if (dirtyRef.current) return;
       void load();
@@ -132,7 +132,7 @@ export function SpecFlow({ specId }: { specId: string }) {
     if (debounceRef.current) window.clearTimeout(debounceRef.current);
     setSaving(true);
     debounceRef.current = window.setTimeout(async () => {
-      const updated = await window.kraken.specs.writeFile(root, specId, file, v);
+      const updated = await window.octo.specs.writeFile(root, specId, file, v);
       setMeta(updated);
       setSaving(false);
       setSavedAt(Date.now());
@@ -142,7 +142,7 @@ export function SpecFlow({ specId }: { specId: string }) {
   };
 
   const approve = async () => {
-    const updated = await window.kraken.specs.advance(root, specId);
+    const updated = await window.octo.specs.advance(root, specId);
     setMeta(updated);
     await load();
     await refreshAll();
@@ -150,7 +150,7 @@ export function SpecFlow({ specId }: { specId: string }) {
   };
 
   const reopenTasks = async () => {
-    const updated = await window.kraken.specs.setPhase(root, specId, 'build');
+    const updated = await window.octo.specs.setPhase(root, specId, 'build');
     setMeta(updated);
     await load();
     await refreshAll();
@@ -303,7 +303,7 @@ export function SpecFlow({ specId }: { specId: string }) {
 
       {/* Row 2 — breadcrumb */}
       <div className="flex items-center gap-1.5 px-5 pt-3 pb-1 font-mono text-[11.5px] text-faint shrink-0">
-        <span>.kraken</span>
+        <span>.octo</span>
         <ChevronRight size={11} className="text-ink-600 shrink-0" />
         <span>specs</span>
         <ChevronRight size={11} className="text-ink-600 shrink-0" />
@@ -575,7 +575,7 @@ function DocStage({
     <>
       {drafting && (
         <div className="flex items-center gap-2.5 px-6 py-2 bg-accent/[0.07] text-accent text-[12px] shrink-0">
-          <KrakenLogo animated className="w-4 h-5 shrink-0" />
+          <OctoLogo animated className="w-4 h-5 shrink-0" />
           Claude is drafting {file}.md — the document refreshes when it finishes. Watch progress in
           the Assistant (⌘J).
         </div>
@@ -690,7 +690,7 @@ function SourceDoc({ md }: { md: string }) {
   const lines = useMemo(() => md.replace(/\n$/, '').split('\n'), [md]);
   return (
     <div className="h-full overflow-auto px-6 py-5">
-      <div className="kraken-editor text-[13px]">
+      <div className="octo-editor text-[13px]">
         {lines.map((l, i) => (
           <div key={i} className="code-line">
             <span className="code-ln" style={{ minWidth: '4ch' }}>
@@ -826,7 +826,7 @@ Be specific — cite file:line. Do not edit anything; this is a read-only audit.
       agentScope: resolveAgent(routed.name, agents).scope ?? null,
     });
 
-    const off = window.kraken.claude.onEvent((ev) => {
+    const off = window.octo.claude.onEvent((ev) => {
       if (ev.requestId !== requestId) return;
       if (ev.type === 'delta' && ev.text) appendDelta(assistantId, ev.text, ev.channel);
       if (ev.type === 'done') {
@@ -842,7 +842,7 @@ Be specific — cite file:line. Do not edit anything; this is a read-only audit.
       }
     });
 
-    const base = `You are the Kraken SDD agent auditing a ${meta.kind} spec titled "${meta.name}". Current phase: ${meta.phase}.`;
+    const base = `You are the Octo SDD agent auditing a ${meta.kind} spec titled "${meta.name}". Current phase: ${meta.phase}.`;
     const context = [
       files.requirements && `# requirements.md\n${files.requirements}`,
       files.bugfix && `# bugfix.md\n${files.bugfix}`,
@@ -855,7 +855,7 @@ Be specific — cite file:line. Do not edit anything; this is a read-only audit.
       .filter(Boolean)
       .join('\n\n---\n\n');
 
-    window.kraken.claude.stream({
+    window.octo.claude.stream({
       requestId,
       system,
       messages: [{ role: 'user', content: userText }],
@@ -911,7 +911,7 @@ function runSurfaceQuestions(
       status: 'running',
     });
 
-    const off = window.kraken.claude.onEvent((ev) => {
+    const off = window.octo.claude.onEvent((ev) => {
       if (ev.requestId !== requestId) return;
       if (ev.type === 'delta' && ev.text) acc += ev.text;
       if (ev.type === 'done' || ev.type === 'error') {
@@ -925,7 +925,7 @@ function runSurfaceQuestions(
         if (!fresh.length) return resolve(0);
         let next = md;
         for (const q of fresh) next = addQuestion(next, q);
-        window.kraken.specs
+        window.octo.specs
           .writeFile(root, meta.id, file, next)
           .then(() => resolve(fresh.length))
           .catch(() => resolve(0));
@@ -941,7 +941,7 @@ function runSurfaceQuestions(
       'document is already unambiguous, output nothing. Do not edit files or use tools.';
     const userText = `${label} document for the spec "${meta.name}":\n\n${md || '(empty)'}\n\nList the open questions, one per line:`;
 
-    window.kraken.claude.stream({
+    window.octo.claude.stream({
       requestId,
       system,
       messages: [{ role: 'user', content: userText }],

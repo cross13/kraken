@@ -39,7 +39,7 @@ export function Markdown({ source, className }: { source: string; className?: st
       for (const [i, node] of nodes.entries()) {
         const src = node.dataset.mermaid ?? '';
         try {
-          const { svg } = await mermaid.render(`kraken-mermaid-${seq++}-${i}`, src);
+          const { svg } = await mermaid.render(`octo-mermaid-${seq++}-${i}`, src);
           if (cancelled) return;
           node.innerHTML = svg;
         } catch {

@@ -26,12 +26,12 @@ const EYE_LEFT = 'M 72,68 L 92,76 L 92,84 L 72,76 Z';
 const EYE_RIGHT = 'M 128,68 L 108,76 L 108,84 L 128,76 Z';
 
 /**
- * Kraken brand mark — the octopus from the Octopus Brand Kit. The dark
+ * Octo brand mark — the octopus from the Octopus Brand Kit. The dark
  * colorway carries the brand gradients (cyan rim on a deep-sea body); the
  * light colorway is flat navy for white/daylight tiles. Keyframes live in
  * styles.css under "Brand".
  */
-export function KrakenLogo({ className, glow, animated, variant = 'auto' }: Props) {
+export function OctoLogo({ className, glow, animated, variant = 'auto' }: Props) {
   const theme = useTheme((s) => s.theme);
   const light = variant === 'light' || (variant === 'auto' && theme === 'daylight');
   // Gradient ids must be unique per instance — the mark renders many times per page.

@@ -29,7 +29,7 @@ export type ModelOption = ModelInfo;
 /** Steps that use the planning model when one is set. */
 const PLANNING_STEPS: ReadonlySet<StepKey> = new Set(['requirements', 'plan', 'tasks', 'audit']);
 
-const KEY = 'kraken.planningModel';
+const KEY = 'octo.planningModel';
 
 function load(): string {
   try {
@@ -90,7 +90,7 @@ export const useModels = create<ModelsStore>((set, get) => ({
   refresh: async (workspacePath) => {
     set({ loading: true });
     try {
-      const discovery = await window.kraken.models.list(workspacePath ?? null);
+      const discovery = await window.octo.models.list(workspacePath ?? null);
       set({ discovery, available: sortModels(discovery.models) });
     } catch {
       // Discovery is best-effort — leave whatever list we already had.

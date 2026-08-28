@@ -1,9 +1,9 @@
 {
-  "name": "kraken",
+  "name": "octo",
   "version": "0.1.0",
   "description": "Spec-Driven Development workbench powered by Claude",
   "main": "out/main/index.js",
-  "author": "Kraken",
+  "author": "Octo",
   "license": "MIT",
   "type": "module",
   "scripts": {
@@ -56,8 +56,8 @@
     "zustand": "^5.0.1"
   },
   "build": {
-    "appId": "dev.kraken.app",
-    "productName": "Kraken",
+    "appId": "dev.octo.app",
+    "productName": "Octo",
     "files": [
       "out/**/*",
       "resources/**/*"

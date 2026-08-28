@@ -76,12 +76,12 @@ export function SourceControlView({
       setStatus(null);
       return;
     }
-    const s = await window.kraken.git.status(root);
+    const s = await window.octo.git.status(root);
     setStatus(s);
   }, [root]);
 
   const refreshToken = useCallback(async () => {
-    const s = await window.kraken.github.tokenStatus();
+    const s = await window.octo.github.tokenStatus();
     setTokenStatus(s);
     return s;
   }, []);
@@ -90,14 +90,14 @@ export function SourceControlView({
     async (f: Filter) => {
       if (!root) return;
       setLoadingPrs(true);
-      const info = await window.kraken.github.repoInfo(root);
+      const info = await window.octo.github.repoInfo(root);
       setRepo(info);
       if (!info.ok) {
         setPrs([]);
         setLoadingPrs(false);
         return;
       }
-      const res = await window.kraken.github.listPrs({ cwd: root, state: f });
+      const res = await window.octo.github.listPrs({ cwd: root, state: f });
       setPrs(res.ok ? res.data ?? [] : []);
       setLoadingPrs(false);
     },
@@ -405,7 +405,7 @@ function SyncSection({
 
           <div className="grid grid-cols-3 gap-1.5">
             <SyncButton
-              onClick={() => run('pull', () => window.kraken.git.pull(root), 'Pulled.')}
+              onClick={() => run('pull', () => window.octo.git.pull(root), 'Pulled.')}
               busy={busy === 'pull'}
               disabled={!!busy}
               primary={behind > 0}
@@ -414,7 +414,7 @@ function SyncSection({
               count={behind}
             />
             <SyncButton
-              onClick={() => run('push', () => window.kraken.git.push(root), 'Pushed.')}
+              onClick={() => run('push', () => window.octo.git.push(root), 'Pushed.')}
               busy={busy === 'push'}
               disabled={!!busy}
               primary={ahead > 0}
@@ -424,7 +424,7 @@ function SyncSection({
             />
             <SyncButton
               onClick={() =>
-                run('fetch', () => window.kraken.git.fetch(root), 'Fetched.')
+                run('fetch', () => window.octo.git.fetch(root), 'Fetched.')
               }
               busy={busy === 'fetch'}
               disabled={!!busy}
@@ -516,7 +516,7 @@ function BranchSection({
   const onBranch = status?.branch ?? null;
 
   const loadBranches = useCallback(async () => {
-    const res = await window.kraken.git.listBranches(root);
+    const res = await window.octo.git.listBranches(root);
     setBranches(res.ok ? res.branches : []);
   }, [root]);
 
@@ -524,13 +524,13 @@ function BranchSection({
     loadBranches();
   }, [loadBranches, onBranch]);
 
-  const suggestedNew = spec ? `kraken/${spec.id}` : '';
+  const suggestedNew = spec ? `octo/${spec.id}` : '';
 
   const switchTo = async (name: string) => {
     if (name === onBranch) return;
     setBusy(name);
     setErr(null);
-    const res = await window.kraken.git.checkout({
+    const res = await window.octo.git.checkout({
       workspacePath: root,
       specId: spec?.id,
       branch: name,
@@ -549,7 +549,7 @@ function BranchSection({
     if (!name) return;
     setBusy('__new__');
     setErr(null);
-    const res = await window.kraken.git.createBranch({
+    const res = await window.octo.git.createBranch({
       workspacePath: root,
       specId: spec?.id,
       branch: name,
@@ -749,7 +749,7 @@ function ChangesSection({
   const [err, setErr] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const res = await window.kraken.git.listChanges(root);
+    const res = await window.octo.git.listChanges(root);
     setFiles(res.ok ? res.files : []);
   }, [root]);
 
@@ -771,9 +771,9 @@ function ChangesSection({
   };
 
   const stage = (paths: string[]) =>
-    act(() => window.kraken.git.stage({ workspacePath: root, paths }));
+    act(() => window.octo.git.stage({ workspacePath: root, paths }));
   const unstage = (paths: string[]) =>
-    act(() => window.kraken.git.unstage({ workspacePath: root, paths }));
+    act(() => window.octo.git.unstage({ workspacePath: root, paths }));
 
   if (status?.isRepo === false) return null;
 
@@ -966,7 +966,7 @@ function CommitSection({
     setBusy(true);
     setErr(null);
     setDone(null);
-    const res = await window.kraken.git.commitPush({
+    const res = await window.octo.git.commitPush({
       workspacePath: root,
       specId: spec?.id,
       message: msg.trim() || 'chore: update',
@@ -1172,7 +1172,7 @@ function PrCard({
   const merge = async () => {
     setBusy(true);
     setErr(null);
-    const res = await window.kraken.github.mergePr({
+    const res = await window.octo.github.mergePr({
       cwd,
       specId,
       number: pr.number,
@@ -1384,7 +1384,7 @@ function CreatePrDialog({
   useEffect(
     () => () => {
       genOffRef.current?.();
-      if (genReqRef.current) void window.kraken.claude.cancel(genReqRef.current);
+      if (genReqRef.current) void window.octo.claude.cancel(genReqRef.current);
     },
     []
   );
@@ -1392,7 +1392,7 @@ function CreatePrDialog({
   // Load the remote branches (valid PR targets) for the base typeahead.
   useEffect(() => {
     let alive = true;
-    window.kraken.github.listBranches(cwd).then((res) => {
+    window.octo.github.listBranches(cwd).then((res) => {
       if (!alive || !res.ok || !res.data) return;
       setBranches(res.data);
       // Keep the actual default branch selected when it exists on the remote;
@@ -1410,7 +1410,7 @@ function CreatePrDialog({
   const submit = async () => {
     setBusy(true);
     setErr(null);
-    const res = await window.kraken.github.createPr({
+    const res = await window.octo.github.createPr({
       cwd,
       specId: spec?.id,
       title: title.trim(),
@@ -1436,7 +1436,7 @@ function CreatePrDialog({
 
     let files: Record<string, string> = {};
     try {
-      files = (await window.kraken.specs.read(cwd, spec.id)).files;
+      files = (await window.octo.specs.read(cwd, spec.id)).files;
     } catch {
       // Non-fatal — the CLI backend can still read the files from disk itself.
     }
@@ -1463,7 +1463,7 @@ function CreatePrDialog({
       status: 'running',
     });
 
-    const off = window.kraken.claude.onEvent((ev) => {
+    const off = window.octo.claude.onEvent((ev) => {
       if (ev.requestId !== requestId) return;
       if (ev.type === 'delta' && ev.text) setBody((b) => b + ev.text);
       if (ev.type === 'done') {
@@ -1496,7 +1496,7 @@ function CreatePrDialog({
         ? `Base it on this spec:\n\n${specBody}`
         : `The spec files could not be read here — read \`${spec.path}\` in the workspace and summarize the change.`);
 
-    window.kraken.claude.stream({
+    window.octo.claude.stream({
       requestId,
       system,
       messages: [{ role: 'user', content: userText }],
@@ -1617,7 +1617,7 @@ function CreatePrDialog({
           </button>
         </div>
         <p className="text-[10px] text-ink-500 leading-snug">
-          Kraken pushes <code className="text-ink-300">{head || 'the branch'}</code> to
+          Octo pushes <code className="text-ink-300">{head || 'the branch'}</code> to
           origin before opening the PR.
         </p>
       </div>
@@ -1638,7 +1638,7 @@ function TokenSetup({
   const save = async () => {
     if (!token.trim()) return;
     setBusy(true);
-    await window.kraken.github.setToken(token.trim());
+    await window.octo.github.setToken(token.trim());
     setToken('');
     setBusy(false);
     onSaved();

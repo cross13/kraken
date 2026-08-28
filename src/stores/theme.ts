@@ -2,7 +2,7 @@ import { create } from 'zustand';
 
 // `signal` is the brand palette (Claude Design · "Paleta y Tokens"): green =
 // execute & progress, violet = agent & wait, radius 0. The other three are the
-// palettes from the original design (Kraken Welcome.dc.html). The active theme
+// palettes from the original design (Octo Welcome.dc.html). The active theme
 // is written to `<html data-theme>`, which swaps the CSS variables defined in
 // styles.css — re-skinning the entire app at once.
 export type Theme = 'signal' | 'abyss' | 'bioluminescent' | 'daylight';
@@ -16,7 +16,7 @@ export const THEME_LABEL: Record<Theme, string> = {
   daylight: 'Daylight',
 };
 
-const STORAGE_KEY = 'kraken.theme';
+const STORAGE_KEY = 'octo.theme';
 
 function load(): Theme {
   try {

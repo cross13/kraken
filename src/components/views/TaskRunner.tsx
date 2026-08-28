@@ -21,7 +21,7 @@ import { useWorkspace } from '../../stores/workspace';
 import { useModels } from '../../stores/models';
 import { useOrchestrator, isOrchestrated } from '../../stores/orchestrator';
 import { cn } from '../../lib/cn';
-import { KrakenLogo } from '../KrakenLogo';
+import { OctoLogo } from '../OctoLogo';
 import { TaskInspector } from './TaskInspector';
 import type { SpecMeta } from '../../../electron/shared/types';
 
@@ -98,7 +98,7 @@ export function TaskRunner({ meta, tasksMd, planMd, requirementsMd, onReload, on
 
   // Load the configured concurrency once.
   useEffect(() => {
-    window.kraken.settings.getMaxConcurrency().then(setMaxConcurrency);
+    window.octo.settings.getMaxConcurrency().then(setMaxConcurrency);
   }, [setMaxConcurrency]);
 
   // Scheduler state lives in refs so event callbacks see fresh values.
@@ -176,7 +176,7 @@ export function TaskRunner({ meta, tasksMd, planMd, requirementsMd, onReload, on
       dependsOn: opts.dependsOn,
     });
 
-    const off = window.kraken.claude.onEvent((ev) => {
+    const off = window.octo.claude.onEvent((ev) => {
       if (ev.requestId !== requestId) return;
       if (ev.type === 'delta' && ev.text) appendDelta(assistantId, ev.text, ev.channel);
       if (ev.type === 'done') {
@@ -185,7 +185,7 @@ export function TaskRunner({ meta, tasksMd, planMd, requirementsMd, onReload, on
         finishRun(requestId, 'done');
         onReload();
         if (opts.fireComplete && opts.task && root) {
-          void window.kraken.hooks.fire('task-complete', {
+          void window.octo.hooks.fire('task-complete', {
             root,
             specId: meta.id,
             taskId: opts.task.id,
@@ -207,7 +207,7 @@ export function TaskRunner({ meta, tasksMd, planMd, requirementsMd, onReload, on
       .filter(Boolean)
       .join('\n\n---\n\n');
 
-    window.kraken.claude.stream({
+    window.octo.claude.stream({
       requestId,
       system: composedSystem,
       messages: [{ role: 'user', content: opts.userText }],
@@ -283,7 +283,7 @@ export function TaskRunner({ meta, tasksMd, planMd, requirementsMd, onReload, on
           waveCtxRef.current = null;
           // Only fire wave-complete when every task in the wave succeeded.
           if (ctx && root && !waveFailedRef.current) {
-            void window.kraken.hooks.fire('wave-complete', {
+            void window.octo.hooks.fire('wave-complete', {
               root,
               specId: meta.id,
               specKind: meta.kind,
@@ -375,7 +375,7 @@ export function TaskRunner({ meta, tasksMd, planMd, requirementsMd, onReload, on
     Object.values(all)
       .filter((r) => (isOrchestrated(r) || r.kind === 'hook') && r.specId === meta.id)
       .forEach((r) => {
-        void window.kraken.claude.cancel(r.requestId);
+        void window.octo.claude.cancel(r.requestId);
         useOrchestrator.getState().finishRun(r.requestId, 'cancelled');
       });
   };
@@ -393,7 +393,7 @@ export function TaskRunner({ meta, tasksMd, planMd, requirementsMd, onReload, on
 
   const readFreshTasks = async () => {
     try {
-      const md = await window.kraken.fs.read(`${meta.path}/tasks.md`);
+      const md = await window.octo.fs.read(`${meta.path}/tasks.md`);
       return parseTasks(md);
     } catch {
       return parseTasks(tasksMd);
@@ -414,7 +414,7 @@ export function TaskRunner({ meta, tasksMd, planMd, requirementsMd, onReload, on
         (h) => h.enabled && h.trigger === 'wave-complete' && h.blocking
       );
       const fire = () =>
-        void window.kraken.hooks.fire('wave-complete', {
+        void window.octo.hooks.fire('wave-complete', {
           root,
           specId: meta.id,
           specKind: meta.kind,
@@ -443,7 +443,7 @@ export function TaskRunner({ meta, tasksMd, planMd, requirementsMd, onReload, on
         resolve();
       };
 
-      const off = window.kraken.hooks.onEvent((ev) => {
+      const off = window.octo.hooks.onEvent((ev) => {
         if (ev.trigger !== 'wave-complete') return;
         if (ev.type === 'started') {
           inflight++;
@@ -468,7 +468,7 @@ export function TaskRunner({ meta, tasksMd, planMd, requirementsMd, onReload, on
 
   /** Release a stuck blocking hook: cancel its run(s) and let autopilot proceed. */
   const unblockHook = () => {
-    blockingHookReqsRef.current.forEach((id) => void window.kraken.claude.cancel(id));
+    blockingHookReqsRef.current.forEach((id) => void window.octo.claude.cancel(id));
     unblockHookRef.current = true; // force-resolve even if the terminal event is lost
   };
 
@@ -498,7 +498,7 @@ export function TaskRunner({ meta, tasksMd, planMd, requirementsMd, onReload, on
       // All waves done → advance the spec to 'done' (fires spec-done → docs hook).
       const after = await readFreshTasks();
       if (after.tasks.length > 0 && after.tasks.every((t) => t.done) && meta.phase === 'build') {
-        await window.kraken.specs.advance(root, meta.id);
+        await window.octo.specs.advance(root, meta.id);
         onReload();
       }
     } finally {
@@ -522,7 +522,7 @@ export function TaskRunner({ meta, tasksMd, planMd, requirementsMd, onReload, on
     if (meta.phase !== 'build') return;
     advancedRef.current = true;
     void (async () => {
-      await window.kraken.specs.advance(root, meta.id);
+      await window.octo.specs.advance(root, meta.id);
       onReload();
       onShip?.();
     })();
@@ -573,7 +573,7 @@ export function TaskRunner({ meta, tasksMd, planMd, requirementsMd, onReload, on
   const changeConcurrency = async (n: number) => {
     const clamped = Math.max(1, Math.min(8, n));
     setMaxConcurrency(clamped);
-    await window.kraken.settings.setMaxConcurrency(clamped);
+    await window.octo.settings.setMaxConcurrency(clamped);
   };
 
   return (
@@ -830,7 +830,7 @@ function TaskCard({
       <div className="flex items-center gap-2 mb-1 text-[12px]">
         {state === 'running' ? (
           <span className="flex items-center gap-1.5 text-accent">
-            <KrakenLogo animated className="w-3.5 h-[17px]" /> Task in progress
+            <OctoLogo animated className="w-3.5 h-[17px]" /> Task in progress
           </span>
         ) : state === 'ready' && !refining ? (
           <button

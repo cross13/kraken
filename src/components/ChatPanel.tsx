@@ -10,7 +10,7 @@ import {
   ChevronRight,
   ChevronDown,
 } from 'lucide-react';
-import { KrakenLogo } from './KrakenLogo';
+import { OctoLogo } from './OctoLogo';
 import { useChat } from '../stores/chat';
 import { useWorkspace } from '../stores/workspace';
 import { useOrchestrator } from '../stores/orchestrator';
@@ -115,10 +115,10 @@ export function ChatPanel() {
 
     const agent = selectedAgent ? agents.find((a) => a.name === selectedAgent) : null;
     const editingHint = root
-      ? `You are running with file-edit permissions in the workspace at \`${root}\`. When the user asks you to draft, edit, or refine a spec file (anything under \`.kraken/specs/\`), use the **Read**, **Edit**, and **Write** tools to apply the change directly to disk rather than pasting the full file in chat. Keep your chat reply to a short summary of what changed.`
+      ? `You are running with file-edit permissions in the workspace at \`${root}\`. When the user asks you to draft, edit, or refine a spec file (anything under \`.octo/specs/\`), use the **Read**, **Edit**, and **Write** tools to apply the change directly to disk rather than pasting the full file in chat. Keep your chat reply to a short summary of what changed.`
       : 'No workspace is open — file-edit tools will fail; ask the user to open a folder.';
     const system = [
-      'You are Kraken, a Spec-Driven Development assistant. Write GitHub-flavored markdown.',
+      'You are Octo, a Spec-Driven Development assistant. Write GitHub-flavored markdown.',
       editingHint,
       agent?.body,
       skillContext,
@@ -131,7 +131,7 @@ export function ChatPanel() {
       .map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content }))
       .concat([{ role: 'user', content: working }]);
 
-    const off = window.kraken.claude.onEvent((ev) => {
+    const off = window.octo.claude.onEvent((ev) => {
       if (ev.requestId !== requestId) return;
       if (ev.type === 'delta' && ev.text) appendDelta(assistantId, ev.text, ev.channel);
       if (ev.type === 'done') {
@@ -149,7 +149,7 @@ export function ChatPanel() {
       }
     });
 
-    window.kraken.claude.stream({
+    window.octo.claude.stream({
       requestId,
       system,
       messages: history,
@@ -165,7 +165,7 @@ export function ChatPanel() {
 
   const stop = () => {
     if (currentRequestId) {
-      window.kraken.claude.cancel(currentRequestId);
+      window.octo.claude.cancel(currentRequestId);
       finishRun(currentRequestId, 'cancelled');
     }
   };
@@ -210,7 +210,7 @@ export function ChatPanel() {
         {/* Working bar — the session's live status, with cancel */}
         {busy && (
           <div className="flex items-center gap-2.5 rounded-xl bg-card ring-1 ring-ink-50/[0.06] px-3.5 py-2.5">
-            <KrakenLogo animated className="w-[18px] h-[22px] shrink-0" />
+            <OctoLogo animated className="w-[18px] h-[22px] shrink-0" />
             <span className="text-[13px] text-ink-200">Working…</span>
             <button
               onClick={stop}
@@ -319,9 +319,9 @@ function Message({
     <div className="px-0.5">
       <div className="flex items-center gap-2.5 mb-2">
         <span className="w-7 h-7 grid place-items-center rounded-full bg-elev shrink-0">
-          <KrakenLogo animated={streaming} className="w-[15px] h-[19px]" />
+          <OctoLogo animated={streaming} className="w-[15px] h-[19px]" />
         </span>
-        <span className="text-[13px] font-semibold text-ink-50">{agent ?? 'Kraken'}</span>
+        <span className="text-[13px] font-semibold text-ink-50">{agent ?? 'Octo'}</span>
         {streaming && (
           <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse-slow" />
         )}

@@ -30,7 +30,7 @@ import { ModuleHeader, ModuleTabs, ModuleSection, Explainer, Callout, ScopeChip 
 const EXPLAINER = [
   {
     heading: 'What steering is',
-    body: 'Markdown docs in .kraken/steering/ that carry project context — product, stack, conventions, domain knowledge. Kraken prepends the resolved set to every run\'s system prompt (chat, spec drafting, tasks, hooks).',
+    body: 'Markdown docs in .octo/steering/ that carry project context — product, stack, conventions, domain knowledge. Octo prepends the resolved set to every run\'s system prompt (chat, spec drafting, tasks, hooks).',
   },
   {
     heading: 'Always in context',
@@ -567,7 +567,7 @@ function PreviewPane() {
     if (!root) return;
     setLoading(true);
     const files = testPath.trim() ? [testPath.trim()] : [];
-    window.kraken.steering
+    window.octo.steering
       .preview(root, { files, manualRefs: [] })
       .then(setPreview)
       .finally(() => setLoading(false));

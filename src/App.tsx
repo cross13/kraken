@@ -63,7 +63,7 @@ export default function App() {
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
     const push = () =>
-      window.kraken.fleet.push(Object.values(useOrchestrator.getState().runs));
+      window.octo.fleet.push(Object.values(useOrchestrator.getState().runs));
     const schedule = () => {
       if (timer) return;
       timer = setTimeout(() => {
@@ -86,7 +86,7 @@ export default function App() {
   // process, so this global listener is the only place they get registered on
   // the renderer side.
   useEffect(() => {
-    const off = window.kraken.hooks.onEvent((ev) => {
+    const off = window.octo.hooks.onEvent((ev) => {
       const store = useOrchestrator.getState();
       if (ev.type === 'started') {
         store.startRun({

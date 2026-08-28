@@ -12,7 +12,7 @@ import {
 import { useWorkspace } from '../../stores/workspace';
 import { useOrchestrator } from '../../stores/orchestrator';
 import { Markdown } from '../Markdown';
-import { KrakenLoader } from '../KrakenLoader';
+import { OctoLoader } from '../OctoLoader';
 import { cn } from '../../lib/cn';
 import type { SpecMeta, SpecFileChange } from '../../../electron/shared/types';
 
@@ -53,7 +53,7 @@ export function CompletionSummary({
   const summaryPath = `${meta.path}/summary.md`;
 
   const loadFiles = useCallback(() => {
-    window.kraken.history
+    window.octo.history
       .listSpecFiles({ workspacePath: root ?? null, specId: meta.id })
       .then(setFiles)
       .catch(() => setFiles([]));
@@ -62,7 +62,7 @@ export function CompletionSummary({
   useEffect(() => {
     loadFiles();
     let alive = true;
-    window.kraken.fs
+    window.octo.fs
       .read(summaryPath)
       .then((t) => {
         if (!alive) return;
@@ -107,7 +107,7 @@ export function CompletionSummary({
       status: 'running',
     });
 
-    const off = window.kraken.claude.onEvent((ev) => {
+    const off = window.octo.claude.onEvent((ev) => {
       if (ev.requestId !== requestId) return;
       if (ev.type === 'delta' && ev.text) {
         acc += ev.text;
@@ -117,7 +117,7 @@ export function CompletionSummary({
         off();
         finishRun(requestId, 'done');
         setSummarizing(false);
-        if (acc.trim()) void window.kraken.fs.write(summaryPath, acc);
+        if (acc.trim()) void window.octo.fs.write(summaryPath, acc);
       }
       if (ev.type === 'error') {
         off();
@@ -143,7 +143,7 @@ To ground it, read \`${specRel}/${reqLabel}\` and \`${specRel}/plan.md\`, and in
 Files changed in this spec (${files.length}):
 ${fileList}`;
 
-    window.kraken.claude.stream({
+    window.octo.claude.stream({
       requestId,
       system,
       messages: [{ role: 'user', content: userText }],
@@ -255,7 +255,7 @@ ${fileList}`;
                 )}
               />
             ) : summarizing ? (
-              <KrakenLoader size="sm" label="Generating summary…" className="py-4" />
+              <OctoLoader size="sm" label="Generating summary…" className="py-4" />
             ) : (
               <p className="text-[11px] text-ink-500">
                 Click Generate summary for a brief description of everything that changed.

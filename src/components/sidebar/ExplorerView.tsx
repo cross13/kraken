@@ -61,7 +61,7 @@ export function ExplorerView() {
 }
 
 function TreeNode({ entry, depth }: { entry: DirEntry; depth: number }) {
-  const [open, setOpen] = useState(depth < 1 && entry.name === '.kraken');
+  const [open, setOpen] = useState(depth < 1 && entry.name === '.octo');
   const openOverlay = useUi((s) => s.openOverlay);
 
   if (entry.type === 'dir') {

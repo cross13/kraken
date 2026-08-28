@@ -1,7 +1,7 @@
 # Renderer (`src/`)
 
 React 18 + Tailwind + Zustand. The renderer talks to the backend **only** through
-`window.kraken.*` (see [`ipc-contract.md`](./ipc-contract.md)). There is no global state outside
+`window.octo.*` (see [`ipc-contract.md`](./ipc-contract.md)). There is no global state outside
 the Zustand stores.
 
 ## The four-surface shell
@@ -128,7 +128,7 @@ button cycles it.
 
 ## Layout & space (`styles.css` → "Layout primitives")
 
-Kraken is a desktop window that ranges from ~1100px to ultrawide, so **surfaces are expected to
+Octo is a desktop window that ranges from ~1100px to ultrawide, so **surfaces are expected to
 use the width they're given**. Content picks one of three fluid containers by content type — never
 a hardcoded `max-w-[720px] mx-auto`:
 
@@ -210,12 +210,12 @@ The brand mark is the octopus from the **Octopus Brand Kit** (claude.ai/design p
 cyan rim gradient `#00BBDD→#003973`, deep-sea body `#001A33→#000A14`, visor eyes `#7DF3FF`;
 the light colorway (flat `#003973`, `#00BBDD` eyes) is auto-selected on the Daylight theme.
 
-- **`KrakenLogo`** (`components/KrakenLogo.tsx`) — the mark. Props: `animated` (bobbing body +
+- **`OctoLogo`** (`components/OctoLogo.tsx`) — the mark. Props: `animated` (bobbing body +
   staggered tentacle sway + eye scan), `glow` (pulsing cyan drop-shadow, dark colorway only),
   `variant: 'auto' | 'dark' | 'light'` (`auto` follows `useTheme`). Gradient ids are
   instance-unique via `useId`. The natural aspect is 4:5 (viewBox `40 24 120 150`) — size
   containers accordingly (e.g. `w-4 h-5`).
-- **`KrakenLoader`** (`components/KrakenLoader.tsx`) — the kit's "reading code" loader: animated
+- **`OctoLoader`** (`components/OctoLoader.tsx`) — the kit's "reading code" loader: animated
   mark over a scrolling code shimmer + three pulsing dots. Props: `size sm|md|lg`, `label`,
   `showCode`. Used for blocking states (e.g. Ship's summary generation); tiny inline button
   spinners stay `Loader2`.
@@ -250,14 +250,14 @@ The launchpad. Its **composer creates specs** (the old Welcome bar only forwarde
 Below: **In flight** spec cards (kind stripe, live run count from the orchestrator, phase
 progress, Resume → `openSpec(id, stageForPhase(phase))`), **Shipped** recents (open the Build
 stage), a **Manage** toggle that embeds `SpecsStudio` (analytics + per-spec runs/timeline +
-delete), and a one-time **"Set up Kraken defaults"** card that calls `workspace.seedDefaults()`
+delete), and a one-time **"Set up Octo defaults"** card that calls `workspace.seedDefaults()`
 (replaces the per-module Seed buttons; dismissal persisted in `localStorage`).
 
 ## The spec flow (`views/SpecFlow.tsx`)
 
 One continuous guided surface per spec — the whole lifecycle on one screen, framed like an
 editor (Kiro-style): **file tabs** (`requirements.md` / `plan.md` / `tasks.md`, accent-underlined,
-locked stages dimmed), a mono **breadcrumb** (`.kraken › specs › <id> › <file>.md`, which shows
+locked stages dimmed), a mono **breadcrumb** (`.octo › specs › <id> › <file>.md`, which shows
 `summary.md` while the Ship panel is open), and the **spec strip** (`Spec: <name>` + numbered
 phase chips: ① Requirements ② Plan ③ Build). The tab row also carries save status, the
 doc **view switcher** (Source · Cards · Edit), and **one overflow menu** (Audit · Surface open

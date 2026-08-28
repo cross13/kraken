@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Kraken is an Electron desktop app for running the Spec-Driven Development (SDD) loop:
+Octo is an Electron desktop app for running the Spec-Driven Development (SDD) loop:
 requirements → plan → build (tasks + execution). It drives Claude through one of two
 interchangeable backends — the user's **local Claude CLI** (default) or the **Anthropic
 API SDK** — selected at runtime in Settings. Specs are plain markdown on disk; agents and
@@ -54,7 +54,7 @@ Three Electron layers; data crosses between them **only** through the typed IPC 
 Owns all filesystem, spec, agent/skill, settings, git, history, and Claude-streaming logic.
 Everything is registered in `registerIpc()`. Key responsibilities living here:
 - **Spec lifecycle** — `createSpec`/`readSpec`/`writeSpecFile`/`advanceSpec` plus the
-  markdown `*Template` functions. A spec is a directory under `.kraken/specs/<id>/`
+  markdown `*Template` functions. A spec is a directory under `.octo/specs/<id>/`
   containing `spec.json` (phase + metadata) and the phase markdown files. `advanceSpec`
   walks the fixed order `requirements → plan → build → done` and lazily writes the next
   phase's template file if missing.
@@ -75,9 +75,9 @@ Everything is registered in `registerIpc()`. Key responsibilities living here:
   and skill markdown into the workspace's `.claude/` dirs ("Seed defaults" in the UI).
 
 ### Preload — `electron/preload.ts`
-Context-isolated bridge. Exposes a single typed object on `window.kraken` (namespaced:
+Context-isolated bridge. Exposes a single typed object on `window.octo` (namespaced:
 `workspace`, `specs`, `skills`, `agents`, `fs`, `settings`, `cli`, `git`, `history`, `claude`).
-`KrakenApi` (its `typeof`) is the contract the renderer types against. **When you add or
+`OctoApi` (its `typeof`) is the contract the renderer types against. **When you add or
 change an IPC handler in `main.ts`, you must update the matching method here**, or the
 renderer can't reach it. Streaming is fire-and-forget: `claude.stream(payload)` sends, and
 results arrive through `claude.onEvent(handler)`.
@@ -119,7 +119,7 @@ results arrive through `claude.onEvent(handler)`.
   requirements draft into the gated flow; **Quick Plan** drafts both docs with no stops;
   `?`-suffixed input goes to the Assistant), plus in-flight spec cards, Shipped recents, a
   Manage mode embedding `SpecsStudio` (analytics + `specs:delete`), and a one-time
-  "Set up Kraken defaults" seeding card. **Spec** (`SpecFlow`) is one continuous guided flow
+  "Set up Octo defaults" seeding card. **Spec** (`SpecFlow`) is one continuous guided flow
   framed like an editor: file tabs (`requirements.md`/`plan.md`/`tasks.md`) +
   breadcrumb + the spec strip (numbered phase chips: Requirements → Plan → **Build**),
   doc stages as line-numbered **Source** (default) / section **Cards** / raw **Edit** over a
@@ -163,15 +163,15 @@ results arrive through `claude.onEvent(handler)`.
   installed file (root `.claude/` vs global) so you can confirm what's actually in use.
 
 ### Persistence — `electron/db.ts` (better-sqlite3)
-App-level history DB at `app.getPath('userData')/kraken.db`. Tables: `specs`, `spec_events`
+App-level history DB at `app.getPath('userData')/octo.db`. Tables: `specs`, `spec_events`
 (phase-advance audit trail), `runs` (every Claude invocation with prompt/response/status/
 duration), `errors`, `hook_runs` (hook-triggered run log). This is global telemetry, separate
 from the per-workspace spec markdown — specs on disk are the source of truth; the DB is a
 queryable mirror + run log.
 
 ### Hooks — event-driven agent hooks (`electron/main.ts` hooks section)
-JSON files in `.kraken/hooks/*.json` (+ global `~/.kraken/hooks/`), shape = `HookConfig`.
-A Kraken-native engine fires Claude runs on app-level events — `maybeFireHooks(trigger, ctx)`
+JSON files in `.octo/hooks/*.json` (+ global `~/.octo/hooks/`), shape = `HookConfig`.
+A Octo-native engine fires Claude runs on app-level events — `maybeFireHooks(trigger, ctx)`
 is called at trigger points (`advanceSpec` → spec-advance/spec-done; `writeSpecFile` →
 file-save-in-app; TaskRunner → task-complete/wave-complete; manual). `fireHook` reuses
 `streamClaude` (so hook runs appear in History) via `getMainSender()`. **Loop-guard:** hook
@@ -180,7 +180,7 @@ plus a per-hook cooldown (`hookCooldown`). `seedDefaultHooks` ships `code-valida
 (wave-complete) and `docs-changelog` (spec-done). Hooks UI: Library › Hooks (`HooksStudio`) + the overlay `HookEditor`.
 
 ### Steering — project context injection (`electron/main.ts` steering section)
-Markdown in `.kraken/steering/*.md` (+ global, + root AGENTS.md/CLAUDE.md as implicit
+Markdown in `.octo/steering/*.md` (+ global, + root AGENTS.md/CLAUDE.md as implicit
 `always`). `composeSteeringSystem` resolves inclusion modes (always / fileMatch / manual /
 auto) and is prepended to `payload.system` **inside `streamClaude`**, so every run (chat,
 task, hook) gets steering uniformly. Docs can be **pinned** (persisted per workspace in
@@ -256,7 +256,7 @@ it). See `docs/subsystems.md` → Travel Display.
   types go in `electron/shared/types.ts` (imported by both sides — keep it dependency-free).
 - Both backends must stay behaviorally interchangeable: anything user-visible should flow
   through the common `claude:event` stream, not be special-cased per backend.
-- Spec phase order and the `.kraken/specs/<id>/{spec.json,*.md}` on-disk shape are load-bearing;
+- Spec phase order and the `.octo/specs/<id>/{spec.json,*.md}` on-disk shape are load-bearing;
   changing them affects `createSpec`, `advanceSpec`, `readSpec`, and `listSpecs` together.
 - Agents/skills follow Claude Code's exact format and precedence (workspace overrides global
   on name conflict) — don't invent a parallel format.

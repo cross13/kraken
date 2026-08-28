@@ -5,7 +5,7 @@ import { Markdown } from '../Markdown';
 export function AgentViewer({ path }: { path: string }) {
   const [content, setContent] = useState('');
   useEffect(() => {
-    window.kraken.agents.read(path).then(setContent);
+    window.octo.agents.read(path).then(setContent);
   }, [path]);
 
   return (

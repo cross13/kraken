@@ -46,7 +46,7 @@ export function ShipView({ meta, onReopen }: { meta: SpecMeta; onReopen: () => v
   const [hasGithub, setHasGithub] = useState(false);
 
   const readGit = () =>
-    window.kraken.git
+    window.octo.git
       .status(root)
       .then((s) =>
         setGit({ isRepo: s.isRepo, branch: s.branch, hasChanges: s.hasChanges, hasOrigin: s.hasOrigin })
@@ -55,7 +55,7 @@ export function ShipView({ meta, onReopen }: { meta: SpecMeta; onReopen: () => v
 
   useEffect(() => {
     readGit();
-    window.kraken.github.hasToken().then(setHasGithub).catch(() => setHasGithub(false));
+    window.octo.github.hasToken().then(setHasGithub).catch(() => setHasGithub(false));
     const t = setInterval(readGit, 5000);
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -68,7 +68,7 @@ export function ShipView({ meta, onReopen }: { meta: SpecMeta; onReopen: () => v
     setBusy('branch');
     setNotice(null);
     try {
-      const res = await window.kraken.git.createBranch({
+      const res = await window.octo.git.createBranch({
         workspacePath: root,
         specId: meta.id,
         branch: meta.branch ?? suggestedBranch,
@@ -98,7 +98,7 @@ export function ShipView({ meta, onReopen }: { meta: SpecMeta; onReopen: () => v
     setBusy('commit');
     setNotice(null);
     try {
-      const res = await window.kraken.git.commitPush({
+      const res = await window.octo.git.commitPush({
         workspacePath: root,
         specId: meta.id,
         message: commitMessage(),
@@ -128,7 +128,7 @@ export function ShipView({ meta, onReopen }: { meta: SpecMeta; onReopen: () => v
     setBusy('pr');
     setNotice(null);
     try {
-      const res = await window.kraken.github.createPr({
+      const res = await window.octo.github.createPr({
         cwd: root,
         specId: meta.id,
         title: `${meta.kind === 'feature' ? 'feat' : 'fix'}: ${meta.name}`,
@@ -259,7 +259,7 @@ export function ShipView({ meta, onReopen }: { meta: SpecMeta; onReopen: () => v
                 </button>
                 {prUrl ? (
                   <button
-                    onClick={() => void window.kraken.shell.openUrl(prUrl)}
+                    onClick={() => void window.octo.shell.openUrl(prUrl)}
                     className="flex items-center gap-1.5 text-[12px] px-3 py-2 rounded-lg bg-good/15 text-ok font-semibold hover:bg-good/25 transition"
                   >
                     <GitPullRequest size={12} /> View PR <ExternalLink size={11} />

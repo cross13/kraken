@@ -21,7 +21,7 @@ import { LibDialogShell, LibField } from './AgentsStudio';
 const EXPLAINER = [
   {
     heading: 'What a hook is',
-    body: 'A JSON rule in .kraken/hooks/ that fires a Claude run (or a shell command) automatically when an app event happens — no manual trigger needed.',
+    body: 'A JSON rule in .octo/hooks/ that fires a Claude run (or a shell command) automatically when an app event happens — no manual trigger needed.',
   },
   {
     heading: 'When they fire',
@@ -146,13 +146,13 @@ function HookCard({ hook, triggerLabel }: { hook: HookConfig; triggerLabel: stri
 
   const toggle = async () => {
     if (!root) return;
-    await window.kraken.hooks.toggle(root, hook.id, !hook.enabled);
+    await window.octo.hooks.toggle(root, hook.id, !hook.enabled);
     await refreshAll();
   };
 
   const run = async () => {
     if (!root) return;
-    await window.kraken.hooks.fireOne(root, hook.id, { root });
+    await window.octo.hooks.fireOne(root, hook.id, { root });
   };
 
   return (
@@ -220,7 +220,7 @@ function GenerateHookDialog({ onClose }: { onClose: () => void }) {
   const generate = async () => {
     if (!root || !nl.trim()) return;
     setBusy(true);
-    await window.kraken.hooks.generateFromNl(root, nl.trim());
+    await window.octo.hooks.generateFromNl(root, nl.trim());
     // The hook file is written asynchronously by Claude; refresh shortly after.
     setTimeout(() => refreshAll(), 1500);
     onClose();
@@ -230,7 +230,7 @@ function GenerateHookDialog({ onClose }: { onClose: () => void }) {
     <LibDialogShell title="Generate a hook" onClose={onClose}>
       <p className="text-[12px] text-dim mb-4">
         Describe the automation in plain language. Claude writes a hook JSON into{' '}
-        <code className="font-mono text-accent">.kraken/hooks/</code> — it appears in the list when
+        <code className="font-mono text-accent">.octo/hooks/</code> — it appears in the list when
         it finishes.
       </p>
       <LibField label="Description">

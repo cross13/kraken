@@ -11,7 +11,7 @@ tags: [architecture, refactor, design-system, migration]
 
 ![status](https://img.shields.io/badge/metodolog%C3%ADa-completa-brightgreen) ![fases](https://img.shields.io/badge/fases-7%2F7%20hechas-brightgreen) ![branding](https://img.shields.io/badge/branding-B1--B4%20pendientes-yellow) ![riesgo](https://img.shields.io/badge/riesgo-bajo--medio-lightgrey)
 
-> **TL;DR** — Kraken pide hoy **4 aprobaciones humanas** antes de la primera línea de
+> **TL;DR** — Octo pide hoy **4 aprobaciones humanas** antes de la primera línea de
 > código. Este plan las baja a **2**, funde `design.md` + `tasks.md` en un único
 > **`plan.md`**, y convierte Ship en un panel de la etapa Construir. En paralelo,
 > reemplaza el lenguaje visual por la paleta **Signal** (verde = ejecutar,
@@ -52,7 +52,7 @@ fuente de verdad del progreso**.
 
 ### Decisiones pendientes
 
-- [ ] **D1** — ¿la app se sigue llamando Kraken? *(bloquea B3)*
+- [ ] **D1** — ¿la app se sigue llamando Octo? *(bloquea B3)*
 - [x] **D2** — Ship es un panel de `build`, no una etapa
 - [x] **D3** — se conservan Abyss / Bioluminescent / Daylight
 
@@ -93,7 +93,7 @@ flowchart TD
   A["electron/shared/types.ts:4<br/>type SpecPhase"] --> B["electron/main.ts:903<br/>advanceSpec + templates"]
   A --> C["electron/db.ts:36<br/>CHECK phase IN ..."]
   A --> D["src/stores/ui.ts:22<br/>type SpecStage"]
-  B --> E[".kraken/specs/id/spec.json<br/>FUENTE DE VERDAD"]
+  B --> E[".octo/specs/id/spec.json<br/>FUENTE DE VERDAD"]
   D --> F["SpecFlow.tsx:38-39<br/>PHASE_ORDER + STAGES"]
   F --> G["TaskRunner · SpecsStudio · HomeView"]
   A --> H["specActions.ts · agentRouter.ts<br/>models.ts · moduleConfig.ts"]
@@ -224,7 +224,7 @@ Cada criterio de aceptación → cómo se prueba.
 - [ ] <decisión que sólo vos podés tomar>
 ````
 
-### ⚠️ Bloqueante — Kraken no renderiza Mermaid
+### ⚠️ Bloqueante — Octo no renderiza Mermaid
 
 `src/lib/markdown.ts` pasa todo bloque de código por Prism: un ` ```mermaid `
 sale **como código coloreado, no como diagrama**. Y los prompts actuales ya piden
@@ -529,9 +529,9 @@ flowchart LR
 - **Space Grotesk** (UI y display) + **JetBrains Mono** (etiquetas, metadatos, cronómetros).
 - **Movimiento**: hover 120ms, barras 250ms, pulso 1,8s.
 
-### 6.2 Mapeo a los tokens de Kraken
+### 6.2 Mapeo a los tokens de Octo
 
-Kraken ya es 100% variable-driven, así que la paleta entró **sin tocar un
+Octo ya es 100% variable-driven, así que la paleta entró **sin tocar un
 componente**. Canales RGB separados por espacio, como el resto de `styles.css`:
 
 | Token | Hex | Canales | Rol |
@@ -568,7 +568,7 @@ Abyss, `0` en Signal. `rounded-full` queda **fuera a propósito** (dots, avatare
 | **B0** | *(= F0)* tokens, tema, fuentes, radios | bajo | ✅ |
 | **B1** | sombras a token (`--shadow-*` no-op en Signal); `rounded-full` → recto donde no sea círculo; radios hardcodeados de `styles.css` (scrollbar `8px`, bloques propios `9–15px`) | bajo | ⬜ |
 | **B2** | **semántica de acentos**: `accent` → `agent` en todo lo que sea agente/espera/decisión — `AssistantDrawer`, chips de `OrchestratorView`/`WideApp`/`AgentGraphView`, banners de Open Questions, prioridad media en `SpecsStudio`. Verde reservado a primarios y progreso | **medio** — es criterio, no mecánica | ⬜ |
-| **B3** | identidad: `KrakenLogo`, `KrakenLoader`, splash de `index.html` (hoy cian `#00BBDD` sobre `#060d16`), `scripts/render-icon.mjs`, ícono de app | medio | ⬜ |
+| **B3** | identidad: `OctoLogo`, `OctoLoader`, splash de `index.html` (hoy cian `#00BBDD` sobre `#060d16`), `scripts/render-icon.mjs`, ícono de app | medio | ⬜ |
 | **B4** | densidad y ritmo: tarjeta activa 26px, panel 14–15px, gap 16px, transiciones 120ms | bajo | ⬜ |
 
 > B2 es el tramo con más criterio humano: hoy el violeta **es** el acento primario.
@@ -619,7 +619,7 @@ gracias al alias de lectura; F5 lo elimina.
 | R4 | `--warn` remapeado a violeta pierde el ámbar de "cuidado" | Aceptado: la paleta define dos acentos |
 | R5 | El violeta deja de ser primario → B2 es criterio, no mecánica | Después de B0/B1, con la app corriendo |
 | R6 | `mermaid` suma ~500 kB al bundle | `import()` diferido; sólo se carga si el documento tiene un diagrama |
-| **D1** | ¿La app se sigue llamando **Kraken**? | ⬜ pendiente — B3 depende de esto |
+| **D1** | ¿La app se sigue llamando **Octo**? | ⬜ pendiente — B3 depende de esto |
 | **D2** | ¿Ship como panel de `build`, o cuarto chip sin ser fase? | ✅ panel dentro de `build` — es el objetivo "menos pasos" |
 | **D3** | ¿Se conservan Abyss / Bioluminescent / Daylight? | ✅ sí — costo cero y Daylight es el único tema claro |
 
@@ -654,7 +654,7 @@ de 130 a 35 líneas.
 |---|---:|---|
 | [`github/awesome-copilot@create-implementation-plan`](https://skills.sh/github/awesome-copilot/create-implementation-plan) | 12,4K | **El estándar de facto.** Front matter + badge de estado + fases con tablas `Task \| Description \| Completed \| Date`. Pero exige un zoo de IDs (`REQ-`, `SEC-`, `CON-`, `GUD-`, `PAT-`, `ALT-`, `DEP-`, `FILE-`, `TEST-`, `RISK-`) y hasta un script de verificación de unicidad: **optimizado para máquinas, no para leer**. Tomé el front matter, el badge y las tablas de tareas; dejé los IDs |
 | [`softaworks/agent-toolkit@mermaid-diagrams`](https://skills.sh/softaworks/agent-toolkit/mermaid-diagrams) | 4,8K | ✅ **instalada.** Árbol de decisión para elegir el tipo de diagrama + referencias por tipo (`flowcharts.md`, `sequence-diagrams.md`, `erd-diagrams.md`, `class-diagrams.md`, `c4-diagrams.md`, `architecture-diagrams.md`, `advanced-features.md`). Es exactamente lo que le falta al prompt de `spec-planner` |
-| [`b-mendoza/agent-skills@validate-implementation-plan`](https://skills.sh/b-mendoza/agent-skills/validate-implementation-plan) | 1,7K | Interesante para el gate de Plan: valida el plan antes de ejecutarlo. Se solapa con el *Improve plan* que Kraken ya tiene |
+| [`b-mendoza/agent-skills@validate-implementation-plan`](https://skills.sh/b-mendoza/agent-skills/validate-implementation-plan) | 1,7K | Interesante para el gate de Plan: valida el plan antes de ejecutarlo. Se solapa con el *Improve plan* que Octo ya tiene |
 | [`github/awesome-copilot@update-implementation-plan`](https://skills.sh/github/awesome-copilot/update-implementation-plan) | 11,1K | Actualiza un plan existente sin reescribirlo. Mismo rol que *Revise with feedback* |
 | [`davila7/claude-code-templates@mermaid-diagram-specialist`](https://skills.sh/davila7/claude-code-templates/mermaid-diagram-specialist) | 1,2K | Alternativa al de softaworks, menos adoptada |
 
@@ -668,7 +668,7 @@ npx skills add softaworks/agent-toolkit@mermaid-diagrams -g -y
 `npx skills` instala en `~/.agents/skills/<name>` y deja un **symlink** en
 `~/.claude/skills/`. `listSkills` (`electron/main.ts`) filtraba con
 `if (!e.isDirectory()) continue`, y `readdir(withFileTypes)` reporta un symlink
-como **ni directorio ni archivo** — así que Kraken no veía ninguna skill
+como **ni directorio ni archivo** — así que Octo no veía ninguna skill
 instalada por un gestor. Corregido a `isDirectory() || isSymbolicLink()`, dejando
 que la prueba de `SKILL.md` (que sí sigue el link) decida. Verificado: **71
 skills visibles, `mermaid-diagrams` incluida.** `listAgents` no necesita el

@@ -442,8 +442,8 @@ function DetailDrawer({
     setLoading(true);
     const runId = info.runId;
     Promise.all([
-      window.kraken.history.getRun(runId),
-      window.kraken.history.listRunFiles(runId),
+      window.octo.history.getRun(runId),
+      window.octo.history.listRunFiles(runId),
     ])
       .then(([r, f]) => {
         if (!alive) return;
@@ -666,7 +666,7 @@ export function AgentGraphView() {
       setTasksMd('');
       return;
     }
-    window.kraken.specs.read(root, specId).then((res) => {
+    window.octo.specs.read(root, specId).then((res) => {
       if (alive) setTasksMd(res.files.tasks ?? '');
     });
     return () => {
@@ -680,10 +680,10 @@ export function AgentGraphView() {
       setFileCounts(new Map());
       return;
     }
-    window.kraken.history
+    window.octo.history
       .listRuns({ workspacePath: root ?? null, specId, limit: 300 })
       .then(setHistory);
-    window.kraken.history
+    window.octo.history
       .runFileCounts({ workspacePath: root ?? null, specId })
       .then((rows) => setFileCounts(new Map(rows.map((r) => [r.run_id, r.files]))));
   }, [root, specId]);

@@ -351,7 +351,7 @@ body {
 }
 
 /* react-simple-code-editor container */
-.kraken-editor {
+.octo-editor {
   font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
   font-size: 13px;
   line-height: 1.65;
@@ -359,17 +359,17 @@ body {
   caret-color: #7c5cff;
   min-height: 100%;
 }
-.kraken-editor textarea:focus {
+.octo-editor textarea:focus {
   outline: none;
 }
-.kraken-editor pre {
+.octo-editor pre {
   margin: 0;
 }
 
-/* Prism — Kraken dark theme. Applied both inside markdown code blocks
-   (`.md-code`) and inside the SDD spec editor (`.kraken-editor`).        */
+/* Prism — Octo dark theme. Applied both inside markdown code blocks
+   (`.md-code`) and inside the SDD spec editor (`.octo-editor`).        */
 .md-code,
-.kraken-editor pre {
+.octo-editor pre {
   color: #e7ebf3;
   background: rgba(255, 255, 255, 0.025);
 }
@@ -506,7 +506,7 @@ body {
 }
 
 /* ---- Brand (Octopus Brand Kit) ------------------------------------------
-   Keyframes for the KrakenLogo / KrakenLoader animations. The boot splash in
+   Keyframes for the OctoLogo / OctoLoader animations. The boot splash in
    index.html duplicates these inline so it can animate before the bundle
    loads — keep the two in sync. */
 @keyframes octo-bob {
@@ -539,7 +539,7 @@ body {
 }
 
 /* App-tile behind the mark (nav rail, welcome hero). Daylight swaps to the
-   kit's white tile; KrakenLogo's 'auto' variant swaps the mark to match. */
+   kit's white tile; OctoLogo's 'auto' variant swaps the mark to match. */
 .octo-tile {
   background: linear-gradient(180deg, #001224, #001a33);
   box-shadow:

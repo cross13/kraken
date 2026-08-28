@@ -1,6 +1,6 @@
 # Architecture
 
-Kraken is an Electron desktop app for the Spec-Driven Development (SDD) loop:
+Octo is an Electron desktop app for the Spec-Driven Development (SDD) loop:
 **requirements → plan → build (tasks + execution)**. It drives Claude through one of two
 interchangeable backends — the user's local Claude CLI (default) or the Anthropic API
 SDK — selected at runtime in Settings.
@@ -13,12 +13,12 @@ typed IPC bridge.** Never reach across a layer any other way.
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │  Renderer (src/)  —  React 18 + Tailwind + Zustand                │
-│  UI, client state. Talks to the backend ONLY via window.kraken.*  │
+│  UI, client state. Talks to the backend ONLY via window.octo.*  │
 └──────────────────────────────┬────────────────────────────────────┘
-                               │  window.kraken.<ns>.<method>()
+                               │  window.octo.<ns>.<method>()
 ┌──────────────────────────────┴────────────────────────────────────┐
 │  Preload (electron/preload.ts)  —  context-isolated bridge          │
-│  Exposes one typed object `window.kraken`. KrakenApi = its typeof.  │
+│  Exposes one typed object `window.octo`. OctoApi = its typeof.  │
 │  invoke() for request/response, send()+on() for streaming.          │
 └──────────────────────────────┬────────────────────────────────────┘
                                │  ipcRenderer.invoke / send  ↔  ipcMain.handle / on
@@ -36,7 +36,7 @@ Owns everything privileged. Handlers are registered in **`registerIpc()`** via
 `ipcMain.handle('<namespace>:<action>', …)`. Key responsibilities:
 
 - **Spec lifecycle** — `createSpec` / `readSpec` / `writeSpecFile` / `advanceSpec`, plus the
-  markdown `*Template` functions. A spec is a directory under `.kraken/specs/<id>/` holding
+  markdown `*Template` functions. A spec is a directory under `.octo/specs/<id>/` holding
   `spec.json` (phase + metadata) and the phase markdown files. Two documents are authored
   (`requirements.md`/`bugfix.md` and `plan.md`) behind two gates; `tasks.md` is **derived** from
   the plan's `## Tasks` section when the Plan gate is approved.
@@ -57,10 +57,10 @@ Owns everything privileged. Handlers are registered in **`registerIpc()`** via
 
 ### Preload — `electron/preload.ts`
 
-Context-isolated bridge. Exposes a single typed object on `window.kraken`, namespaced:
+Context-isolated bridge. Exposes a single typed object on `window.octo`, namespaced:
 `workspace`, `specs`, `skills`, `agents`, `steering`, `hooks`, `fs`, `mcp`, `settings`,
 `cli`, `git`, `github`, `history`, `claude`, `terminal`, `shell`, `win`, `fleet`. The exported
-`KrakenApi` type (`typeof api`) is the contract the renderer types against.
+`OctoApi` type (`typeof api`) is the contract the renderer types against.
 
 **Rule:** when you add or change an IPC handler in `main.ts`, you must add/update the matching
 method here, or the renderer can't reach it. See [`ipc-contract.md`](./ipc-contract.md).
@@ -86,7 +86,7 @@ no DOM, no third-party imports).
 
 ## End-to-end data flow (a chat/stream example)
 
-1. Renderer calls `window.kraken.claude.stream(payload)` (fire-and-forget `ipcRenderer.send`).
+1. Renderer calls `window.octo.claude.stream(payload)` (fire-and-forget `ipcRenderer.send`).
 2. Preload forwards on channel `claude:stream`.
 3. Main's handler → `streamClaude` → records a run (`db.ts`), composes steering + system,
    forks to `streamViaCli` / `streamViaApi`.

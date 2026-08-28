@@ -84,7 +84,7 @@ export function TaskInspector({
 
   useEffect(() => {
     let alive = true;
-    window.kraken.history
+    window.octo.history
       .listRuns({ workspacePath: root ?? null, specId: meta.id, limit: 300 })
       .then((h) => alive && setHistory(h))
       .catch(() => alive && setHistory([]));
@@ -127,8 +127,8 @@ export function TaskInspector({
     }
     setLoadingRow(true);
     Promise.all([
-      window.kraken.history.getRun(info.runId),
-      window.kraken.history.listRunFiles(info.runId),
+      window.octo.history.getRun(info.runId),
+      window.octo.history.listRunFiles(info.runId),
     ])
       .then(([r, f]) => {
         if (!alive) return;

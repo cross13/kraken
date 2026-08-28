@@ -13,7 +13,7 @@ Adding or changing anything that touches the backend means editing **three place
      renameSpec(root, id, name)
    );
    ```
-2. **`electron/preload.ts`** — expose a typed method under the right namespace on `window.kraken`:
+2. **`electron/preload.ts`** — expose a typed method under the right namespace on `window.octo`:
    ```ts
    specs: {
      // …
@@ -21,7 +21,7 @@ Adding or changing anything that touches the backend means editing **three place
        ipcRenderer.invoke('specs:rename', root, id, name) as Promise<SpecMeta>,
    }
    ```
-3. **`src/`** — call it from a store or component: `await window.kraken.specs.rename(root, id, name)`.
+3. **`src/`** — call it from a store or component: `await window.octo.specs.rename(root, id, name)`.
 
 If a new shared shape is involved, add it to **`electron/shared/types.ts`** first and import it
 on both sides. Then run `npm run typecheck`.
@@ -60,9 +60,9 @@ workspace root and its file tree.
 `.claude/agents` (workspace + `~/.claude/`). `seedDefaults` writes the bundled SDD library.
 
 ### `steering`
-`list(root)`, `seedDefaults(root)` — project-context markdown in `.kraken/steering/`.
+`list(root)`, `seedDefaults(root)` — project-context markdown in `.octo/steering/`.
 `write(root, input: SteeringWriteInput)` — create/update a doc (frontmatter `.md`; renames via
-`input.prevPath`). `remove(root, path)` — delete a doc (rejects paths outside `.kraken/steering`).
+`input.prevPath`). `remove(root, path)` — delete a doc (rejects paths outside `.octo/steering`).
 `preview(root, { files?, manualRefs? })` — returns the exact steering block that would be injected
 (pins merged in). `getPins(root)` / `setPins(root, names)` — pinned doc names (force-included in
 every run), persisted per workspace in `electron-store`.

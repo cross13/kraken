@@ -112,7 +112,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
       hint: 'wide run monitor · second screen',
       icon: <MonitorSmartphone size={15} />,
       group: 'Commands',
-      run: () => window.kraken.win.toggleWide(),
+      run: () => window.octo.win.toggleWide(),
     });
     out.push({
       id: 'cmd:new-terminal',

@@ -141,7 +141,22 @@ export function initDb(): Database.Database {
   if (db) return db;
   const dir = app.getPath('userData');
   fs.mkdirSync(dir, { recursive: true });
-  const file = path.join(dir, 'kraken.db');
+  const file = path.join(dir, 'octo.db');
+  // Renamed with the app (Kraken → Octo). main.ts carries the userData folder
+  // over, so the database may still be sitting there under its old name — WAL
+  // sidecars included, since orphaning those would drop uncommitted pages.
+  if (!fs.existsSync(file)) {
+    for (const ext of ['', '-wal', '-shm']) {
+      const legacy = path.join(dir, `kraken.db${ext}`);
+      if (fs.existsSync(legacy)) {
+        try {
+          fs.renameSync(legacy, `${file}${ext}`);
+        } catch {
+          // best-effort: a missing sidecar just means a checkpointed database
+        }
+      }
+    }
+  }
   db = new Database(file);
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');

@@ -31,7 +31,7 @@ export function FileViewer({ path }: { path: string }) {
   useEffect(() => {
     setError(null);
     setHighlighted(null);
-    window.kraken.fs
+    window.octo.fs
       .read(path)
       .then(setContent)
       .catch((e) => setError(String(e)));

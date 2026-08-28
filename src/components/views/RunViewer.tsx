@@ -34,8 +34,8 @@ export function RunViewer({ runId }: { runId: string }) {
     let active = true;
     const load = async () => {
       const [r, f] = await Promise.all([
-        window.kraken.history.getRun(runId),
-        window.kraken.history.listRunFiles(runId),
+        window.octo.history.getRun(runId),
+        window.octo.history.listRunFiles(runId),
       ]);
       if (!active) return;
       if (!r) setNotFound(true);

@@ -149,10 +149,10 @@ export const useUi = create<UiStore>((set, get) => ({
   assistantOpen: false,
   toggleAssistant: () => set((s) => ({ assistantOpen: !s.assistantOpen })),
   setAssistantOpen: (b) => set({ assistantOpen: b }),
-  assistantWidth: clampAssistant(loadNum('kraken.chatWidth', 420)),
+  assistantWidth: clampAssistant(loadNum('octo.chatWidth', 420)),
   setAssistantWidth: (n) => {
     const w = clampAssistant(n);
-    saveNum('kraken.chatWidth', w);
+    saveNum('octo.chatWidth', w);
     set({ assistantWidth: w });
   },
 

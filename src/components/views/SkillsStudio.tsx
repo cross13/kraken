@@ -32,7 +32,7 @@ const EXPLAINER = [
   },
   {
     heading: 'How one gets injected',
-    body: 'The governing SDD skill (sdd-feature / sdd-bugfix by spec kind) is injected into every spec + task run. Kraken additionally injects a domain skill when it confidently matches the work.',
+    body: 'The governing SDD skill (sdd-feature / sdd-bugfix by spec kind) is injected into every spec + task run. Octo additionally injects a domain skill when it confidently matches the work.',
   },
   {
     heading: 'Which is best for a task',
@@ -196,7 +196,7 @@ function SkillDetail({ skill }: { skill: SkillMeta }) {
   const toggleSkill = useModuleConfig((s) => s.toggleSkill);
 
   useEffect(() => {
-    window.kraken.skills.read(skill.path).then(setBody);
+    window.octo.skills.read(skill.path).then(setBody);
   }, [skill.path]);
 
   const isSdd = skill.name === 'sdd-feature' || skill.name === 'sdd-bugfix';
@@ -294,7 +294,7 @@ function NewSkillDialog({
     setErr(null);
     try {
       const path = skillPath(root, slug);
-      await window.kraken.fs.write(path, skillScaffold(slug, description.trim()));
+      await window.octo.fs.write(path, skillScaffold(slug, description.trim()));
       await refreshAll();
       onCreated(path);
     } catch (e) {

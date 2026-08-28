@@ -18,7 +18,7 @@ import {
   Wand2,
   Trash2,
 } from 'lucide-react';
-import { KrakenLogo } from '../KrakenLogo';
+import { OctoLogo } from '../OctoLogo';
 import { cn } from '../../lib/cn';
 import { useOrchestrator } from '../../stores/orchestrator';
 import type { ActiveRun, FinishedRun, RunKind } from '../../../electron/shared/types';
@@ -72,17 +72,17 @@ export function OrchestratorView() {
   }, [active.length]);
 
   useEffect(() => {
-    window.kraken.settings.getMaxConcurrency().then(setMaxConcurrency);
+    window.octo.settings.getMaxConcurrency().then(setMaxConcurrency);
   }, [setMaxConcurrency]);
 
   const changeConcurrency = async (n: number) => {
     const clamped = Math.max(1, Math.min(8, n));
     setMaxConcurrency(clamped);
-    await window.kraken.settings.setMaxConcurrency(clamped);
+    await window.octo.settings.setMaxConcurrency(clamped);
   };
 
   const cancelOne = (run: ActiveRun) => {
-    window.kraken.claude.cancel(run.requestId);
+    window.octo.claude.cancel(run.requestId);
     finishRun(run.requestId, 'cancelled');
   };
 
@@ -102,7 +102,7 @@ export function OrchestratorView() {
             )}
           >
             {active.length > 0 ? (
-              <KrakenLogo animated className="w-4 h-5" />
+              <OctoLogo animated className="w-4 h-5" />
             ) : (
               <Network size={16} />
             )}

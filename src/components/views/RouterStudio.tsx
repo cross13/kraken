@@ -24,7 +24,7 @@ import { ModuleHeader, ModuleSection, Explainer, Callout, ScopeChip } from '../M
 const EXPLAINER = [
   {
     heading: 'Routing just works',
-    body: 'For every step Kraken picks the best-fitting installed agent and injects the right skills automatically: per-task @agent → chat override → your pin → strongest keyword specialist (project-local wins ties) → bundled default → generic.',
+    body: 'For every step Octo picks the best-fitting installed agent and injects the right skills automatically: per-task @agent → chat override → your pin → strongest keyword specialist (project-local wins ties) → bundled default → generic.',
   },
   {
     heading: 'See why, before you run',

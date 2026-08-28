@@ -1,9 +1,9 @@
 # Data Model
 
-Kraken has **two sources of data**, kept deliberately separate:
+Octo has **two sources of data**, kept deliberately separate:
 
 1. **Specs on disk** (per-workspace markdown) — the **source of truth** for SDD content.
-2. **SQLite** (`kraken.db`, app-level) — a global, queryable **mirror + telemetry log** of
+2. **SQLite** (`octo.db`, app-level) — a global, queryable **mirror + telemetry log** of
    specs, phase events, and every Claude run. Never the source of truth.
 
 Shared TypeScript shapes live in **`electron/shared/types.ts`** (imported by both main and
@@ -11,10 +11,10 @@ renderer; keep dependency-free).
 
 ## Specs on disk
 
-A spec is a **directory** under the workspace at `.kraken/specs/<id>/`:
+A spec is a **directory** under the workspace at `.octo/specs/<id>/`:
 
 ```
-.kraken/specs/<id>/
+.octo/specs/<id>/
   spec.json        # SpecMeta-ish: phase + metadata (load-bearing shape)
   requirements.md  # feature specs   (or bugfix.md for bugfix specs)
   plan.md          # the technical plan, incl. its `## Tasks` waves
@@ -94,7 +94,7 @@ inputs, so question answers flow forward into the plan.
 
 ## SQLite schema (`electron/db.ts`)
 
-App-level DB at `app.getPath('userData')/kraken.db` (better-sqlite3). Tables use
+App-level DB at `app.getPath('userData')/octo.db` (better-sqlite3). Tables use
 `CREATE TABLE IF NOT EXISTS`, so schema changes to existing tables need a migration, not just
 an edited `CREATE`. Tables:
 
@@ -146,7 +146,7 @@ the agent graph would treat the stale row as live and spin a finished task forev
   (`Record<workspacePath, string[]>`) — force-included in every run.
 - `GitHubRepoInfo`, `GitHubTokenStatus`, `PullRequestMeta`, `GitHubOpResult<T>` — GitHub.
 - `ModelInfo`, `ModelDiscovery`, `ModelOrigin` — model discovery. `ModelOrigin`
-  (`'api' | 'cli-config' | 'catalog'`) records **how Kraken learned about a model**, and is
+  (`'api' | 'cli-config' | 'catalog'`) records **how Octo learned about a model**, and is
   distinct from `ModelSource` (`explicit | settings-default | cli-default | api-default`), which
   records **how a given run resolved its model**. Don't conflate them. Nothing is persisted —
   discovery is recomputed on demand.

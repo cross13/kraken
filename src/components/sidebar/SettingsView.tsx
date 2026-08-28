@@ -72,12 +72,12 @@ export function SettingsView({ variant = 'panel' }: { variant?: 'panel' | 'page'
   const [branch, setBranch] = useState<string | null>(null);
 
   useEffect(() => {
-    window.kraken.settings.hasApiKey().then(setHasKey);
-    window.kraken.settings.getModel().then(setModel);
-    window.kraken.settings.getBackend().then(setBackend);
-    window.kraken.settings.getPermissions().then(setPerms);
-    window.kraken.mcp.list().then(setMcp).catch(() => setMcp([]));
-    window.kraken.github.tokenStatus().then(setGithub).catch(() => setGithub(null));
+    window.octo.settings.hasApiKey().then(setHasKey);
+    window.octo.settings.getModel().then(setModel);
+    window.octo.settings.getBackend().then(setBackend);
+    window.octo.settings.getPermissions().then(setPerms);
+    window.octo.mcp.list().then(setMcp).catch(() => setMcp([]));
+    window.octo.github.tokenStatus().then(setGithub).catch(() => setGithub(null));
     redetectCli();
   }, []);
 
@@ -88,9 +88,9 @@ export function SettingsView({ variant = 'panel' }: { variant?: 'panel' | 'page'
   }, [root, hasKey, refreshModels]);
 
   useEffect(() => {
-    window.kraken.workspace.getRecents().then(setRecents).catch(() => setRecents([]));
+    window.octo.workspace.getRecents().then(setRecents).catch(() => setRecents([]));
     if (root) {
-      window.kraken.git
+      window.octo.git
         .status(root)
         .then((s) => setBranch(s.isRepo ? s.branch : null))
         .catch(() => setBranch(null));
@@ -101,38 +101,38 @@ export function SettingsView({ variant = 'panel' }: { variant?: 'panel' | 'page'
 
   const saveGhToken = async () => {
     if (!ghTokenInput.trim()) return;
-    await window.kraken.github.setToken(ghTokenInput.trim());
+    await window.octo.github.setToken(ghTokenInput.trim());
     setGhTokenInput('');
     setGhEditing(false);
-    setGithub(await window.kraken.github.tokenStatus());
+    setGithub(await window.octo.github.tokenStatus());
   };
 
   const clearGhToken = async () => {
-    await window.kraken.github.clearToken();
-    setGithub(await window.kraken.github.tokenStatus());
+    await window.octo.github.clearToken();
+    setGithub(await window.octo.github.tokenStatus());
   };
 
   const savePerms = async (next: Partial<Permissions>) => {
     if (!perms) return;
     const merged = { ...perms, ...next };
     setPerms(merged);
-    await window.kraken.settings.setPermissions(next);
+    await window.octo.settings.setPermissions(next);
   };
 
   const redetectCli = async () => {
     setCli(null);
-    const status = await window.kraken.cli.detect();
+    const status = await window.octo.cli.detect();
     setCli(status);
   };
 
   const changeBackend = async (b: Backend) => {
     setBackend(b);
-    await window.kraken.settings.setBackend(b);
+    await window.octo.settings.setBackend(b);
   };
 
   const saveKey = async () => {
     if (!keyInput.trim()) return;
-    await window.kraken.settings.setApiKey(keyInput.trim());
+    await window.octo.settings.setApiKey(keyInput.trim());
     setKeyInput('');
     setEditing(false);
     setHasKey(true);
@@ -141,13 +141,13 @@ export function SettingsView({ variant = 'panel' }: { variant?: 'panel' | 'page'
   };
 
   const clearKey = async () => {
-    await window.kraken.settings.clearApiKey();
+    await window.octo.settings.clearApiKey();
     setHasKey(false);
   };
 
   const changeModel = async (m: string) => {
     setModel(m);
-    await window.kraken.settings.setModel(m);
+    await window.octo.settings.setModel(m);
   };
 
   // As a page, the sections flow into an auto-fitting multi-column grid — a
@@ -557,7 +557,7 @@ export function SettingsView({ variant = 'panel' }: { variant?: 'panel' | 'page'
 
         <section className="text-[10px] text-ink-500 leading-relaxed border-t border-ink-800 pt-3">
           <p className="mb-1">
-            Specs live in <code className="text-ink-300">.kraken/specs/</code>.
+            Specs live in <code className="text-ink-300">.octo/specs/</code>.
           </p>
           <p>
             Agents and skills are read from <code className="text-ink-300">.claude/agents/</code> and{' '}
@@ -598,12 +598,12 @@ export function SettingsView({ variant = 'panel' }: { variant?: 'panel' | 'page'
   );
 }
 
-/** Chip that says *how* Kraken knows about a model — never implies more. */
+/** Chip that says *how* Octo knows about a model — never implies more. */
 function SourceChip({ source }: { source: ModelInfo['source'] }) {
   const meta = {
     api: { label: 'your account', cls: 'bg-good/15 text-ok', title: 'Returned by the Anthropic Models API for your stored key.' },
     'cli-config': { label: 'local config', cls: 'bg-accent/15 text-accent', title: 'Named in your local Claude Code settings.' },
-    catalog: { label: 'not verified', cls: 'bg-ink-700/70 text-ink-300', title: 'Known model id from Kraken’s bundled catalog. Availability not checked.' },
+    catalog: { label: 'not verified', cls: 'bg-ink-700/70 text-ink-300', title: 'Known model id from Octo’s bundled catalog. Availability not checked.' },
   }[source];
   return (
     <span
@@ -669,7 +669,7 @@ function ModelSourceNote({
     return (
       <p className="text-[10px] text-ink-500 leading-snug mb-2">
         Verified against the Anthropic Models API with your stored key. Entries marked{' '}
-        <b className="text-ink-300">not verified</b> are known ids Kraken hasn't confirmed you can
+        <b className="text-ink-300">not verified</b> are known ids Octo hasn't confirmed you can
         reach.
       </p>
     );
@@ -678,7 +678,7 @@ function ModelSourceNote({
   return (
     <p className="text-[10px] text-ink-500 leading-snug mb-2">
       {backend === 'cli'
-        ? 'Read from your local Claude Code config plus Kraken’s catalog. Add an API key to verify the full list against your account — the CLI has no way to list models without starting a billable run.'
+        ? 'Read from your local Claude Code config plus Octo’s catalog. Add an API key to verify the full list against your account — the CLI has no way to list models without starting a billable run.'
         : 'Add an API key to list the models your account can actually reach.'}
     </p>
   );

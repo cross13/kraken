@@ -67,7 +67,7 @@ ${editInstruction(targetPath)}`,
 }
 
 function buildSystem(agentBody: string, meta: SpecMeta, files: Record<string, string>): string {
-  const base = `You are the Kraken SDD agent helping with a ${meta.kind} spec titled "${meta.name}". Current phase: ${meta.phase}. Be precise. Output GitHub-flavored markdown. Do not invent behaviors that are not stated or strongly implied — ask once for missing context, then commit to a draft.`;
+  const base = `You are the Octo SDD agent helping with a ${meta.kind} spec titled "${meta.name}". Current phase: ${meta.phase}. Be precise. Output GitHub-flavored markdown. Do not invent behaviors that are not stated or strongly implied — ask once for missing context, then commit to a draft.`;
   const context = [
     files.requirements && `# requirements.md\n${files.requirements}`,
     files.bugfix && `# bugfix.md\n${files.bugfix}`,
@@ -194,7 +194,7 @@ In your chat reply, list the improvements you made as short bullets (what + why)
   });
 
   return new Promise<boolean>((resolve) => {
-    const off = window.kraken.claude.onEvent((ev) => {
+    const off = window.octo.claude.onEvent((ev) => {
       if (ev.requestId !== requestId) return;
       if (ev.type === 'delta' && ev.text) chat.appendDelta(assistantId, ev.text, ev.channel);
       if (ev.type === 'done') {
@@ -216,7 +216,7 @@ In your chat reply, list the improvements you made as short bullets (what + why)
       .filter(Boolean)
       .join('\n\n---\n\n');
 
-    window.kraken.claude.stream({
+    window.octo.claude.stream({
       requestId,
       system,
       messages: [{ role: 'user', content: userText }],
@@ -294,7 +294,7 @@ Reference \`${specRel}/${reqLabel}\`, \`${specRel}/plan.md\`, and \`${specRel}/t
   });
 
   return new Promise<boolean>((resolve) => {
-    const off = window.kraken.claude.onEvent((ev) => {
+    const off = window.octo.claude.onEvent((ev) => {
       if (ev.requestId !== requestId) return;
       if (ev.type === 'delta' && ev.text) chat.appendDelta(assistantId, ev.text, ev.channel);
       if (ev.type === 'done') {
@@ -311,7 +311,7 @@ Reference \`${specRel}/${reqLabel}\`, \`${specRel}/plan.md\`, and \`${specRel}/t
       }
     });
 
-    window.kraken.claude.stream({
+    window.octo.claude.stream({
       requestId,
       system: [routed.body, system].filter(Boolean).join('\n\n---\n\n'),
       messages: [{ role: 'user', content: userText }],
@@ -352,7 +352,7 @@ export async function planSpec(text: string, kind?: SpecKind): Promise<SpecMeta>
   const resolvedKind = kind ?? specKindFromText(text);
   const spec = await ws.createSpec(specNameFromText(text), resolvedKind);
   useUi.getState().openSpec(spec.id, 'define');
-  const { meta, files } = await window.kraken.specs.read(ws.root!, spec.id);
+  const { meta, files } = await window.octo.specs.read(ws.root!, spec.id);
   void draftSpecDoc({ meta, files, file: firstStageFile(resolvedKind), brief: text });
   return spec;
 }
@@ -369,7 +369,7 @@ export async function quickPlanSpec(text: string, kind?: SpecKind): Promise<Spec
   const spec = await ws.createSpec(specNameFromText(text), resolvedKind);
   useUi.getState().openSpec(spec.id, 'define');
 
-  const read = () => window.kraken.specs.read(root, spec.id);
+  const read = () => window.octo.specs.read(root, spec.id);
   // Two documents now, not three: the plan carries its own task waves, and
   // advancing past it derives tasks.md.
   const order: SpecDocFile[] = [firstStageFile(resolvedKind), 'plan'];
@@ -377,7 +377,7 @@ export async function quickPlanSpec(text: string, kind?: SpecKind): Promise<Spec
     const { meta, files } = await read();
     const ok = await draftSpecDoc({ meta, files, file, brief: text });
     if (!ok) break;
-    const updated = await window.kraken.specs.advance(root, spec.id);
+    const updated = await window.octo.specs.advance(root, spec.id);
     useUi.getState().openSpec(spec.id, stageForPhase(updated.phase));
     await ws.refreshAll();
   }
