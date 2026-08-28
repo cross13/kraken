@@ -40,7 +40,7 @@ export function OctoLoader({
       <OctoLogo animated glow variant="dark" className={MARK_SIZE[size]} />
 
       {showCode && (
-        <div className="w-[220px] h-[96px] rounded-[10px] overflow-hidden relative bg-[#000A14] ring-1 ring-[#00BBDD]/[0.14]">
+        <div className="w-[220px] h-[96px] rounded-lg overflow-hidden relative bg-rail ring-1 ring-accent/[0.18]">
           <div
             className="flex flex-col gap-[9px] px-3.5 py-3"
             style={{ animation: 'octo-code-scroll 6s linear infinite' }}
@@ -57,7 +57,8 @@ export function OctoLoader({
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
-              background: 'linear-gradient(180deg,#000A14,transparent 25%,transparent 75%,#000A14)',
+              background:
+                'linear-gradient(180deg,rgb(var(--rail)),transparent 25%,transparent 75%,rgb(var(--rail)))',
             }}
           />
         </div>
@@ -67,7 +68,7 @@ export function OctoLoader({
         {[0, 1, 2].map((i) => (
           <span
             key={i}
-            className="w-1.5 h-1.5 rounded-full bg-[#00BBDD]"
+            className="w-1.5 h-1.5 rounded-full bg-accent"
             style={{ animation: `octo-dot-pulse 1.2s ${i * 0.2}s infinite` }}
           />
         ))}

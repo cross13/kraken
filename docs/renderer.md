@@ -235,9 +235,24 @@ needs eyes on the running app.
 ## Brand (Octopus Brand Kit)
 
 The brand mark is the octopus from the **Octopus Brand Kit** (claude.ai/design project
-"Octopus logo animation"). It carries fixed brand colors independent of the theme palettes:
-cyan rim gradient `#00BBDD→#003973`, deep-sea body `#001A33→#000A14`, visor eyes `#7DF3FF`;
-the light colorway (flat `#003973`, `#00BBDD` eyes) is auto-selected on the Daylight theme.
+"Octopus logo animation") — the app's literal namesake since the Kraken → Octo rename.
+
+**The mark is theme-driven**, not a fixed colourway: the rim is `--accent2 → --accent/40`, the
+body is `--card → --rail`, the eyes are `--accent-num`, and the glow and `.octo-tile` read the
+accent too. So it is green on Signal, violet on Abyss, teal on Bioluminescent — the app is never
+wearing two palettes at once. CSS variables only resolve through `style`, never through SVG
+presentation attributes, which is why `OctoLogo`'s gradient stops are inline styles. The light
+colourway (flat `--accent` body, `--accent-fg` eyes) is auto-selected on Daylight.
+
+Two places can't follow the theme, and use Signal's literals because Signal is the default:
+
+- **The boot splash** in `index.html` paints before the bundle — and therefore before
+  `styles.css` — exists, and the CSP forbids the inline script that would read the persisted
+  theme. On a non-default theme that costs one brand-coloured frame.
+- **The app icon** (`resources/icon.svg` → `npm run icon` → `icon.png`) is a static asset. It is
+  deliberately **inverted** versus the in-app mark: at 32px in a dock a dark tile with a thin rim
+  disappears, so it uses the palette's primary-button treatment — brand green as fill, `#0F1400`
+  as the only ink allowed on it, `--accent-num` visor.
 
 - **`OctoLogo`** (`components/OctoLogo.tsx`) — the mark. Props: `animated` (bobbing body +
   staggered tentacle sway + eye scan), `glow` (pulsing cyan drop-shadow, dark colorway only),

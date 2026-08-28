@@ -548,19 +548,23 @@ body {
   40% { opacity: 1; }
 }
 @keyframes octo-glow-pulse {
-  0%, 100% { filter: drop-shadow(0 0 3px rgba(0, 187, 221, 0.5)); }
-  50% { filter: drop-shadow(0 0 9px rgba(0, 187, 221, 0.75)); }
+  0%, 100% { filter: drop-shadow(0 0 3px rgb(var(--accent) / 0.5)); }
+  50% { filter: drop-shadow(0 0 9px rgb(var(--accent) / 0.75)); }
 }
 
 /* App-tile behind the mark (nav rail, welcome hero). Daylight swaps to the
    kit's white tile; OctoLogo's 'auto' variant swaps the mark to match. */
 .octo-tile {
-  background: linear-gradient(180deg, #001224, #001a33);
+  background: linear-gradient(180deg, rgb(var(--card)), rgb(var(--rail)));
   box-shadow:
-    0 0 0 1px rgba(0, 187, 221, 0.2),
-    0 2px 12px rgba(0, 187, 221, 0.25);
+    0 0 0 1px rgb(var(--accent) / 0.25),
+    0 2px 12px rgb(var(--accent) / 0.2);
+}
+[data-theme='signal'] .octo-tile {
+  /* Signal is flat: the hairline carries the tile, not a shadow. */
+  box-shadow: 0 0 0 1px rgb(var(--accent) / 0.5);
 }
 [data-theme='daylight'] .octo-tile {
-  background: #ffffff;
-  box-shadow: 0 0 0 1px #e8edf2;
+  background: rgb(var(--panel));
+  box-shadow: 0 0 0 1px rgb(var(--line));
 }

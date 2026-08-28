@@ -26,9 +26,13 @@ const EYE_LEFT = 'M 72,68 L 92,76 L 92,84 L 72,76 Z';
 const EYE_RIGHT = 'M 128,68 L 108,76 L 108,84 L 128,76 Z';
 
 /**
- * Octo brand mark — the octopus from the Octopus Brand Kit. The dark
- * colorway carries the brand gradients (cyan rim on a deep-sea body); the
- * light colorway is flat navy for white/daylight tiles. Keyframes live in
+ * Octo brand mark — the octopus from the Octopus Brand Kit.
+ *
+ * The mark is **theme-driven**: the rim is the active accent, the body is the
+ * surface ladder, the eyes are the accent's brightest step. So it is green on
+ * Signal, violet on Abyss, teal on Bioluminescent — the app is never wearing
+ * two palettes at once. CSS variables only resolve through `style`, not through
+ * SVG presentation attributes, hence the inline `stopColor`s. Keyframes live in
  * styles.css under "Brand".
  */
 export function OctoLogo({ className, glow, animated, variant = 'auto' }: Props) {
@@ -39,8 +43,10 @@ export function OctoLogo({ className, glow, animated, variant = 'auto' }: Props)
   const rimId = `okRim${uid}`;
   const bodyId = `okBody${uid}`;
 
-  const rim = light ? '#003973' : `url(#${rimId})`;
-  const eye = light ? '#00BBDD' : '#7DF3FF';
+  const rim = `url(#${rimId})`;
+  // Dark: the brightest accent step reads as a lit visor. Light: the ink that
+  // the palette allows on an accent fill, i.e. maximum contrast on the body.
+  const eye = light ? 'rgb(var(--accent-fg))' : 'rgb(var(--accent-num))';
 
   return (
     <div
@@ -59,18 +65,25 @@ export function OctoLogo({ className, glow, animated, variant = 'auto' }: Props)
             : undefined),
         }}
       >
-        {!light && (
-          <defs>
-            <linearGradient id={rimId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor="#00BBDD" />
-              <stop offset="1" stopColor="#003973" />
-            </linearGradient>
-            <linearGradient id={bodyId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor="#001A33" />
-              <stop offset="1" stopColor="#000A14" />
-            </linearGradient>
-          </defs>
-        )}
+        <defs>
+          <linearGradient id={rimId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" style={{ stopColor: 'rgb(var(--accent2))' }} />
+            <stop
+              offset="1"
+              style={{ stopColor: light ? 'rgb(var(--accent) / 0.75)' : 'rgb(var(--accent) / 0.4)' }}
+            />
+          </linearGradient>
+          <linearGradient id={bodyId} x1="0" y1="0" x2="0" y2="1">
+            <stop
+              offset="0"
+              style={{ stopColor: light ? 'rgb(var(--accent))' : 'rgb(var(--card))' }}
+            />
+            <stop
+              offset="1"
+              style={{ stopColor: light ? 'rgb(var(--accent))' : 'rgb(var(--rail))' }}
+            />
+          </linearGradient>
+        </defs>
 
         {TENTACLES.map((d, i) => (
           <path
@@ -94,7 +107,7 @@ export function OctoLogo({ className, glow, animated, variant = 'auto' }: Props)
 
         <path
           d={BODY}
-          fill={light ? '#003973' : `url(#${bodyId})`}
+          fill={`url(#${bodyId})`}
           stroke={light ? undefined : rim}
           strokeWidth={light ? undefined : 3}
           strokeLinejoin="round"

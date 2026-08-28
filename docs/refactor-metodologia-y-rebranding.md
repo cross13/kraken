@@ -9,7 +9,7 @@ tags: [architecture, refactor, design-system, migration]
 
 # Refactor — **Definir · Plan · Construir** + rebranding *Signal*
 
-![status](https://img.shields.io/badge/metodolog%C3%ADa-completa-brightgreen) ![fases](https://img.shields.io/badge/fases-7%2F7%20hechas-brightgreen) ![branding](https://img.shields.io/badge/branding-B3--B4%20pendientes-yellow) ![riesgo](https://img.shields.io/badge/riesgo-bajo--medio-lightgrey)
+![status](https://img.shields.io/badge/metodolog%C3%ADa-completa-brightgreen) ![fases](https://img.shields.io/badge/fases-7%2F7%20hechas-brightgreen) ![branding](https://img.shields.io/badge/branding-B4%20pendiente-yellow) ![riesgo](https://img.shields.io/badge/riesgo-bajo--medio-lightgrey)
 
 > **TL;DR** — Octo pide hoy **4 aprobaciones humanas** antes de la primera línea de
 > código. Este plan las baja a **2**, funde `design.md` + `tasks.md` en un único
@@ -47,7 +47,7 @@ fuente de verdad del progreso**.
 - [x] **B0** · tokens, tema, fuentes, radios *(= F0)*
 - [x] **B1** · sombras a token + `rounded-full` + radios hardcodeados de `styles.css`
 - [x] **B2** · semántica de acentos — `accent` → `agent` donde signifique agente/espera, y fuera los colores off-palette
-- [ ] **B3** · identidad — logo, loader, splash, ícono *(desbloqueado: D1 resuelta)*
+- [x] **B3** · identidad — logo, loader, splash, ícono
 - [ ] **B4** · densidad y ritmo — padding 26/14–15px, gap 16px, 120ms
 
 ### Decisiones pendientes
@@ -568,7 +568,7 @@ Abyss, `0` en Signal. `rounded-full` queda **fuera a propósito** (dots, avatare
 | **B0** | *(= F0)* tokens, tema, fuentes, radios | bajo | ✅ |
 | **B1** | ✅ **hecha.** `boxShadow` → `var(--shadow-*)`: en Signal `panel` y `card` son `none`, y `glow` pasa a ser la hairline de acento al 50% que la paleta sí admite. **`rounded-full` tokenizado** (`--radius-full`) en vez de barrido a mano: 9999px en los temas legacy, 0 en Signal, y los ~40 puntos de estado, badges, píldoras y avatares quedan cuadrados de una — el marcador de estado de la paleta *es* un cuadrado de 6px, así que es el sistema, no una concesión. Sin radios hardcodeados en `styles.css` | bajo | ✅ |
 | **B2** | ✅ **hecha.** Violeta para la **identidad del agente** (chip de `LibBadge`, nodos de `AgentGraphView`, banner y marcador de tool-call de `ChatPanel`, `TaskInspector`) y para lo que **espera una decisión tuya** (Open Questions, *Awaiting approval* en Home). Verde intacto en primarios, progreso y "corriendo". **Y el hallazgo grande:** había **50 clases de color hardcodeadas** (`amber-500`, `emerald-400`, `sky-300`, `purple-300`) que nunca respondieron al tema — un tercer y cuarto acento fuera de sistema. Remapeadas a `warn` / `good` / `dim` / `agent`; en `src/` no queda ninguna | **medio** — es criterio, no mecánica | ✅ |
-| **B3** | identidad: `OctoLogo`, `OctoLoader`, splash de `index.html` (hoy cian `#00BBDD` sobre `#060d16`), `scripts/render-icon.mjs`, ícono de app. **Desbloqueado** por D1 — y con el nombre nuevo, el pulpo es el homónimo literal | medio | ⬜ |
+| **B3** | ✅ **hecha.** La marca pasó a ser **theme-driven** en vez de cambiarle el cian por verde: rim `--accent2 → --accent/40`, cuerpo `--card → --rail`, ojos `--accent-num`, más el glow y `.octo-tile`. Verde en Signal, violeta en Abyss, turquesa en Bioluminescent — la app nunca lleva dos paletas puestas. Splash e ícono no pueden seguir al tema (uno pinta antes del bundle, el otro es un asset estático) y usan los literales de Signal; el ícono va **invertido a propósito** — tile verde y silueta `#0F1400` — porque a 32px en el dock un tile oscuro con rim fino desaparece. En `src/`, `index.html` y `resources/` no queda un solo cian | medio | ✅ |
 | **B4** | densidad y ritmo: tarjeta activa 26px, panel 14–15px, gap 16px, transiciones 120ms | bajo | ⬜ |
 
 > **Nota de B2.** Un chequeo que hice y descartó una preocupación previa: el verde
