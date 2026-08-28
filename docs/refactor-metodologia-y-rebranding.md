@@ -47,12 +47,12 @@ fuente de verdad del progreso**.
 - [x] **B0** · tokens, tema, fuentes, radios *(= F0)*
 - [x] **B1** · sombras a token + `rounded-full` + radios hardcodeados de `styles.css`
 - [ ] **B2** · semántica de acentos — `accent` → `agent` donde signifique agente/espera
-- [ ] **B3** · identidad — logo, loader, splash, ícono *(bloqueado por D1)*
+- [ ] **B3** · identidad — logo, loader, splash, ícono *(desbloqueado: D1 resuelta)*
 - [ ] **B4** · densidad y ritmo — padding 26/14–15px, gap 16px, 120ms
 
 ### Decisiones pendientes
 
-- [ ] **D1** — ¿la app se sigue llamando Octo? *(bloquea B3)*
+- [x] **D1** — la app pasó de **Kraken** a **Octo** (agosto 2026). La marca ya era un pulpo, así que el nombre por fin dice lo que se ve
 - [x] **D2** — Ship es un panel de `build`, no una etapa
 - [x] **D3** — se conservan Abyss / Bioluminescent / Daylight
 
@@ -566,9 +566,9 @@ Abyss, `0` en Signal. `rounded-full` queda **fuera a propósito** (dots, avatare
 | Tramo | Alcance | Riesgo | Estado |
 |---|---|---|---|
 | **B0** | *(= F0)* tokens, tema, fuentes, radios | bajo | ✅ |
-| **B1** | sombras a token (`--shadow-*` no-op en Signal); `rounded-full` → recto donde no sea círculo; radios hardcodeados de `styles.css` (scrollbar `8px`, bloques propios `9–15px`) | bajo | ⬜ |
+| **B1** | ✅ **hecha.** `boxShadow` → `var(--shadow-*)`: en Signal `panel` y `card` son `none`, y `glow` pasa a ser la hairline de acento al 50% que la paleta sí admite. **`rounded-full` tokenizado** (`--radius-full`) en vez de barrido a mano: 9999px en los temas legacy, 0 en Signal, y los ~40 puntos de estado, badges, píldoras y avatares quedan cuadrados de una — el marcador de estado de la paleta *es* un cuadrado de 6px, así que es el sistema, no una concesión. Sin radios hardcodeados en `styles.css` | bajo | ✅ |
 | **B2** | **semántica de acentos**: `accent` → `agent` en todo lo que sea agente/espera/decisión — `AssistantDrawer`, chips de `OrchestratorView`/`WideApp`/`AgentGraphView`, banners de Open Questions, prioridad media en `SpecsStudio`. Verde reservado a primarios y progreso | **medio** — es criterio, no mecánica | ⬜ |
-| **B3** | identidad: `OctoLogo`, `OctoLoader`, splash de `index.html` (hoy cian `#00BBDD` sobre `#060d16`), `scripts/render-icon.mjs`, ícono de app | medio | ⬜ |
+| **B3** | identidad: `OctoLogo`, `OctoLoader`, splash de `index.html` (hoy cian `#00BBDD` sobre `#060d16`), `scripts/render-icon.mjs`, ícono de app. **Desbloqueado** por D1 — y con el nombre nuevo, el pulpo es el homónimo literal | medio | ⬜ |
 | **B4** | densidad y ritmo: tarjeta activa 26px, panel 14–15px, gap 16px, transiciones 120ms | bajo | ⬜ |
 
 > B2 es el tramo con más criterio humano: hoy el violeta **es** el acento primario.
@@ -619,7 +619,7 @@ gracias al alias de lectura; F5 lo elimina.
 | R4 | `--warn` remapeado a violeta pierde el ámbar de "cuidado" | Aceptado: la paleta define dos acentos |
 | R5 | El violeta deja de ser primario → B2 es criterio, no mecánica | Después de B0/B1, con la app corriendo |
 | R6 | `mermaid` suma ~500 kB al bundle | `import()` diferido; sólo se carga si el documento tiene un diagrama |
-| **D1** | ¿La app se sigue llamando **Octo**? | ⬜ pendiente — B3 depende de esto |
+| **D1** | ¿Cómo se llama la app? | ✅ **Octo**. El renombre movió `.kraken/` → `.octo/`, `kraken.db` → `octo.db`, `appData/Kraken` → `appData/Octo`, las claves de `localStorage` y `window.kraken` → `window.octo`, cada uno con su migración one-shot. **Lo único que no sobrevive:** en macOS la clave de `safeStorage` vive en el Keychain bajo el nombre de la app, así que la API key y el token de GitHub hay que re-ingresarlos una vez |
 | **D2** | ¿Ship como panel de `build`, o cuarto chip sin ser fase? | ✅ panel dentro de `build` — es el objetivo "menos pasos" |
 | **D3** | ¿Se conservan Abyss / Bioluminescent / Daylight? | ✅ sí — costo cero y Daylight es el único tema claro |
 
