@@ -9,7 +9,7 @@ tags: [architecture, refactor, design-system, migration]
 
 # Refactor — **Definir · Plan · Construir** + rebranding *Signal*
 
-![status](https://img.shields.io/badge/metodolog%C3%ADa-completa-brightgreen) ![fases](https://img.shields.io/badge/fases-7%2F7%20hechas-brightgreen) ![branding](https://img.shields.io/badge/branding-B2--B4%20pendientes-yellow) ![riesgo](https://img.shields.io/badge/riesgo-bajo--medio-lightgrey)
+![status](https://img.shields.io/badge/metodolog%C3%ADa-completa-brightgreen) ![fases](https://img.shields.io/badge/fases-7%2F7%20hechas-brightgreen) ![branding](https://img.shields.io/badge/branding-B3--B4%20pendientes-yellow) ![riesgo](https://img.shields.io/badge/riesgo-bajo--medio-lightgrey)
 
 > **TL;DR** — Octo pide hoy **4 aprobaciones humanas** antes de la primera línea de
 > código. Este plan las baja a **2**, funde `design.md` + `tasks.md` en un único
@@ -46,7 +46,7 @@ fuente de verdad del progreso**.
 
 - [x] **B0** · tokens, tema, fuentes, radios *(= F0)*
 - [x] **B1** · sombras a token + `rounded-full` + radios hardcodeados de `styles.css`
-- [ ] **B2** · semántica de acentos — `accent` → `agent` donde signifique agente/espera
+- [x] **B2** · semántica de acentos — `accent` → `agent` donde signifique agente/espera, y fuera los colores off-palette
 - [ ] **B3** · identidad — logo, loader, splash, ícono *(desbloqueado: D1 resuelta)*
 - [ ] **B4** · densidad y ritmo — padding 26/14–15px, gap 16px, 120ms
 
@@ -567,12 +567,17 @@ Abyss, `0` en Signal. `rounded-full` queda **fuera a propósito** (dots, avatare
 |---|---|---|---|
 | **B0** | *(= F0)* tokens, tema, fuentes, radios | bajo | ✅ |
 | **B1** | ✅ **hecha.** `boxShadow` → `var(--shadow-*)`: en Signal `panel` y `card` son `none`, y `glow` pasa a ser la hairline de acento al 50% que la paleta sí admite. **`rounded-full` tokenizado** (`--radius-full`) en vez de barrido a mano: 9999px en los temas legacy, 0 en Signal, y los ~40 puntos de estado, badges, píldoras y avatares quedan cuadrados de una — el marcador de estado de la paleta *es* un cuadrado de 6px, así que es el sistema, no una concesión. Sin radios hardcodeados en `styles.css` | bajo | ✅ |
-| **B2** | **semántica de acentos**: `accent` → `agent` en todo lo que sea agente/espera/decisión — `AssistantDrawer`, chips de `OrchestratorView`/`WideApp`/`AgentGraphView`, banners de Open Questions, prioridad media en `SpecsStudio`. Verde reservado a primarios y progreso | **medio** — es criterio, no mecánica | ⬜ |
+| **B2** | ✅ **hecha.** Violeta para la **identidad del agente** (chip de `LibBadge`, nodos de `AgentGraphView`, banner y marcador de tool-call de `ChatPanel`, `TaskInspector`) y para lo que **espera una decisión tuya** (Open Questions, *Awaiting approval* en Home). Verde intacto en primarios, progreso y "corriendo". **Y el hallazgo grande:** había **50 clases de color hardcodeadas** (`amber-500`, `emerald-400`, `sky-300`, `purple-300`) que nunca respondieron al tema — un tercer y cuarto acento fuera de sistema. Remapeadas a `warn` / `good` / `dim` / `agent`; en `src/` no queda ninguna | **medio** — es criterio, no mecánica | ✅ |
 | **B3** | identidad: `OctoLogo`, `OctoLoader`, splash de `index.html` (hoy cian `#00BBDD` sobre `#060d16`), `scripts/render-icon.mjs`, ícono de app. **Desbloqueado** por D1 — y con el nombre nuevo, el pulpo es el homónimo literal | medio | ⬜ |
 | **B4** | densidad y ritmo: tarjeta activa 26px, panel 14–15px, gap 16px, transiciones 120ms | bajo | ⬜ |
 
-> B2 es el tramo con más criterio humano: hoy el violeta **es** el acento primario.
-> Hacerlo con la app corriendo al lado, después de B1.
+> **Nota de B2.** Un chequeo que hice y descartó una preocupación previa: el verde
+> `#76B900` como texto chico mide **6,5:1 sobre `--panel` `#232323`** — el 2,41:1 de
+> la paleta es *sobre blanco*, o sea que aplica a Daylight, donde el acento no es
+> verde. Así que `text-accent` no es un defecto de contraste. Queda igual una
+> preferencia del sistema: reservar `--accent-text` (`#A6E62E`) para texto y
+> `--accent` para relleno. Son ~190 call sites mezclando íconos y texto, y separar
+> unos de otros pide ojos sobre la app corriendo. **Deferido a propósito.**
 
 ---
 

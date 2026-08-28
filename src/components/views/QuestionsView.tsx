@@ -191,7 +191,7 @@ export function QuestionsView({ specId }: { specId: string }) {
       {/* Header */}
       <div className="flex items-center justify-between gap-4 border-b border-ink-800 px-6 py-3">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 grid place-items-center rounded-lg bg-accent/10 text-accent shrink-0">
+          <div className="w-9 h-9 grid place-items-center rounded-lg bg-agent/12 text-agent-text shrink-0">
             <HelpCircle size={16} />
           </div>
           <div className="min-w-0">
@@ -215,7 +215,7 @@ export function QuestionsView({ specId }: { specId: string }) {
           {openCount > 0 && (
             <button
               onClick={suggestAllOpen}
-              className="text-xs font-medium flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent/15 text-accent ring-1 ring-inset ring-accent/30 hover:bg-accent/25 transition"
+              className="text-xs font-medium flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-agent/15 text-agent-text ring-1 ring-inset ring-agent/30 hover:bg-agent/25 transition"
               title="Suggest answers for every open question"
             >
               <Sparkles size={13} /> Suggest all
@@ -380,7 +380,7 @@ function QuestionCard({
         <button
           onClick={onSuggest}
           disabled={busy}
-          className="text-[11px] flex items-center gap-1 px-2 py-1 rounded text-accent hover:bg-accent/10 disabled:opacity-50"
+          className="text-[11px] flex items-center gap-1 px-2 py-1 rounded text-agent-text hover:bg-agent/10 disabled:opacity-50"
           title="Suggest an answer with Claude"
         >
           {busy ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}

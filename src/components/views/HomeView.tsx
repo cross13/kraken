@@ -490,8 +490,10 @@ function SpecCard({
   const status = running
     ? { label: `${runningCount} running`, cls: 'text-good', dot: 'bg-good', pulse: true }
     : spec.phase === 'build'
-      ? { label: 'Ready to run', cls: 'text-accent-2', dot: 'bg-accent', pulse: false }
-      : { label: 'Awaiting approval', cls: 'text-accent-2', dot: 'bg-accent', pulse: false };
+      ? // green is "press me / in progress"…
+        { label: 'Ready to run', cls: 'text-accent-text', dot: 'bg-accent', pulse: false }
+      : // …violet is "this one is waiting on you".
+        { label: 'Awaiting approval', cls: 'text-agent-text', dot: 'bg-agent', pulse: false };
 
   return (
     <div

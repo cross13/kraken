@@ -29,11 +29,11 @@ import { cn } from '../../lib/cn';
 const KIND_META: Record<RunKind, { label: string; icon: React.ReactNode; cls: string }> = {
   task: { label: 'Task', icon: <ListChecks size={12} />, cls: 'bg-accent/15 text-accent' },
   refine: { label: 'Refine', icon: <Wand2 size={12} />, cls: 'bg-accent/15 text-accent' },
-  polish: { label: 'Polish', icon: <Sparkles size={12} />, cls: 'bg-purple-500/15 text-purple-300' },
+  polish: { label: 'Polish', icon: <Sparkles size={12} />, cls: 'bg-agent/15 text-agent-text' },
   chat: { label: 'Chat', icon: <MessageSquare size={12} />, cls: 'bg-ink-700 text-ink-200' },
-  spec: { label: 'Spec', icon: <FileText size={12} />, cls: 'bg-sky-500/15 text-sky-300' },
-  audit: { label: 'Audit', icon: <Stethoscope size={12} />, cls: 'bg-amber-500/15 text-amber-300' },
-  hook: { label: 'Hook', icon: <Bot size={12} />, cls: 'bg-emerald-500/15 text-emerald-300' },
+  spec: { label: 'Spec', icon: <FileText size={12} />, cls: 'bg-ink-50/[0.06] text-dim' },
+  audit: { label: 'Audit', icon: <Stethoscope size={12} />, cls: 'bg-warn/15 text-warn' },
+  hook: { label: 'Hook', icon: <Bot size={12} />, cls: 'bg-good/15 text-good' },
 };
 
 function kindMeta(kind?: RunKind) {
@@ -534,7 +534,7 @@ function RunDetail({
 const CHANNEL_CLS: Record<StreamChannel, string> = {
   text: 'text-ink-200',
   thinking: 'text-ink-500 italic',
-  tool: 'text-accent',
+  tool: 'text-agent-text',
   tool_result: 'text-ink-400',
 };
 

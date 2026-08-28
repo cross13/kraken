@@ -156,26 +156,26 @@ function TaskNode({ data }: NodeProps) {
         {d.task.waveLabel && (
           <span className="text-[9px] text-ink-600 ml-auto">{d.task.waveLabel}</span>
         )}
-        {hasWarn && <AlertTriangle size={11} className="text-amber-400" />}
+        {hasWarn && <AlertTriangle size={11} className="text-warn" />}
       </div>
       <div className="text-[11px] text-ink-100 leading-snug mt-1 line-clamp-2">
         {d.task.description || '(no description)'}
       </div>
       <div className="flex items-center gap-1 mt-1.5 flex-wrap">
-        <span className="text-[9px] px-1.5 py-0.5 rounded flex items-center gap-1 bg-accent/15 text-accent">
+        <span className="text-[9px] px-1.5 py-0.5 rounded flex items-center gap-1 bg-agent/15 text-agent-text">
           <Bot size={9} />
           {d.info?.agent ?? 'generic'}
           {d.info?.agentScope ? ` · ${scopeLabel(d.info.agentScope)}` : ''}
         </span>
         {d.info?.skill && (
-          <span className="text-[9px] px-1.5 py-0.5 rounded flex items-center gap-1 bg-sky-500/15 text-sky-300">
+          <span className="text-[9px] px-1.5 py-0.5 rounded flex items-center gap-1 bg-ink-50/[0.06] text-dim">
             <Sparkles size={9} />
             {d.info.skill}
           </span>
         )}
         {d.fileCount > 0 && (
           <span
-            className="text-[9px] px-1.5 py-0.5 rounded flex items-center gap-1 bg-emerald-500/15 text-emerald-300"
+            className="text-[9px] px-1.5 py-0.5 rounded flex items-center gap-1 bg-good/15 text-good"
             title={`${d.fileCount} file${d.fileCount === 1 ? '' : 's'} written`}
           >
             <FileText size={9} />
@@ -257,12 +257,12 @@ function MiscNode({ data }: NodeProps) {
       </div>
       <div className="text-[11px] text-ink-100 leading-snug mt-1 line-clamp-2">{label}</div>
       <div className="flex items-center gap-1 mt-1.5 flex-wrap">
-        <span className="text-[9px] px-1.5 py-0.5 rounded flex items-center gap-1 bg-accent/15 text-accent">
+        <span className="text-[9px] px-1.5 py-0.5 rounded flex items-center gap-1 bg-agent/15 text-agent-text">
           <Bot size={9} />
           {d.info.agent ?? 'generic'}
         </span>
         {d.info.skill && (
-          <span className="text-[9px] px-1.5 py-0.5 rounded flex items-center gap-1 bg-sky-500/15 text-sky-300">
+          <span className="text-[9px] px-1.5 py-0.5 rounded flex items-center gap-1 bg-ink-50/[0.06] text-dim">
             <Sparkles size={9} />
             {d.info.skill}
           </span>
@@ -490,7 +490,7 @@ function DetailDrawer({
                 className={cn(
                   'flex items-start gap-1.5 text-[11px] rounded-md px-2 py-1.5 leading-snug',
                   w.level === 'warn'
-                    ? 'bg-amber-500/10 text-amber-300 border border-amber-500/30'
+                    ? 'bg-warn/10 text-warn border border-warn/30'
                     : 'bg-ink-800/60 text-ink-300 border border-ink-700'
                 )}
               >
@@ -560,7 +560,7 @@ function DetailDrawer({
           <h4 className="text-[10px] uppercase tracking-wider text-ink-500 font-semibold mb-1 flex items-center gap-1.5">
             Output files
             {files.length > 0 && (
-              <span className="text-[9px] px-1 py-0.5 rounded bg-emerald-500/15 text-emerald-300">
+              <span className="text-[9px] px-1 py-0.5 rounded bg-good/15 text-good">
                 {files.length}
               </span>
             )}
@@ -578,9 +578,9 @@ function DetailDrawer({
                   title={f.path}
                 >
                   {f.op === 'write' ? (
-                    <FilePlus2 size={12} className="text-emerald-400 shrink-0" />
+                    <FilePlus2 size={12} className="text-good shrink-0" />
                   ) : (
-                    <FilePen size={12} className="text-sky-400 shrink-0" />
+                    <FilePen size={12} className="text-dim shrink-0" />
                   )}
                   <span className="font-mono truncate">
                     {f.path.split('/').slice(-2).join('/')}
@@ -795,13 +795,13 @@ export function AgentGraphView() {
         <div className="ml-auto text-[11px] text-ink-500 flex items-center gap-3">
           <span>{stats.runs} tracked</span>
           {fileCounts.size > 0 && (
-            <span className="text-emerald-400 flex items-center gap-1">
+            <span className="text-good flex items-center gap-1">
               <FileText size={11} />
               {[...fileCounts.values()].reduce((a, b) => a + b, 0)} files
             </span>
           )}
           {stats.warns > 0 && (
-            <span className="text-amber-400 flex items-center gap-1">
+            <span className="text-warn flex items-center gap-1">
               <AlertTriangle size={11} /> {stats.warns} warning{stats.warns === 1 ? '' : 's'}
             </span>
           )}

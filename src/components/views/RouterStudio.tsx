@@ -391,7 +391,7 @@ function ReasonBadge({ reason }: { reason: RouteReason }) {
         ? 'bg-accent/15 text-accent'
         : reason === 'specialist'
           ? 'bg-good/12 text-good'
-          : 'bg-sky-500/15 text-sky-300';
+          : 'bg-ink-50/[0.06] text-dim';
   return (
     <span className={cn('text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1', tone)}>
       {reason === 'pinned' && <Pin size={9} />}
@@ -405,7 +405,7 @@ function SkillChip({ name, kind }: { name: string; kind: 'governing' | 'domain' 
     <span
       className={cn(
         'flex items-center gap-1 text-[11.5px] px-2 py-1 rounded-lg font-medium',
-        kind === 'governing' ? 'bg-sky-500/12 text-sky-300' : 'bg-good/12 text-good'
+        kind === 'governing' ? 'bg-ink-50/[0.05] text-dim' : 'bg-good/12 text-good'
       )}
     >
       <Sparkles size={11} /> {name}

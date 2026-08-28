@@ -216,9 +216,9 @@ ${fileList}`;
                       title={f.path}
                     >
                       {created ? (
-                        <FilePlus2 size={12} className="text-emerald-400 shrink-0" />
+                        <FilePlus2 size={12} className="text-good shrink-0" />
                       ) : (
-                        <FilePen size={12} className="text-sky-400 shrink-0" />
+                        <FilePen size={12} className="text-dim shrink-0" />
                       )}
                       <span className="font-mono truncate">{f.path}</span>
                       <span className="ml-auto flex items-center gap-1 shrink-0">

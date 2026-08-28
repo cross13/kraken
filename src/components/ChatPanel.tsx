@@ -179,8 +179,8 @@ export function ChatPanel() {
   return (
     <div className="h-full flex flex-col">
       {selectedAgent && (
-        <div className="mx-3 mt-1 px-3 py-1.5 flex items-center gap-2 rounded-lg bg-accent/[0.08]">
-          <Bot size={12} className="text-accent" />
+        <div className="mx-3 mt-1 px-3 py-1.5 flex items-center gap-2 rounded-lg bg-agent/[0.10]">
+          <Bot size={12} className="text-agent-text" />
           <span className="text-[11px] text-ink-200">
             Speaking as <b className="text-ink-50">{selectedAgent}</b>
           </span>
@@ -367,7 +367,7 @@ function SegmentView({ seg }: { seg: MessageSegment }) {
     return (
       <div className="rounded-lg bg-card ring-1 ring-ink-50/[0.06] overflow-hidden">
         <div className="flex items-center gap-2 px-3 py-1.5 text-[11px] text-dim">
-          <Terminal size={11} className="text-accent" /> Tool
+          <Terminal size={11} className="text-agent-text" /> Tool
         </div>
         <Markdown source={seg.text} className="px-3 pb-2 text-[12px]" />
       </div>

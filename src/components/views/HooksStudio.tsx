@@ -175,7 +175,7 @@ function HookCard({ hook, triggerLabel }: { hook: HookConfig; triggerLabel: stri
             <Briefcase size={11} className="text-faint" />
           )}
           {hook.blocking && (
-            <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 uppercase">
+            <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-warn/15 text-warn uppercase">
               blocking
             </span>
           )}

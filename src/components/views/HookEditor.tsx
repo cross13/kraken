@@ -117,7 +117,7 @@ export function HookEditor({ hookId }: { hookId?: string }) {
             {!isNew && (
               <button
                 onClick={remove}
-                className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-md border border-ink-700 text-red-400/80 hover:text-red-400"
+                className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-md border border-ink-700 text-danger/80 hover:text-danger"
               >
                 <Trash2 size={12} /> Delete
               </button>

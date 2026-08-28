@@ -215,7 +215,7 @@ export function TaskInspector({
 
         {/* Summary chips */}
         <div className="flex items-center gap-2 flex-wrap px-6 py-3 bg-rail/60 shrink-0">
-          <Chip icon={<Bot size={11} />} tone="accent">
+          <Chip icon={<Bot size={11} />} tone="agent">
             {agentName ?? 'generic'}
             {info?.agentScope
               ? ` · ${scopeLabel(info.agentScope)}`
@@ -224,7 +224,7 @@ export function TaskInspector({
                 : ''}
           </Chip>
           {skillName && (
-            <Chip icon={<Sparkles size={11} />} tone="sky">
+            <Chip icon={<Sparkles size={11} />} tone="meta">
               {skillName}
             </Chip>
           )}
@@ -235,7 +235,7 @@ export function TaskInspector({
           )}
           {elapsed && <Chip icon={<Clock size={11} />}>{elapsed}</Chip>}
           {files.length > 0 && (
-            <Chip icon={<FileText size={11} />} tone="emerald">
+            <Chip icon={<FileText size={11} />} tone="meta">
               {files.length} file{files.length === 1 ? '' : 's'}
             </Chip>
           )}
@@ -250,7 +250,7 @@ export function TaskInspector({
                   key={i}
                   className={cn(
                     'flex items-start gap-2 text-[12px] rounded-lg px-3 py-2 leading-snug',
-                    w.level === 'warn' ? 'bg-amber-500/10 text-amber-300' : 'bg-elev text-dim'
+                    w.level === 'warn' ? 'bg-warn/10 text-warn' : 'bg-elev text-dim'
                   )}
                 >
                   <AlertTriangle size={13} className="mt-0.5 shrink-0" />
@@ -289,7 +289,7 @@ export function TaskInspector({
                 {agentMeta?.model && <Field label="Model">{agentMeta.model}</Field>}
                 {agentMeta?.description && <Field label="About">{agentMeta.description}</Field>}
                 {!agentMeta && agentName && (
-                  <p className="text-[11px] text-amber-300 mt-1.5">
+                  <p className="text-[11px] text-warn mt-1.5">
                     Not installed in <code className="md-codespan">.claude/agents</code> — generic
                     Claude will run.
                   </p>
@@ -373,9 +373,9 @@ export function TaskInspector({
                         title={f.path}
                       >
                         {f.op === 'write' ? (
-                          <FilePlus2 size={13} className="text-emerald-400 shrink-0" />
+                          <FilePlus2 size={13} className="text-good shrink-0" />
                         ) : (
-                          <FilePen size={13} className="text-sky-400 shrink-0" />
+                          <FilePen size={13} className="text-dim shrink-0" />
                         )}
                         <span className="font-mono truncate flex-1">{f.path}</span>
                         <span className="text-[10px] text-faint shrink-0">
@@ -421,7 +421,7 @@ export function TaskInspector({
   );
 }
 
-type Tone = 'default' | 'accent' | 'sky' | 'emerald';
+type Tone = 'default' | 'agent' | 'meta';
 
 function Chip({
   icon,
@@ -432,11 +432,13 @@ function Chip({
   tone?: Tone;
   children: React.ReactNode;
 }) {
+  // Two accents, one role each. Violet is the agent; everything that is merely
+  // metadata (the skill, the spec file) stays neutral rather than reaching for a
+  // third accent the palette doesn't have.
   const tones: Record<Tone, string> = {
     default: 'bg-elev text-dim',
-    accent: 'bg-accent/15 text-accent',
-    sky: 'bg-sky-500/15 text-sky-300',
-    emerald: 'bg-emerald-500/15 text-emerald-300',
+    agent: 'bg-agent/15 text-agent-text',
+    meta: 'bg-ink-50/[0.06] text-dim',
   };
   return (
     <span

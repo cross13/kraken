@@ -212,6 +212,26 @@ accent — semantics only separate under Signal.
 **When adding a shadow or a radius, add the variable to all four theme blocks** — a literal px or
 rgba value in a component is what this indirection exists to prevent.
 
+**Which accent, and when.** Under Signal the two accents carry meaning, so pick by role, not by
+looks:
+
+| Use | Token |
+| --- | --- |
+| Primary button, progress bar, running dot, check, focus ring | `accent` (green) |
+| Agent identity — its chip, avatar, banner, tool-call marker | `agent` / `agent-text` (violet) |
+| Waiting on the user — open questions, "Awaiting approval", a blocked gate | `agent-text`, or `warn` |
+| Success, a file added | `good` · **Caution** `warn` · **Error** `danger` / `danger-text` |
+| Metadata that isn't either accent — the skill chip, a run kind, a modified file | `dim` on a neutral tint |
+
+**There are no hardcoded Tailwind palette colours in `src/`** — no `amber-500`, `emerald-400`,
+`sky-300`, `purple-300`. They were a third and fourth accent that never responded to the theme;
+they now map onto `warn` / `good` / `dim` / `agent`. A `bg-<colour>-500` in a component is a bug.
+
+One deliberate deferral: `text-accent` is still used at ~190 sites for both icons and small text.
+Green measures 6.5:1 on `--panel`, so it is legible — but the system reserves `--accent-text`
+(`#A6E62E`) for *text* and keeps `--accent` for fill. Telling icon from text at those call sites
+needs eyes on the running app.
+
 ## Brand (Octopus Brand Kit)
 
 The brand mark is the octopus from the **Octopus Brand Kit** (claude.ai/design project

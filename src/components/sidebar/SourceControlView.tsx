@@ -1164,7 +1164,7 @@ function PrCard({
   const state = pr.merged ? 'merged' : pr.state;
   const stateStyle =
     state === 'merged'
-      ? 'bg-purple-500/15 text-purple-300'
+      ? 'bg-agent/15 text-agent-text'
       : state === 'open'
         ? 'bg-ok/15 text-ok'
         : 'bg-ink-700 text-ink-300';
@@ -1232,7 +1232,7 @@ function PrCard({
           <button
             onClick={merge}
             disabled={busy}
-            className="text-[10px] inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-200 hover:bg-purple-500/30 disabled:opacity-40"
+            className="text-[10px] inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-agent/20 text-agent-text hover:bg-agent/30 disabled:opacity-40"
           >
             {busy ? (
               <Loader2 size={10} className="animate-spin" />

@@ -212,7 +212,7 @@ function SkillDetail({ skill }: { skill: SkillMeta }) {
             <h2 className="font-display text-[19px] font-bold text-ink-50 truncate">{skill.name}</h2>
             <ScopeChip scope={skill.scope} />
             {isSdd && (
-              <span className="text-[9.5px] font-mono px-1.5 py-0.5 rounded uppercase tracking-wide bg-sky-500/15 text-sky-300">
+              <span className="text-[9.5px] font-mono px-1.5 py-0.5 rounded uppercase tracking-wide bg-ink-50/[0.06] text-dim">
                 governing
               </span>
             )}

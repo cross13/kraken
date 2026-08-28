@@ -631,7 +631,7 @@ export function TaskRunner({ meta, tasksMd, planMd, requirementsMd, onReload, on
               <button
                 onClick={unblockHook}
                 title="A blocking hook is running. Unblock cancels it and lets the run continue."
-                className="text-[11px] flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 hover:bg-amber-500/30"
+                className="text-[11px] flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-warn/20 text-warn hover:bg-warn/30"
               >
                 <Unlock size={11} /> Unblock
               </button>
@@ -691,7 +691,7 @@ export function TaskRunner({ meta, tasksMd, planMd, requirementsMd, onReload, on
         </div>
 
         {waitingOnHook && (
-          <div className="flex items-center gap-2 text-[11px] text-amber-300 bg-amber-500/10 rounded-lg px-2.5 py-1.5">
+          <div className="flex items-center gap-2 text-[11px] text-warn bg-warn/10 rounded-lg px-2.5 py-1.5">
             <Loader2 size={12} className="animate-spin shrink-0" />
             <span className="flex-1">
               Waiting on a blocking hook to finish before the next wave. If it's stuck, click{' '}
