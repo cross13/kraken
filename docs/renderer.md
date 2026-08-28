@@ -121,8 +121,9 @@ Configuration for **file-viewer syntax highlighting** (localStorage-persisted): 
 Library › **Appearance** (`SyntaxStudio`). See **File viewer & syntax** below.
 
 ### `theme.ts` — `useTheme`
-The active visual palette (`abyss` | `bioluminescent` | `daylight`); persists to `localStorage`
-and writes `document.documentElement.dataset.theme`. The `CommandBar`'s contrast button cycles it.
+The active visual palette (`signal` [default] | `abyss` | `bioluminescent` | `daylight`); persists
+to `localStorage` and writes `document.documentElement.dataset.theme`. The `CommandBar`'s contrast
+button cycles it.
 
 ## Layout & space (`styles.css` → "Layout primitives")
 
@@ -158,7 +159,7 @@ reused as surfaces must be re-laid-out, not wrapped in a fixed centred box — t
 
 The whole app re-skins by swapping one attribute. Every Tailwind colour token is defined as
 `rgb(var(--x) / <alpha-value>)`, where `--x` is a **space-separated RGB channel triple**. The
-channel values live in `styles.css` under the three `data-theme` blocks. The visual language is
+channel values live in `styles.css` under the four `data-theme` blocks. The visual language is
 **frame + floating panels** (Kiro-style): `--rail` is the near-black app FRAME (title bar, icon
 rail, canvas), `--bg` (`ink-950`) is the interior of a floating panel, and panels are separated
 from the frame by rounded corners + a hairline `ring-ink-50/[0.07]` rather than borders. The
@@ -168,8 +169,38 @@ legacy `ink-*` scale is remapped onto the surfaces (`--bg`→`ink-950`, `--panel
 `--accent-fg` is themeable. Surfaces stay neutral grey — the purple lives only in the accent.
 Fonts: body **Hanken Grotesk**, display **Space Grotesk** (`font-display`), mono **JetBrains
 Mono**. Animations include `flow` (progress shimmer), `pulse-dot`, and `slide-in` (the overlay
-panel). When adding a colour, add a channel var to **all three** theme blocks and a token in the
+panel). When adding a colour, add a channel var to **all four** theme blocks and a token in the
 Tailwind config.
+
+### Signal — the brand palette (default)
+
+`signal` comes from the Claude Design system *"Paleta y Tokens"* and is the theme the rebranding
+targets. Its rules differ from the Kiro-style themes above and are load-bearing:
+
+- **Two accents, one role each.** Green `#76B900` = *execute & progress* (primary buttons,
+  progress bars, the running dot, checks). Violet `#9B6BFF` = *agent, wait & decide* (the "it's
+  waiting on you" banner, agent chips, medium priority). **Never both on the same control**, and
+  violet never on a button that executes work.
+- **Green is fill-only.** It measures 2.41:1 on white, so as text it is forbidden — use
+  `text-accent-text` (`#A6E62E`) on grey, `text-accent-num` (`#C4F06A`) for the running timer, and
+  `--accent-fg` (`#0F1400`) as the only ink on a green fill.
+- **Brand grey, never black.** `--rail` `#1A1A1A` → `--bg` `#1E1E1E` → `--panel` `#232323` →
+  `--card` `#2A2A2A`, plus `--raised` `#262626` for the active task / "up next".
+- **Contrast floor `#A8A8A8`** (`--faint`): no interface text goes darker; mono labels ≥ 11px.
+- **Radius 0, no shadows.** Hierarchy is a lighter grey plus a 1px accent border.
+- **Fonts**: Space Grotesk for UI *and* display (set on `:root[data-theme='signal']`), JetBrains
+  Mono for labels, metadata and timers.
+
+Two token families exist for this: `accent-text` / `accent-num` alongside `accent`, and the whole
+`agent` family (`agent`, `agent-2`, `agent-text`, `agent-tint`, `agent-fg`) plus `raised` and
+`danger-text`. The legacy themes were built around a single accent, so there `agent-*` aliases the
+accent — semantics only separate under Signal.
+
+**Shape is themed too.** `borderRadius` in `tailwind.config.cjs` maps to `--radius-*`, so
+`rounded-lg` is 8px on Abyss and 0 on Signal. `rounded-full` is deliberately *not* tokenised (dots,
+avatars, circular pills stay circular); flattening those is a per-component pass. Shadows
+(`shadow-panel` / `shadow-glow` / `shadow-card`) are **not** themed yet — see
+`docs/refactor-metodologia-y-rebranding.md` § B1.
 
 ## Brand (Octopus Brand Kit)
 

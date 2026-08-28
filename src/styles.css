@@ -33,6 +33,28 @@
   --good: 62 222 168;
   --warn: 246 186 94;
   --danger: 245 114 114;
+  --danger-text: 245 114 114;
+  --raised: 38 38 46;
+  /* Legacy themes were designed around a single accent: the agent family
+     aliases it. Only the Signal brand splits execute (green) from wait (violet). */
+  --accent-text: 173 159 255;
+  --accent-num: 173 159 255;
+  --agent: 139 122 249;
+  --agent2: 173 159 255;
+  --agent-text: 173 159 255;
+  --agent-tint: 45 40 78;
+  --agent-fg: 255 255 255;
+
+  /* Shape scale — themed so a brand can flatten every control at once.
+     `rounded-full` is deliberately NOT tokenised (dots, avatars, circular
+     pills stay circular); flattening those is a per-component pass. */
+  --radius-sm: 2px;
+  --radius: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --radius-3xl: 24px;
 }
 
 :root[data-theme='bioluminescent'] {
@@ -56,6 +78,15 @@
   --good: 52 211 153;
   --warn: 251 191 107;
   --danger: 248 113 113;
+  --danger-text: 248 113 113;
+  --raised: 22 48 37;
+  --accent-text: 104 240 220;
+  --accent-num: 104 240 220;
+  --agent: 38 219 205;
+  --agent2: 104 240 220;
+  --agent-text: 104 240 220;
+  --agent-tint: 20 60 56;
+  --agent-fg: 255 255 255;
 }
 
 :root[data-theme='daylight'] {
@@ -79,6 +110,76 @@
   --good: 22 163 74;
   --warn: 217 119 6;
   --danger: 220 38 38;
+  --danger-text: 220 38 38;
+  --raised: 244 243 240;
+  --accent-text: 109 75 240;
+  --accent-num: 109 75 240;
+  --agent: 109 75 240;
+  --agent2: 139 109 245;
+  --agent-text: 88 60 200;
+  --agent-tint: 234 229 253;
+  --agent-fg: 255 255 255;
+}
+
+/* ---------------------------------------------------------------------------
+   Signal — the brand palette (Claude Design · "Paleta y Tokens").
+   Three base colours: green #76B900, brand grey #1E1E1E (never pure black) and
+   white. Two accents with ONE role each: green = execute & progress, violet =
+   agent, wait & decide — never both on the same control. Radius 0, no shadows;
+   hierarchy comes from a lighter grey plus a 1px accent border. #A8A8A8 is the
+   contrast floor: no interface text goes darker.
+   ------------------------------------------------------------------------- */
+:root[data-theme='signal'] {
+  color-scheme: dark;
+  font-family: 'Space Grotesk', 'Hanken Grotesk', system-ui, sans-serif;
+
+  /* surfaces — brand grey, never black */
+  --rail: 26 26 26; /* #1A1A1A chrome */
+  --bg: 30 30 30; /* #1E1E1E app */
+  --panel: 35 35 35; /* #232323 */
+  --card: 42 42 42; /* #2A2A2A */
+  --raised: 38 38 38; /* #262626 active task / "up next" */
+  --elev: 51 51 51; /* derived hover step */
+  --line: 57 57 57; /* = white .10 over the panel */
+
+  /* text — #A8A8A8 is the floor */
+  --ink-600: 110 110 110; /* #6E6E6E disabled, low priority */
+  --faint: 168 168 168; /* #A8A8A8 mono metadata */
+  --ink-400: 180 180 180;
+  --dim: 200 200 200; /* #C8C8C8 column headings */
+  --ink-200: 236 236 236; /* #ECECEC card titles */
+  --ink-100: 242 242 242; /* #F2F2F2 default UI text */
+  --ink-50: 250 250 250; /* #FAFAFA figures & strong titles */
+
+  /* green — execute & progress. #76B900 is 2.41:1 on white: FILL ONLY. */
+  --accent: 118 185 0; /* #76B900 */
+  --accent2: 138 208 0; /* #8AD000 hover / link */
+  --accent-fg: 15 20 0; /* #0F1400 the only ink allowed on green fill */
+  --accent-text: 166 230 46; /* #A6E62E green text on grey */
+  --accent-num: 196 240 106; /* #C4F06A the running timer only */
+
+  /* violet — agent, wait & decide. Never on a button that executes work. */
+  --agent: 155 107 255; /* #9B6BFF */
+  --agent2: 178 139 255; /* #B28BFF */
+  --agent-text: 201 169 255; /* #C9A9FF */
+  --agent-tint: 42 33 64; /* #2A2140 banner / avatar ground */
+  --agent-fg: 18 8 31; /* #12081F */
+
+  /* state — the palette defines two accents, so `warn` (needs your decision)
+     maps onto violet rather than an amber that isn't in the system. */
+  --good: 118 185 0;
+  --warn: 201 169 255;
+  --danger: 224 83 60; /* #E0533C fill */
+  --danger-text: 255 138 114; /* #FF8A72 label */
+
+  /* shape — radius 0: the form comes from straight 1px borders */
+  --radius-sm: 0px;
+  --radius: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
+  --radius-3xl: 0px;
 }
 
 html,

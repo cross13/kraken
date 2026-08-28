@@ -33,9 +33,21 @@ module.exports = {
           2: v('--accent2'),
           fg: v('--accent-fg'),
           muted: 'rgb(var(--accent) / 0.16)',
+          // Green fails contrast as small text — use `text-accent-text` there.
+          text: v('--accent-text'),
+          num: v('--accent-num'),
+        },
+        // Second accent: agent output, waiting, "needs your decision".
+        agent: {
+          DEFAULT: v('--agent'),
+          2: v('--agent2'),
+          fg: v('--agent-fg'),
+          text: v('--agent-text'),
+          tint: v('--agent-tint'),
         },
         // Semantic design tokens (new) — also themed.
         card: v('--card'),
+        raised: v('--raised'),
         elev: v('--elev'),
         rail: v('--rail'),
         panel: v('--panel'),
@@ -44,8 +56,24 @@ module.exports = {
         good: v('--good'),
         ok: v('--good'),
         warn: v('--warn'),
-        danger: v('--danger'),
+        danger: {
+          DEFAULT: v('--danger'),
+          text: v('--danger-text'),
+        },
         bad: v('--danger'),
+      },
+      // Themed shape scale — `rounded-lg` is 8px on Abyss and 0 on Signal.
+      // `full` stays literal so dots, avatars and circular pills survive.
+      borderRadius: {
+        none: '0',
+        sm: 'var(--radius-sm)',
+        DEFAULT: 'var(--radius)',
+        md: 'var(--radius-md)',
+        lg: 'var(--radius-lg)',
+        xl: 'var(--radius-xl)',
+        '2xl': 'var(--radius-2xl)',
+        '3xl': 'var(--radius-3xl)',
+        full: '9999px',
       },
       fontFamily: {
         sans: ['Hanken Grotesk', 'Geist', 'Inter', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
