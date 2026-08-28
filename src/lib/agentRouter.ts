@@ -75,7 +75,10 @@ export function getRouterConfig(): RouterConfig {
 
 /** Stable key for an action, used for per-action agent pins. */
 export function actionKey(action: Action): string {
-  return action.kind === 'spec-file' ? action.file : action.kind;
+  // `tasks` shares the plan's pin: task planning is part of the plan document
+  // now, and tasks.md is derived from it.
+  if (action.kind === 'spec-file') return action.file === 'tasks' ? 'plan' : action.file;
+  return action.kind;
 }
 
 export interface RoutedAgent {
@@ -146,9 +149,12 @@ export function actionProfile(action: Action): ActionProfile {
         return { preferred: ['spec-requirements-writer'], keywords: ['requirement', 'product', 'analyst', 'spec', 'user story'] };
       if (action.file === 'bugfix')
         return { preferred: ['bug-analyzer'], keywords: ['bug', 'debug', 'analyz', 'triage', 'root cause'] };
-      if (action.file === 'plan')
-        return { preferred: ['spec-planner', 'spec-design-architect'], keywords: ['plan', 'design', 'architect', 'architecture', 'system', 'ui', 'ux', 'frontend'] };
-      return { preferred: ['spec-task-planner'], keywords: ['task', 'plan', 'planner', 'breakdown', 'decompos'] };
+      // plan + tasks: one document, one planner. The legacy bundled agents stay
+      // in the preference list so an existing .claude/agents keeps working.
+      return {
+        preferred: ['spec-planner', 'spec-design-architect', 'spec-task-planner'],
+        keywords: ['plan', 'design', 'architect', 'architecture', 'system', 'task', 'breakdown', 'decompos', 'ui', 'ux', 'frontend'],
+      };
     case 'task-execute':
     case 'task-refine':
       // Capability signals from the task text PLUS broad implementation signals,

@@ -116,7 +116,7 @@ results arrive through `claude.onEvent(handler)`.
   for detail views (file/agent/skill/run viewers, Open Questions, hook editor, the repo panel).
   There is **no global tab bar and no focus mode** — surfaces are singletons. **Home** (`HomeView`) is
   the launchpad: its composer **creates specs** (`lib/specActions.ts` — **Plan** streams the
-  requirements draft into the gated flow; **Quick Plan** drafts all three docs with no stops;
+  requirements draft into the gated flow; **Quick Plan** drafts both docs with no stops;
   `?`-suffixed input goes to the Assistant), plus in-flight spec cards, Shipped recents, a
   Manage mode embedding `SpecsStudio` (analytics + `specs:delete`), and a one-time
   "Set up Kraken defaults" seeding card. **Spec** (`SpecFlow`) is one continuous guided flow
@@ -125,7 +125,9 @@ results arrive through `claude.onEvent(handler)`.
   doc stages as line-numbered **Source** (default) / section **Cards** / raw **Edit** over a
   **gate bar** whose *Approve* advances the phase **and navigates** (*Revise with feedback*
   re-drafts inline; *Improve with Claude* runs a critical self-review that refines the doc in
-  place — every step has one, incl. *Improve plan* on Tasks), Tasks as **inline task blocks**
+  place — every step has one, incl. *Improve plan* on Tasks). Approving **Plan** derives
+  `tasks.md` from the plan's `## Tasks` section, and refuses when there isn't one. Tasks render as
+  **inline task blocks**
   with Kiro-style Start-task actions
   (`TaskRunner` engine, Run all = autopilot as the primary CTA), and **Ship** (`ShipView`) as a
   panel *inside* Build — the automatic payoff:

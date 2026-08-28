@@ -241,7 +241,8 @@ The launchpad. Its **composer creates specs** (the old Welcome bar only forwarde
 - **Plan** (`lib/specActions.ts` → `planSpec`) — creates the spec (name via `specNameFromText`,
   kind via `specKindFromText` feature/bugfix detection), opens the Spec flow, and streams the
   requirements draft while the user watches. Gated flow.
-- **Quick Plan** (`quickPlanSpec`) — the no-gates escape hatch: drafts requirements → plan →
+- **Quick Plan** (`quickPlanSpec`) — the no-gates escape hatch: drafts requirements → plan (two
+  documents, not three — the plan carries its own task waves and advancing derives `tasks.md`) →
   tasks back-to-back (advancing between), landing on Tasks ready to run.
 - Input ending in `?` routes to the Assistant instead (`chat.pendingPrompt`); `/` and `@`
   popovers still pick skills/agents.
@@ -264,7 +265,8 @@ questions · Reopen tasks/Re-sync · Delete spec). Stage bodies:
 
 - **Doc stages** (requirements/bugfix, plan) default to **Source** — the document as
   line-numbered, markdown-highlighted source (`SourceDoc`) — with `SpecDocument` section cards
-  and raw `MarkdownEditor` as the other views, above a pinned **gate bar**:
+  and raw `MarkdownEditor` as the other views, above a pinned **gate bar** (the flow has **two
+  gates**, Requirements and Plan — Build is work, not a decision):
   `[✎ Revise with feedback…] [✦ Improve with Claude] [Approve <stage> → <next>]`. **Approve
   advances the phase AND navigates** to the next doc (`specs.advance` + `setSpecStage`). An empty
   doc shows **Draft with Claude** instead; already-approved stages show **Continue →**. Revise
@@ -272,7 +274,10 @@ questions · Reopen tasks/Re-sync · Delete spec). Stage bodies:
   self-review pass (per-doc checklist in `IMPROVE_FOCUS`) that refines the file in place and
   reports its improvements in the Assistant. Neither needs a trip to chat. A "Claude is drafting…" banner appears whenever an
   orchestrator run with `source: 'spec:<file>'` is live for this spec (covers drafts started from
-  Home / Quick Plan too).
+  Home / Quick Plan too). The **Plan gate has a hard precondition**: approving it derives
+  `tasks.md` from the plan's `## Tasks` section, so a plan without one disables Approve and says
+  why (`extractTasksSection` from `electron/shared/planTasks.ts`) rather than dropping the user
+  into an empty Build stage.
 - **Tasks** renders `TaskRunner` — waves **inline in the document** as mono task blocks along an
   indent guide, each with a Kiro-style inline action line (**Start task** / *Task in progress* /
   ✓ Completed · Refine / Blocked-by) above the literal `[ ] T1: …` line. The header is a progress
@@ -379,7 +384,8 @@ table) readable inside the app rather than showing as coloured code.
 
 ## Other `src/lib` helpers
 
-- `tasks.ts` — parse `tasks.md` checklists, per-task `@agent`, waves/dependencies.
+- `tasks.ts` — parse `tasks.md` checklists, per-task `@agent`, waves/dependencies. Wave headings
+  match H2–H4, because a derived `tasks.md` keeps the plan's `### Wave 1`.
 - `specSections.ts` — parse a requirements/plan doc into section cards (consumed by `SpecDocument`).
 - `specActions.ts` — the shared drafting/plan/polish layer (see "The spec flow").
 - `markdown.ts` / `prism.ts` / `fileLang.ts` / `syntaxThemes.ts` — rendering + highlighting.

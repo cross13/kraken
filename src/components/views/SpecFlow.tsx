@@ -34,6 +34,7 @@ import { routeAgent } from '../../lib/agentRouter';
 import { resolveAgent } from '../../lib/verifyLibrary';
 import { parseOpenQuestions, addQuestion } from '../../lib/openQuestions';
 import type { SpecMeta, SpecPhase } from '../../../electron/shared/types';
+import { extractTasksSection } from '../../../electron/shared/planTasks';
 
 const PHASE_ORDER: SpecPhase[] = ['requirements', 'plan', 'build', 'done'];
 const STAGES: SpecStage[] = ['define', 'plan', 'build'];
@@ -173,6 +174,13 @@ export function SpecFlow({ specId }: { specId: string }) {
 
   const labels = stageLabels(meta.kind);
   const fileNames = stageFileNames(meta.kind);
+  // The Plan gate is the one gate with a hard precondition: approving it derives
+  // tasks.md from the plan's `## Tasks` section, so a plan without one would land
+  // the user in an empty Build stage.
+  const gateBlocked =
+    stage === 'plan' && !!files.plan?.trim() && extractTasksSection(files.plan) === null
+      ? 'This plan has no ## Tasks section yet — Approve would leave Build empty. Use Improve with Claude to add the waves.'
+      : null;
   const shipReady = meta.phase === 'done';
   const showingShip = stage === 'build' && shipReady && buildTab === 'ship';
 
@@ -372,6 +380,7 @@ export function SpecFlow({ specId }: { specId: string }) {
             stageLabel={labels[stageIdx]}
             onApprove={approve}
             onContinue={() => setStage(STAGES[stageIdx + 1])}
+            blocked={gateBlocked}
           />
         )}
       </div>
@@ -505,6 +514,7 @@ function DocStage({
   nextLabel,
   onApprove,
   onContinue,
+  blocked,
 }: {
   meta: SpecMeta;
   files: Record<string, string>;
@@ -519,6 +529,8 @@ function DocStage({
   nextLabel: string;
   onApprove: () => Promise<void>;
   onContinue: () => void;
+  /** why this gate can't be approved yet, or null */
+  blocked?: string | null;
 }) {
   const [revising, setRevising] = useState(false);
   const [feedback, setFeedback] = useState('');
@@ -631,6 +643,9 @@ function DocStage({
                 </button>
               </>
             )}
+            {blocked && (
+              <span className="text-[11.5px] text-warn/90 leading-snug max-w-[46ch]">{blocked}</span>
+            )}
             <div className="flex-1" />
             {empty ? (
               <button
@@ -644,8 +659,8 @@ function DocStage({
             ) : atGate ? (
               <button
                 onClick={approveClick}
-                disabled={approving || drafting}
-                title={`Marks ${stageLabel.toLowerCase()} approved and opens ${nextLabel}`}
+                disabled={approving || drafting || !!blocked}
+                title={blocked ?? `Marks ${stageLabel.toLowerCase()} approved and opens ${nextLabel}`}
                 className="flex items-center gap-1.5 text-[12.5px] px-4 py-2 rounded-lg bg-accent text-accent-fg font-semibold hover:opacity-90 shadow-glow transition disabled:opacity-50"
               >
                 {approving ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}

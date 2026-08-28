@@ -17,8 +17,8 @@ A spec is a **directory** under the workspace at `.kraken/specs/<id>/`:
 .kraken/specs/<id>/
   spec.json        # SpecMeta-ish: phase + metadata (load-bearing shape)
   requirements.md  # feature specs   (or bugfix.md for bugfix specs)
-  plan.md
-  tasks.md
+  plan.md          # the technical plan, incl. its `## Tasks` waves
+  tasks.md         # DERIVED from plan.md at the Plan gate — the live, tickable copy
 ```
 
 - **Phase order is fixed and load-bearing:** `requirements → plan → build → done`
@@ -29,6 +29,13 @@ A spec is a **directory** under the workspace at `.kraken/specs/<id>/`:
   `PRAGMA user_version = 2`, which rebuilds `specs` because its `phase` CHECK cannot be altered
   in place). `advanceSpec` walks this order and **lazily writes the next phase's template
   file** if missing (the `*Template` functions in `main.ts`).
+- **`tasks.md` is derived, not authored.** Approving the Plan gate copies `plan.md`'s `## Tasks`
+  section into `tasks.md` verbatim (`tasksDocFromPlan` in `electron/shared/planTasks.ts`, shared
+  with the renderer so the gate can refuse a plan that has no usable task list). From then on the
+  two are allowed to diverge: **the plan is the intent, `tasks.md` is the state** the runner ticks.
+  Nothing syncs backwards — the **Audit** action (`spec-doctor`) is what surfaces the drift.
+  `tasksTemplate` remains only as the fallback for a spec advanced without a task list (hooks and
+  Quick Plan advance without passing through the gate).
 - **Kind** is `'feature' | 'bugfix'` (`SpecKind`). Feature specs start at `requirements.md`;
   bugfix specs at `bugfix.md` (with explicit *Unchanged Behavior* regression guards).
 - Changing the phase order or the `{spec.json, *.md}` shape affects `createSpec`, `advanceSpec`,

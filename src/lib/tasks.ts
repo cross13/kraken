@@ -22,7 +22,9 @@ export interface ParsedTasksDoc {
   waves: ParsedWave[];
 }
 
-const waveRegex = /^##\s*Wave\s+(\d+)\s*(?:\(([^)]*)\))?/i;
+// H2 through H4: `tasksTemplate` writes `## Wave 1`, while a tasks.md derived
+// from a plan's `## Tasks` section keeps the plan's `### Wave 1`.
+const waveRegex = /^#{2,4}\s*Wave\s+(\d+)\s*(?:\(([^)]*)\))?/i;
 // - [ ] T1: description...  or  - [ ] T1 @agent-name: description...
 // Tolerates markdown emphasis the model often adds around the id, e.g.
 // `- [ ] **T1**: …` or `- [ ] **T1:** …` — the `[*_]*` runs absorb the markers

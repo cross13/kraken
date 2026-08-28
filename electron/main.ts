@@ -77,6 +77,7 @@ import type {
   TerminalCreateOpts,
   TerminalProfile,
 } from './shared/types.js';
+import { tasksDocFromPlan } from './shared/planTasks.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -949,7 +950,17 @@ async function advanceSpec(root: string, id: string) {
     await fs.writeFile(path.join(specPath, 'plan.md'), planTemplate(meta.name, meta.kind), 'utf8');
   }
   if (next === 'build' && !existsSync(path.join(specPath, 'tasks.md'))) {
-    await fs.writeFile(path.join(specPath, 'tasks.md'), tasksTemplate(meta.name), 'utf8');
+    // Approving the plan derives tasks.md from its `## Tasks` section: the plan
+    // is the intent, tasks.md is the live state the runner ticks. The template
+    // is only a fallback for a spec advanced without a usable task list (the
+    // Plan gate blocks that in the UI, but hooks and Quick Plan advance too).
+    const planPath = path.join(specPath, 'plan.md');
+    const planMd = existsSync(planPath) ? await fs.readFile(planPath, 'utf8') : '';
+    await fs.writeFile(
+      path.join(specPath, 'tasks.md'),
+      tasksDocFromPlan(meta.name, planMd) ?? tasksTemplate(meta.name),
+      'utf8'
+    );
   }
   await fs.writeFile(metaPath, JSON.stringify(meta, null, 2), 'utf8');
   try {
@@ -1059,76 +1070,72 @@ function bugfixTemplate(name: string) {
 }
 
 /**
- * `plan.md` — the single technical-plan document that replaced `design.md`.
- * The `## Tareas` section that folds task planning in here arrives with the
- * plan→tasks derivation (see docs/refactor-metodologia-y-rebranding.md, F3).
+ * `plan.md` — the single technical-plan document that replaced `design.md` and
+ * absorbed task planning. Its `## Tasks` section is what the Build stage runs:
+ * approving the Plan gate copies it into `tasks.md` (`tasksDocFromPlan`).
+ *
+ * The shape follows the Cursor plan format — a diagram of the approach up top,
+ * then the affected files, then the checklist — because a plan that isn't read
+ * is a plan that doesn't work. See docs/refactor-metodologia-y-rebranding.md.
  */
 function planTemplate(name: string, kind: SpecKind) {
-  if (kind === 'bugfix') {
-    return `# Plan — ${name}
-
-> Objetivo en una línea. Appetite: <S / M / L>. Riesgo: <bajo / medio / alto>.
-
-## Enfoque
-
-\`\`\`mermaid
+  const head = kind === 'bugfix' ? `# Plan — ${name}` : `# Plan — ${name}`;
+  const approach =
+    kind === 'bugfix'
+      ? `\`\`\`mermaid
 flowchart LR
-  A["Síntoma"] --> B["Causa raíz"] --> C["Fix mínimo"]
+  A["Symptom"] --> B["Root cause"] --> C["Minimal fix"]
 \`\`\`
 
-Causa raíz y el cambio mínimo que satisface el bugfix preservando Unchanged Behavior.
-
-## Archivos afectados
-
-| Archivo | Cambio |
-|---|---|
-| \`ruta/al/archivo.ts:42\` | qué cambia y por qué |
-
-## Verificación
-- Test que reproduce el bug: SHALL fallar antes del fix, SHALL pasar después.
-- Tests de no-regresión: SHALL pasar antes y después.
-
-## Riesgos y rollback
-
-| Riesgo | Mitigación | Cómo se revierte |
-|---|---|---|
-
-## Open Questions
-- [ ] <decisión pendiente>
-`;
-  }
-  return `# Plan — ${name}
-
-> Objetivo en una línea. Appetite: <S / M / L>. Riesgo: <bajo / medio / alto>.
-
-## Enfoque
-
-\`\`\`mermaid
+Root cause, and the smallest change that satisfies the fix while preserving Unchanged Behavior.`
+      : `\`\`\`mermaid
 flowchart LR
-  A["Entrada"] --> B["Componente nuevo"] --> C["Salida"]
+  A["Input"] --> B["New component"] --> C["Output"]
 \`\`\`
 
-Un párrafo: la estrategia elegida y, en una frase, cada alternativa descartada.
+One paragraph: the strategy chosen and, in one sentence each, the alternatives rejected.`;
 
-## Archivos afectados
+  return `${head}
 
-| Archivo | Cambio |
+> One-line objective. Appetite: <S / M / L>. Risk: <low / medium / high>.
+
+## Approach
+
+${approach}
+
+## Affected files
+
+| File | Change |
 |---|---|
-| \`ruta/al/archivo.ts:42\` | qué cambia y por qué |
+| \`path/to/file.ts:42\` | what changes and why |
 
-## Datos y contratos
-Esquemas, IPC, estado persistido. Sólo lo que cambia.
+## Data & contracts
+Schemas, IPC, persisted state. Only what changes.
 
-## Riesgos y rollback
+## Risks & rollback
 
-| Riesgo | Mitigación | Cómo se revierte |
+| Risk | Mitigation | How to revert |
 |---|---|---|
 
-## Verificación
-Cada criterio de aceptación → cómo se prueba.
+## Verification
+${
+  kind === 'bugfix'
+    ? `- Bug-reproducing test: SHALL fail before the fix, SHALL pass after.
+- No-regression tests: SHALL pass before and after.`
+    : `Every acceptance criterion → how it is proven.`
+}
+
+## Tasks
+
+### Wave 1
+- [ ] T1: <smallest verifiable change> — _outcome: ..._
+- [ ] T2: <independent change, disjoint files> — _outcome: ..._
+
+### Wave 2 (depends on T1)
+- [ ] T3: <change> — _outcome: ..._
 
 ## Open Questions
-- [ ] <decisión que sólo el usuario puede tomar>
+- [ ] <a decision only the user can make>
 `;
 }
 

@@ -9,7 +9,7 @@ tags: [architecture, refactor, design-system, migration]
 
 # Refactor — **Definir · Plan · Construir** + rebranding *Signal*
 
-![status](https://img.shields.io/badge/status-in--progress-yellow) ![fases](https://img.shields.io/badge/fases-4%2F7%20hechas-blue) ![riesgo](https://img.shields.io/badge/riesgo-bajo--medio-lightgrey)
+![status](https://img.shields.io/badge/status-in--progress-yellow) ![fases](https://img.shields.io/badge/fases-5%2F7%20hechas-blue) ![riesgo](https://img.shields.io/badge/riesgo-bajo--medio-lightgrey)
 
 > **TL;DR** — Kraken pide hoy **4 aprobaciones humanas** antes de la primera línea de
 > código. Este plan las baja a **2**, funde `design.md` + `tasks.md` en un único
@@ -38,7 +38,7 @@ fuente de verdad del progreso**.
 - [x] **F1 · Contrato + persistencia** — `design→plan`, `tasks→build` en las 5 capas + migración SQLite + migrador de disco
 - [x] **F2 · UI a tres etapas** — 3 chips, Ship adentro de Construir
 - [x] **F2b · Render de Mermaid** — sin esto el formato de plan no se ve dentro de la app
-- [ ] **F3 · El plan genera las tareas** — `## Tareas` en `plan.md` → `tasks.md`
+- [x] **F3 · El plan genera las tareas** — `## Tasks` en `plan.md` → `tasks.md`
 - [ ] **F4 · Biblioteca semilla + prompts** — `spec-planner`, hooks, skill `mermaid-diagrams`
 - [ ] **F5 · Limpieza final + docs** — *(T1/T2 ya entregados en F1)*
 
@@ -265,7 +265,7 @@ y deja la app usable.
 | F1 | Contrato + persistencia + migración SQLite | bajo | ✅ **hecha** |
 | F2 | UI a tres etapas | bajo | ✅ **hecha** |
 | F2b | Render de Mermaid en el visor de specs | bajo | ✅ **hecha** |
-| F3 | El plan genera las tareas | **medio** — única lógica nueva | ⬜ |
+| F3 | El plan genera las tareas | **medio** — única lógica nueva | ✅ **hecha** |
 | F4 | Biblioteca semilla, hooks y prompts | bajo | ⬜ |
 | F5 | Migrador de disco + docs | bajo | ⬜ |
 
@@ -393,7 +393,7 @@ sólo se validó por tipos y build.
 
 ---
 
-### ⬜ F3 — El plan genera las tareas
+### ✅ F3 — El plan genera las tareas *(hecha)*
 
 **Objetivo:** `plan.md` es la intención; `tasks.md` es el estado. Única fase con
 lógica nueva.
@@ -423,14 +423,30 @@ flowchart TD
 | `src/stores/moduleConfig.ts:12` | *Design* + *Task planning* → una fila **Plan** |
 | `src/lib/library.ts:85` | el playground de Routing pierde `design` |
 
-- [ ] T1: `SpecDocFile` y prompts fusionados — el prompt debe exigir el diagrama Mermaid y el formato `- [ ] T1: …`
-- [ ] T2: `extractTasksSection()` + escritura de `tasks.md` en el approve de Plan
-- [ ] T3: validación dura — sin `## Tareas` no se avanza
-- [ ] T4: router, models y moduleConfig
-- [ ] T5 @migration: migrar `localStorage` — `pinnedAgents.design ?? pinnedAgents.tasks` → `pinnedAgents.plan`
+- [x] T1: prompt de plan fusionado — exige el diagrama Mermaid, la tabla de archivos afectados y la sección `## Tasks` con olas en el formato exacto `- [ ] T1: …`; `IMPROVE_FOCUS.plan` absorbió los chequeos de calidad de tareas
+- [x] T2: `electron/shared/planTasks.ts` — `extractTasksSection()` / `tasksDocFromPlan()`, compartido entre main y renderer; `advanceSpec` deriva `tasks.md` al entrar en `build`
+- [x] T3: validación dura en el gate de Plan — sin `## Tasks` el botón *Approve* queda deshabilitado y explica por qué, en vez de dejar al usuario en un Construir vacío
+- [x] T4: `actionKey` manda `tasks → plan` (un solo pin), `actionProfile` fusiona los dos perfiles con `spec-planner` al frente, `ROUTABLE_ACTIONS` pierde la fila *Task planning*, `library.ts` pierde su caso
+- [x] T5: migración de `localStorage` — `pinnedAgents.design ?? pinnedAgents.tasks` → `pinnedAgents.plan`
+- [x] T6: `waveRegex` acepta H2–H4, porque un `tasks.md` derivado conserva los `### Wave 1` del plan
+- [x] T7: `planTemplate` reescrita **en inglés** con la sección `## Tasks`; Quick Plan pasó de 3 pasos a 2
+- [x] T8: docs — `data-model.md`, `renderer.md`, `CLAUDE.md`
 
-**Aceptación:** *Plan* desde Home produce `requirements.md` + `plan.md`; aprobar
-Plan genera `tasks.md` con las mismas tareas; el `TaskRunner` las corre.
+**Aceptación:** **19 tests sobre el código real** (transpilado con esbuild, no una
+réplica): la extracción encuentra la sección, corta antes del siguiente H2, ignora
+un `## Tasks` sin líneas de tarea, tolera `## Tasks (waves)` y el énfasis alrededor
+del id; y el round trip `plan.md → tasksDocFromPlan → parseTasks` devuelve 3 tareas
+en 2 olas con dependencias, `@agent` y estado de checkbox intactos. `typecheck` y
+`build` verdes.
+**Pendiente de verificar en la app corriendo:** el gate bloqueado y un draft real
+de plan con su diagrama.
+
+> **Desvíos del plan v1.0.** (1) `SpecDocFile` **conserva** `'tasks'`: ya no es un
+> documento que se redacte por separado, pero sigue siendo el archivo vivo que el
+> *Improve plan* de Construir refina — quitarlo rompía esa acción sin ganar nada.
+> (2) La plantilla del plan pasó a **inglés**, como el resto de las plantillas y
+> prompts de `main.ts`; la sección tiene que llamarse `## Tasks` porque es lo que
+> parsea el extractor. El documento de plan (éste) sigue en español.
 
 ---
 

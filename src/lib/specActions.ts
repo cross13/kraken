@@ -37,7 +37,22 @@ Required sections: Reproduction (numbered steps), Current Behavior (WHEN/THEN), 
 ${editInstruction(targetPath)}`,
     plan: `Draft or refine **plan.md** for "${meta.name}".
 
-Read the current \`${specRel}/${meta.kind === 'feature' ? 'requirements.md' : 'bugfix.md'}\` first. If it has a **Resolved Decisions** section, treat each entry as a settled answer to an open question and reflect those decisions in the plan — do not re-open them. Then produce: Enfoque (with a \`\`\`mermaid flowchart of the approach), Archivos afectados (a table of \`path:line\` → change), Datos y contratos, Riesgos y rollback, Verificación mapping back to every acceptance criterion, Open Questions.
+Read the current \`${specRel}/${meta.kind === 'feature' ? 'requirements.md' : 'bugfix.md'}\` first. If it has a **Resolved Decisions** section, treat each entry as a settled answer to an open question and reflect those decisions in the plan — do not re-open them.
+
+Produce exactly these sections, in this order:
+
+1. A one-line objective blockquote (\`> …\`) with appetite and risk.
+2. \`## Approach\` — open with **one \`\`\`mermaid flowchart** of the approach (3–7 nodes, every label quoted), then one paragraph: the strategy chosen and, in one sentence each, the alternatives rejected.
+3. \`## Affected files\` — a table \`| File | Change |\` with real \`path:line\` references from this workspace. Locate them; do not guess.
+4. \`## Data & contracts\` — schemas, IPC, persisted state. Only what changes.
+5. \`## Risks & rollback\` — a table \`| Risk | Mitigation | How to revert |\`.
+6. \`## Verification\` — every acceptance criterion mapped to how it is proven.
+7. \`## Tasks\` — **required.** Dependency-ordered waves as \`### Wave 1\`, \`### Wave 2 (depends on T1)\`, … Wave 1 has no dependencies and its tasks must be parallel-safe (disjoint files). Every task has exactly one observable outcome.
+8. \`## Open Questions\`.
+
+Format each task line **exactly** as \`- [ ] T1: <description> — _outcome: ..._\` — a plain checkbox, then the bare id (T1, T2, …), then a colon. Do NOT wrap the id or checkbox in markdown bold/emphasis (no \`**T1**\`, no \`__T1__\`). Optionally name a specialized agent as \`- [ ] T1 @agent-name: <description>\`.
+
+The \`## Tasks\` section is what the Build stage executes: approving this plan copies it into tasks.md verbatim, so **a plan without it cannot be approved**.
 
 ${editInstruction(targetPath)}`,
     tasks: `Draft or refine **tasks.md** for "${meta.name}".
@@ -90,10 +105,12 @@ const IMPROVE_FOCUS: Record<SpecDocFile, string> = {
 - Unchanged Behavior guards cover the realistic regression surface, not just the happy path.
 - Any hypothesis stated as fact — separate observed behavior from diagnosis.`,
   plan: `- Every acceptance criterion in the requirements maps to a concrete part of the plan; call out any that don't.
-- Component boundaries and data/state ownership are unambiguous.
-- Error handling covers the failure modes the requirements imply.
-- The Testing Strategy maps back to every acceptance criterion.
-- Sequences reflect the real flow; remove hand-waving ("somehow", "as needed").`,
+- The Approach diagram reflects the real flow — remove hand-waving ("somehow", "as needed").
+- Affected-file references are real paths in this workspace, not invented ones.
+- Error and failure modes the requirements imply are covered.
+- Verification maps back to every acceptance criterion.
+- \`## Tasks\` exists and is executable: wave ordering is correct, tasks in the same wave are truly parallel-safe (disjoint files), dependencies are explicit, and each task has exactly one observable outcome — split tasks that hide several.
+- Task lines keep the exact \`- [ ] T1: …\` format (checkbox state preserved for completed tasks).`,
   tasks: `- Every component named in the plan and every acceptance criterion is covered by at least one task; call out gaps.
 - Wave ordering is correct: tasks in the same wave are truly parallel-safe (disjoint files), dependencies are explicit.
 - Each task has exactly one observable outcome — split tasks that hide several.
@@ -353,17 +370,15 @@ export async function quickPlanSpec(text: string, kind?: SpecKind): Promise<Spec
   useUi.getState().openSpec(spec.id, 'define');
 
   const read = () => window.kraken.specs.read(root, spec.id);
-  const order: SpecDocFile[] = [firstStageFile(resolvedKind), 'plan', 'tasks'];
+  // Two documents now, not three: the plan carries its own task waves, and
+  // advancing past it derives tasks.md.
+  const order: SpecDocFile[] = [firstStageFile(resolvedKind), 'plan'];
   for (const file of order) {
     const { meta, files } = await read();
     const ok = await draftSpecDoc({ meta, files, file, brief: text });
     if (!ok) break;
-    if (file !== 'tasks') {
-      const updated = await window.kraken.specs.advance(root, spec.id);
-      useUi.getState().openSpec(spec.id, stageForPhase(updated.phase));
-    } else {
-      useUi.getState().openSpec(spec.id, 'build');
-    }
+    const updated = await window.kraken.specs.advance(root, spec.id);
+    useUi.getState().openSpec(spec.id, stageForPhase(updated.phase));
     await ws.refreshAll();
   }
   return spec;

@@ -271,7 +271,7 @@ export function HomeView() {
             <button
               onClick={() => start('quick')}
               disabled={!command.trim() || !!creating}
-              title="Quick Plan — draft requirements, design & tasks with no approval stops"
+              title="Quick Plan — draft requirements and the plan with no approval stops"
               className="flex items-center gap-1.5 rounded-[10px] px-3 py-2 bg-elev text-dim text-[13px] font-semibold hover:text-ink-50 transition disabled:opacity-40"
             >
               {creating === 'quick' ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
