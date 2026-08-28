@@ -10,6 +10,11 @@ parallel format.
 
 - **Locations:** agents are flat markdown in `.claude/agents/*.md`; skills are a directory per
   skill at `.claude/skills/<name>/SKILL.md` — both in the workspace plus `~/.claude/` (global).
+- **Symlinks count.** Skill managers (`npx skills add …`) install into `~/.agents/skills/<name>`
+  and drop a **symlink** in `~/.claude/skills/`, and `readdir(withFileTypes)` reports a symlink as
+  neither a directory nor a file. `listSkills` therefore accepts `isDirectory() || isSymbolicLink()`
+  and lets the `SKILL.md` probe (which follows the link) decide. `listAgents` needs no equivalent:
+  it filters on the `.md` suffix and `readFile` follows links on its own.
 - **Precedence:** workspace overrides global on a name conflict.
 - **Seeding:** `seedDefaultAgents` / `seedDefaultSkills` (main) write the bundled SDD agent/skill
   markdown into the workspace's `.claude/` dirs ("Seed defaults" in the UI; `*:create-default`

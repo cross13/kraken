@@ -1104,7 +1104,11 @@ async function listSkills(root: string): Promise<SkillMeta[]> {
     if (!existsSync(dir)) continue;
     const entries = await fs.readdir(dir, { withFileTypes: true });
     for (const e of entries) {
-      if (!e.isDirectory()) continue;
+      // Skill managers (`npx skills add`) install into ~/.agents/skills and
+      // symlink the entry here, and readdir reports a symlink as neither a
+      // directory nor a file — so accept both and let the SKILL.md probe
+      // (which follows the link) decide whether it's really a skill.
+      if (!e.isDirectory() && !e.isSymbolicLink()) continue;
       const skillFile = path.join(dir, e.name, 'SKILL.md');
       if (!existsSync(skillFile)) continue;
       try {
