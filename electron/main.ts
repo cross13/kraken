@@ -36,6 +36,8 @@ import {
   initDb,
   upsertSpec,
   deleteSpec,
+  clearHistory,
+  historyCounts,
   recordSpecEvent,
   listSpecEvents,
   beginRun,
@@ -58,6 +60,9 @@ import {
 } from './db.js';
 import type {
   AgentMeta,
+  DataResetOptions,
+  DataResetReport,
+  DataUsage,
   DirEntry,
   SkillMeta,
   SpecMeta,
@@ -359,6 +364,11 @@ function registerIpc() {
       writeSpecFile(root, id, file, content)
   );
   ipcMain.handle('specs:advance', (_e, root: string, id: string) => advanceSpec(root, id));
+
+  ipcMain.handle('data:usage', (_e, root: string) => dataUsage(root));
+  ipcMain.handle('data:reset', (_e, root: string, opts: DataResetOptions) =>
+    resetData(root, opts)
+  );
   ipcMain.handle('specs:set-phase', (_e, root: string, id: string, phase: SpecPhase) =>
     setSpecPhase(root, id, phase)
   );
@@ -1070,6 +1080,69 @@ function briefBlock(brief?: string) {
     .split('\n')
     .map((l) => `> ${l}`)
     .join('\n')}\n`;
+}
+
+// ---------- Wholesale reset (Settings › Danger zone) ----------
+
+/** The two spec roots a workspace can have: the current one and the pre-rename one. */
+function specRoots(root: string) {
+  return [
+    { dir: path.join(root, '.octo', 'specs'), legacy: false },
+    { dir: path.join(root, '.kraken', 'specs'), legacy: true },
+  ];
+}
+
+/** Spec folders on disk + history rows, so the UI can say what a reset removes. */
+async function dataUsage(root: string): Promise<DataUsage> {
+  const counts = { specsOnDisk: 0, legacySpecsOnDisk: 0 };
+  for (const { dir, legacy } of specRoots(root)) {
+    if (!existsSync(dir)) continue;
+    const items = await fs.readdir(dir, { withFileTypes: true });
+    const n = items.filter((i) => i.isDirectory()).length;
+    if (legacy) counts.legacySpecsOnDisk += n;
+    else counts.specsOnDisk += n;
+  }
+  return { ...counts, workspace: historyCounts(root), all: historyCounts() };
+}
+
+/**
+ * Start clean: delete the spec folders on disk and the mirrored history rows.
+ *
+ * Deliberately scoped to **the data the SDD loop produces**. It never touches
+ * settings, the stored API key / GitHub token, agents, skills, hooks or
+ * steering — wiping those would cost the user their setup, not their clutter.
+ * Refuses while agents are still running, so nothing writes a spec back after
+ * the delete.
+ */
+async function resetData(root: string, opts: DataResetOptions): Promise<DataResetReport> {
+  if (activeStreams.size > 0) {
+    throw new Error(
+      `${activeStreams.size} run(s) still active — stop them from Activity › Runs before resetting.`
+    );
+  }
+  const report: DataResetReport = { specsDeleted: 0, legacySpecsDeleted: 0, history: null };
+
+  if (opts.specs) {
+    for (const { dir, legacy } of specRoots(root)) {
+      if (!existsSync(dir)) continue;
+      const base = path.resolve(dir);
+      for (const item of await fs.readdir(dir, { withFileTypes: true })) {
+        if (!item.isDirectory()) continue;
+        const target = path.resolve(base, item.name);
+        // Never rm outside the specs directory, whatever readdir hands back.
+        if (!target.startsWith(base + path.sep)) continue;
+        await fs.rm(target, { recursive: true, force: true });
+        if (legacy) report.legacySpecsDeleted++;
+        else report.specsDeleted++;
+      }
+    }
+  }
+
+  if (opts.history) {
+    report.history = clearHistory(opts.historyScope === 'all' ? undefined : root);
+  }
+
+  return report;
 }
 
 function featureRequirementsTemplate(name: string, brief?: string) {

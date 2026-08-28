@@ -390,8 +390,12 @@ stays in `ModuleShell.tsx`; helpers in `lib/library.ts`.
 - **Appearance** (`SyntaxStudio`) — file-viewer color themes + installable languages.
 - **Settings** (`SettingsView variant="page"`) — regrouped: Connection (backend + API key + CLI
   status), Models (global model + **planning model**), Repository (project directory + GitHub
-  token), Advanced (permissions + MCP servers). The Orchestration section (concurrency) and
-  model-per-step grid were removed.
+  token), Advanced (permissions + MCP servers), and a **Danger zone** (`DangerZone`) that wipes
+  the specs on disk and the history DB — two toggles with live counts from `data:usage`, a
+  this-project / every-project scope for the history, a typed `RESET` confirmation, and a hard
+  block while any run is in flight. On success it calls `ui.closeSpec()`, `orchestrator.clearLog()`
+  and `workspace.refreshAll()` so nothing in the UI points at deleted data. The Orchestration
+  section (concurrency) and model-per-step grid were removed.
 
 ## Agent routing — `src/lib/agentRouter.ts`
 

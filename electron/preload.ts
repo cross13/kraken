@@ -1,6 +1,9 @@
 import { contextBridge, ipcRenderer, webFrame } from 'electron';
 import type {
   AgentMeta,
+  DataResetOptions,
+  DataResetReport,
+  DataUsage,
   DirEntry,
   ErrorRow,
   RunRow,
@@ -65,6 +68,12 @@ const api = {
       ipcRenderer.invoke('specs:set-phase', root, id, phase) as Promise<SpecMeta>,
     delete: (root: string, id: string) =>
       ipcRenderer.invoke('specs:delete', root, id) as Promise<void>,
+  },
+  /** Wholesale reset of the SDD data — specs on disk + the history DB. */
+  data: {
+    usage: (root: string) => ipcRenderer.invoke('data:usage', root) as Promise<DataUsage>,
+    reset: (root: string, opts: DataResetOptions) =>
+      ipcRenderer.invoke('data:reset', root, opts) as Promise<DataResetReport>,
   },
   skills: {
     list: (root: string) => ipcRenderer.invoke('skills:list', root) as Promise<SkillMeta[]>,

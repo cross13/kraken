@@ -69,7 +69,7 @@ export function SpecFlow({ specId }: { specId: string }) {
   const deleteSpec = useWorkspace((s) => s.deleteSpec);
   const stage = useUi((s) => s.specStage);
   const setStage = useUi((s) => s.setSpecStage);
-  const setSurface = useUi((s) => s.setSurface);
+  const closeSpec = useUi((s) => s.closeSpec);
   const openOverlay = useUi((s) => s.openOverlay);
 
   const [meta, setMeta] = useState<SpecMeta | null>(null);
@@ -170,7 +170,7 @@ export function SpecFlow({ specId }: { specId: string }) {
 
   const removeSpec = async () => {
     await deleteSpec(meta.id);
-    setSurface('home');
+    closeSpec();
   };
 
   const labels = stageLabels(meta.kind);

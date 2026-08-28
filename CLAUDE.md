@@ -76,7 +76,8 @@ Everything is registered in `registerIpc()`. Key responsibilities living here:
 
 ### Preload — `electron/preload.ts`
 Context-isolated bridge. Exposes a single typed object on `window.octo` (namespaced:
-`workspace`, `specs`, `skills`, `agents`, `fs`, `settings`, `cli`, `git`, `history`, `claude`).
+`workspace`, `specs`, `data`, `skills`, `agents`, `fs`, `settings`, `cli`, `git`, `history`,
+`claude`).
 `OctoApi` (its `typeof`) is the contract the renderer types against. **When you add or
 change an IPC handler in `main.ts`, you must update the matching method here**, or the
 renderer can't reach it. Streaming is fire-and-forget: `claude.stream(payload)` sends, and
@@ -138,7 +139,8 @@ results arrive through `claude.onEvent(handler)`.
   Terminals, Graph). **Library** (`LibrarySurface`) consolidates config: Agents · Skills · Hooks ·
   Steering · Routing (`RouterStudio`, now a read-only routing explainer + Advanced pins) ·
   Appearance (`SyntaxStudio`) · Settings (regrouped: Connection / Models incl. the **planning
-  model** / Repository / Advanced). Module config lives in the `moduleConfig` store and is pushed
+  model** / Repository / Advanced / **Danger zone** — the `data:reset` wipe of specs on disk +
+  the history DB, which never touches settings, secrets, agents, skills, hooks or steering). Module config lives in the `moduleConfig` store and is pushed
   into the router via `setRouterConfig`; the old routing-weight knobs are invisible defaults.
 - **Agent routing** (`src/lib/agentRouter.ts`) is content-aware. Precedence: per-task
   `@agent` > chat `@agent` override > best-matching **installed** agent for the action.

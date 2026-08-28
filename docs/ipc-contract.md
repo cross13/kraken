@@ -107,6 +107,15 @@ See [`backends.md`](./backends.md) → Model discovery.
 typeahead), `listPrs(args)`, `createPr(args)`, `mergePr(args)`. Backed by `electron/github.ts`
 (dependency-free REST client). PR/repo methods return `GitHubOpResult<T>`.
 
+### `data`
+`usage(root)` → `DataUsage` (spec folders on disk, incl. any left in a pre-rename
+`.kraken/specs`, plus history-row counts for this workspace and for every workspace).
+`reset(root, opts: DataResetOptions)` → `DataResetReport` — the **Danger zone** wipe behind
+Library › Settings: deletes spec folders on disk and/or history rows (`historyScope:
+'workspace' | 'all'`, `clearHistory` in `db.ts`, one transaction + `VACUUM`). It never touches
+settings, secrets, agents, skills, hooks or steering, refuses a path outside the specs
+directory, and **throws while any run is active** so nothing writes a spec back mid-delete.
+
 ### `history`
 `listRuns`, `getRun`, `listRunFiles`, `runFileCounts`, `listSpecFiles`, `listErrors`, `stats`,
 `specRunStats`, `listSpecEvents`. Read-only queries over the SQLite mirror (`electron/db.ts`).

@@ -48,6 +48,19 @@ re-sent as grounding when the user later presses *Draft … with Claude*. Plus o
 workflow state written back by the Source Control panel: `branch`, `committedAt`,
 `lastCommitHash`, `lastCommitPushed`, `prNumber`, `prUrl`, `prState`.
 
+## Starting clean
+
+Library › Settings › **Danger zone** (`DangerZone` in `SettingsView`, IPC `data:reset`) wipes the
+data the SDD loop produces so a workspace can restart on the current methodology: the spec folders
+under `.octo/specs` (plus anything stranded in a pre-rename `.kraken/specs`) and the mirrored
+history rows — scoped to this workspace or to every workspace. Deletion order matters: `errors`
+and `run_files` go before `runs` (they are matched by `workspace_path` **or** `run_id`, so rows
+written before `workspace_path` existed don't survive as orphans), all inside one transaction,
+followed by `VACUUM`.
+
+What it deliberately leaves alone: settings and secrets (`electron-store` + `safeStorage`), and
+everything under `.claude/` and `.octo/{hooks,steering}`. Losing those is losing your setup.
+
 ## Tasks format
 
 `tasks.md` uses GitHub-style checklists. A task can specify a per-task agent:

@@ -308,6 +308,46 @@ export interface HookRunRow {
   created_at: string;
 }
 
+// ---------- Data reset (Settings › Danger zone) ----------
+
+/** Row counts in the history DB, per table. */
+export interface HistoryCounts {
+  specs: number;
+  specEvents: number;
+  runs: number;
+  runFiles: number;
+  errors: number;
+  hookRuns: number;
+}
+
+/** What a reset would remove, so the UI can say it before asking. */
+export interface DataUsage {
+  /** spec folders under `.octo/specs` */
+  specsOnDisk: number;
+  /** spec folders left behind in a pre-rename `.kraken/specs` */
+  legacySpecsOnDisk: number;
+  /** history rows belonging to this workspace */
+  workspace: HistoryCounts;
+  /** history rows across every workspace */
+  all: HistoryCounts;
+}
+
+export interface DataResetOptions {
+  /** delete every spec folder on disk (this workspace, incl. legacy `.kraken`) */
+  specs: boolean;
+  /** delete history rows */
+  history: boolean;
+  /** `workspace` = this project's rows; `all` = the whole DB */
+  historyScope: 'workspace' | 'all';
+}
+
+export interface DataResetReport {
+  specsDeleted: number;
+  legacySpecsDeleted: number;
+  /** null when history was left alone */
+  history: HistoryCounts | null;
+}
+
 // ---------- Steering files ----------
 
 export type SteeringInclusion = 'always' | 'fileMatch' | 'manual' | 'auto';

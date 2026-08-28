@@ -86,6 +86,8 @@ interface UiStore {
   activeSpecId: string | null;
   specStage: SpecStage;
   openSpec: (specId: string, stage?: SpecStage) => void;
+  /** Leave the spec surface with no spec selected (after a delete or a reset). */
+  closeSpec: () => void;
   setSpecStage: (stage: SpecStage) => void;
 
   // ---- Activity surface ----
@@ -136,6 +138,7 @@ export const useUi = create<UiStore>((set, get) => ({
       activeSpecId: specId,
       specStage: stage ?? (specId === s.activeSpecId ? s.specStage : 'define'),
     })),
+  closeSpec: () => set({ surface: 'home', activeSpecId: null, specStage: 'define' }),
   setSpecStage: (stage) => set({ specStage: stage }),
 
   activityTab: 'runs',

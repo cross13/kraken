@@ -3,6 +3,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { app } from 'electron';
 import type {
+  HistoryCounts,
   SpecMeta,
   SpecPhase,
   RunRow,
@@ -305,6 +306,64 @@ export function deleteSpec(workspacePath: string, id: string) {
     d.prepare(`DELETE FROM specs WHERE workspace_path = ? AND id = ?`).run(workspacePath, id);
   });
   tx();
+}
+
+// ---------- Wholesale clear (Settings › Danger zone) ----------
+
+/**
+ * Every history table, in delete-safe order (children before `runs`), with the
+ * where-clause that scopes it to one workspace. `undefined` means "every
+ * workspace" — the whole DB.
+ *
+ * `errors` and `run_files` carry a nullable `workspace_path`, so they are also
+ * matched through their `run_id`; otherwise rows written before that column was
+ * populated would survive a workspace-scoped clear as orphans.
+ */
+function historyTargets(workspacePath?: string) {
+  const runIds = `SELECT id FROM runs WHERE workspace_path IS ?`;
+  const all = workspacePath === undefined;
+  const own = () => (all ? { where: '', args: [] as unknown[] } : { where: 'WHERE workspace_path IS ?', args: [workspacePath] as unknown[] });
+  const viaRun = () =>
+    all
+      ? { where: '', args: [] as unknown[] }
+      : { where: `WHERE workspace_path IS ? OR run_id IN (${runIds})`, args: [workspacePath, workspacePath] as unknown[] };
+  return [
+    { key: 'errors' as const, table: 'errors', ...viaRun() },
+    { key: 'runFiles' as const, table: 'run_files', ...viaRun() },
+    { key: 'runs' as const, table: 'runs', ...own() },
+    { key: 'specEvents' as const, table: 'spec_events', ...own() },
+    { key: 'hookRuns' as const, table: 'hook_runs', ...own() },
+    { key: 'specs' as const, table: 'specs', ...own() },
+  ];
+}
+
+/** How many rows a clear would remove — shown before asking for confirmation. */
+export function historyCounts(workspacePath?: string): HistoryCounts {
+  const d = require_db();
+  const out: HistoryCounts = { specs: 0, specEvents: 0, runs: 0, runFiles: 0, errors: 0, hookRuns: 0 };
+  for (const t of historyTargets(workspacePath)) {
+    out[t.key] = (
+      d.prepare(`SELECT COUNT(*) AS n FROM ${t.table} ${t.where}`).get(...t.args) as { n: number }
+    ).n;
+  }
+  return out;
+}
+
+/**
+ * Delete history rows for one workspace, or the whole DB when `workspacePath`
+ * is omitted. One transaction; returns what it removed. `VACUUM` runs after it
+ * (it cannot run inside a transaction) so the file actually shrinks.
+ */
+export function clearHistory(workspacePath?: string): HistoryCounts {
+  const d = require_db();
+  const counts = historyCounts(workspacePath);
+  const targets = historyTargets(workspacePath);
+  const tx = d.transaction(() => {
+    for (const t of targets) d.prepare(`DELETE FROM ${t.table} ${t.where}`).run(...t.args);
+  });
+  tx();
+  d.exec('VACUUM');
+  return counts;
 }
 
 /** Per-spec run aggregates (runs, errors, cancelled, total time, last activity). */

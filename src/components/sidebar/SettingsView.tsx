@@ -17,16 +17,24 @@ import {
   FolderGit2,
   FolderOpen,
   GitBranch,
+  AlertTriangle,
+  Database,
+  FileText,
+  Loader2,
 } from 'lucide-react';
 import { Settings as SettingsIcon } from 'lucide-react';
 import { SidebarHeader } from '../SidebarShell';
 import { cn } from '../../lib/cn';
 import { useWorkspace } from '../../stores/workspace';
 import { useModels } from '../../stores/models';
+import { useOrchestrator } from '../../stores/orchestrator';
+import { useUi } from '../../stores/ui';
 import type {
   McpServerMeta,
   GitHubTokenStatus,
   ModelInfo,
+  DataResetReport,
+  DataUsage,
 } from '../../../electron/shared/types';
 
 type Backend = 'cli' | 'api';
@@ -555,6 +563,8 @@ export function SettingsView({ variant = 'panel' }: { variant?: 'panel' | 'page'
           </div>
         </section>
 
+        {root && <DangerZone root={root} />}
+
         <section className="text-[10px] text-ink-500 leading-relaxed border-t border-ink-800 pt-3">
           <p className="mb-1">
             Specs live in <code className="text-ink-300">.octo/specs/</code>.
@@ -720,6 +730,191 @@ function BackendCard({
       </div>
       <div className="text-[10px] text-ink-400 leading-snug">{description}</div>
     </button>
+  );
+}
+
+/**
+ * Danger zone — start clean.
+ *
+ * Wipes only what the SDD loop produces: the spec folders on disk (`.octo/specs`
+ * plus anything left in a pre-rename `.kraken/specs`) and the mirrored rows in
+ * the history DB. Settings, secrets, agents, skills, hooks and steering survive,
+ * because losing those is losing your setup, not your clutter.
+ *
+ * Two locks before anything is deleted: no run may be in flight (the main
+ * process refuses too), and the user has to type RESET.
+ */
+function DangerZone({ root }: { root: string }) {
+  const [usage, setUsage] = useState<DataUsage | null>(null);
+  const [wipeSpecs, setWipeSpecs] = useState(true);
+  const [wipeHistory, setWipeHistory] = useState(true);
+  const [allWorkspaces, setAllWorkspaces] = useState(false);
+  const [confirm, setConfirm] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [report, setReport] = useState<DataResetReport | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const refreshAll = useWorkspace((s) => s.refreshAll);
+  const clearLog = useOrchestrator((s) => s.clearLog);
+  const closeSpec = useUi((s) => s.closeSpec);
+  const running = useOrchestrator((s) =>
+    Object.values(s.runs).filter((r) => r.status === 'running' || r.status === 'queued').length
+  );
+
+  const loadUsage = () => {
+    window.octo.data
+      .usage(root)
+      .then(setUsage)
+      .catch(() => setUsage(null));
+  };
+  useEffect(loadUsage, [root]);
+
+  const scoped = allWorkspaces ? usage?.all : usage?.workspace;
+  const nothingSelected = !wipeSpecs && !wipeHistory;
+  const armed = confirm.trim().toUpperCase() === 'RESET' && !nothingSelected && !running && !busy;
+
+  const run = async () => {
+    if (!armed) return;
+    setBusy(true);
+    setError(null);
+    setReport(null);
+    try {
+      const r = await window.octo.data.reset(root, {
+        specs: wipeSpecs,
+        history: wipeHistory,
+        historyScope: allWorkspaces ? 'all' : 'workspace',
+      });
+      setReport(r);
+      setConfirm('');
+      closeSpec();
+      clearLog();
+      await refreshAll();
+      loadUsage();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section>
+      <h3 className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-bad font-semibold mb-2">
+        <AlertTriangle size={12} /> Danger zone
+      </h3>
+      <div className="rounded-md border border-bad/30 bg-bad/[0.05] p-3 space-y-3">
+        <p className="text-[10.5px] text-ink-300 leading-snug">
+          Start clean on the current methodology: delete the specs on disk and the run history.
+          Your settings, API key, GitHub token, agents, skills, hooks and steering are{' '}
+          <span className="text-ink-100">not</span> touched.
+        </p>
+
+        <div className="space-y-2.5">
+          <ToggleRow
+            icon={<FileText size={13} />}
+            title="Spec files"
+            description={
+              usage
+                ? `${usage.specsOnDisk} spec folder(s) under .octo/specs${
+                    usage.legacySpecsOnDisk
+                      ? ` + ${usage.legacySpecsOnDisk} left in .kraken/specs`
+                      : ''
+                  } — deleted from disk, permanently.`
+                : 'Every spec folder under .octo/specs — deleted from disk, permanently.'
+            }
+            enabled={wipeSpecs}
+            onToggle={setWipeSpecs}
+            tone="warn"
+          />
+          <ToggleRow
+            icon={<Database size={13} />}
+            title="History database"
+            description={
+              scoped
+                ? `${scoped.runs} run(s), ${scoped.specEvents} phase event(s), ${scoped.hookRuns} hook run(s), ${scoped.runFiles} file touch(es), ${scoped.errors} error(s).`
+                : 'Runs, phase events, hook runs, file touches and errors.'
+            }
+            enabled={wipeHistory}
+            onToggle={setWipeHistory}
+            tone="warn"
+          />
+          {wipeHistory && (
+            <div className="flex items-center gap-2 pl-[21px]">
+              <button
+                onClick={() => setAllWorkspaces(false)}
+                className={cn(
+                  'text-[10px] px-2 py-1 rounded-md border transition',
+                  !allWorkspaces
+                    ? 'border-warn/50 bg-warn/10 text-warn'
+                    : 'border-ink-800 text-ink-400 hover:text-ink-200'
+                )}
+              >
+                This project
+              </button>
+              <button
+                onClick={() => setAllWorkspaces(true)}
+                className={cn(
+                  'text-[10px] px-2 py-1 rounded-md border transition',
+                  allWorkspaces
+                    ? 'border-bad/50 bg-bad/10 text-bad'
+                    : 'border-ink-800 text-ink-400 hover:text-ink-200'
+                )}
+              >
+                Every project ({usage?.all.runs ?? '—'} runs)
+              </button>
+            </div>
+          )}
+        </div>
+
+        {running > 0 ? (
+          <p className="text-[10px] text-warn leading-snug flex items-start gap-1.5">
+            <AlertCircle size={11} className="mt-px shrink-0" />
+            {running} run(s) still active — stop them in Activity › Runs first.
+          </p>
+        ) : (
+          <div className="flex items-center gap-2">
+            <input
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              placeholder="Type RESET to confirm"
+              disabled={nothingSelected}
+              className="flex-1 text-xs px-2 py-1.5 rounded-md bg-ink-950 border border-ink-800 focus:border-bad outline-none font-mono disabled:opacity-40"
+            />
+            <button
+              onClick={run}
+              disabled={!armed}
+              className="text-xs px-3 py-1.5 rounded-md bg-bad/90 text-white font-semibold hover:bg-bad disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1.5"
+            >
+              {busy ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+              Delete permanently
+            </button>
+          </div>
+        )}
+
+        {error && (
+          <p className="text-[10px] text-bad leading-snug flex items-start gap-1.5">
+            <AlertCircle size={11} className="mt-px shrink-0" /> {error}
+          </p>
+        )}
+        {report && (
+          <p className="text-[10px] text-ok leading-snug flex items-start gap-1.5">
+            <Check size={11} className="mt-px shrink-0" />
+            Removed {report.specsDeleted + report.legacySpecsDeleted} spec folder(s)
+            {report.history
+              ? ` and ${
+                  report.history.runs +
+                  report.history.specEvents +
+                  report.history.hookRuns +
+                  report.history.runFiles +
+                  report.history.errors +
+                  report.history.specs
+                } history row(s)`
+              : ''}
+            . Clean slate.
+          </p>
+        )}
+      </div>
+    </section>
   );
 }
 
