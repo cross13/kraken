@@ -17,12 +17,17 @@ A spec is a **directory** under the workspace at `.kraken/specs/<id>/`:
 .kraken/specs/<id>/
   spec.json        # SpecMeta-ish: phase + metadata (load-bearing shape)
   requirements.md  # feature specs   (or bugfix.md for bugfix specs)
-  design.md
+  plan.md
   tasks.md
 ```
 
-- **Phase order is fixed and load-bearing:** `requirements → design → tasks → done`
-  (`SpecPhase`). `advanceSpec` walks this order and **lazily writes the next phase's template
+- **Phase order is fixed and load-bearing:** `requirements → plan → build → done`
+  (`SpecPhase`). `plan` and `build` were called `design` and `tasks` before the methodology
+  refactor; a spec written by an older version is migrated in place on first read
+  (`migrateSpecDir` in main.ts renames `design.md` → `plan.md` and rewrites `spec.json`), and the
+  DB mirror is migrated once at startup (`migrateSpecPhases` in db.ts, guarded by
+  `PRAGMA user_version = 2`, which rebuilds `specs` because its `phase` CHECK cannot be altered
+  in place). `advanceSpec` walks this order and **lazily writes the next phase's template
   file** if missing (the `*Template` functions in `main.ts`).
 - **Kind** is `'feature' | 'bugfix'` (`SpecKind`). Feature specs start at `requirements.md`;
   bugfix specs at `bugfix.md` (with explicit *Unchanged Behavior* regression guards).
@@ -52,7 +57,7 @@ plain `- [ ] T1: …` form, so new task lists come out clean without manual clea
 
 ## Open Questions format
 
-Spec files (requirements/bugfix and design) carry a `## Open Questions` section. The
+Spec files (requirements/bugfix and plan) carry a `## Open Questions` section. The
 `QuestionsView` module manages it; markdown stays the source of truth. Convention (parsed by
 `src/lib/openQuestions.ts`):
 
@@ -67,7 +72,7 @@ An unchecked item is **open**; a checked item is **resolved**, with its answer a
 adding one appends a `- [ ]` item (creating the section if absent).
 
 The `QuestionsView` module is anchored to the **requirement file** (`requirements.md` /
-`bugfix.md`) — questions are read from and written to that doc so they feed the design phase.
+`bugfix.md`) — questions are read from and written to that doc so they feed the plan phase.
 Once answered, **Apply to requirements** folds the resolved Q&A into a `## Resolved Decisions`
 section (idempotent replace, via `writeDecisionsSection`):
 
@@ -77,8 +82,8 @@ section (idempotent replace, via `writeDecisionsSection`):
 - **What is the default concurrency?** — Default 2, configurable up to 8.
 ```
 
-The design-generation prompt reads `requirements.md` and treats `Resolved Decisions` as settled
-inputs, so question answers flow forward into the design.
+The plan-generation prompt reads `requirements.md` and treats `Resolved Decisions` as settled
+inputs, so question answers flow forward into the plan.
 
 ## SQLite schema (`electron/db.ts`)
 

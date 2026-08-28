@@ -1,7 +1,7 @@
 # Architecture
 
 Kraken is an Electron desktop app for the Spec-Driven Development (SDD) loop:
-**requirements → design → tasks → execution**. It drives Claude through one of two
+**requirements → plan → build (tasks + execution)**. It drives Claude through one of two
 interchangeable backends — the user's local Claude CLI (default) or the Anthropic API
 SDK — selected at runtime in Settings.
 

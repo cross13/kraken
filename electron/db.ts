@@ -33,7 +33,7 @@ const SCHEMA = [
     workspace_path TEXT NOT NULL,
     name TEXT NOT NULL,
     kind TEXT NOT NULL CHECK (kind IN ('feature','bugfix')),
-    phase TEXT NOT NULL CHECK (phase IN ('requirements','design','tasks','done')),
+    phase TEXT NOT NULL CHECK (phase IN ('requirements','plan','build','done')),
     fs_path TEXT NOT NULL,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
@@ -147,6 +147,7 @@ export function initDb(): Database.Database {
   db.pragma('foreign_keys = ON');
   for (const stmt of SCHEMA) db.exec(stmt);
   migrateRuns(db);
+  migrateSpecPhases(db);
   reconcileOrphanedRuns(db);
   return db;
 }
@@ -196,6 +197,45 @@ function migrateRuns(d: Database.Database) {
       // column already exists — expected on up-to-date databases
     }
   }
+}
+
+/**
+ * v2 — the SDD phases `design` and `tasks` became `plan` and `build`.
+ * `specs.phase` carries a CHECK constraint and SQLite cannot alter one in
+ * place, so the table is rebuilt and `spec_events` is rewritten in the same
+ * transaction. Guarded by `user_version` so it runs exactly once; on a fresh
+ * database it rebuilds an empty table, which is harmless.
+ */
+function migrateSpecPhases(d: Database.Database) {
+  if ((d.pragma('user_version', { simple: true }) as number) >= 2) return;
+  const renamed = (col: string) =>
+    `CASE ${col} WHEN 'design' THEN 'plan' WHEN 'tasks' THEN 'build' ELSE ${col} END`;
+  d.transaction(() => {
+    d.exec(`CREATE TABLE specs_v2 (
+      id TEXT NOT NULL,
+      workspace_path TEXT NOT NULL,
+      name TEXT NOT NULL,
+      kind TEXT NOT NULL CHECK (kind IN ('feature','bugfix')),
+      phase TEXT NOT NULL CHECK (phase IN ('requirements','plan','build','done')),
+      fs_path TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      PRIMARY KEY (workspace_path, id)
+    )`);
+    d.exec(
+      `INSERT INTO specs_v2 (id, workspace_path, name, kind, phase, fs_path, created_at, updated_at)
+         SELECT id, workspace_path, name, kind, ${renamed('phase')}, fs_path, created_at, updated_at
+           FROM specs`
+    );
+    // DROP takes the old indexes with it, so both are recreated after the swap.
+    d.exec(`DROP TABLE specs`);
+    d.exec(`ALTER TABLE specs_v2 RENAME TO specs`);
+    d.exec(`CREATE INDEX IF NOT EXISTS idx_specs_workspace ON specs(workspace_path)`);
+    d.exec(`CREATE INDEX IF NOT EXISTS idx_specs_updated ON specs(updated_at DESC)`);
+    d.exec(`UPDATE spec_events SET from_phase = ${renamed('from_phase')}`);
+    d.exec(`UPDATE spec_events SET to_phase = ${renamed('to_phase')}`);
+  })();
+  d.pragma('user_version = 2');
 }
 
 function require_db(): Database.Database {

@@ -16,7 +16,7 @@ import type { ModelInfo, ModelDiscovery } from '../../electron/shared/types';
 
 export type StepKey =
   | 'requirements'
-  | 'design'
+  | 'plan'
   | 'tasks'
   | 'task'
   | 'refine'
@@ -27,7 +27,7 @@ export type StepKey =
 export type ModelOption = ModelInfo;
 
 /** Steps that use the planning model when one is set. */
-const PLANNING_STEPS: ReadonlySet<StepKey> = new Set(['requirements', 'design', 'tasks', 'audit']);
+const PLANNING_STEPS: ReadonlySet<StepKey> = new Set(['requirements', 'plan', 'tasks', 'audit']);
 
 const KEY = 'kraken.planningModel';
 

@@ -37,8 +37,8 @@ function ago(iso?: string) {
 
 const PHASE_INDEX: Record<SpecMeta['phase'], number> = {
   requirements: 0,
-  design: 1,
-  tasks: 2,
+  plan: 1,
+  build: 2,
   done: 3,
 };
 
@@ -489,7 +489,7 @@ function SpecCard({
   const running = runningCount > 0;
   const status = running
     ? { label: `${runningCount} running`, cls: 'text-good', dot: 'bg-good', pulse: true }
-    : spec.phase === 'tasks'
+    : spec.phase === 'build'
       ? { label: 'Ready to run', cls: 'text-accent-2', dot: 'bg-accent', pulse: false }
       : { label: 'Awaiting approval', cls: 'text-accent-2', dot: 'bg-accent', pulse: false };
 

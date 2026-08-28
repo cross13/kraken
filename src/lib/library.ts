@@ -82,8 +82,8 @@ function buildAction(key: RoutableAction, taskText: string): Action {
       return { kind: 'spec-file', file: 'requirements', specKind: 'feature' };
     case 'bugfix':
       return { kind: 'spec-file', file: 'bugfix', specKind: 'bugfix' };
-    case 'design':
-      return { kind: 'spec-file', file: 'design', specKind: 'feature' };
+    case 'plan':
+      return { kind: 'spec-file', file: 'plan', specKind: 'feature' };
     case 'tasks':
       return { kind: 'spec-file', file: 'tasks', specKind: 'feature' };
     case 'task-execute':

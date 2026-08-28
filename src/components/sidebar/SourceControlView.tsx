@@ -1443,7 +1443,7 @@ function CreatePrDialog({
     const reqKey = spec.kind === 'bugfix' ? 'bugfix' : 'requirements';
     const specBody = [
       files[reqKey] && `## ${reqKey}.md\n\n${files[reqKey]}`,
-      files.design && `## design.md\n\n${files.design}`,
+      files.plan && `## plan.md\n\n${files.plan}`,
       files.tasks && `## tasks.md\n\n${files.tasks}`,
     ]
       .filter(Boolean)

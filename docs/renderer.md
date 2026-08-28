@@ -69,7 +69,8 @@ chunks each become their own segment. `ChatPanel` renders assistant messages fro
 ### `ui.ts` — `useUi`
 The shell state. `surface: 'home' | 'spec' | 'activity' | 'library'` plus per-surface state:
 
-- **Spec**: `activeSpecId` + `specStage` (`'requirements' | 'design' | 'tasks' | 'ship'`);
+- **Spec**: `activeSpecId` + `specStage` (`'define' | 'plan' | 'build' | 'ship'`, mapped from the
+  spec's phase by `stageForPhase`);
   `openSpec(specId, stage?)` navigates (use `stageForPhase(phase)` to land on the right stage).
 - **Activity**: `activityTab` (`'runs' | 'history' | 'terminals' | 'graph'`), `openActivity(tab?)`.
 - **Library**: `librarySection` (`'agents' | 'skills' | 'hooks' | 'steering' | 'routing' |
@@ -95,7 +96,7 @@ mirrors of the same store field: the tasks-board header and Activity › Runs.
 
 ### `models.ts` — `useModels`
 Model routing collapsed to two knobs: the global default model (Settings, persisted in the main
-process) and an optional **`planningModel`** for the thinking-heavy steps (requirements / design /
+process) and an optional **`planningModel`** for the thinking-heavy steps (requirements / plan /
 tasks / audit). `modelFor(step)` returns the planning model for those steps when set, else
 `undefined` (inherit the global default). Persisted to `localStorage`.
 
@@ -240,7 +241,7 @@ The launchpad. Its **composer creates specs** (the old Welcome bar only forwarde
 - **Plan** (`lib/specActions.ts` → `planSpec`) — creates the spec (name via `specNameFromText`,
   kind via `specKindFromText` feature/bugfix detection), opens the Spec flow, and streams the
   requirements draft while the user watches. Gated flow.
-- **Quick Plan** (`quickPlanSpec`) — the no-gates escape hatch: drafts requirements → design →
+- **Quick Plan** (`quickPlanSpec`) — the no-gates escape hatch: drafts requirements → plan →
   tasks back-to-back (advancing between), landing on Tasks ready to run.
 - Input ending in `?` routes to the Assistant instead (`chat.pendingPrompt`); `/` and `@`
   popovers still pick skills/agents.
@@ -254,14 +255,14 @@ delete), and a one-time **"Set up Kraken defaults"** card that calls `workspace.
 ## The spec flow (`views/SpecFlow.tsx`)
 
 One continuous guided surface per spec — the whole lifecycle on one screen, framed like an
-editor (Kiro-style): **file tabs** (`requirements.md` / `design.md` / `tasks.md` / `summary.md`,
+editor (Kiro-style): **file tabs** (`requirements.md` / `plan.md` / `tasks.md` / `summary.md`,
 accent-underlined, locked stages dimmed), a mono **breadcrumb**
 (`.kraken › specs › <id> › <file>.md`), and the **spec strip** (`Spec: <name>` + numbered phase
-chips: ① Requirements ② Design ③ Task List ④ Ship). The tab row also carries save status, the
+chips: ① Requirements ② Plan ③ Task List ④ Ship). The tab row also carries save status, the
 doc **view switcher** (Source · Cards · Edit), and **one overflow menu** (Audit · Surface open
 questions · Reopen tasks/Re-sync · Delete spec). Stage bodies:
 
-- **Doc stages** (requirements/bugfix, design) default to **Source** — the document as
+- **Doc stages** (requirements/bugfix, plan) default to **Source** — the document as
   line-numbered, markdown-highlighted source (`SourceDoc`) — with `SpecDocument` section cards
   and raw `MarkdownEditor` as the other views, above a pinned **gate bar**:
   `[✎ Revise with feedback…] [✦ Improve with Claude] [Approve <stage> → <next>]`. **Approve
@@ -353,7 +354,7 @@ wrap, and a link to Library › Appearance. Colors are scoped as `--syn-*` vars 
 ## Other `src/lib` helpers
 
 - `tasks.ts` — parse `tasks.md` checklists, per-task `@agent`, waves/dependencies.
-- `specSections.ts` — parse a requirements/design doc into section cards (consumed by `SpecDocument`).
+- `specSections.ts` — parse a requirements/plan doc into section cards (consumed by `SpecDocument`).
 - `specActions.ts` — the shared drafting/plan/polish layer (see "The spec flow").
 - `markdown.ts` / `prism.ts` / `fileLang.ts` / `syntaxThemes.ts` — rendering + highlighting.
 - `graphModel.ts` — the agent-graph data layer (`indexRuns`/`verifyRun`, run-grouping taxonomy).

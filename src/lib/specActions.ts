@@ -7,7 +7,7 @@ import { routeAgent, routeSkill, skillSystemBlock } from './agentRouter';
 import { resolveAgent, resolveSkill } from './verifyLibrary';
 import type { SpecKind, SpecMeta } from '../../electron/shared/types';
 
-export type SpecDocFile = 'requirements' | 'bugfix' | 'design' | 'tasks';
+export type SpecDocFile = 'requirements' | 'bugfix' | 'plan' | 'tasks';
 
 /** The doc file for a spec's first stage (bug specs analyze instead of gather). */
 export function firstStageFile(kind: SpecKind): SpecDocFile {
@@ -35,14 +35,14 @@ ${editInstruction(targetPath)}`,
 Required sections: Reproduction (numbered steps), Current Behavior (WHEN/THEN), Expected Behavior (WHEN/THEN/SHALL), Unchanged Behavior (WHEN/THEN/SHALL CONTINUE TO — these protect against regressions), Environment.
 
 ${editInstruction(targetPath)}`,
-    design: `Draft or refine **design.md** for "${meta.name}".
+    plan: `Draft or refine **plan.md** for "${meta.name}".
 
-Read the current \`${specRel}/${meta.kind === 'feature' ? 'requirements.md' : 'bugfix.md'}\` first. If it has a **Resolved Decisions** section, treat each entry as a settled answer to an open question and reflect those decisions in the design — do not re-open them. Then produce: Overview, Components, Data & State, Sequence (ascii/mermaid), Error Handling, Testing Strategy mapping back to every acceptance criterion, Open Questions.
+Read the current \`${specRel}/${meta.kind === 'feature' ? 'requirements.md' : 'bugfix.md'}\` first. If it has a **Resolved Decisions** section, treat each entry as a settled answer to an open question and reflect those decisions in the plan — do not re-open them. Then produce: Enfoque (with a \`\`\`mermaid flowchart of the approach), Archivos afectados (a table of \`path:line\` → change), Datos y contratos, Riesgos y rollback, Verificación mapping back to every acceptance criterion, Open Questions.
 
 ${editInstruction(targetPath)}`,
     tasks: `Draft or refine **tasks.md** for "${meta.name}".
 
-Read the current \`${specRel}/design.md\` first. Then produce dependency-ordered waves: Wave 1 = no dependencies and parallel-safe; each later wave lists its prerequisites explicitly. Every task has a single observable outcome. Close with a Verification checklist that maps every acceptance criterion to at least one task.
+Read the current \`${specRel}/plan.md\` first. Then produce dependency-ordered waves: Wave 1 = no dependencies and parallel-safe; each later wave lists its prerequisites explicitly. Every task has a single observable outcome. Close with a Verification checklist that maps every acceptance criterion to at least one task.
 
 Format each task line **exactly** as \`- [ ] T1: <description>\` — a plain checkbox, then the bare id (T1, T2, …), then a colon. Do NOT wrap the id or checkbox in markdown bold/emphasis (no \`**T1**\`, no \`__T1__\`). Optionally name a specialized agent as \`- [ ] T1 @agent-name: <description>\`.
 
@@ -56,7 +56,7 @@ function buildSystem(agentBody: string, meta: SpecMeta, files: Record<string, st
   const context = [
     files.requirements && `# requirements.md\n${files.requirements}`,
     files.bugfix && `# bugfix.md\n${files.bugfix}`,
-    files.design && `# design.md\n${files.design}`,
+    files.plan && `# plan.md\n${files.plan}`,
     files.tasks && `# tasks.md\n${files.tasks}`,
   ]
     .filter(Boolean)
@@ -89,12 +89,12 @@ const IMPROVE_FOCUS: Record<SpecDocFile, string> = {
 - Current vs Expected Behavior are precise WHEN/THEN statements that don't overlap or contradict.
 - Unchanged Behavior guards cover the realistic regression surface, not just the happy path.
 - Any hypothesis stated as fact — separate observed behavior from diagnosis.`,
-  design: `- Every acceptance criterion in the requirements maps to a concrete part of the design; call out any that don't.
+  plan: `- Every acceptance criterion in the requirements maps to a concrete part of the plan; call out any that don't.
 - Component boundaries and data/state ownership are unambiguous.
 - Error handling covers the failure modes the requirements imply.
 - The Testing Strategy maps back to every acceptance criterion.
 - Sequences reflect the real flow; remove hand-waving ("somehow", "as needed").`,
-  tasks: `- Every design component and every acceptance criterion is covered by at least one task; call out gaps.
+  tasks: `- Every component named in the plan and every acceptance criterion is covered by at least one task; call out gaps.
 - Wave ordering is correct: tasks in the same wave are truly parallel-safe (disjoint files), dependencies are explicit.
 - Each task has exactly one observable outcome — split tasks that hide several.
 - The Verification checklist maps every acceptance criterion to at least one task.
@@ -159,7 +159,7 @@ In your chat reply, list the improvements you made as short bullets (what + why)
 
   const stepModel = useModels
     .getState()
-    .modelFor(file === 'design' ? 'design' : file === 'tasks' ? 'tasks' : 'requirements');
+    .modelFor(file === 'plan' ? 'plan' : file === 'tasks' ? 'tasks' : 'requirements');
 
   orch.startRun({
     requestId,
@@ -235,7 +235,7 @@ export function polishSpec(meta: SpecMeta): Promise<boolean> {
 3. Suggest cleanups: dead code, awkward abstractions, naming, comments.
 4. If anything is genuinely wrong, apply the fix directly using Edit/Write tools.
 
-Reference \`${specRel}/${reqLabel}\`, \`${specRel}/design.md\`, and \`${specRel}/tasks.md\`. Keep your chat reply concise.`;
+Reference \`${specRel}/${reqLabel}\`, \`${specRel}/plan.md\`, and \`${specRel}/tasks.md\`. Keep your chat reply concise.`;
 
   const system = `You are polishing the implementation of the spec "${meta.name}" (${meta.kind}).
 
@@ -248,7 +248,7 @@ All tasks in \`${specRel}/tasks.md\` are marked done. The user wants a critical 
 
 When you find something genuinely wrong, apply the fix directly using the Edit/Write tools. For optional suggestions, list them in chat. Be specific: cite file:line.
 
-Reference \`${specRel}/${reqLabel}\`, \`${specRel}/design.md\`, and \`${specRel}/tasks.md\` before forming opinions.`;
+Reference \`${specRel}/${reqLabel}\`, \`${specRel}/plan.md\`, and \`${specRel}/tasks.md\` before forming opinions.`;
 
   chat.push({ id: crypto.randomUUID(), role: 'user', content: userText, createdAt: Date.now() });
   const routed = routeAgent({ kind: 'polish' }, agents, chat.selectedAgent);
@@ -334,7 +334,7 @@ export async function planSpec(text: string, kind?: SpecKind): Promise<SpecMeta>
   const ws = useWorkspace.getState();
   const resolvedKind = kind ?? specKindFromText(text);
   const spec = await ws.createSpec(specNameFromText(text), resolvedKind);
-  useUi.getState().openSpec(spec.id, 'requirements');
+  useUi.getState().openSpec(spec.id, 'define');
   const { meta, files } = await window.kraken.specs.read(ws.root!, spec.id);
   void draftSpecDoc({ meta, files, file: firstStageFile(resolvedKind), brief: text });
   return spec;
@@ -350,10 +350,10 @@ export async function quickPlanSpec(text: string, kind?: SpecKind): Promise<Spec
   if (!root) return null;
   const resolvedKind = kind ?? specKindFromText(text);
   const spec = await ws.createSpec(specNameFromText(text), resolvedKind);
-  useUi.getState().openSpec(spec.id, 'requirements');
+  useUi.getState().openSpec(spec.id, 'define');
 
   const read = () => window.kraken.specs.read(root, spec.id);
-  const order: SpecDocFile[] = [firstStageFile(resolvedKind), 'design', 'tasks'];
+  const order: SpecDocFile[] = [firstStageFile(resolvedKind), 'plan', 'tasks'];
   for (const file of order) {
     const { meta, files } = await read();
     const ok = await draftSpecDoc({ meta, files, file, brief: text });
@@ -362,7 +362,7 @@ export async function quickPlanSpec(text: string, kind?: SpecKind): Promise<Spec
       const updated = await window.kraken.specs.advance(root, spec.id);
       useUi.getState().openSpec(spec.id, stageForPhase(updated.phase));
     } else {
-      useUi.getState().openSpec(spec.id, 'tasks');
+      useUi.getState().openSpec(spec.id, 'build');
     }
     await ws.refreshAll();
   }

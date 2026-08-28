@@ -28,14 +28,14 @@ import type { SpecMeta } from '../../../electron/shared/types';
 interface Props {
   meta: SpecMeta;
   tasksMd: string;
-  designMd: string;
+  planMd: string;
   requirementsMd: string;
   onReload: () => void;
   /** called when the last task completes and the spec advances to Ship */
   onShip?: () => void;
 }
 
-export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload, onShip }: Props) {
+export function TaskRunner({ meta, tasksMd, planMd, requirementsMd, onReload, onShip }: Props) {
   const doc = useMemo(() => parseTasks(tasksMd), [tasksMd]);
   const stats = useMemo(() => summarize(doc), [doc]);
   const [refiningTaskId, setRefiningTaskId] = useState<string | null>(null);
@@ -88,7 +88,7 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload, 
       meta,
       files: {
         [firstStageFile(meta.kind)]: requirementsMd,
-        design: designMd,
+        plan: planMd,
         tasks: tasksMd,
       },
       file: 'tasks',
@@ -246,7 +246,7 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload, 
       agentName: routed.name,
       agentLabel: 'spec-task-executor',
       agentBody: routed.body,
-      systemText: buildExecutorSystem(meta, specRel, task, requirementsMd, designMd, tasksMd),
+      systemText: buildExecutorSystem(meta, specRel, task, requirementsMd, planMd, tasksMd),
       userText: `Execute task **${task.id}**: ${task.description}`,
       model: useModels.getState().modelFor('task'),
       fireComplete: true,
@@ -326,7 +326,7 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload, 
       agentName: routed.name,
       agentLabel: 'spec-task-executor',
       agentBody: routed.body,
-      systemText: buildRefineSystem(meta, specRel, task, feedback, requirementsMd, designMd, tasksMd),
+      systemText: buildRefineSystem(meta, specRel, task, feedback, requirementsMd, planMd, tasksMd),
       userText: `Refine task **${task.id}**: ${task.description}\n\n**Feedback:** ${feedback}`,
       model: useModels.getState().modelFor('refine'),
       routeReason: routed.reason,
@@ -497,7 +497,7 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload, 
       }
       // All waves done → advance the spec to 'done' (fires spec-done → docs hook).
       const after = await readFreshTasks();
-      if (after.tasks.length > 0 && after.tasks.every((t) => t.done) && meta.phase === 'tasks') {
+      if (after.tasks.length > 0 && after.tasks.every((t) => t.done) && meta.phase === 'build') {
         await window.kraken.specs.advance(root, meta.id);
         onReload();
       }
@@ -519,7 +519,7 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload, 
   useEffect(() => {
     if (advancedRef.current || !root) return;
     if (!stats.allDone || stats.total === 0 || anyRunning || autopilotOn) return;
-    if (meta.phase !== 'tasks') return;
+    if (meta.phase !== 'build') return;
     advancedRef.current = true;
     void (async () => {
       await window.kraken.specs.advance(root, meta.id);
@@ -538,9 +538,9 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload, 
   if (doc.tasks.length === 0) {
     const phaseHint =
       meta.phase === 'requirements'
-        ? `This spec is in the **${meta.phase}** phase. Advance twice (→ design → tasks) to generate tasks.md, then come back here.`
-        : meta.phase === 'design'
-          ? `This spec is in the **${meta.phase}** phase. Advance once (→ tasks) to generate tasks.md, then come back here.`
+        ? `This spec is in the **${meta.phase}** phase. Advance twice (→ plan → build) to generate tasks.md, then come back here.`
+        : meta.phase === 'plan'
+          ? `This spec is in the **${meta.phase}** phase. Advance once (→ build) to generate tasks.md, then come back here.`
           : `tasks.md exists but no tasks are parsed yet. Click **Ask Claude** above to have it draft real, executable tasks.`;
     return (
       <div className="h-full grid place-items-center bg-ink-950 px-6">
@@ -964,7 +964,7 @@ function buildExecutorSystem(
   specRel: string,
   task: ParsedTask,
   requirementsMd: string,
-  designMd: string,
+  planMd: string,
   tasksMd: string
 ): string {
   const reqLabel = meta.kind === 'feature' ? 'requirements.md' : 'bugfix.md';
@@ -975,10 +975,10 @@ function buildExecutorSystem(
 **Wave**: ${task.waveLabel}${
     task.dependencies.length ? ` (depends on ${task.dependencies.join(', ')})` : ''
   }
-**Spec files**: \`${specRel}/${reqLabel}\`, \`${specRel}/design.md\`, \`${specRel}/tasks.md\`
+**Spec files**: \`${specRel}/${reqLabel}\`, \`${specRel}/plan.md\`, \`${specRel}/tasks.md\`
 
 ## Before editing
-1. Re-read \`${specRel}/${reqLabel}\` and \`${specRel}/design.md\` to ground yourself.
+1. Re-read \`${specRel}/${reqLabel}\` and \`${specRel}/plan.md\` to ground yourself.
 2. Locate the target source files in the workspace.
 
 ## To execute
@@ -996,8 +996,8 @@ function buildExecutorSystem(
 ## Reference — current ${reqLabel}
 ${requirementsMd || '(empty)'}
 
-## Reference — current design.md
-${designMd || '(empty)'}
+## Reference — current plan.md
+${planMd || '(empty)'}
 
 ## Reference — current tasks.md
 ${tasksMd}`;
@@ -1009,7 +1009,7 @@ function buildRefineSystem(
   task: ParsedTask,
   feedback: string,
   requirementsMd: string,
-  designMd: string,
+  planMd: string,
   tasksMd: string
 ): string {
   const reqLabel = meta.kind === 'feature' ? 'requirements.md' : 'bugfix.md';
@@ -1018,7 +1018,7 @@ function buildRefineSystem(
 **Spec**: ${meta.name} (${meta.kind})
 **Task**: ${task.id} — ${task.description}
 **Wave**: ${task.waveLabel}
-**Spec files**: \`${specRel}/${reqLabel}\`, \`${specRel}/design.md\`, \`${specRel}/tasks.md\`
+**Spec files**: \`${specRel}/${reqLabel}\`, \`${specRel}/plan.md\`, \`${specRel}/tasks.md\`
 
 ## User feedback on the previous output
 > ${feedback.split('\n').join('\n> ')}
@@ -1038,8 +1038,8 @@ function buildRefineSystem(
 ## Reference — current ${reqLabel}
 ${requirementsMd || '(empty)'}
 
-## Reference — current design.md
-${designMd || '(empty)'}
+## Reference — current plan.md
+${planMd || '(empty)'}
 
 ## Reference — current tasks.md
 ${tasksMd}`;

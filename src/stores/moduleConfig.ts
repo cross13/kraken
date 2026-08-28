@@ -11,7 +11,7 @@ import { setRouterConfig, type RouterConfig } from '../lib/agentRouter';
 export type RoutableAction =
   | 'requirements'
   | 'bugfix'
-  | 'design'
+  | 'plan'
   | 'tasks'
   | 'task-execute'
   | 'task-refine'
@@ -21,8 +21,8 @@ export type RoutableAction =
 export const ROUTABLE_ACTIONS: { key: RoutableAction; label: string; hint: string }[] = [
   { key: 'requirements', label: 'Requirements', hint: 'Draft & refine feature requirements' },
   { key: 'bugfix', label: 'Bug analysis', hint: 'Analyze & triage a bug report' },
-  { key: 'design', label: 'Design', hint: 'Draft & refine the design document' },
-  { key: 'tasks', label: 'Task planning', hint: 'Break the design into dependency waves' },
+  { key: 'plan', label: 'Plan', hint: 'Draft & refine the technical plan' },
+  { key: 'tasks', label: 'Task planning', hint: 'Break the plan into dependency waves' },
   { key: 'task-execute', label: 'Task execution', hint: 'Run a task — the parallel workhorse' },
   { key: 'task-refine', label: 'Task refine', hint: 'Adjust a completed task from feedback' },
   { key: 'polish', label: 'Polish', hint: 'Final review pass when all tasks are done' },

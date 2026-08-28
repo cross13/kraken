@@ -138,7 +138,7 @@ Use this structure:
 - **Changes** — a few bullets grouping the work by area.
 - **Files** — for each changed file below, one line: \`path\` — what changed and why.
 
-To ground it, read \`${specRel}/${reqLabel}\` and \`${specRel}/design.md\`, and inspect the changed files (and \`git diff\` if available). Be concise and factual — do not invent changes.
+To ground it, read \`${specRel}/${reqLabel}\` and \`${specRel}/plan.md\`, and inspect the changed files (and \`git diff\` if available). Be concise and factual — do not invent changes.
 
 Files changed in this spec (${files.length}):
 ${fileList}`;

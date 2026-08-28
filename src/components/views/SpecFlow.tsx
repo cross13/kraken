@@ -35,22 +35,22 @@ import { resolveAgent } from '../../lib/verifyLibrary';
 import { parseOpenQuestions, addQuestion } from '../../lib/openQuestions';
 import type { SpecMeta, SpecPhase } from '../../../electron/shared/types';
 
-const PHASE_ORDER: SpecPhase[] = ['requirements', 'design', 'tasks', 'done'];
-const STAGES: SpecStage[] = ['requirements', 'design', 'tasks', 'ship'];
+const PHASE_ORDER: SpecPhase[] = ['requirements', 'plan', 'build', 'done'];
+const STAGES: SpecStage[] = ['define', 'plan', 'build', 'ship'];
 
 /** How a doc stage renders: line-numbered source (default), section cards, or raw edit. */
 type DocView = 'source' | 'cards' | 'edit';
 
 function stageLabels(kind: 'feature' | 'bugfix') {
   return kind === 'feature'
-    ? ['Requirements', 'Design', 'Task List', 'Ship']
-    : ['Bug analysis', 'Design', 'Task List', 'Ship'];
+    ? ['Requirements', 'Plan', 'Task List', 'Ship']
+    : ['Bug analysis', 'Plan', 'Task List', 'Ship'];
 }
 
 function stageFileNames(kind: 'feature' | 'bugfix') {
   return [
     kind === 'feature' ? 'requirements.md' : 'bugfix.md',
-    'design.md',
+    'plan.md',
     'tasks.md',
     'summary.md',
   ];
@@ -112,9 +112,9 @@ export function SpecFlow({ specId }: { specId: string }) {
 
   const phaseIdx = PHASE_ORDER.indexOf(meta.phase);
   const stageIdx = STAGES.indexOf(stage);
-  const isDocStage = stage === 'requirements' || stage === 'design';
+  const isDocStage = stage === 'define' || stage === 'plan';
   const file: SpecDocFile | null =
-    stage === 'requirements' ? firstStageFile(meta.kind) : stage === 'design' ? 'design' : stage === 'tasks' ? 'tasks' : null;
+    stage === 'define' ? firstStageFile(meta.kind) : stage === 'plan' ? 'plan' : stage === 'build' ? 'tasks' : null;
   const content = file ? (files[file] ?? '') : '';
 
   const onChange = (v: string) => {
@@ -142,11 +142,11 @@ export function SpecFlow({ specId }: { specId: string }) {
   };
 
   const reopenTasks = async () => {
-    const updated = await window.kraken.specs.setPhase(root, specId, 'tasks');
+    const updated = await window.kraken.specs.setPhase(root, specId, 'build');
     setMeta(updated);
     await load();
     await refreshAll();
-    setStage('tasks');
+    setStage('build');
   };
 
   const surfaceQuestions = async () => {
@@ -243,7 +243,7 @@ export function SpecFlow({ specId }: { specId: string }) {
                     audit();
                   }}
                 />
-                {stage === 'requirements' && (
+                {stage === 'define' && (
                   <MenuItem
                     icon={
                       surfacing ? <Loader2 size={13} className="animate-spin" /> : <HelpCircle size={13} />
@@ -316,12 +316,12 @@ export function SpecFlow({ specId }: { specId: string }) {
           ) : (
             <LockedStage label="Ship" hint="Finish the task waves first — Ship unlocks automatically when the last task completes." />
           )
-        ) : stage === 'tasks' ? (
+        ) : stage === 'build' ? (
           stageIdx <= phaseIdx ? (
             <TaskRunner
               meta={meta}
               tasksMd={files.tasks ?? ''}
-              designMd={files.design ?? ''}
+              planMd={files.plan ?? ''}
               requirementsMd={files.requirements ?? files.bugfix ?? ''}
               onReload={load}
               onShip={() => setStage('ship')}
@@ -730,7 +730,7 @@ function useAudit(meta: SpecMeta | null, files: Record<string, string>, onReload
     const reqLabel = meta.kind === 'feature' ? 'requirements.md' : 'bugfix.md';
     const userText = `Audit the spec "${meta.name}" for inconsistencies (SDD re-sync).
 
-Read \`${specRel}/${reqLabel}\`, \`${specRel}/design.md\`, and \`${specRel}/tasks.md\`, then inspect the actual code in the workspace. Report:
+Read \`${specRel}/${reqLabel}\`, \`${specRel}/plan.md\`, and \`${specRel}/tasks.md\`, then inspect the actual code in the workspace. Report:
 1. Acceptance criteria with no corresponding task or implementation.
 2. Tasks or code with no backing requirement (scope creep).
 3. Places where the code contradicts the spec (drift).
@@ -786,7 +786,7 @@ Be specific — cite file:line. Do not edit anything; this is a read-only audit.
     const context = [
       files.requirements && `# requirements.md\n${files.requirements}`,
       files.bugfix && `# bugfix.md\n${files.bugfix}`,
-      files.design && `# design.md\n${files.design}`,
+      files.plan && `# plan.md\n${files.plan}`,
       files.tasks && `# tasks.md\n${files.tasks}`,
     ]
       .filter(Boolean)

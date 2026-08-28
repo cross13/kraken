@@ -774,6 +774,7 @@ async function listSpecs(root: string): Promise<SpecMeta[]> {
     const specPath = path.join(specsDir, item.name);
     const metaPath = path.join(specPath, 'spec.json');
     if (!existsSync(metaPath)) continue;
+    await migrateSpecDir(specPath);
     try {
       const meta = JSON.parse(await fs.readFile(metaPath, 'utf8')) as SpecMeta;
       const enriched = { ...meta, path: specPath };
@@ -797,6 +798,38 @@ function slugify(name: string) {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 64);
+}
+
+/** Phase names written by versions before the Definir · Plan · Construir refactor. */
+const LEGACY_PHASES: Record<string, SpecPhase> = { design: 'plan', tasks: 'build' };
+
+function normalizePhase(phase: string): SpecPhase {
+  return (LEGACY_PHASES[phase] ?? phase) as SpecPhase;
+}
+
+/**
+ * Lazily migrate one spec directory to the three-stage layout: the `design` /
+ * `tasks` phases become `plan` / `build`, and `design.md` becomes `plan.md`.
+ * Idempotent and cheap (two existsSync checks on the happy path), so it can run
+ * on every list/read. Non-destructive: the rename only happens when there is no
+ * `plan.md` to clobber, and nothing is ever deleted — disk is the source of truth.
+ */
+async function migrateSpecDir(specPath: string): Promise<void> {
+  const legacyDoc = path.join(specPath, 'design.md');
+  const planDoc = path.join(specPath, 'plan.md');
+  if (existsSync(legacyDoc) && !existsSync(planDoc)) {
+    await fs.rename(legacyDoc, planDoc);
+  }
+  const metaPath = path.join(specPath, 'spec.json');
+  if (!existsSync(metaPath)) return;
+  try {
+    const meta = JSON.parse(await fs.readFile(metaPath, 'utf8')) as SpecMeta;
+    const phase = normalizePhase(meta.phase);
+    if (phase === meta.phase) return;
+    await fs.writeFile(metaPath, JSON.stringify({ ...meta, phase }, null, 2), 'utf8');
+  } catch {
+    // corrupt spec.json — listSpecs / readSpec surface it
+  }
 }
 
 async function createSpec(root: string, name: string, kind: SpecKind): Promise<SpecMeta> {
@@ -867,9 +900,10 @@ function patchSpecMeta(root: string, id: string, patch: Partial<SpecMeta>): Spec
 
 async function readSpec(root: string, id: string) {
   const specPath = path.join(root, '.kraken', 'specs', id);
+  await migrateSpecDir(specPath);
   const meta = JSON.parse(await fs.readFile(path.join(specPath, 'spec.json'), 'utf8')) as SpecMeta;
   const files: Record<string, string> = {};
-  for (const f of ['requirements.md', 'bugfix.md', 'design.md', 'tasks.md']) {
+  for (const f of ['requirements.md', 'bugfix.md', 'plan.md', 'tasks.md']) {
     const fp = path.join(specPath, f);
     if (existsSync(fp)) files[f.replace('.md', '')] = await fs.readFile(fp, 'utf8');
   }
@@ -904,22 +938,17 @@ async function advanceSpec(root: string, id: string) {
   const specPath = path.join(root, '.kraken', 'specs', id);
   const metaPath = path.join(specPath, 'spec.json');
   const meta = JSON.parse(await fs.readFile(metaPath, 'utf8')) as SpecMeta;
-  const order: SpecPhase[] = ['requirements', 'design', 'tasks', 'done'];
-  const idx = order.indexOf(meta.phase);
-  const from = meta.phase;
-  const next = order[Math.min(idx + 1, order.length - 1)];
+  const order: SpecPhase[] = ['requirements', 'plan', 'build', 'done'];
+  const from = normalizePhase(meta.phase);
+  const next = order[Math.min(order.indexOf(from) + 1, order.length - 1)];
   meta.phase = next;
   meta.updatedAt = new Date().toISOString();
   meta.path = specPath;
 
-  if (next === 'design' && !existsSync(path.join(specPath, 'design.md'))) {
-    await fs.writeFile(
-      path.join(specPath, 'design.md'),
-      designTemplate(meta.name, meta.kind),
-      'utf8'
-    );
+  if (next === 'plan' && !existsSync(path.join(specPath, 'plan.md'))) {
+    await fs.writeFile(path.join(specPath, 'plan.md'), planTemplate(meta.name, meta.kind), 'utf8');
   }
-  if (next === 'tasks' && !existsSync(path.join(specPath, 'tasks.md'))) {
+  if (next === 'build' && !existsSync(path.join(specPath, 'tasks.md'))) {
     await fs.writeFile(path.join(specPath, 'tasks.md'), tasksTemplate(meta.name), 'utf8');
   }
   await fs.writeFile(metaPath, JSON.stringify(meta, null, 2), 'utf8');
@@ -942,8 +971,8 @@ async function setSpecPhase(root: string, id: string, phase: SpecPhase) {
   const specPath = path.join(root, '.kraken', 'specs', id);
   const metaPath = path.join(specPath, 'spec.json');
   const meta = JSON.parse(await fs.readFile(metaPath, 'utf8')) as SpecMeta;
-  const order: SpecPhase[] = ['requirements', 'design', 'tasks', 'done'];
-  const from = meta.phase;
+  const order: SpecPhase[] = ['requirements', 'plan', 'build', 'done'];
+  const from = normalizePhase(meta.phase);
   meta.phase = phase;
   meta.updatedAt = new Date().toISOString();
   meta.path = specPath;
@@ -1029,47 +1058,77 @@ function bugfixTemplate(name: string) {
 `;
 }
 
-function designTemplate(name: string, kind: SpecKind) {
+/**
+ * `plan.md` — the single technical-plan document that replaced `design.md`.
+ * The `## Tareas` section that folds task planning in here arrives with the
+ * plan→tasks derivation (see docs/refactor-metodologia-y-rebranding.md, F3).
+ */
+function planTemplate(name: string, kind: SpecKind) {
   if (kind === 'bugfix') {
-    return `# Design — ${name}
+    return `# Plan — ${name}
 
-## Root Cause Analysis
-Trace the defect to the smallest unit of code or state that produced it.
+> Objetivo en una línea. Appetite: <S / M / L>. Riesgo: <bajo / medio / alto>.
 
-## Fix Approach
-Describe the minimum change that satisfies the bugfix while preserving Unchanged Behavior.
+## Enfoque
 
-## Validation Properties
-- Bug-reproducing test: SHALL fail on the current code, SHALL pass after the fix.
-- No-regression tests: SHALL pass before and after.
-
-## Risks & Rollback
-`;
-  }
-  return `# Design — ${name}
-
-## Overview
-High-level architecture and motivation for the chosen approach.
-
-## Components
-- Component A — responsibility, inputs, outputs.
-
-## Data & State
-- Schemas, persistence, in-flight state.
-
-## Sequence
-\`\`\`
-user → UI → service → store
+\`\`\`mermaid
+flowchart LR
+  A["Síntoma"] --> B["Causa raíz"] --> C["Fix mínimo"]
 \`\`\`
 
-## Error Handling
-- Failure modes and user-visible recovery.
+Causa raíz y el cambio mínimo que satisface el bugfix preservando Unchanged Behavior.
 
-## Testing Strategy
-- Unit, integration, and acceptance test coverage.
+## Archivos afectados
+
+| Archivo | Cambio |
+|---|---|
+| \`ruta/al/archivo.ts:42\` | qué cambia y por qué |
+
+## Verificación
+- Test que reproduce el bug: SHALL fallar antes del fix, SHALL pasar después.
+- Tests de no-regresión: SHALL pasar antes y después.
+
+## Riesgos y rollback
+
+| Riesgo | Mitigación | Cómo se revierte |
+|---|---|---|
 
 ## Open Questions
-- [ ] <unresolved design decision to settle before tasks>
+- [ ] <decisión pendiente>
+`;
+  }
+  return `# Plan — ${name}
+
+> Objetivo en una línea. Appetite: <S / M / L>. Riesgo: <bajo / medio / alto>.
+
+## Enfoque
+
+\`\`\`mermaid
+flowchart LR
+  A["Entrada"] --> B["Componente nuevo"] --> C["Salida"]
+\`\`\`
+
+Un párrafo: la estrategia elegida y, en una frase, cada alternativa descartada.
+
+## Archivos afectados
+
+| Archivo | Cambio |
+|---|---|
+| \`ruta/al/archivo.ts:42\` | qué cambia y por qué |
+
+## Datos y contratos
+Esquemas, IPC, estado persistido. Sólo lo que cambia.
+
+## Riesgos y rollback
+
+| Riesgo | Mitigación | Cómo se revierte |
+|---|---|---|
+
+## Verificación
+Cada criterio de aceptación → cómo se prueba.
+
+## Open Questions
+- [ ] <decisión que sólo el usuario puede tomar>
 `;
 }
 
@@ -1531,7 +1590,7 @@ function composeHookSystem(hook: HookConfig, ctx: HookFireContext, agentBody: st
     const specRel = path.join('.kraken', 'specs', ctx.specId);
     parts.push(
       `This hook fired for spec \`${ctx.specId}\`. Relevant files live under \`${specRel}/\` ` +
-        `(requirements.md / bugfix.md, design.md, tasks.md).`
+        `(requirements.md / bugfix.md, plan.md, tasks.md).`
     );
   }
   if (ctx.fileHints && ctx.fileHints.length) {
@@ -1723,7 +1782,7 @@ Keep your reply concise: typecheck result, fixes applied, and open concerns.`,
       agent: 'spec-task-executor',
       instructions: `This spec just reached the 'done' phase.
 
-1. Read the spec's requirements.md / bugfix.md and design.md.
+1. Read the spec's requirements.md / bugfix.md and plan.md.
 2. Prepend a dated entry to CHANGELOG.md at the repo root (create it with a "Keep a Changelog" header if missing), summarizing the user-facing change under Added / Changed / Fixed.
 3. Add or update a short section under docs/ (create docs/<spec-id>.md if there is no docs structure yet; otherwise extend the most relevant existing doc).
 

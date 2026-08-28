@@ -50,7 +50,7 @@ workspace root and its file tree.
 ### `specs`
 `list(root)`, `create(root, name, kind)`, `read(root, id)`, `writeFile(root, id, file, content)`,
 `advance(root, id)`, `setPhase(root, id, phase)`, `delete(root, id)` — the SDD spec lifecycle.
-`advance` walks `requirements → design → tasks → done`; `setPhase` can reopen a phase (Re-sync).
+`advance` walks `requirements → plan → build → done`; `setPhase` can reopen a phase (Re-sync).
 `delete` permanently removes the on-disk spec folder **and** cascades every mirrored DB row
 (`spec_events`, `runs` + their `run_files`/`errors`, `hook_runs`). See
 [`data-model.md`](./data-model.md) for the on-disk shape.

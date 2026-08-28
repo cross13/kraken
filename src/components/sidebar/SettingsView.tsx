@@ -300,7 +300,7 @@ export function SettingsView({ variant = 'panel' }: { variant?: 'panel' | 'page'
             <Cpu size={12} /> Planning model
           </h3>
           <p className="text-[10px] text-ink-500 leading-snug mb-2">
-            Optional second model for the thinking-heavy planning steps (requirements, design,
+            Optional second model for the thinking-heavy planning steps (requirements, plan,
             tasks, audit). Execution always uses the model above.
           </p>
           <div className="rounded-md border border-ink-800 bg-ink-900/60 p-1">

@@ -22,7 +22,7 @@ export function NewSpecDialog({
     if (!name.trim() || busy) return;
     setBusy(true);
     const spec = await createSpec(name.trim(), kind);
-    openSpec(spec.id, 'requirements');
+    openSpec(spec.id, 'define');
     onClose();
   };
 

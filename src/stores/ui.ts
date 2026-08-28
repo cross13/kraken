@@ -18,8 +18,8 @@ export type LibrarySection =
   | 'appearance'
   | 'settings';
 
-/** Stages of the spec flow. `requirements` covers bugfix analysis for bug specs. */
-export type SpecStage = 'requirements' | 'design' | 'tasks' | 'ship';
+/** Stages of the spec flow. `define` covers bugfix analysis for bug specs. */
+export type SpecStage = 'define' | 'plan' | 'build' | 'ship';
 
 /** Right slide-over content — detail views that used to be center tabs. */
 export type Overlay =
@@ -62,9 +62,16 @@ function saveNum(key: string, n: number) {
   }
 }
 
+const STAGE_FOR_PHASE: Record<SpecMeta['phase'], SpecStage> = {
+  requirements: 'define',
+  plan: 'plan',
+  build: 'build',
+  done: 'ship',
+};
+
 /** The stage a spec should open on, given its phase. */
 export function stageForPhase(phase: SpecMeta['phase']): SpecStage {
-  return phase === 'done' ? 'ship' : phase;
+  return STAGE_FOR_PHASE[phase];
 }
 
 interface UiStore {
@@ -118,12 +125,12 @@ export const useUi = create<UiStore>((set, get) => ({
   setSurface: (s) => set({ surface: s }),
 
   activeSpecId: null,
-  specStage: 'requirements',
+  specStage: 'define',
   openSpec: (specId, stage) =>
     set((s) => ({
       surface: 'spec',
       activeSpecId: specId,
-      specStage: stage ?? (specId === s.activeSpecId ? s.specStage : 'requirements'),
+      specStage: stage ?? (specId === s.activeSpecId ? s.specStage : 'define'),
     })),
   setSpecStage: (stage) => set({ specStage: stage }),
 

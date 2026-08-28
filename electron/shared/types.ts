@@ -1,7 +1,13 @@
 // Types shared between main and renderer.
 
 export type SpecKind = 'feature' | 'bugfix';
-export type SpecPhase = 'requirements' | 'design' | 'tasks' | 'done';
+/**
+ * Phases of the Definir · Plan · Construir loop. `plan` and `build` were called
+ * `design` and `tasks` before the methodology refactor; specs written by older
+ * versions are normalized on read (`normalizePhase` / `migrateSpecDir` in
+ * main.ts) and in the DB mirror (`migrateSpecPhases` in db.ts).
+ */
+export type SpecPhase = 'requirements' | 'plan' | 'build' | 'done';
 
 export interface SpecMeta {
   id: string;
@@ -25,7 +31,7 @@ export interface SpecMeta {
 export interface SpecFiles {
   requirements?: string;
   bugfix?: string;
-  design?: string;
+  plan?: string;
   tasks?: string;
 }
 

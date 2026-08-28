@@ -68,7 +68,7 @@ export interface GroupMeta {
 
 export const GROUP_META: Record<RunGroup, GroupMeta> = {
   execution: { label: 'Task execution', hint: 'Wave tasks from tasks.md', color: '#38bdf8' },
-  spec: { label: 'Spec generation', hint: 'Drafting requirements / design / tasks', color: '#a78bfa' },
+  spec: { label: 'Spec generation', hint: 'Drafting requirements / plan / tasks', color: '#a78bfa' },
   hook: { label: 'Hooks', hint: 'Event-triggered agent runs', color: '#fbbf24' },
   audit: { label: 'Audit', hint: 'Drift detection (spec-doctor)', color: '#2dd4bf' },
   chat: { label: 'Chat', hint: 'Interactive chat runs', color: '#94a3b8' },

@@ -11,7 +11,7 @@ import type { AgentMeta, SkillMeta, SpecKind } from '../../electron/shared/types
  */
 
 export type Action =
-  | { kind: 'spec-file'; file: 'requirements' | 'bugfix' | 'design' | 'tasks'; specKind: SpecKind }
+  | { kind: 'spec-file'; file: 'requirements' | 'bugfix' | 'plan' | 'tasks'; specKind: SpecKind }
   | { kind: 'task-execute'; taskAgent?: string; taskText?: string }
   | { kind: 'task-refine'; taskAgent?: string; taskText?: string }
   | { kind: 'polish' }
@@ -146,8 +146,8 @@ export function actionProfile(action: Action): ActionProfile {
         return { preferred: ['spec-requirements-writer'], keywords: ['requirement', 'product', 'analyst', 'spec', 'user story'] };
       if (action.file === 'bugfix')
         return { preferred: ['bug-analyzer'], keywords: ['bug', 'debug', 'analyz', 'triage', 'root cause'] };
-      if (action.file === 'design')
-        return { preferred: ['spec-design-architect'], keywords: ['design', 'architect', 'architecture', 'system', 'ui', 'ux', 'frontend'] };
+      if (action.file === 'plan')
+        return { preferred: ['spec-planner', 'spec-design-architect'], keywords: ['plan', 'design', 'architect', 'architecture', 'system', 'ui', 'ux', 'frontend'] };
       return { preferred: ['spec-task-planner'], keywords: ['task', 'plan', 'planner', 'breakdown', 'decompos'] };
     case 'task-execute':
     case 'task-refine':

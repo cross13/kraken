@@ -1,4 +1,4 @@
-// Parse a spec markdown document (requirements.md / bugfix.md / design.md) into
+// Parse a spec markdown document (requirements.md / bugfix.md / plan.md) into
 // a title + a list of H2 sections, so the SpecDocument view can render each as
 // its own card. Intentionally tolerant: any markdown parses into *something*.
 

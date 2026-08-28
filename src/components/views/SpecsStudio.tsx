@@ -48,11 +48,11 @@ const EXPLAINER = [
   },
 ];
 
-const PHASE_ORDER: SpecPhase[] = ['requirements', 'design', 'tasks', 'done'];
+const PHASE_ORDER: SpecPhase[] = ['requirements', 'plan', 'build', 'done'];
 const PHASE_LABEL: Record<SpecPhase, string> = {
   requirements: 'Requirements',
-  design: 'Design',
-  tasks: 'Tasks',
+  plan: 'Plan',
+  build: 'Build',
   done: 'Done',
 };
 
@@ -210,7 +210,7 @@ function OverviewTab({
   onOpenSpec: (id: string) => void;
 }) {
   const agg = useMemo(() => {
-    const byPhase: Record<SpecPhase, number> = { requirements: 0, design: 0, tasks: 0, done: 0 };
+    const byPhase: Record<SpecPhase, number> = { requirements: 0, plan: 0, build: 0, done: 0 };
     let features = 0;
     let bugfixes = 0;
     for (const s of specs) {

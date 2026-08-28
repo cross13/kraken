@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## What this is
 
 Kraken is an Electron desktop app for running the Spec-Driven Development (SDD) loop:
-requirements → design → tasks → execution. It drives Claude through one of two
+requirements → plan → build (tasks + execution). It drives Claude through one of two
 interchangeable backends — the user's **local Claude CLI** (default) or the **Anthropic
 API SDK** — selected at runtime in Settings. Specs are plain markdown on disk; agents and
 skills are read from the standard Claude Code locations (`.claude/agents`, `.claude/skills`,
@@ -56,7 +56,7 @@ Everything is registered in `registerIpc()`. Key responsibilities living here:
 - **Spec lifecycle** — `createSpec`/`readSpec`/`writeSpecFile`/`advanceSpec` plus the
   markdown `*Template` functions. A spec is a directory under `.kraken/specs/<id>/`
   containing `spec.json` (phase + metadata) and the phase markdown files. `advanceSpec`
-  walks the fixed order `requirements → design → tasks → done` and lazily writes the next
+  walks the fixed order `requirements → plan → build → done` and lazily writes the next
   phase's template file if missing.
 - **Backend dispatch** — `streamClaude` records a run row, then forks to `streamViaCli`
   or `streamViaApi` based on the `backend` setting. Both emit identical `claude:event`
@@ -120,8 +120,8 @@ results arrive through `claude.onEvent(handler)`.
   `?`-suffixed input goes to the Assistant), plus in-flight spec cards, Shipped recents, a
   Manage mode embedding `SpecsStudio` (analytics + `specs:delete`), and a one-time
   "Set up Kraken defaults" seeding card. **Spec** (`SpecFlow`) is one continuous guided flow
-  framed like an editor: file tabs (`requirements.md`/`design.md`/`tasks.md`/`summary.md`) +
-  breadcrumb + the spec strip (numbered phase chips: Requirements → Design → Task List → **Ship**),
+  framed like an editor: file tabs (`requirements.md`/`plan.md`/`tasks.md`/`summary.md`) +
+  breadcrumb + the spec strip (numbered phase chips: Requirements → Plan → Task List → **Ship**),
   doc stages as line-numbered **Source** (default) / section **Cards** / raw **Edit** over a
   **gate bar** whose *Approve* advances the phase **and navigates** (*Revise with feedback*
   re-drafts inline; *Improve with Claude* runs a critical self-review that refines the doc in
