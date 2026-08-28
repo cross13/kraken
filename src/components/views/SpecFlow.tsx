@@ -29,6 +29,7 @@ import { ShipView } from './ShipView';
 import { MarkdownEditor } from '../MarkdownEditor';
 import { OctoLogo } from '../OctoLogo';
 import { draftSpecDoc, firstStageFile, type SpecDocFile } from '../../lib/specActions';
+import { isStubDoc } from '../../lib/specDoc';
 import { highlight } from '../../lib/prism';
 import { routeAgent } from '../../lib/agentRouter';
 import { resolveAgent } from '../../lib/verifyLibrary';
@@ -547,11 +548,16 @@ function DocStage({
     )
   );
 
+  // "Has content" isn't "has been written": creating a spec seeds a template.
+  // A stub gets Draft as its primary action; Approve stays reachable anyway.
+  const stub = isStubDoc(content);
   const empty = !content.trim();
   const atGate = stageIdx === phaseIdx;
 
   const draft = () => {
-    void draftSpecDoc({ meta, files, file });
+    // The composer text that created this spec grounds the very first draft.
+    const isFirst = file === firstStageFile(meta.kind);
+    void draftSpecDoc({ meta, files, file, brief: isFirst ? meta.brief : undefined });
   };
 
   const submitRevision = () => {
@@ -623,7 +629,7 @@ function DocStage({
           </div>
         ) : (
           <>
-            {!empty && (
+            {!stub && (
               <>
                 <button
                   onClick={() => setRevising(true)}
@@ -647,15 +653,28 @@ function DocStage({
               <span className="text-[11.5px] text-warn/90 leading-snug max-w-[46ch]">{blocked}</span>
             )}
             <div className="flex-1" />
-            {empty ? (
-              <button
-                onClick={draft}
-                disabled={drafting}
-                className="flex items-center gap-1.5 text-[12.5px] px-4 py-2 rounded-lg bg-accent text-accent-fg font-semibold hover:opacity-90 shadow-glow transition disabled:opacity-50"
-              >
-                {drafting ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
-                Draft {stageLabel.toLowerCase()} with Claude
-              </button>
+            {stub ? (
+              <>
+                {!empty && atGate && (
+                  <button
+                    onClick={approveClick}
+                    disabled={approving || drafting || !!blocked}
+                    title={blocked ?? `Approve ${stageLabel.toLowerCase()} as written`}
+                    className="flex items-center gap-1.5 text-[12.5px] px-3.5 py-2 rounded-lg bg-elev text-ink-100 hover:bg-line transition disabled:opacity-50"
+                  >
+                    {approving ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
+                    Approve as written
+                  </button>
+                )}
+                <button
+                  onClick={draft}
+                  disabled={drafting}
+                  className="flex items-center gap-1.5 text-[12.5px] px-4 py-2 rounded-lg bg-accent text-accent-fg font-semibold hover:opacity-90 shadow-glow transition disabled:opacity-50"
+                >
+                  {drafting ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
+                  Draft {stageLabel.toLowerCase()} with Claude
+                </button>
+              </>
             ) : atGate ? (
               <button
                 onClick={approveClick}

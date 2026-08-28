@@ -48,9 +48,11 @@ argument and return shapes). Grouped by namespace:
 workspace root and its file tree.
 
 ### `specs`
-`list(root)`, `create(root, name, kind)`, `read(root, id)`, `writeFile(root, id, file, content)`,
+`list(root)`, `create(root, name, kind, brief?)`, `read(root, id)`, `writeFile(root, id, file, content)`,
 `advance(root, id)`, `setPhase(root, id, phase)`, `delete(root, id)` — the SDD spec lifecycle.
 `advance` walks `requirements → plan → build → done`; `setPhase` can reopen a phase (Re-sync).
+`create`'s optional `brief` is the Home composer's text: it is stored on `SpecMeta` and quoted at
+the top of the seeded first document — creating a spec never starts a Claude run.
 `delete` permanently removes the on-disk spec folder **and** cascades every mirrored DB row
 (`spec_events`, `runs` + their `run_files`/`errors`, `hook_runs`). See
 [`data-model.md`](./data-model.md) for the on-disk shape.

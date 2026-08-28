@@ -25,7 +25,7 @@ interface WorkspaceStore {
   pickWorkspace: () => Promise<void>;
   restoreLast: () => Promise<void>;
   refreshAll: () => Promise<void>;
-  createSpec: (name: string, kind: SpecKind) => Promise<SpecMeta>;
+  createSpec: (name: string, kind: SpecKind, brief?: string) => Promise<SpecMeta>;
   deleteSpec: (id: string) => Promise<void>;
   seedDefaults: () => Promise<void>;
   saveSteering: (input: SteeringWriteInput) => Promise<SteeringFile>;
@@ -77,9 +77,9 @@ export const useWorkspace = create<WorkspaceStore>((set, get) => ({
     set({ tree, specs, skills, agents, steering, steeringPins, hooks });
   },
 
-  createSpec: async (name, kind) => {
+  createSpec: async (name, kind, brief) => {
     const root = get().root!;
-    const spec = await window.octo.specs.create(root, name, kind);
+    const spec = await window.octo.specs.create(root, name, kind, brief);
     await get().refreshAll();
     return spec;
   },

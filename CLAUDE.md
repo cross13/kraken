@@ -115,8 +115,9 @@ results arrive through `claude.onEvent(handler)`.
   `AssistantDrawer`), the **Explorer** drawer (⌘⇧E), and a right slide-over **`OverlayPanel`**
   for detail views (file/agent/skill/run viewers, Open Questions, hook editor, the repo panel).
   There is **no global tab bar and no focus mode** — surfaces are singletons. **Home** (`HomeView`) is
-  the launchpad: its composer **creates specs** (`lib/specActions.ts` — **Plan** streams the
-  requirements draft into the gated flow; **Quick Plan** drafts both docs with no stops;
+  the launchpad: its composer **creates specs** (`lib/specActions.ts` — **Plan** creates the spec
+  and opens it with **no run started**, keeping the composer text as `SpecMeta.brief` for the
+  explicit *Draft … with Claude* action; **Quick Plan** drafts both docs with no stops;
   `?`-suffixed input goes to the Assistant), plus in-flight spec cards, Shipped recents, a
   Manage mode embedding `SpecsStudio` (analytics + `specs:delete`), and a one-time
   "Set up Octo defaults" seeding card. **Spec** (`SpecFlow`) is one continuous guided flow

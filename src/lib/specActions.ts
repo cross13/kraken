@@ -344,16 +344,18 @@ export function specKindFromText(text: string): SpecKind {
 }
 
 /**
- * "Plan" — create a spec from the composer text, open it, and stream the
- * first-stage draft while the user watches. Gated flow: they approve each phase.
+ * "Plan" — create a spec from the composer text and open it on the first stage.
+ *
+ * Deliberately starts **no Claude run**: the composer text is stored as the
+ * spec's `brief` (and quoted at the top of the seeded document), and the user
+ * decides when to spend a run by pressing *Draft … with Claude* at the gate
+ * bar. Use `quickPlanSpec` for the hands-off path.
  */
 export async function planSpec(text: string, kind?: SpecKind): Promise<SpecMeta> {
   const ws = useWorkspace.getState();
   const resolvedKind = kind ?? specKindFromText(text);
-  const spec = await ws.createSpec(specNameFromText(text), resolvedKind);
+  const spec = await ws.createSpec(specNameFromText(text), resolvedKind, text);
   useUi.getState().openSpec(spec.id, 'define');
-  const { meta, files } = await window.octo.specs.read(ws.root!, spec.id);
-  void draftSpecDoc({ meta, files, file: firstStageFile(resolvedKind), brief: text });
   return spec;
 }
 
@@ -366,7 +368,7 @@ export async function quickPlanSpec(text: string, kind?: SpecKind): Promise<Spec
   const root = ws.root;
   if (!root) return null;
   const resolvedKind = kind ?? specKindFromText(text);
-  const spec = await ws.createSpec(specNameFromText(text), resolvedKind);
+  const spec = await ws.createSpec(specNameFromText(text), resolvedKind, text);
   useUi.getState().openSpec(spec.id, 'define');
 
   const read = () => window.octo.specs.read(root, spec.id);

@@ -50,8 +50,8 @@ const api = {
   },
   specs: {
     list: (root: string) => ipcRenderer.invoke('specs:list', root) as Promise<SpecMeta[]>,
-    create: (root: string, name: string, kind: SpecKind) =>
-      ipcRenderer.invoke('specs:create', root, name, kind) as Promise<SpecMeta>,
+    create: (root: string, name: string, kind: SpecKind, brief?: string) =>
+      ipcRenderer.invoke('specs:create', root, name, kind, brief) as Promise<SpecMeta>,
     read: (root: string, id: string) =>
       ipcRenderer.invoke('specs:read', root, id) as Promise<{
         meta: SpecMeta;

@@ -347,8 +347,10 @@ function registerIpc() {
   ipcMain.handle('workspace:list-tree', (_e, root: string) => listTree(root));
 
   ipcMain.handle('specs:list', (_e, root: string) => listSpecs(root));
-  ipcMain.handle('specs:create', (_e, root: string, name: string, kind: SpecKind) =>
-    createSpec(root, name, kind)
+  ipcMain.handle(
+    'specs:create',
+    (_e, root: string, name: string, kind: SpecKind, brief?: string) =>
+      createSpec(root, name, kind, brief)
   );
   ipcMain.handle('specs:read', (_e, root: string, id: string) => readSpec(root, id));
   ipcMain.handle(
@@ -865,7 +867,12 @@ async function migrateSpecDir(specPath: string): Promise<void> {
   }
 }
 
-async function createSpec(root: string, name: string, kind: SpecKind): Promise<SpecMeta> {
+async function createSpec(
+  root: string,
+  name: string,
+  kind: SpecKind,
+  brief?: string
+): Promise<SpecMeta> {
   const slug = slugify(name) || `spec-${Date.now()}`;
   const specsDir = path.join(root, '.octo', 'specs');
   await ensureDir(specsDir);
@@ -887,11 +894,14 @@ async function createSpec(root: string, name: string, kind: SpecKind): Promise<S
     path: specPath,
     createdAt: now,
     updatedAt: now,
+    ...(brief?.trim() ? { brief: brief.trim() } : {}),
   };
 
   const initialFile = kind === 'feature' ? 'requirements.md' : 'bugfix.md';
   const template =
-    kind === 'feature' ? featureRequirementsTemplate(name) : bugfixTemplate(name);
+    kind === 'feature'
+      ? featureRequirementsTemplate(name, brief)
+      : bugfixTemplate(name, brief);
 
   await fs.writeFile(path.join(specPath, initialFile), template, 'utf8');
   await fs.writeFile(path.join(specPath, 'spec.json'), JSON.stringify(meta, null, 2), 'utf8');
@@ -1052,9 +1062,19 @@ async function removeSpec(root: string, id: string): Promise<void> {
   }
 }
 
-function featureRequirementsTemplate(name: string) {
-  return `# Requirements — ${name}
+/** The user's own words, quoted at the top of the doc they seed. */
+function briefBlock(brief?: string) {
+  const t = brief?.trim();
+  if (!t) return '';
+  return `\n${t
+    .split('\n')
+    .map((l) => `> ${l}`)
+    .join('\n')}\n`;
+}
 
+function featureRequirementsTemplate(name: string, brief?: string) {
+  return `# Requirements — ${name}
+${briefBlock(brief)}
 ## Introduction
 Briefly describe the user-facing capability and why it matters.
 
@@ -1077,9 +1097,9 @@ Briefly describe the user-facing capability and why it matters.
 `;
 }
 
-function bugfixTemplate(name: string) {
+function bugfixTemplate(name: string, brief?: string) {
   return `# Bugfix Analysis — ${name}
-
+${briefBlock(brief)}
 ## Reproduction
 1. <step>
 2. <step>

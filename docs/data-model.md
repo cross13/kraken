@@ -41,9 +41,12 @@ A spec is a **directory** under the workspace at `.octo/specs/<id>/`:
 - Changing the phase order or the `{spec.json, *.md}` shape affects `createSpec`, `advanceSpec`,
   `readSpec`, and `listSpecs` **together** — touch them as a set.
 
-`SpecMeta` (the in-memory + IPC shape) also carries optional git/GitHub workflow state written
-back by the Source Control panel: `branch`, `committedAt`, `lastCommitHash`, `lastCommitPushed`,
-`prNumber`, `prUrl`, `prState`.
+`SpecMeta` (the in-memory + IPC shape) also carries `brief` — the user's original one-liner from
+the Home composer, passed to `specs:create`. Creating a spec starts no Claude run, so the brief
+has to be persisted: it is quoted at the top of the seeded `requirements.md`/`bugfix.md` and
+re-sent as grounding when the user later presses *Draft … with Claude*. Plus optional git/GitHub
+workflow state written back by the Source Control panel: `branch`, `committedAt`,
+`lastCommitHash`, `lastCommitPushed`, `prNumber`, `prUrl`, `prState`.
 
 ## Tasks format
 

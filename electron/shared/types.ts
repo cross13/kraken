@@ -17,6 +17,12 @@ export interface SpecMeta {
   path: string;
   createdAt: string;
   updatedAt: string;
+  /**
+   * The user's original one-liner from the Home composer. Kept because creating
+   * a spec no longer drafts anything: the brief has to survive until the user
+   * presses "Draft … with Claude" at the gate bar.
+   */
+  brief?: string;
   // Optional git workflow state — set when the user creates a branch or commits.
   branch?: string;
   committedAt?: string;

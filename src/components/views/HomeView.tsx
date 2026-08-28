@@ -45,9 +45,9 @@ const PHASE_INDEX: Record<SpecMeta['phase'], number> = {
 const FIRST_RUN_KEY = 'octo.firstRunDismissed';
 
 /**
- * Home — the launchpad. The composer creates specs (Plan = gated flow,
- * Quick Plan = draft all three docs with no stops); below it, in-flight specs
- * with live status, shipped recents, and the Manage (analytics) mode.
+ * Home — the launchpad. The composer creates specs (Plan = gated flow, no run
+ * until you ask for one; Quick Plan = draft both docs with no stops); below it,
+ * in-flight specs with live status, shipped recents, and the Manage mode.
  */
 export function HomeView() {
   const root = useWorkspace((s) => s.root);
@@ -280,7 +280,7 @@ export function HomeView() {
             <button
               onClick={() => start('plan')}
               disabled={!command.trim() || !!creating}
-              title="Plan — create the spec and draft requirements; you approve each phase"
+              title="Plan — create the spec and open Requirements. Nothing runs until you press Draft"
               className="flex items-center gap-1.5 rounded-[10px] px-3.5 py-2 bg-gradient-to-br from-accent to-accent-2 text-white text-[13px] font-semibold shadow-glow hover:opacity-95 transition disabled:opacity-40"
             >
               {creating === 'plan' ? (
@@ -293,9 +293,10 @@ export function HomeView() {
           </div>
           <div className="flex items-center gap-2.5 mt-2.5 px-1">
             <span className="text-[11.5px] text-faint">
-              <b className="text-dim font-medium">Plan</b> walks Requirements → Design → Tasks with
-              approval gates · <b className="text-dim font-medium">Quick Plan</b> drafts all three
-              and lands on Tasks ready to run
+              <b className="text-dim font-medium">Plan</b> walks Requirements → Plan → Build with
+              approval gates, drafting only when you ask ·{' '}
+              <b className="text-dim font-medium">Quick Plan</b> drafts both docs with no stops and
+              lands on Build ready to run
             </span>
           </div>
 
@@ -437,7 +438,7 @@ export function HomeView() {
             <div className="text-[14px] font-semibold text-ink-50 mb-1">No specs yet</div>
             <p className="text-[12px] text-faint">
               Describe what you want to build in the box above — <b>Plan</b> creates the spec and
-              drafts requirements while you watch.
+              opens Requirements, seeded with your description and ready to draft.
             </p>
           </div>
         )}

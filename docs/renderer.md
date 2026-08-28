@@ -293,8 +293,10 @@ Two places can't follow the theme, and use Signal's literals because Signal is t
 The launchpad. Its **composer creates specs** (the old Welcome bar only forwarded to chat):
 
 - **Plan** (`lib/specActions.ts` → `planSpec`) — creates the spec (name via `specNameFromText`,
-  kind via `specKindFromText` feature/bugfix detection), opens the Spec flow, and streams the
-  requirements draft while the user watches. Gated flow.
+  kind via `specKindFromText` feature/bugfix detection) and opens the Spec flow at the first
+  stage. It deliberately **starts no Claude run**: the composer text is persisted as
+  `SpecMeta.brief` and quoted at the top of the seeded document, and drafting happens when the
+  user presses *Draft … with Claude* at the gate bar. Gated flow.
 - **Quick Plan** (`quickPlanSpec`) — the no-gates escape hatch: drafts requirements → plan (two
   documents, not three — the plan carries its own task waves and advancing derives `tasks.md`) →
   tasks back-to-back (advancing between), landing on Tasks ready to run.
@@ -322,8 +324,12 @@ questions · Reopen tasks/Re-sync · Delete spec). Stage bodies:
   and raw `MarkdownEditor` as the other views, above a pinned **gate bar** (the flow has **two
   gates**, Requirements and Plan — Build is work, not a decision):
   `[✎ Revise with feedback…] [✦ Improve with Claude] [Approve <stage> → <next>]`. **Approve
-  advances the phase AND navigates** to the next doc (`specs.advance` + `setSpecStage`). An empty
-  doc shows **Draft with Claude** instead; already-approved stages show **Continue →**. Revise
+  advances the phase AND navigates** to the next doc (`specs.advance` + `setSpecStage`). A doc
+  that is still the **untouched template** shows **Draft &lt;stage&gt; with Claude** as the primary
+  action instead (`isStubDoc` in `lib/specDoc.ts` — the seeded templates keep their literal
+  `<placeholder>` tokens until something writes over them), with *Approve as written* kept
+  alongside it so a false positive can never block the gate; the first stage's draft passes
+  `meta.brief` so the composer text still grounds it. Already-approved stages show **Continue →**. Revise
   runs `draftSpecDoc({feedback})`; **Improve** runs `draftSpecDoc({improve: true})` — a critical
   self-review pass (per-doc checklist in `IMPROVE_FOCUS`) that refines the file in place and
   reports its improvements in the Assistant. Neither needs a trip to chat. A "Claude is drafting…" banner appears whenever an
