@@ -197,11 +197,20 @@ Two token families exist for this: `accent-text` / `accent-num` alongside `accen
 `danger-text`. The legacy themes were built around a single accent, so there `agent-*` aliases the
 accent — semantics only separate under Signal.
 
-**Shape is themed too.** `borderRadius` in `tailwind.config.cjs` maps to `--radius-*`, so
-`rounded-lg` is 8px on Abyss and 0 on Signal. `rounded-full` is deliberately *not* tokenised (dots,
-avatars, circular pills stay circular); flattening those is a per-component pass. Shadows
-(`shadow-panel` / `shadow-glow` / `shadow-card`) are **not** themed yet — see
-`docs/refactor-metodologia-y-rebranding.md` § B1.
+**Shape and elevation are themed too**, so a flat brand needs no per-component sweep:
+
+- `borderRadius` maps to `--radius-*` — `rounded-lg` is 8px on Abyss, 0 on Signal. **`rounded-full`
+  included** (`--radius-full`): 9999px on the legacy themes, 0 on Signal, which squares the ~40
+  status dots, badges, pills and avatars in one move. The palette's own status marker is a 6px
+  square, so this is the system, not a compromise.
+- `boxShadow` maps to `--shadow-*`. Signal sets `panel` and `card` to `none` — hierarchy there is a
+  lighter grey plus a 1px border — and turns `glow` into the one halo the palette allows, a 50%
+  accent hairline.
+- `styles.css` has no hardcoded radii left: the scrollbar thumb and the two Prism chips read
+  `var(--radius-lg)` / `var(--radius)`.
+
+**When adding a shadow or a radius, add the variable to all four theme blocks** — a literal px or
+rgba value in a component is what this indirection exists to prevent.
 
 ## Brand (Octopus Brand Kit)
 

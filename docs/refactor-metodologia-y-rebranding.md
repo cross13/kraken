@@ -9,7 +9,7 @@ tags: [architecture, refactor, design-system, migration]
 
 # Refactor — **Definir · Plan · Construir** + rebranding *Signal*
 
-![status](https://img.shields.io/badge/metodolog%C3%ADa-completa-brightgreen) ![fases](https://img.shields.io/badge/fases-7%2F7%20hechas-brightgreen) ![branding](https://img.shields.io/badge/branding-B1--B4%20pendientes-yellow) ![riesgo](https://img.shields.io/badge/riesgo-bajo--medio-lightgrey)
+![status](https://img.shields.io/badge/metodolog%C3%ADa-completa-brightgreen) ![fases](https://img.shields.io/badge/fases-7%2F7%20hechas-brightgreen) ![branding](https://img.shields.io/badge/branding-B2--B4%20pendientes-yellow) ![riesgo](https://img.shields.io/badge/riesgo-bajo--medio-lightgrey)
 
 > **TL;DR** — Octo pide hoy **4 aprobaciones humanas** antes de la primera línea de
 > código. Este plan las baja a **2**, funde `design.md` + `tasks.md` en un único
@@ -45,7 +45,7 @@ fuente de verdad del progreso**.
 ### Rebranding — paralelo
 
 - [x] **B0** · tokens, tema, fuentes, radios *(= F0)*
-- [ ] **B1** · sombras a token + `rounded-full` + radios hardcodeados de `styles.css`
+- [x] **B1** · sombras a token + `rounded-full` + radios hardcodeados de `styles.css`
 - [ ] **B2** · semántica de acentos — `accent` → `agent` donde signifique agente/espera
 - [ ] **B3** · identidad — logo, loader, splash, ícono *(bloqueado por D1)*
 - [ ] **B4** · densidad y ritmo — padding 26/14–15px, gap 16px, 120ms

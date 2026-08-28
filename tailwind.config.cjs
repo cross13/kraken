@@ -73,17 +73,19 @@ module.exports = {
         xl: 'var(--radius-xl)',
         '2xl': 'var(--radius-2xl)',
         '3xl': 'var(--radius-3xl)',
-        full: '9999px',
+        full: 'var(--radius-full)',
       },
       fontFamily: {
         sans: ['Hanken Grotesk', 'Geist', 'Inter', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
         display: ['Space Grotesk', 'Hanken Grotesk', 'Geist', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'Geist Mono', 'SF Mono', 'Menlo', 'monospace'],
       },
+      // Themed elevation — Signal switches shadows off entirely and turns the
+      // glow into the accent hairline its palette allows.
       boxShadow: {
-        panel: '0 1px 0 rgba(255,255,255,0.04) inset, 0 0 0 1px rgba(255,255,255,0.04)',
-        glow: '0 0 0 1px rgb(var(--accent) / 0.4), 0 0 40px -10px rgb(var(--accent) / 0.6)',
-        card: '0 12px 34px rgba(0,0,0,0.34)',
+        panel: 'var(--shadow-panel)',
+        glow: 'var(--shadow-glow)',
+        card: 'var(--shadow-card)',
       },
       animation: {
         'pulse-slow': 'pulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
