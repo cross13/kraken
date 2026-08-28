@@ -4,6 +4,12 @@
 > shell, the gated spec flow with inline task waves, the automatic Ship stage, the single
 > Activity center, and the consolidated Library with knob triage. This document is kept as the
 > design rationale; the current-state reference is [`renderer.md`](./renderer.md).
+>
+> **Superseded in part (August 2026).** The spec flow described here has four stages
+> (Requirements · Design · Tasks · Ship); it now has three, with Ship as a panel inside Build —
+> see [`refactor-metodologia-y-rebranding.md`](./refactor-metodologia-y-rebranding.md). The
+> four-surface shell, the Activity center and the Library are unchanged. Read this for the *why*
+> behind the shell, not for the current stage list.
 
 ---
 

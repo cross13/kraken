@@ -37,7 +37,9 @@ Owns everything privileged. Handlers are registered in **`registerIpc()`** via
 
 - **Spec lifecycle** — `createSpec` / `readSpec` / `writeSpecFile` / `advanceSpec`, plus the
   markdown `*Template` functions. A spec is a directory under `.kraken/specs/<id>/` holding
-  `spec.json` (phase + metadata) and the phase markdown files.
+  `spec.json` (phase + metadata) and the phase markdown files. Two documents are authored
+  (`requirements.md`/`bugfix.md` and `plan.md`) behind two gates; `tasks.md` is **derived** from
+  the plan's `## Tasks` section when the Plan gate is approved.
 - **Backend dispatch** — `streamClaude` records a run row, prepends steering, then forks to
   `streamViaCli` or `streamViaApi` based on the `backend` setting. Both emit identical
   `claude:event` messages. See [`backends.md`](./backends.md).

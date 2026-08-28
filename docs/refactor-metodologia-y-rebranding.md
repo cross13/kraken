@@ -3,13 +3,13 @@ goal: Reducir el loop de SDD de 4 fases a Definir · Plan · Construir, y rebran
 version: 1.1
 date_created: 2026-08-28
 owner: Lucas Borella
-status: In progress
+status: In progress — methodology complete, rebranding B1–B4 pending
 tags: [architecture, refactor, design-system, migration]
 ---
 
 # Refactor — **Definir · Plan · Construir** + rebranding *Signal*
 
-![status](https://img.shields.io/badge/status-in--progress-yellow) ![fases](https://img.shields.io/badge/fases-6%2F7%20hechas-blue) ![riesgo](https://img.shields.io/badge/riesgo-bajo--medio-lightgrey)
+![status](https://img.shields.io/badge/metodolog%C3%ADa-completa-brightgreen) ![fases](https://img.shields.io/badge/fases-7%2F7%20hechas-brightgreen) ![branding](https://img.shields.io/badge/branding-B1--B4%20pendientes-yellow) ![riesgo](https://img.shields.io/badge/riesgo-bajo--medio-lightgrey)
 
 > **TL;DR** — Kraken pide hoy **4 aprobaciones humanas** antes de la primera línea de
 > código. Este plan las baja a **2**, funde `design.md` + `tasks.md` en un único
@@ -40,7 +40,7 @@ fuente de verdad del progreso**.
 - [x] **F2b · Render de Mermaid** — sin esto el formato de plan no se ve dentro de la app
 - [x] **F3 · El plan genera las tareas** — `## Tasks` en `plan.md` → `tasks.md`
 - [x] **F4 · Biblioteca semilla + prompts** — `spec-planner`, hooks, skill `mermaid-diagrams`
-- [ ] **F5 · Limpieza final + docs** — *(T1/T2 ya entregados en F1)*
+- [x] **F5 · Limpieza final + docs** — *(T1/T2 ya entregados en F1)*
 
 ### Rebranding — paralelo
 
@@ -267,7 +267,7 @@ y deja la app usable.
 | F2b | Render de Mermaid en el visor de specs | bajo | ✅ **hecha** |
 | F3 | El plan genera las tareas | **medio** — única lógica nueva | ✅ **hecha** |
 | F4 | Biblioteca semilla, hooks y prompts | bajo | ✅ **hecha** |
-| F5 | Migrador de disco + docs | bajo | ⬜ |
+| F5 | Migrador de disco + docs | bajo | ✅ **hecha** |
 
 ---
 
@@ -478,12 +478,23 @@ de plan que use la skill de mermaid.
 
 ---
 
-### ⬜ F5 — Migrador de disco + docs
+### ✅ F5 — Migrador de disco + docs *(hecha)*
 
 - [x] ~~T1: migrador lazy~~ → entregado en **F1** como `migrateSpecDir()`
 - [x] ~~T2: borrar el alias de lectura~~ → innecesario: F1 migra en vez de aliasear
-- [ ] T3 @docs: `architecture.md`, `data-model.md`, `renderer.md`, `ipc-contract.md`, `subsystems.md`, `README.md` y `CLAUDE.md` — regla dura del proyecto
-- [ ] T4: verificación `grep -rn "'design'" src electron` → 0 resultados
+- [x] T3 @docs: `architecture.md`, `data-model.md`, `renderer.md`, `ipc-contract.md`, `subsystems.md`, `README.md` y `CLAUDE.md` — regla dura del proyecto
+- [x] T4: verificación — en `src/` y `electron/` quedan exactamente **dos** ocurrencias de
+  `'design'`, ambas deliberadas: la keyword de routing en `agentRouter.ts:156` y el `CASE` de la
+  migración en `db.ts:212`. Ningún literal de fase.
+- [x] T5: `ux-redesign-proposal.md` lleva una nota de *superseded in part* — describe cuatro
+  etapas y se conserva como registro histórico del *porqué* del shell, no de la lista de etapas.
+- [x] T6: `docs/README.md` indexa este documento.
+
+**Aceptación:** abrir un workspace con specs viejas no muestra ni una referencia a
+"Design"; ningún doc del proyecto describe ya el loop de cuatro fases.
+
+> **La metodología está completa.** Lo que queda del plan son los tramos de
+> rebranding **B1–B4**, que nunca dependieron del refactor.
 
 ---
 
