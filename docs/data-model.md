@@ -59,7 +59,7 @@ action default) is in `src/lib/agentRouter.ts`. See [`subsystems.md`](./subsyste
 
 The line parser tolerates markdown emphasis the model sometimes adds around the id
 (`- [ ] **T1**: …`, `__T1__`, fully-bold lines) — the markers are stripped so the id, `@agent`,
-and description still resolve. The drafting prompt and `spec-task-planner` agent also instruct the
+and description still resolve. The drafting prompt and `spec-planner` agent also instruct the
 plain `- [ ] T1: …` form, so new task lists come out clean without manual cleanup.
 
 ## Open Questions format

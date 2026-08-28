@@ -69,7 +69,7 @@ export function QuestionsView({ specId }: { specId: string }) {
   }, [root, specId]);
 
   // Questions are anchored to the requirement phase file (requirements.md /
-  // bugfix.md), so resolving them updates the very doc the design phase reads.
+  // bugfix.md), so resolving them updates the very doc the plan phase reads.
   const reqFile = meta?.kind === 'bugfix' ? 'bugfix' : 'requirements';
   const reqLabel = `${reqFile}.md`;
   const reqMd = filesMd[reqFile] ?? '';
@@ -111,7 +111,7 @@ export function QuestionsView({ specId }: { specId: string }) {
     await writeReq(addQuestion(reqMd, text));
   };
 
-  // Fold the resolved Q&A into a `## Resolved Decisions` section the design step reads.
+  // Fold the resolved Q&A into a `## Resolved Decisions` section the plan step reads.
   const applyToRequirements = async () => {
     if (!resolved.length) return;
     setApplying(true);
@@ -236,12 +236,12 @@ export function QuestionsView({ specId }: { specId: string }) {
             {allResolved ? (
               <>
                 All questions answered. Apply them to <code className="text-ink-200">{reqLabel}</code>{' '}
-                so the <b className="text-ink-100">design step</b> uses these decisions.
+                so the <b className="text-ink-100">plan step</b> uses these decisions.
               </>
             ) : (
               <>
                 Answer the {openCount} open question{openCount === 1 ? '' : 's'}, then apply them to{' '}
-                <code className="text-ink-200">{reqLabel}</code> for the design step.
+                <code className="text-ink-200">{reqLabel}</code> for the plan step.
               </>
             )}
             {decisionsSynced && (
@@ -275,7 +275,7 @@ export function QuestionsView({ specId }: { specId: string }) {
           </div>
         ) : questions.length === 0 ? (
           <div className="text-sm text-ink-400 mb-3">
-            No open questions yet. Add the decisions you need to settle before design.
+            No open questions yet. Add the decisions you need to settle before planning.
           </div>
         ) : (
           <div className="space-y-2 mb-3">

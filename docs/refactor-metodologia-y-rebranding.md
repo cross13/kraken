@@ -9,7 +9,7 @@ tags: [architecture, refactor, design-system, migration]
 
 # Refactor — **Definir · Plan · Construir** + rebranding *Signal*
 
-![status](https://img.shields.io/badge/status-in--progress-yellow) ![fases](https://img.shields.io/badge/fases-5%2F7%20hechas-blue) ![riesgo](https://img.shields.io/badge/riesgo-bajo--medio-lightgrey)
+![status](https://img.shields.io/badge/status-in--progress-yellow) ![fases](https://img.shields.io/badge/fases-6%2F7%20hechas-blue) ![riesgo](https://img.shields.io/badge/riesgo-bajo--medio-lightgrey)
 
 > **TL;DR** — Kraken pide hoy **4 aprobaciones humanas** antes de la primera línea de
 > código. Este plan las baja a **2**, funde `design.md` + `tasks.md` en un único
@@ -39,7 +39,7 @@ fuente de verdad del progreso**.
 - [x] **F2 · UI a tres etapas** — 3 chips, Ship adentro de Construir
 - [x] **F2b · Render de Mermaid** — sin esto el formato de plan no se ve dentro de la app
 - [x] **F3 · El plan genera las tareas** — `## Tasks` en `plan.md` → `tasks.md`
-- [ ] **F4 · Biblioteca semilla + prompts** — `spec-planner`, hooks, skill `mermaid-diagrams`
+- [x] **F4 · Biblioteca semilla + prompts** — `spec-planner`, hooks, skill `mermaid-diagrams`
 - [ ] **F5 · Limpieza final + docs** — *(T1/T2 ya entregados en F1)*
 
 ### Rebranding — paralelo
@@ -266,7 +266,7 @@ y deja la app usable.
 | F2 | UI a tres etapas | bajo | ✅ **hecha** |
 | F2b | Render de Mermaid en el visor de specs | bajo | ✅ **hecha** |
 | F3 | El plan genera las tareas | **medio** — única lógica nueva | ✅ **hecha** |
-| F4 | Biblioteca semilla, hooks y prompts | bajo | ⬜ |
+| F4 | Biblioteca semilla, hooks y prompts | bajo | ✅ **hecha** |
 | F5 | Migrador de disco + docs | bajo | ⬜ |
 
 ---
@@ -450,7 +450,7 @@ de plan con su diagrama.
 
 ---
 
-### ⬜ F4 — Biblioteca semilla, hooks y prompts
+### ✅ F4 — Biblioteca semilla, hooks y prompts *(hecha)*
 
 | Archivo | Cambio |
 |---|---|
@@ -462,18 +462,19 @@ de plan con su diagrama.
 | `TaskRunner.tsx:31` | prop `designMd` → `planMd`; prompts y mensaje de fase `:541` |
 | `CompletionSummary.tsx:141` · `SourceControlView.tsx:1446` · `QuestionsView.tsx` · `graphModel.ts:71` | copy y referencias |
 
-- [ ] T1: `spec-planner` — un agente que lee requirements y produce plan + olas + diagrama
-- [ ] T2: agentes viejos quedan *deprecated*: no se re-siembran, pero el router los sigue encontrando si existen
-- [ ] T3: skills `sdd-*` — **no renombrar** (rompe workspaces existentes), sólo cambiar el cuerpo
-- [ ] T4: `TaskRunner` con `planMd`
-- [ ] T5: barrido de copy
-- [ ] T6: el prompt de `spec-planner` referencia la skill **`mermaid-diagrams`** (ya instalada,
-  §9.2) para elegir bien el tipo de diagrama — `flowchart` para el enfoque, `sequenceDiagram`
-  para flujos entre componentes, `erDiagram` cuando cambia el modelo de datos
+- [x] T1: **`spec-planner`** — reemplaza a `spec-design-architect` + `spec-task-planner`; produce el plan completo con diagrama, tabla de archivos (obligándose a usar Grep/Glob para citar rutas reales), riesgos, verificación y las olas
+- [x] T2: los dos agentes viejos **no se re-siembran**, pero siguen en la lista de preferencia del router detrás de `spec-planner` — y `seedDefaultAgents` nunca pisa un archivo existente, así que un workspace ya sembrado sigue funcionando
+- [x] T3: skills `sdd-feature` / `sdd-bugfix` — **mismo nombre**, cuerpo de tres etapas y dos gates
+- [x] T4: ~~`TaskRunner` con `planMd`~~ → ya entregado en F1
+- [x] T5: barrido de copy — `spec-task-executor`, `spec-doctor` (ahora audita explícitamente la deriva plan ↔ tasks), `codebase-explorer`, `test-generator`, `NewSpecDialog`, `QuestionsView`, `openQuestions`, `SpecDocument`, `models`
+- [x] T6: el prompt de `spec-planner` referencia la skill **`mermaid-diagrams`** (instalada, §9.2) y nombra el criterio: `flowchart` para el enfoque, `sequenceDiagram` para interacciones entre componentes, `erDiagram` cuando cambia el modelo de datos
+- [x] T7: ~~prompt del hook `docs-changelog`~~ → ya entregado en F1
+- [x] T8: docs — `subsystems.md`, `data-model.md`, `CLAUDE.md`
 
-**Aceptación:** "Seed defaults" en un workspace limpio produce la biblioteca nueva;
-un run de tarea cita `plan.md` en su system prompt; el plan generado trae un
-diagrama del tipo correcto.
+**Aceptación:** `typecheck` y `build` verdes; no queda copy que hable de una etapa
+de *Design* en `src/`.
+**Pendiente de verificar en la app corriendo:** un "Seed defaults" real y un draft
+de plan que use la skill de mermaid.
 
 ---
 

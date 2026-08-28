@@ -134,7 +134,7 @@ export function addQuestion(md: string, text: string): string {
 
 // ---------- Resolved Decisions ----------
 // When the requirements' open questions are answered, their Q&A is consolidated
-// into a `## Resolved Decisions` section so the design phase consumes settled
+// into a `## Resolved Decisions` section so the plan phase consumes settled
 // inputs instead of digging through a checklist.
 
 export interface Decision {
@@ -144,7 +144,7 @@ export interface Decision {
 
 const DECISIONS_RE = /^#{2,6}\s+Resolved Decisions\s*$/i;
 const DECISIONS_NOTE =
-  '<!-- Generated from Open Questions — settled answers that inform the design. -->';
+  '<!-- Generated from Open Questions — settled answers that inform the plan. -->';
 
 export function hasDecisionsSection(md: string): boolean {
   return md.split('\n').some((l) => DECISIONS_RE.test(l));

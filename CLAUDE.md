@@ -155,7 +155,8 @@ results arrive through `claude.onEvent(handler)`.
   playground.
 - **Skills are injected, not just labelled.** `SkillMeta.body` carries the full `SKILL.md`
   text; `skillSystemBlock`/`skillSystemBlocks` build prompt blocks that are prepended to the
-  system prompt. The SDD skill (`sdd-feature`/`sdd-bugfix`, by spec kind) governs spec drafting
+  system prompt. The SDD skill (`sdd-feature`/`sdd-bugfix`, by spec kind — three stages, two
+  gates) governs spec drafting
   and task runs; `bestSkillByText` additionally injects a confident domain skill match
   (e.g. a frontend skill for UI tasks). Chat `/skill` injects that skill's body too. The
   Running-Tasks **Library verification** panel resolves the chosen agent/skill back to the

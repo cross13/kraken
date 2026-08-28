@@ -2747,18 +2747,18 @@ async function seedDefaultSkills(root: string) {
   const skills: Record<string, string> = {
     'sdd-feature': `---
 name: sdd-feature
-description: Walk through requirements → design → tasks for a new feature. Activate when the user wants to scope, design, or break down a feature.
+description: Walk through requirements → plan → build for a new feature. Activate when the user wants to scope, plan, or break down a feature.
 ---
 
 # SDD Feature Skill
 
-When activated, drive a three-phase Spec-Driven Development conversation:
+When activated, drive a three-stage conversation. There are only **two gates**; the third stage is work, not a decision.
 
-1. **Requirements** — capture user stories and acceptance criteria using EARS notation.
-2. **Design** — propose architecture, components, sequences, and testing strategy.
-3. **Tasks** — break the design into independent waves with clear outcomes.
+1. **Define** (\`requirements.md\`) — user stories and acceptance criteria in EARS notation. *Gate.*
+2. **Plan** (\`plan.md\`) — approach with a mermaid diagram, affected files, data & contracts, risks & rollback, verification, **and the dependency-ordered task waves**. *Gate.*
+3. **Build** (\`tasks.md\`) — execute the waves, then ship.
 
-Always ask for confirmation before advancing phases.
+There is no separate design document and no separate task-planning step: the plan carries both, and approving it derives \`tasks.md\` from its \`## Tasks\` section. Ask for confirmation before advancing a gate.
 `,
     'sdd-bugfix': `---
 name: sdd-bugfix
@@ -2767,13 +2767,15 @@ description: Reproduce → root cause → minimal fix workflow for bug specs. Ac
 
 # SDD Bugfix Skill
 
+Same three stages as a feature spec — \`bugfix.md\` → \`plan.md\` → \`tasks.md\` — with the analysis in place of requirements.
+
 Capture three sections:
 
 - **Current Behavior** — WHEN/THEN of the defect.
 - **Expected Behavior** — WHEN/THEN/SHALL of the correct behavior.
 - **Unchanged Behavior** — WHEN/THEN/SHALL CONTINUE TO statements that guard regressions.
 
-Prefer the smallest possible change that satisfies the bugfix and preserves Unchanged Behavior.
+Then plan: root cause, the minimal fix, and the waves that deliver it. Prefer the smallest possible change that satisfies the bugfix and preserves Unchanged Behavior, and make the regression guards explicit in **## Verification**.
 `,
   };
 
@@ -2819,41 +2821,34 @@ Output sections:
 Never invent behaviors that aren't stated or strongly implied. Ask the user once for missing context, then commit to a draft.
 `,
 
-    'spec-design-architect': `---
-name: spec-design-architect
-description: Convert requirements.md into a design.md with components, sequences, data model, error handling, and test strategy. Use in the Design phase.
+    'spec-planner': `---
+name: spec-planner
+description: Turn requirements.md (or bugfix.md) into a plan.md — approach, affected files, risks, verification, and the dependency-ordered task waves. Use in the Plan phase.
 tools: Read, Write, Grep, Glob
 ---
 
-You author **design.md** by reading requirements.md (or bugfix.md) and producing:
+You author **plan.md**: one document that says *how* the work gets done and *in what order*. It replaces the old split between a design document and a task list — the waves live here.
 
-- **Overview** — chosen approach and why over alternatives.
-- **Components** — each with responsibility, inputs, outputs.
-- **Data & State** — schemas and persistence.
-- **Sequence** — ascii or mermaid for the primary flow.
-- **Error Handling** — failure modes and user-visible recovery.
-- **Testing Strategy** — unit, integration, acceptance mapping back to ACs.
-- **Open Questions** — explicit, numbered.
+Read requirements.md (or bugfix.md) first. If it has a **Resolved Decisions** section, treat every entry as settled and do not re-open it.
 
-Bias to the simplest design that satisfies every acceptance criterion. Call out tradeoffs.
-`,
+Produce, in this order:
 
-    'spec-task-planner': `---
-name: spec-task-planner
-description: Break design.md into trackable tasks organized in dependency waves. Use in the Tasks phase.
-tools: Read, Write, Grep, Glob
----
+- A one-line objective blockquote with appetite (S / M / L) and risk.
+- **## Approach** — open with one \`\`\`mermaid diagram, then a paragraph on the strategy chosen and, in a sentence each, the alternatives rejected. Pick the diagram type deliberately: \`flowchart\` for the shape of the approach, \`sequenceDiagram\` for interactions between components over time, \`erDiagram\` when the data model changes. Quote every node label. If a **mermaid-diagrams** skill is installed, follow it.
+- **## Affected files** — a table \`| File | Change |\`. Use **Grep/Glob to find the real paths** and cite \`path:line\`. Never invent a path.
+- **## Data & contracts** — schemas, IPC, persisted state. Only what changes.
+- **## Risks & rollback** — a table \`| Risk | Mitigation | How to revert |\`.
+- **## Verification** — every acceptance criterion mapped to how it is proven.
+- **## Tasks** — dependency-ordered waves as \`### Wave 1\`, \`### Wave 2 (depends on T1)\`, …
+- **## Open Questions** — explicit, and only for decisions the user must make.
 
-You author **tasks.md**. Each task must have:
-- A unique ID (T1, T2, …).
-- A single observable outcome.
-- A small enough scope to verify in one PR.
+Write each task line exactly as \`- [ ] T1: <description> — _outcome: ..._\` — a plain checkbox, the bare id, then a colon. Never wrap the id or checkbox in markdown bold/emphasis (no \`**T1**\`, no \`__T1__\`); the runner parses these lines literally. To assign a specialized agent, use \`- [ ] T1 @agent-name: <description>\`.
 
-Write each task line exactly as \`- [ ] T1: <description>\` — a plain checkbox, the bare id, then a colon. Never wrap the id or checkbox in markdown bold/emphasis (no \`**T1**\`, no \`__T1__\`); the runner parses these lines literally. To assign a specialized agent, use \`- [ ] T1 @agent-name: <description>\`.
+Wave 1 contains every task with no dependencies, and its tasks must be **parallel-safe** — they run at the same time, so they must touch disjoint files. Each task has exactly one observable outcome, small enough to verify in one PR.
 
-Group tasks into **waves**. Wave 1 contains all tasks with no dependencies and may run in parallel. Subsequent waves list their prerequisites explicitly ("(depends on T1, T3)").
+The **## Tasks** section is what the Build stage executes: approving this plan copies it into tasks.md. A plan without it cannot be approved.
 
-Close with a **Verification** checklist that maps every acceptance criterion to at least one task.
+Bias to the simplest approach that satisfies every acceptance criterion, and say what you traded away.
 `,
 
     'spec-task-executor': `---
@@ -2863,8 +2858,8 @@ tools: Read, Edit, Write, Bash, Grep, Glob
 ---
 
 You execute exactly one task at a time. Before editing:
-1. Re-read requirements.md / bugfix.md and design.md.
-2. Locate the target files; confirm the change matches the design.
+1. Re-read requirements.md / bugfix.md and plan.md.
+2. Locate the target files; confirm the change matches the plan.
 
 After editing:
 - Run or describe the test(s) that validate the task.
@@ -2895,7 +2890,7 @@ description: Read-only exploration of the workspace to answer "where is X" or "h
 tools: Read, Grep, Glob
 ---
 
-You are read-only. Locate symbols, trace call paths, summarize how a feature works today, and surface invariants the design must respect. Always report file paths with line numbers.
+You are read-only. Locate symbols, trace call paths, summarize how a feature works today, and surface invariants the plan must respect. Always report file paths with line numbers.
 `,
 
     'code-reviewer': `---
@@ -2915,7 +2910,7 @@ Be specific: cite file:line. No nits unless asked.
 
     'test-generator': `---
 name: test-generator
-description: Generate tests that map each acceptance criterion (EARS statement) to at least one executable test. Use after Design, before/during implementation.
+description: Generate tests that map each acceptance criterion (EARS statement) to at least one executable test. Use after the Plan is approved, before/during implementation.
 tools: Read, Write, Grep, Glob, Bash
 ---
 
@@ -2929,14 +2924,17 @@ Match the project's existing test framework and style.
 
     'spec-doctor': `---
 name: spec-doctor
-description: Audit a spec for inconsistencies between requirements, design, and tasks. Use before moving to implementation, or when a spec feels off.
+description: Audit a spec for inconsistencies between requirements, plan, and tasks. Use before moving to implementation, or when a spec feels off.
 tools: Read, Grep, Glob
 ---
 
 You audit the spec end-to-end. Surface:
 - Acceptance criteria with no corresponding task.
 - Tasks with no acceptance criterion (scope creep).
-- Components in design that no task touches.
+- Components named in the plan that no task touches.
+- **Drift between plan.md and tasks.md** — tasks.md is derived from the plan's \`## Tasks\` section
+  and then edited in place as work proceeds, so the two are expected to diverge. Report tasks that
+  exist in one and not the other, and say which one is right.
 - Unchanged Behavior statements with no regression test.
 
 Report blockers vs. nits separately.

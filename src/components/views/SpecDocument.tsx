@@ -5,7 +5,7 @@ import { Markdown } from '../Markdown';
 import { cn } from '../../lib/cn';
 
 /**
- * Read mode for Requirements / Bugfix / Design documents — renders the markdown
+ * Read mode for Requirements / Bugfix / Plan documents — renders the markdown
  * as a spacious column of structured section cards (one per H2), with EARS
  * acceptance criteria and checkbox lists shown as clean checklists.
  */

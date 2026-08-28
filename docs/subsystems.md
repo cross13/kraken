@@ -23,6 +23,10 @@ parallel format.
   to the system prompt. See [`renderer.md`](./renderer.md) → Skill injection.
 - The bundled SDD skill is `sdd-feature` / `sdd-bugfix` (by spec kind). `spec-task-executor` is
   the bundled task agent; `spec-doctor` is routed by the **Audit** action for drift detection.
+- **`spec-planner` replaced `spec-design-architect` + `spec-task-planner`** when the design and
+  task documents merged into `plan.md`. The old two are **not re-seeded**, but they are kept in the
+  router's preference list after `spec-planner`, so a workspace that seeded them before keeps
+  working — `seedDefaultAgents` never overwrites an existing file either.
 
 ## Hooks — event-driven agent hooks
 

@@ -3,7 +3,7 @@ import type { ModelInfo, ModelDiscovery } from '../../electron/shared/types';
 
 // Model routing, collapsed to two knobs: the global default model (Settings →
 // Models, persisted in the main process) and an optional **planning model**
-// used for the thinking-heavy spec steps (requirements / design / tasks /
+// used for the thinking-heavy spec steps (requirements / plan / tasks /
 // audit). Execution steps (task / refine / polish / chat) always use the
 // global default. Purely renderer-side: the resolved id is passed as
 // `payload.model` on the Claude stream, so no backend change is needed.
