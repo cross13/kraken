@@ -16,7 +16,7 @@ import { useWorkspace } from '../stores/workspace';
 import { useOrchestrator } from '../stores/orchestrator';
 import { useModels } from '../stores/models';
 import { skillSystemBlock } from '../lib/agentRouter';
-import { renderMarkdown } from '../lib/markdown';
+import { Markdown } from './Markdown';
 import { cn } from '../lib/cn';
 import type { MessageSegment } from '../../electron/shared/types';
 
@@ -334,7 +334,7 @@ function Message({
             ))}
           </div>
         ) : (
-          <div className="md" dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }} />
+          <Markdown source={content} />
         )}
       </div>
     </div>
@@ -345,7 +345,7 @@ function Message({
 function SegmentView({ seg }: { seg: MessageSegment }) {
   if (seg.kind === 'text') {
     if (!seg.text.trim()) return null;
-    return <div className="md" dangerouslySetInnerHTML={{ __html: renderMarkdown(seg.text) }} />;
+    return <Markdown source={seg.text} />;
   }
   if (seg.kind === 'thinking') {
     return (
@@ -369,10 +369,7 @@ function SegmentView({ seg }: { seg: MessageSegment }) {
         <div className="flex items-center gap-2 px-3 py-1.5 text-[11px] text-dim">
           <Terminal size={11} className="text-accent" /> Tool
         </div>
-        <div
-          className="md px-3 pb-2 text-[12px]"
-          dangerouslySetInnerHTML={{ __html: renderMarkdown(seg.text) }}
-        />
+        <Markdown source={seg.text} className="px-3 pb-2 text-[12px]" />
       </div>
     );
   }

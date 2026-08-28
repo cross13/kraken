@@ -9,7 +9,7 @@ tags: [architecture, refactor, design-system, migration]
 
 # Refactor — **Definir · Plan · Construir** + rebranding *Signal*
 
-![status](https://img.shields.io/badge/status-in--progress-yellow) ![fases](https://img.shields.io/badge/fases-3%2F6%20hechas-blue) ![riesgo](https://img.shields.io/badge/riesgo-bajo--medio-lightgrey)
+![status](https://img.shields.io/badge/status-in--progress-yellow) ![fases](https://img.shields.io/badge/fases-4%2F6%20hechas-blue) ![riesgo](https://img.shields.io/badge/riesgo-bajo--medio-lightgrey)
 
 > **TL;DR** — Kraken pide hoy **4 aprobaciones humanas** antes de la primera línea de
 > código. Este plan las baja a **2**, funde `design.md` + `tasks.md` en un único
@@ -37,7 +37,7 @@ fuente de verdad del progreso**.
 - [x] **F0 · Tokens de marca** — tema `signal`, tokens nuevos, escala de radios tokenizada
 - [x] **F1 · Contrato + persistencia** — `design→plan`, `tasks→build` en las 5 capas + migración SQLite + migrador de disco
 - [x] **F2 · UI a tres etapas** — 3 chips, Ship adentro de Construir
-- [ ] **F2b · Render de Mermaid** — sin esto el formato de plan no se ve dentro de la app
+- [x] **F2b · Render de Mermaid** — sin esto el formato de plan no se ve dentro de la app
 - [ ] **F3 · El plan genera las tareas** — `## Tareas` en `plan.md` → `tasks.md`
 - [ ] **F4 · Biblioteca semilla + prompts** — `spec-planner`, hooks, skill `mermaid-diagrams`
 - [ ] **F5 · Limpieza final + docs** — *(T1/T2 ya entregados en F1)*
@@ -264,7 +264,7 @@ y deja la app usable.
 | F0 | Tokens de marca | bajo | ✅ **hecha** |
 | F1 | Contrato + persistencia + migración SQLite | bajo | ✅ **hecha** |
 | F2 | UI a tres etapas | bajo | ✅ **hecha** |
-| F2b | Render de Mermaid en el visor de specs | bajo | ⬜ |
+| F2b | Render de Mermaid en el visor de specs | bajo | ✅ **hecha** |
 | F3 | El plan genera las tareas | **medio** — única lógica nueva | ⬜ |
 | F4 | Biblioteca semilla, hooks y prompts | bajo | ⬜ |
 | F5 | Migrador de disco + docs | bajo | ⬜ |
@@ -365,7 +365,7 @@ de tareas. `npm run typecheck` y `npm run build` verdes.
 
 ---
 
-### ⬜ F2b — Render de Mermaid
+### ✅ F2b — Render de Mermaid *(hecha)*
 
 **Objetivo:** que los diagramas del plan se vean como diagramas.
 
@@ -376,16 +376,20 @@ de tareas. `npm run typecheck` y `npm run build` verdes.
 | `src/components/views/SpecDocument.tsx` | `mermaid.run()` post-render + re-run al cambiar de tema |
 | `index.html` | revisar la **CSP** — `script-src 'self'`: mermaid debe ir *bundleado*, no por CDN |
 
-- [ ] T1: instalar `mermaid` y bundlearlo — sin CDN, la CSP lo bloquea
-- [ ] T2: bypass de Prism para `lang === 'mermaid'`
-- [ ] T3: init con `theme: 'dark'` y los tokens de Signal (`--accent`, `--line`, `--panel`)
-- [ ] T4: fallback — si el diagrama no parsea, mostrar el código y no romper el documento
-- [ ] T5: aplicar lo mismo en el visor de archivos y en el chat del Assistant
+- [x] T1: `mermaid@11.17.2` instalado y **bundleado** — sin CDN, la CSP lo bloquea
+- [x] T2: bypass de Prism para `lang === 'mermaid'` → placeholder `.md-mermaid[data-mermaid]`
+- [x] T3: `theme: 'base'` + `themeVariables` derivados de las CSS vars del tema activo; el efecto depende del tema, así que los SVG se re-renderizan al cambiar de paleta
+- [x] T4: fallback — si el diagrama no parsea, queda el código en un `<pre>` y el documento sigue leyéndose
+- [x] T5: nuevo componente **`<Markdown>`**, por el que pasan las 11 superficies de markdown (specs, Assistant, transcripciones de runs, viewers de agent/skill/steering, summary) — un diagrama funciona igual en todas
 
-**Aceptación:** un ` ```mermaid ` dentro de `plan.md` se renderiza en la etapa Plan
-y sobrevive un cambio de tema.
-**Nota:** el peso de `mermaid` (~500 kB gz) es aceptable en Electron, pero conviene
-`import()` diferido — el bundle ya está en 1.9 MB.
+**Aceptación:** `typecheck` y `build` verdes; `mermaid` sale en un chunk aparte
+(1,16 MB) y el bundle principal sólo crece ~4 kB, o sea que la carga es diferida
+de verdad.
+**Pendiente de verificar en la app corriendo:** el render real de un diagrama —
+sólo se validó por tipos y build.
+
+> **Nota de implementación.** El visor de archivos (`FileViewer`) muestra los `.md`
+> como código con Prism, no como markdown renderizado, así que no entra acá.
 
 ---
 

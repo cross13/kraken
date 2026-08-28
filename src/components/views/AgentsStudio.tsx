@@ -20,7 +20,7 @@ import {
   ROUTABLE_ACTIONS,
   type RoutableAction,
 } from '../../stores/moduleConfig';
-import { renderMarkdown } from '../../lib/markdown';
+import { Markdown } from '../Markdown';
 import {
   agentScaffold,
   agentPath,
@@ -365,7 +365,7 @@ function AgentDetail({ agent, agents }: { agent: AgentMeta; agents: AgentMeta[] 
       {/* body */}
       <ModuleSection title="System prompt" desc="The full agent body injected into the model.">
         <div className="rounded-xl bg-ink-950 ring-1 ring-ink-800/40 px-5 py-4">
-          <div className="md" dangerouslySetInnerHTML={{ __html: renderMarkdown(body) }} />
+          <Markdown source={body} />
         </div>
       </ModuleSection>
     </div>

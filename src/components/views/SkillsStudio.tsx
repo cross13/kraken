@@ -12,7 +12,7 @@ import {
 import { useWorkspace } from '../../stores/workspace';
 import { useUi } from '../../stores/ui';
 import { useModuleConfig } from '../../stores/moduleConfig';
-import { renderMarkdown } from '../../lib/markdown';
+import { Markdown } from '../Markdown';
 import { skillScaffold, skillPath, slugify } from '../../lib/library';
 import { cn } from '../../lib/cn';
 import type { SkillMeta } from '../../../electron/shared/types';
@@ -263,7 +263,7 @@ function SkillDetail({ skill }: { skill: SkillMeta }) {
 
       <ModuleSection title="Injected instructions" desc="The full SKILL.md body prepended to the system prompt.">
         <div className="rounded-xl bg-ink-950 ring-1 ring-ink-800/40 px-5 py-4">
-          <div className="md" dangerouslySetInnerHTML={{ __html: renderMarkdown(body) }} />
+          <Markdown source={body} />
         </div>
       </ModuleSection>
     </div>

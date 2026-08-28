@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { useWorkspace } from '../../stores/workspace';
 import { useUi } from '../../stores/ui';
-import { renderMarkdown } from '../../lib/markdown';
+import { Markdown } from '../Markdown';
 import { cn } from '../../lib/cn';
 import type {
   SteeringFile,
@@ -327,7 +327,7 @@ function RootDocDetail({ doc }: { doc: SteeringFile }) {
       </Callout>
       <ModuleSection title="Content" desc="Injected verbatim into every run's system prompt.">
         <div className="rounded-xl bg-ink-950 ring-1 ring-ink-800/40 px-5 py-4">
-          <div className="md" dangerouslySetInnerHTML={{ __html: renderMarkdown(doc.body) }} />
+          <Markdown source={doc.body} />
         </div>
       </ModuleSection>
     </div>

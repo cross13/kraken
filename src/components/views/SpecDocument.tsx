@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { CheckCircle2, Circle, CheckSquare, Square, FileText } from 'lucide-react';
 import { parseSpecDoc, highlightEars, type SpecSection } from '../../lib/specSections';
-import { renderMarkdown } from '../../lib/markdown';
+import { Markdown } from '../Markdown';
 import { cn } from '../../lib/cn';
 
 /**
@@ -91,10 +91,7 @@ function SectionCard({ section, index }: { section: SpecSection; index: number }
           ))}
         </ul>
       ) : (
-        <div
-          className="md text-[14px] leading-relaxed"
-          dangerouslySetInnerHTML={{ __html: renderMarkdown(section.body) }}
-        />
+        <Markdown source={section.body} className="text-[14px] leading-relaxed" />
       )}
     </section>
   );

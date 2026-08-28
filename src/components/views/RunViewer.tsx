@@ -11,7 +11,7 @@ import {
   FilePlus2,
   FilePen,
 } from 'lucide-react';
-import { renderMarkdown } from '../../lib/markdown';
+import { Markdown } from '../Markdown';
 import { cn } from '../../lib/cn';
 import type { RunRow, RunFileRow } from '../../../electron/shared/types';
 
@@ -135,7 +135,7 @@ export function RunViewer({ runId }: { runId: string }) {
 
         {run.response && (
           <Section title="Response">
-            <div className="md" dangerouslySetInnerHTML={{ __html: renderMarkdown(run.response) }} />
+            <Markdown source={run.response} />
           </Section>
         )}
 

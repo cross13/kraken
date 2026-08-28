@@ -354,6 +354,29 @@ language via `detectLanguage` and highlights with `prism.ts` (lazy `ensureLangua
 extras; one-click **Install `<lang>`** banner otherwise). Toolbar: theme picker, line-numbers +
 wrap, and a link to Library › Appearance. Colors are scoped as `--syn-*` vars on `.code-view`.
 
+## Markdown & mermaid (`components/Markdown.tsx` + `lib/markdown.ts`)
+
+**Every markdown surface renders through `<Markdown source={…} className={…} />`** — spec
+documents, the Assistant, run transcripts, agent/skill/steering viewers, the completion summary.
+Don't reach for `renderMarkdown` + `dangerouslySetInnerHTML` directly; a call site that does misses
+the mermaid pass.
+
+`lib/markdown.ts` is `marked` with a custom renderer: fenced code goes through Prism, **except
+```mermaid**, which becomes an inert `<div class="md-mermaid" data-mermaid="…">` holding the source
+(with a `<pre>` inside as the fallback). `<Markdown>` then replaces those placeholders with SVG:
+
+- **mermaid is imported dynamically** (`await import('mermaid')`) so its ~1.2 MB chunk only loads
+  for documents that actually contain a diagram, and it is **bundled, never CDN-loaded** — the CSP
+  in `index.html` is `script-src 'self'`.
+- Diagram colours come from the active theme's CSS variables (`mermaidTheme()` maps `--bg`,
+  `--card`, `--line`, `--ink-100`, `--accent` onto mermaid's `themeVariables`), and the effect
+  depends on the theme so SVGs re-render when the palette changes.
+- A diagram that fails to parse falls back to its source in a `<pre>` — a bad diagram never takes
+  the document with it.
+
+This is what makes the Cursor-style `plan.md` (a flowchart of the approach above the affected-files
+table) readable inside the app rather than showing as coloured code.
+
 ## Other `src/lib` helpers
 
 - `tasks.ts` — parse `tasks.md` checklists, per-task `@agent`, waves/dependencies.

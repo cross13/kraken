@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { useWorkspace } from '../../stores/workspace';
 import { useOrchestrator } from '../../stores/orchestrator';
-import { renderMarkdown } from '../../lib/markdown';
+import { Markdown } from '../Markdown';
 import { KrakenLoader } from '../KrakenLoader';
 import { cn } from '../../lib/cn';
 import type { SpecMeta, SpecFileChange } from '../../../electron/shared/types';
@@ -247,12 +247,12 @@ ${fileList}`;
               Summary
             </h4>
             {summary ? (
-              <div
+              <Markdown
+                source={summary}
                 className={cn(
-                  'md text-[12px] leading-relaxed max-h-72 overflow-y-auto pr-1',
+                  'text-[12px] leading-relaxed max-h-72 overflow-y-auto pr-1',
                   summarizing && 'opacity-80'
                 )}
-                dangerouslySetInnerHTML={{ __html: renderMarkdown(summary) }}
               />
             ) : summarizing ? (
               <KrakenLoader size="sm" label="Generating summary…" className="py-4" />

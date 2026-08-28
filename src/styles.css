@@ -314,6 +314,10 @@ body {
 .md h2 { @apply text-base; }
 .md h3 { @apply text-sm uppercase tracking-wider text-ink-300; }
 .md p { @apply leading-relaxed mb-2 text-ink-100; }
+/* Mermaid: the placeholder <Markdown> fills with an SVG. Wide diagrams scroll
+   inside their own box so the surface never scrolls horizontally. */
+.md-mermaid { @apply my-3 overflow-x-auto; }
+.md-mermaid svg { max-width: 100%; height: auto; }
 .md ul, .md ol { @apply ml-5 mb-2; }
 .md ul { @apply list-disc; }
 .md ol { @apply list-decimal; }
