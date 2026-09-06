@@ -1,0 +1,119 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600&family=Space+Grotesk:wght@600&family=JetBrains+Mono:wght@400;500&display=swap">
+  <style>
+    body { margin: 0; background: #1e1e1e; font-family: 'Hanken Grotesk', system-ui, sans-serif; color: #f2f2f2; }
+    * { box-sizing: border-box; }
+    a { color: #a6e62e; } a:hover { color: #c4f06a; }
+    .mono { font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; }
+    .disp { font-family: 'Space Grotesk', 'Hanken Grotesk', sans-serif; }
+    .kw { font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: .82em; font-weight: 500; color: #a6e62e; }
+  </style>
+</helmet>
+
+<div style="width: 1000px; height: 760px; display: flex; flex-direction: column; background: #1e1e1e; overflow: hidden;">
+
+  <div style="display: flex; align-items: center; gap: 10px; padding: 12px 18px; border-bottom: 1px solid #393939;">
+    <span class="disp" style="font-size: 13px; font-weight: 600; color: #fafafa;">Under ~1180px</span>
+    <span style="font-size: 11.5px; color: #848484;">the two panes stack &mdash; the stories become a filter, not a column</span>
+  </div>
+
+  <!-- readiness keeps its line; it is the reason the view exists -->
+  <div style="display: flex; align-items: center; gap: 14px; padding: 10px 18px; background: #232323; border-bottom: 1px solid #393939;">
+    <span style="font-size: 12px; color: #c8c8c8;">Ready to plan</span>
+    <div style="display: flex; gap: 3px; width: 180px;">
+      <div style="height: 6px; flex: 1; background: #76b900;"></div>
+      <div style="height: 6px; flex: 1; background: #76b900;"></div>
+      <div style="height: 6px; flex: 1; background: #76b900;"></div>
+      <div style="height: 6px; flex: 1; background: #76b900;"></div>
+      <div style="height: 6px; flex: 1; background: #76b900;"></div>
+      <div style="height: 6px; flex: 1; background: #9b6bff;"></div>
+      <div style="height: 6px; flex: 1; background: #9b6bff;"></div>
+    </div>
+    <span class="mono" style="font-size: 11.5px; color: #a8a8a8;">6 of 7 answer a story &middot; 2 need a look</span>
+  </div>
+
+  <!-- the stories, collapsed into a row of filter chips -->
+  <div style="display: flex; align-items: center; gap: 8px; padding: 11px 18px; border-bottom: 1px solid #333333;">
+    <span class="mono" style="font-size: 10px; color: #848484; flex-shrink: 0;">stories</span>
+    <div style="display: flex; gap: 6px; overflow: hidden;">
+      <div style="display: flex; align-items: center; gap: 7px; padding: 6px 11px; background: #333333; color: #fafafa; flex-shrink: 0;">
+        <span class="mono" style="font-size: 10.5px; color: #a6e62e;">US-1</span>
+        <span style="font-size: 12px;">settle decisions before drafting</span>
+        <span class="mono" style="font-size: 10px; color: #848484;">2</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 7px; padding: 6px 11px; background: #2a2a2a; color: #c8c8c8; flex-shrink: 0;">
+        <span class="mono" style="font-size: 10.5px; color: #a8a8a8;">US-2</span>
+        <span style="font-size: 12px;">options, not an essay</span>
+        <span class="mono" style="font-size: 10px; color: #848484;">4</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 7px; padding: 6px 11px; background: #2a2a2a; border-bottom: 2px solid #9b6bff; color: #c8c8c8; flex-shrink: 0;">
+        <span class="mono" style="font-size: 10.5px; color: #c9a9ff;">US-3</span>
+        <span style="font-size: 12px;">skip it entirely</span>
+        <span class="mono" style="font-size: 10px; color: #c9a9ff;">0</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- criteria get the whole width -->
+  <div style="flex: 1; padding: 14px 18px; display: flex; flex-direction: column; gap: 12px; min-height: 0; overflow: hidden;">
+    <div style="display: flex; align-items: center; gap: 9px; padding-bottom: 8px; border-bottom: 1px solid #333333;">
+      <span class="mono" style="font-size: 11px; color: #a6e62e;">US-1</span>
+      <span style="font-size: 12.5px; color: #c8c8c8;">settle the decisions the plan depends on before it drafts</span>
+      <span class="mono" style="margin-left: auto; font-size: 10.5px; color: #848484;">2 criteria</span>
+    </div>
+
+    <div style="display: flex; flex-direction: column;">
+      <div style="display: flex; align-items: baseline; gap: 12px; padding: 12px 4px; border-bottom: 1px solid #2a2a2a;">
+        <span class="mono" style="font-size: 11px; width: 40px; flex-shrink: 0; color: #848484;">AC-1</span>
+        <p style="margin: 0; flex: 1; font-size: 13.5px; line-height: 1.55; color: #c8c8c8;">
+          <span class="kw">WHEN</span> the user approves Requirements <span class="kw">THEN the system SHALL</span> open the Clarify tab, unless Resolved Decisions already exists.
+        </p>
+        <span class="mono" style="font-size: 9.5px; padding: 2px 6px; background: rgba(250,250,250,.06); color: #848484; flex-shrink: 0;">WHEN / THEN</span>
+      </div>
+
+      <div style="padding: 12px 4px; border-bottom: 1px solid #2a2a2a;">
+        <div style="display: flex; align-items: baseline; gap: 12px;">
+          <span class="mono" style="font-size: 11px; width: 40px; flex-shrink: 0; color: #a6e62e;">AC-5</span>
+          <p style="margin: 0; flex: 1; font-size: 13.5px; line-height: 1.55; color: #f2f2f2;">
+            <span class="kw">WHEN</span> the user applies the decisions <span class="kw">THEN the system SHALL</span> write Resolved Decisions and draft the plan if it is still a stub.
+          </p>
+          <span class="mono" style="font-size: 9.5px; padding: 2px 6px; background: rgba(250,250,250,.06); color: #848484; flex-shrink: 0;">WHEN / THEN</span>
+        </div>
+        <div style="margin-top: 10px; margin-left: 52px; padding: 11px 13px; background: #232323; border-left: 2px solid #76b900; display: flex; flex-direction: column; gap: 7px;">
+          <div style="display: flex; gap: 9px;">
+            <span class="mono" style="font-size: 10px; width: 46px; flex-shrink: 0; color: #848484;">form</span>
+            <span style="font-size: 11.5px; color: #ececec;">WHEN / THEN &mdash; one event, one observable outcome</span>
+          </div>
+          <div style="display: flex; gap: 9px;">
+            <span class="mono" style="font-size: 10px; width: 46px; flex-shrink: 0; color: #848484;">story</span>
+            <span style="font-size: 11.5px; color: #ececec;">US-1 &mdash; settle the decisions the plan depends on</span>
+          </div>
+          <div style="display: flex; gap: 9px;">
+            <span class="mono" style="font-size: 10px; width: 46px; flex-shrink: 0; color: #848484;">plan</span>
+            <span style="font-size: 11.5px; color: #a6e62e;">Key details, T5</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: auto; font-size: 11px; line-height: 1.5; color: #848484;">
+      Same reading order as the wide view, same checks &mdash; the stories move above the list instead of beside it, so the
+      criteria never lose their width. The plan&rsquo;s Review view stacks the same way.
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1000,"height":760}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

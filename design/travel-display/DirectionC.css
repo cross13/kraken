@@ -1,0 +1,32 @@
+/* Direction C — Focus + strip: the width buys HIERARCHY. One deep, many shallow. */
+.split {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1120px minmax(0, 1fr);
+  gap: 12px;
+  padding: 10px 14px 12px;
+}
+.focus { display: flex; flex-direction: column; min-height: 0; min-width: 0; border: 1px solid rgba(118, 185, 0, 0.45); background: #282C21; overflow: hidden; }
+.focus-hd { padding: 13px 18px 12px; border-bottom: 1px solid #333333; flex: none; }
+.focus-title { font-size: 22px; font-weight: 600; color: #FAFAFA; line-height: 1.2; }
+.focus-time { font-size: 30px; color: #C4F06A; font-weight: 500; line-height: 1; letter-spacing: -0.01em; }
+.params { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px 22px; margin-top: 13px; }
+.param { display: flex; gap: 7px; align-items: baseline; min-width: 0; }
+.param b { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #848484; font-weight: 600; flex: none; }
+.param span { font-size: 12px; color: #ECECEC; }
+.focus-log { flex: 1 1 auto; min-height: 0; background: #1A1A1A; padding: 12px 18px; overflow: hidden; font-size: 13px; line-height: 1.55; }
+.strip { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.strip-grid { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 10px; align-content: start; }
+.strip-hd { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; color: #848484; font-weight: 600; padding-bottom: 1px; }
+.strip-hd i { flex: 1 1 auto; height: 1px; background: #333333; display: block; }
+.mini { border: 1px solid #393939; background: #232323; padding: 7px 10px 8px; min-width: 0; display: flex; flex-direction: column; }
+.mini.run { border-color: rgba(118, 185, 0, 0.35); background: #262A20; }
+.mini.q { background: #1E1E1E; }
+.mini.past { background: #1C1C1C; border-color: #2F2F2F; }
+.mini.bad { border-color: rgba(224, 83, 60, 0.4); background: #221A18; }
+.mini-1 { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.mini-t { font-size: 12.5px; color: #ECECEC; }
+.mini.past .mini-t, .mini.q .mini-t { color: #A8A8A8; }
+.mini-log { margin-top: 4px; }
+.ico { flex: none; display: block; }

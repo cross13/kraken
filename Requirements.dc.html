@@ -1,0 +1,382 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+  <style>
+    body { margin: 0; background: #1a1a1a; font-family: 'Hanken Grotesk', system-ui, -apple-system, sans-serif; color: #f2f2f2; }
+    * { box-sizing: border-box; }
+    a { color: #a6e62e; } a:hover { color: #c4f06a; }
+    .mono { font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; }
+    .disp { font-family: 'Space Grotesk', 'Hanken Grotesk', system-ui, sans-serif; }
+    .kw { font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: 0.82em; font-weight: 500; letter-spacing: .02em; color: #a6e62e; }
+    .scroll { overflow-y: auto; scrollbar-width: thin; scrollbar-color: #3d3d3d transparent; }
+    .scroll::-webkit-scrollbar { width: 9px; }
+    .scroll::-webkit-scrollbar-thumb { background: #3d3d3d; }
+    .row:hover { background: #262626; }
+    .story:hover { background: #2f2f2f; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; height: 980px; display: flex; flex-direction: column; background: #1e1e1e; overflow: hidden;">
+
+  <!-- file tabs -->
+  <div style="display: flex; align-items: flex-end; gap: 2px; padding: 6px 16px 0; border-bottom: 1px solid rgba(250,250,250,.05); flex-shrink: 0;">
+    <div style="position: relative; padding: 10px 14px; font-size: 13px; color: #fafafa; background: rgba(250,250,250,.03);">
+      requirements.md
+      <span style="position: absolute; left: 8px; right: 8px; bottom: -1px; height: 2px; background: #76b900;"></span>
+    </div>
+    <div style="padding: 10px 14px; font-size: 13px; color: #a8a8a8;">plan.md</div>
+    <div style="padding: 10px 14px; font-size: 13px; color: #848484;">tasks.md</div>
+
+    <div style="margin-left: auto; display: flex; align-items: center; gap: 10px; padding-bottom: 6px;">
+      <span class="mono" style="font-size: 11px; color: #848484;">saved</span>
+      <div style="display: flex; background: rgba(250,250,250,.04); padding: 2px;">
+        <div style="padding: 6px 10px; font-size: 12px; color: #a8a8a8;">Source</div>
+        <div style="padding: 6px 10px; font-size: 12px; color: #fafafa; background: #333333;">Review</div>
+        <div style="padding: 6px 10px; font-size: 12px; color: #a8a8a8;">Edit</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- spec strip -->
+  <div style="display: flex; align-items: center; gap: 14px; padding: 8px 20px; flex-shrink: 0;">
+    <span class="disp" style="font-size: 13.5px; font-weight: 600; color: #fafafa;">Spec: Clarify before the plan</span>
+    <span class="mono" style="font-size: 11px; color: #848484;">&rsaquo; clarify-round &rsaquo; requirements.md</span>
+    <div style="margin-left: auto; display: flex; align-items: center; gap: 6px;">
+      <div style="display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 6px; background: #333333; color: #fafafa;">
+        <span style="width: 19px; height: 19px; display: grid; place-items: center; font-size: 10.5px; font-weight: 600; background: #76b900; color: #0f1400;">1</span>
+        <span style="font-size: 12.5px; font-weight: 500;">Requirements</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 6px; color: #848484;">
+        <span style="width: 19px; height: 19px; display: grid; place-items: center; font-size: 10.5px; font-weight: 600; background: rgba(250,250,250,.07); color: #848484;">2</span>
+        <span style="font-size: 12.5px;">Plan</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 6px; color: #848484;">
+        <span style="width: 19px; height: 19px; display: grid; place-items: center; font-size: 10.5px; font-weight: 600; background: rgba(250,250,250,.07); color: #848484;">3</span>
+        <span style="font-size: 12.5px;">Build</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- readiness: the gate question, answered in one line -->
+  <div style="display: flex; align-items: center; gap: 16px; padding: 10px 20px; background: #232323; border-top: 1px solid #393939; border-bottom: 1px solid #393939; flex-shrink: 0;">
+    <span style="font-size: 12px; color: #c8c8c8;">Ready to plan</span>
+    <div style="display: flex; gap: 3px; width: 300px;">
+      <sc-for list="{{meter}}" as="m" hint-placeholder-count="7">
+        <div style="{{m.style}}"></div>
+      </sc-for>
+    </div>
+    <span class="mono" style="font-size: 11.5px; color: #a8a8a8;">{{readyLabel}}</span>
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <sc-for list="{{filters}}" as="f" hint-placeholder-count="2">
+        <div style="{{f.style}}" onClick="{{f.pick}}">{{f.label}}</div>
+      </sc-for>
+    </div>
+    <span style="margin-left: auto; font-size: 11.5px; color: #848484;">{{hint}}</span>
+  </div>
+
+  <div style="flex: 1; display: flex; min-height: 0;">
+
+    <!-- left: the stories, and the context that bounds them -->
+    <div style="width: 430px; flex-shrink: 0; display: flex; flex-direction: column; border-right: 1px solid #393939; min-height: 0;">
+      <div style="display: flex; align-items: baseline; gap: 8px; padding: 14px 18px 10px;">
+        <span class="mono" style="font-size: 11px; color: #a6e62e;">user stories</span>
+        <span style="font-size: 11.5px; color: #848484;">who wants what, and why</span>
+      </div>
+
+      <div class="scroll" style="flex: 1; padding: 0 14px 18px; display: flex; flex-direction: column; gap: 8px; min-height: 0;">
+        <sc-for list="{{stories}}" as="s" hint-placeholder-count="3">
+          <div class="story" style="{{s.cardStyle}}" onClick="{{s.pick}}">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="mono" style="{{s.idStyle}}">{{s.id}}</span>
+              <span style="margin-left: auto; font-size: 10.5px; padding: 2px 7px; {{s.badgeStyle}}">{{s.badge}}</span>
+            </div>
+            <p style="{{s.textStyle}}">
+              As <b style="font-weight: 600; color: #ececec;">{{s.role}}</b>, I want {{s.want}}, so that {{s.why}}.
+            </p>
+          </div>
+        </sc-for>
+
+        <!-- scope and the questions that still block planning -->
+        <div style="margin-top: 6px; padding: 14px 15px; background: #232323; border: 1px solid #393939;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+            <span class="mono" style="font-size: 10px; color: #848484;">out of scope</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; gap: 8px; align-items: baseline;">
+              <span style="width: 3px; height: 3px; background: #6e6e6e; flex-shrink: 0; margin-top: 6px;"></span>
+              <span style="font-size: 12.5px; line-height: 1.5; color: #a8a8a8;">Editing questions in the raw markdown</span>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: baseline;">
+              <span style="width: 3px; height: 3px; background: #6e6e6e; flex-shrink: 0; margin-top: 6px;"></span>
+              <span style="font-size: 12.5px; line-height: 1.5; color: #a8a8a8;">Answering on behalf of the user</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="padding: 14px 15px; background: #2a2140; border: 1px solid rgba(155,107,255,.35);">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="mono" style="font-size: 10px; color: #c9a9ff;">open questions</span>
+            <span class="mono" style="margin-left: auto; font-size: 10.5px; color: #c9a9ff;">2 open &middot; 3 resolved</span>
+          </div>
+          <p style="margin: 8px 0 0; font-size: 12.5px; line-height: 1.5; color: #c8c8c8;">
+            Two decisions are still open. The plan will guess at them unless they are answered first.
+          </p>
+          <div style="margin-top: 10px; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 12px; font-weight: 500; background: #9b6bff; color: #12081f;">
+            Answer them in Clarify
+            <span style="font-size: 11px;">&rarr;</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- right: the criteria, grouped by the story they serve -->
+    <div style="flex: 1; display: flex; flex-direction: column; min-height: 0; min-width: 0;">
+      <div style="display: flex; align-items: baseline; gap: 8px; padding: 14px 20px 10px;">
+        <span class="mono" style="font-size: 11px; color: #a6e62e;">acceptance criteria</span>
+        <span style="font-size: 11.5px; color: #848484;">{{critHint}}</span>
+      </div>
+
+      <div class="scroll" style="flex: 1; padding: 0 20px 18px; display: flex; flex-direction: column; gap: 14px; min-height: 0;">
+        <sc-for list="{{groups}}" as="g" hint-placeholder-count="3">
+          <div style="{{g.wrapStyle}}">
+            <div style="display: flex; align-items: center; gap: 9px; padding-bottom: 8px; border-bottom: 1px solid #333333;">
+              <span class="mono" style="{{g.idStyle}}">{{g.id}}</span>
+              <span style="{{g.titleStyle}}">{{g.title}}</span>
+              <span class="mono" style="margin-left: auto; font-size: 10.5px; color: #848484;">{{g.count}}</span>
+            </div>
+
+            <div style="display: flex; flex-direction: column;">
+              <sc-for list="{{g.crits}}" as="c" hint-placeholder-count="3">
+                <div class="row" style="{{c.rowStyle}}" onClick="{{c.pick}}">
+                  <div style="display: flex; align-items: baseline; gap: 12px;">
+                    <span class="mono" style="{{c.idStyle}}">{{c.id}}</span>
+                    <p style="{{c.textStyle}}">
+                      <span class="kw">{{c.kw1}}</span> {{c.cond}} <span class="kw">{{c.kw2}}</span> {{c.action}}
+                    </p>
+                    <div style="display: flex; gap: 5px; flex-shrink: 0;">
+                      <sc-for list="{{c.flags}}" as="fl" hint-placeholder-count="1">
+                        <span class="mono" style="{{fl.style}}">{{fl.label}}</span>
+                      </sc-for>
+                    </div>
+                  </div>
+
+                  <sc-if value="{{c.open}}" hint-placeholder-val="{{ true }}">
+                    <div style="margin-top: 10px; margin-left: 52px; padding: 11px 13px; background: #1e1e1e; border-left: 2px solid #76b900; display: flex; flex-direction: column; gap: 7px;">
+                      <sc-for list="{{c.checks}}" as="ck" hint-placeholder-count="3">
+                        <div style="display: flex; align-items: flex-start; gap: 9px;">
+                          <span class="mono" style="font-size: 10px; width: 46px; flex-shrink: 0; color: #848484; padding-top: 1px;">{{ck.kind}}</span>
+                          <span style="{{ck.style}}">{{ck.label}}</span>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-for>
+
+              <sc-if value="{{g.empty}}" hint-placeholder-val="{{ true }}">
+                <div style="padding: 12px 4px; font-size: 12.5px; color: #c9a9ff;">
+                  Nothing here yet — this story has no criterion, so nothing in the plan will be built for it.
+                </div>
+              </sc-if>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+  <!-- gate bar -->
+  <div style="display: flex; align-items: center; gap: 12px; padding: 12px 20px; background: rgba(35,35,35,.6); border-top: 1px solid #393939; flex-shrink: 0;">
+    <div style="padding: 8px 14px; font-size: 12.5px; background: #333333; color: #f2f2f2;">Revise with feedback&hellip;</div>
+    <div style="padding: 8px 14px; font-size: 12.5px; background: rgba(155,107,255,.14); color: #c9a9ff;">Improve with Claude</div>
+    <span style="{{gateNote}}">{{gateText}}</span>
+    <div style="margin-left: auto; display: flex; align-items: center; gap: 8px; padding: 8px 16px; font-size: 12.5px; font-weight: 600; background: #76b900; color: #0f1400;">
+      Approve requirements
+      <span style="font-size: 11px;">&rarr;</span>
+      Plan
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":980},"density":{"editor":"enum","options":["comfortable","compact"],"default":"comfortable"},"showChecks":{"editor":"boolean","default":true}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { story: null, crit: 'AC-7', filter: 'all' };
+  }
+
+  data() {
+    return {
+      stories: [
+        { id: 'US-1', role: 'someone writing a spec', want: 'to settle the decisions the plan depends on before it drafts',
+          why: 'the plan commits to my answer instead of guessing' },
+        { id: 'US-2', role: 'a reviewer', want: 'every question to arrive with concrete options',
+          why: 'answering is one click, not an essay' },
+        { id: 'US-3', role: 'someone in a hurry', want: 'to skip the questions entirely',
+          why: 'a quick plan still lands without stopping' }
+      ],
+      criteria: [
+        { id: 'AC-1', story: 'US-1', kw1: 'WHEN', cond: 'the user approves Requirements', kw2: 'THEN the system SHALL',
+          action: 'open the Clarify tab, unless Resolved Decisions already exists.', form: 'WHEN / THEN', plan: 'Approach, T4' },
+        { id: 'AC-5', story: 'US-1', kw1: 'WHEN', cond: 'the user applies the decisions', kw2: 'THEN the system SHALL',
+          action: 'write Resolved Decisions and draft the plan if it is still a stub.', form: 'WHEN / THEN', plan: 'Key details, T5' },
+        { id: 'AC-2', story: 'US-2', kw1: 'WHEN', cond: 'Claude surfaces a decision', kw2: 'THEN each question SHALL',
+          action: 'carry 2 to 4 concrete options, each with its tradeoff.', form: 'WHEN / THEN', plan: 'Affected files, T2' },
+        { id: 'AC-3', story: 'US-2', kw1: 'WHEN', cond: 'the user clicks an option', kw2: 'THEN the system SHALL',
+          action: 'resolve that question with the option text, in place.', form: 'WHEN / THEN', plan: 'Frontend, T3' },
+        { id: 'AC-4', story: 'US-2', kw1: 'WHILE', cond: 'the Clarify panel is on screen', kw2: 'THE system SHALL',
+          action: 'answer the first open question on keys 1 to 9.', form: 'WHILE / SHALL', plan: 'Frontend, T3' },
+        { id: 'AC-7', story: 'US-2', kw1: 'WHILE', cond: 'the panel is open', kw2: 'THE system SHALL',
+          action: 'feel responsive and stay easy to use.', form: 'WHILE / SHALL', plan: '', vague: 'feel responsive, easy to use' },
+        { id: 'AC-6', story: null, kw1: 'IF', cond: 'a plan run returns questions instead of a plan', kw2: 'THEN the system SHALL',
+          action: 'switch the stage back to Clarify.', form: 'IF / THEN', plan: 'Approach, T4' }
+      ]
+    };
+  }
+
+  renderVals() {
+    const compact = (this.props.density ?? 'comfortable') === 'compact';
+    const showChecks = this.props.showChecks ?? true;
+    const { stories, criteria } = this.data();
+    const selStory = this.state.story;
+    const selCrit = this.state.crit;
+    const filter = this.state.filter;
+
+    const body = compact ? '12.5px' : '13.5px';
+    const rowPad = compact ? '9px 4px' : '12px 4px';
+
+    const needsLook = (c) => !c.story || !!c.vague;
+    const flagged = criteria.filter(needsLook);
+    const orphanStories = stories.filter((s) => !criteria.some((c) => c.story === s.id));
+
+    const meter = criteria.map((c) => ({
+      style: 'height: 6px; flex: 1; background: ' +
+        (needsLook(c) ? '#9b6bff' : c.id === selCrit ? '#c4f06a' : '#76b900') + ';'
+    }));
+
+    const filters = [
+      { key: 'all', label: 'All ' + criteria.length },
+      { key: 'look', label: 'Needs a look ' + flagged.length }
+    ].map((f) => ({
+      label: f.label,
+      style: 'font-size: 11.5px; padding: 4px 10px; cursor: pointer; ' +
+        (filter === f.key
+          ? (f.key === 'look' && flagged.length
+              ? 'background: rgba(155,107,255,.18); color: #c9a9ff;'
+              : 'background: rgba(118,185,0,.16); color: #a6e62e;')
+          : 'background: #2a2a2a; color: #a8a8a8;'),
+      pick: () => this.setState({ filter: f.key })
+    }));
+
+    const storyVals = stories.map((s) => {
+      const mine = criteria.filter((c) => c.story === s.id);
+      const on = s.id === selStory;
+      const orphan = mine.length === 0;
+      return {
+        id: s.id, role: s.role, want: s.want, why: s.why,
+        badge: orphan ? 'no criteria' : mine.length + ' criteria',
+        badgeStyle: orphan
+          ? 'background: rgba(155,107,255,.18); color: #c9a9ff;'
+          : 'background: rgba(250,250,250,.06); color: #a8a8a8;',
+        cardStyle: 'padding: ' + (compact ? '11px 13px' : '14px 15px') + '; cursor: pointer; background: ' +
+          (on ? '#262626' : '#2a2a2a') + '; border-left: 2px solid ' +
+          (on ? '#76b900' : orphan ? '#9b6bff' : 'transparent') +
+          '; opacity: ' + (selStory && !on ? '0.66' : '1') + ';',
+        idStyle: 'font-size: 11px; font-weight: 500; color: ' + (on ? '#a6e62e' : '#a8a8a8') + ';',
+        textStyle: 'margin: 8px 0 0; font-size: ' + body + '; line-height: 1.55; color: ' + (on ? '#f2f2f2' : '#c8c8c8') + ';',
+        pick: () => this.setState({ story: this.state.story === s.id ? null : s.id, crit: null })
+      };
+    });
+
+    const buildCrit = (c) => {
+      const on = c.id === selCrit;
+      const flags = [];
+      if (!c.story) flags.push({ label: 'no story', style: 'font-size: 9.5px; padding: 2px 6px; background: rgba(155,107,255,.18); color: #c9a9ff;' });
+      if (c.vague) flags.push({ label: 'vague', style: 'font-size: 9.5px; padding: 2px 6px; background: rgba(155,107,255,.18); color: #c9a9ff;' });
+      if (!flags.length) flags.push({ label: c.form, style: 'font-size: 9.5px; padding: 2px 6px; background: rgba(250,250,250,.06); color: #848484;' });
+
+      const checks = [
+        { kind: 'form', label: c.form + ' — one event, one observable outcome', style: 'font-size: 11.5px; color: #ececec;' }
+      ];
+      checks.push(c.story
+        ? { kind: 'story', label: c.story + ' — ' + (stories.find((s) => s.id === c.story) || {}).want, style: 'font-size: 11.5px; color: #ececec;' }
+        : { kind: 'story', label: 'no user story asks for this — cut it, or write the story', style: 'font-size: 11.5px; color: #c9a9ff;' });
+      if (c.vague) {
+        checks.push({ kind: 'vague', label: '"' + c.vague + '" cannot be tested — name the number or the observable', style: 'font-size: 11.5px; color: #c9a9ff;' });
+      }
+      checks.push(c.plan
+        ? { kind: 'plan', label: c.plan, style: 'font-size: 11.5px; color: #a6e62e;' }
+        : { kind: 'plan', label: 'nothing in the plan covers it yet', style: 'font-size: 11.5px; color: #848484;' });
+
+      return {
+        id: c.id, kw1: c.kw1, cond: c.cond, kw2: c.kw2, action: c.action,
+        flags: flags,
+        checks: checks,
+        open: on && showChecks,
+        rowStyle: 'padding: ' + rowPad + '; cursor: pointer; border-bottom: 1px solid #2a2a2a;',
+        idStyle: 'font-size: 11px; width: 40px; flex-shrink: 0; color: ' + (on ? '#a6e62e' : '#848484') + ';',
+        textStyle: 'margin: 0; flex: 1; font-size: ' + body + '; line-height: 1.55; color: ' + (on ? '#f2f2f2' : '#c8c8c8') + ';',
+        pick: () => this.setState({ crit: this.state.crit === c.id ? null : c.id })
+      };
+    };
+
+    const visible = criteria.filter((c) => (filter === 'look' ? needsLook(c) : true));
+    const groups = [];
+    for (const s of stories) {
+      if (selStory && s.id !== selStory) continue;
+      const mine = visible.filter((c) => c.story === s.id);
+      if (filter === 'look' && !mine.length && !orphanStories.includes(s)) continue;
+      groups.push({
+        id: s.id,
+        title: s.want,
+        count: mine.length ? mine.length + ' criteria' : 'none',
+        empty: mine.length === 0,
+        crits: mine.map(buildCrit),
+        wrapStyle: 'display: flex; flex-direction: column;',
+        idStyle: 'font-size: 11px; font-weight: 500; color: ' + (s.id === selStory ? '#a6e62e' : '#a8a8a8') + ';',
+        titleStyle: 'font-size: 12.5px; color: #c8c8c8;'
+      });
+    }
+    const loose = visible.filter((c) => !c.story);
+    if (loose.length && !selStory) {
+      groups.push({
+        id: 'none',
+        title: 'not asked for by any story',
+        count: loose.length + ' criteria',
+        empty: false,
+        crits: loose.map(buildCrit),
+        wrapStyle: 'display: flex; flex-direction: column;',
+        idStyle: 'font-size: 11px; font-weight: 500; color: #c9a9ff;',
+        titleStyle: 'font-size: 12.5px; color: #c9a9ff;'
+      });
+    }
+
+    const tied = criteria.length - criteria.filter((c) => !c.story).length;
+    return {
+      meter: meter,
+      filters: filters,
+      stories: storyVals,
+      groups: groups,
+      readyLabel: tied + ' of ' + criteria.length + ' criteria answer a story · ' + flagged.length + ' need a look',
+      hint: selStory
+        ? 'Showing only what ' + selStory + ' asks for. Click it again for everything.'
+        : 'Click a story to see just its criteria, or a criterion to check it.',
+      critHint: selStory ? 'for ' + selStory : 'grouped by the story they serve',
+      gateText: orphanStories.length
+        ? orphanStories.length + ' story has no criterion, and ' + flagged.length + ' criteria need a look'
+        : flagged.length + ' criteria need a look before planning',
+      gateNote: 'font-size: 11.5px; color: #c9a9ff;'
+    };
+  }
+}
+</script>
+</body>
+</html>

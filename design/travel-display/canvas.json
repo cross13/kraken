@@ -1,0 +1,262 @@
+{
+  "pages": [
+    {
+      "id": "page-1",
+      "name": "Pulpo"
+    },
+    {
+      "id": "page-2",
+      "name": "Layouts"
+    }
+  ],
+  "artboards": [
+    {
+      "file": "SamuraiOcto.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 1200,
+      "h": 800,
+      "page": "page-1",
+      "title": "A2 — Chibi samurái"
+    },
+    {
+      "file": "ShojoOcto.dc.html",
+      "x": 1320,
+      "y": 0,
+      "w": 1200,
+      "h": 800,
+      "page": "page-1",
+      "title": "G — Shōjo"
+    },
+    {
+      "file": "ShounenOcto.dc.html",
+      "x": 2640,
+      "y": 0,
+      "w": 1200,
+      "h": 800,
+      "page": "page-1",
+      "title": "H — Shōnen"
+    },
+    {
+      "file": "OvaOcto.dc.html",
+      "x": 3960,
+      "y": 0,
+      "w": 1200,
+      "h": 800,
+      "page": "page-1",
+      "title": "I — OVA 88"
+    },
+    {
+      "file": "ChibiOcto.dc.html",
+      "x": 5280,
+      "y": 0,
+      "w": 1200,
+      "h": 800,
+      "title": "A — Chibi",
+      "page": "page-1"
+    },
+    {
+      "file": "VisorOcto.dc.html",
+      "x": 0,
+      "y": 1080,
+      "w": 1200,
+      "h": 800,
+      "title": "B — Visor",
+      "page": "page-1"
+    },
+    {
+      "file": "InkOcto.dc.html",
+      "x": 1320,
+      "y": 1080,
+      "w": 1200,
+      "h": 800,
+      "title": "C — Tinta",
+      "page": "page-1"
+    },
+    {
+      "file": "PixelOcto.dc.html",
+      "w": 1200,
+      "h": 800,
+      "page": "page-1",
+      "x": 2640,
+      "y": 1080,
+      "title": "D — Píxel"
+    },
+    {
+      "file": "NeonOcto.dc.html",
+      "w": 1200,
+      "h": 800,
+      "page": "page-1",
+      "x": 3960,
+      "y": 1080,
+      "title": "E — Neón"
+    },
+    {
+      "file": "TermOcto.dc.html",
+      "w": 1200,
+      "h": 800,
+      "page": "page-1",
+      "x": 5280,
+      "y": 1080,
+      "title": "F — Terminal"
+    },
+    {
+      "file": "Main.dc.html",
+      "x": 0,
+      "y": 2160,
+      "w": 2560,
+      "h": 720,
+      "title": "La colonia con el samurái (A2)",
+      "page": "page-1"
+    },
+    {
+      "file": "ColonyVisor.dc.html",
+      "x": 2680,
+      "y": 2160,
+      "w": 2560,
+      "h": 720,
+      "title": "La colonia con el visor (B)",
+      "page": "page-1"
+    },
+    {
+      "file": "DirectionA.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 2560,
+      "h": 720,
+      "title": "A — Dense wall",
+      "page": "page-2"
+    },
+    {
+      "file": "DirectionB.dc.html",
+      "x": 2680,
+      "y": 0,
+      "w": 2560,
+      "h": 720,
+      "title": "B — Wave lanes",
+      "page": "page-2"
+    },
+    {
+      "file": "DirectionC.dc.html",
+      "x": 5360,
+      "y": 0,
+      "w": 2560,
+      "h": 720,
+      "title": "C — Focus + strip",
+      "page": "page-2"
+    },
+    {
+      "file": "Anatomy.dc.html",
+      "x": 0,
+      "y": 880,
+      "w": 1200,
+      "h": 720,
+      "title": "Anatomía del tile (A)",
+      "page": "page-2"
+    },
+    {
+      "file": "Colony.dc.html",
+      "x": 1400,
+      "y": 880,
+      "w": 2560,
+      "h": 720,
+      "title": "D — La colonia (mark geométrico)",
+      "page": "page-2"
+    },
+    {
+      "file": "ColonyOpen.dc.html",
+      "x": 4080,
+      "y": 880,
+      "w": 2560,
+      "h": 720,
+      "title": "D — Un pulpo abierto",
+      "page": "page-2"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "octo-brief",
+      "page": "page-1",
+      "x": 0,
+      "y": -340,
+      "w": 1300,
+      "text": "El pulpo, dibujado de nuevo\nA2 es la que elegiste — el chibi de A convertido en samurái, con anatomía de armadura de verdad y el sable haciendo de indicador de estado. Está primera, y abajo la tenés puesta en la colonia entera.\n\nAl lado, los otros registros de ANIME: G shōjo (los ojos son el diseño), H shōnen (tinta pesada, aura, cuadro de impacto), I OVA 88 (cel aerografiado, halación, grano de cinta) y A, el chibi original del que sale A2.\n\nEn la fila de abajo, las que se fueron a otros medios: B mecha, C pincel, D sprite de LCD, E neón, F glifos de terminal.\n\nEn todas, la fila de abajo de la hoja es la que decide: a 54px y 34px, el tamaño real en la colonia."
+    },
+    {
+      "id": "octo-main",
+      "page": "page-1",
+      "x": 0,
+      "y": 2020,
+      "w": 900,
+      "text": "A2 — Chibi samurái, en la colonia\nAcá se ve lo que la hoja no puede mostrar: nueve samuráis a la vez. El sable es lo que más gana en contexto — de un vistazo distinguís quién está cortando, quién tiene el arma envainada esperando y quién la tiene clavada en el piso.\n\nY lo que más se pierde: a 54px el kuwagata y el shikoro son mucho borde por criatura. Si te convence la dirección, lo siguiente sería dibujar una versión simplificada para 34px — casco y sable, sin remaches ni cordón — como se hace con los sprites."
+    },
+    {
+      "id": "dir-a",
+      "page": "page-2",
+      "x": 0,
+      "y": -210,
+      "w": 760,
+      "text": "A — Muro denso\nEl ancho se gasta en ANCHO DE LOG: 4 tiles de 625×210, así cada cola de salida entra ~62 caracteres mono sin cortar líneas.\n\nContra: no te dice en qué wave va cada spec sin leer tile por tile."
+    },
+    {
+      "id": "dir-b",
+      "page": "page-2",
+      "x": 2680,
+      "y": -210,
+      "w": 760,
+      "text": "B — Carriles por wave\nEl ancho se gasta en ESTRUCTURA: un carril por spec, barra segmentada y tareas agrupadas por wave.\n\nContra: el log baja a 2–3 líneas — deja de ser un muro de salida en vivo."
+    },
+    {
+      "id": "dir-c",
+      "page": "page-2",
+      "x": 5360,
+      "y": -210,
+      "w": 760,
+      "text": "C — Foco + tira\nEl ancho se gasta en JERARQUÍA: un agente grande y legible desde lejos y el resto como tarjetas finas.\n\nContra: sólo un agente es legible en profundidad; los demás quedan en estado."
+    },
+    {
+      "id": "anatomia",
+      "page": "page-2",
+      "x": 0,
+      "y": 1640,
+      "w": 700,
+      "text": "Anatomía del tile de la Dirección A: medidas y tokens exactos (Signal, radio 0, sin sombras)."
+    },
+    {
+      "id": "dir-d",
+      "page": "page-2",
+      "x": 1400,
+      "y": 1640,
+      "w": 900,
+      "text": "D — La colonia, con el mark geométrico: esto es lo que está implementado hoy en WideApp.tsx. Sirve de referencia contra las tres mascotas nuevas de la página Pulpo."
+    },
+    {
+      "id": "dir-d-open",
+      "page": "page-2",
+      "x": 4080,
+      "y": 1640,
+      "w": 900,
+      "text": "Click en un pulpo: nada a la izquierda y se abre su run completo. La colonia se comprime a la derecha en vez de desaparecer."
+    },
+    {
+      "id": "colony-visor",
+      "page": "page-1",
+      "x": 2680,
+      "y": 2020,
+      "w": 900,
+      "text": "B — Visor, en la colonia\nAcá se ve por qué B aguanta mejor el tamaño chico: el visor encendido es una sola barra de color que se lee de lejos, y el estado se lee por el color del vidrio antes que por el dibujo — verde ejecuta, violeta decide, apagado espera, rojo falló.\n\nLe saqué los zzz: el vidrio apagado más la cresta caída ya dicen «en cola», y el texto flotando sería una segunda voz, más tierna, encima de un registro que no lo es.\n\nLo que se pierde: no hay ternura. Es una flota, no una pecera."
+    },
+    {
+      "id": "otros-medios",
+      "page": "page-1",
+      "x": 0,
+      "y": 900,
+      "w": 1300,
+      "text": "Las otras cinco, por si sirven de contraste: no son anime, son otros medios. B es la que mejor aguanta el tamaño chico de las nueve; D y F directamente no llegan y lo dicen en su propia hoja."
+    }
+  ],
+  "launch": {
+    "view": "canvas",
+    "page": "page-1"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 1440, "h": 2120, "title": "Requirements · Cards", "is_interactive": true },
+    { "file": "Plan.dc.html", "x": 1560, "y": 0, "w": 1440, "h": 2650, "title": "Plan · Cards", "is_interactive": true },
+    { "file": "Narrow.dc.html", "x": 3120, "y": 0, "w": 900, "h": 2050, "title": "Narrow window", "is_interactive": true },
+    { "file": "Labels.dc.html", "x": 4140, "y": 0, "w": 940, "h": 1060, "title": "The heading map — the whole feature" }
+  ],
+  "annotations": [
+    {
+      "id": "note-flow",
+      "x": 0,
+      "y": -350,
+      "w": 470,
+      "text": "CARDS = THE SPEC READ BACK AS THE THINKING BEHIND IT\n\nEach section is a beat on one line of reasoning. Fixed labels, no Claude run: a heading looks up its role in the argument (THE PROBLEM, WHAT MUST BE TRUE, WHAT WE STILL DON'T KNOW) and the connective that leads into it — so who wants this? / which, to be buildable, means / and, just as deliberately / except that.\n\nUnder each title is a COUNTED line, not a written one: \"7 criteria · 5 tied to a story · 2 need a look\". Everything in it comes from parsing the markdown, so it is free and it can never drift from the document.\n\nBeat 5 is the fallback: \"## Rollout notes\" is not in the map, so it arrives with a dashed node, a neutral SECTION kicker and no connective. It still reads.\n\nNarration off strips roles and connectives and leaves the plain document. Click a beat to follow it alone."
+    },
+    {
+      "id": "note-plan",
+      "x": 1560,
+      "y": -350,
+      "w": 450,
+      "text": "PLAN · CARDS — the plan is already an argument\n\nStrategy → surface → contract → risk → proof → order, ending where reality changed the plan. Ten beats, ten map entries.\n\nTwo things today's Cards view breaks, fixed here because a beat has to know what it holds: \"Affected files\" and \"Risks and rollback\" are markdown TABLES, and src/lib/markdown.ts has no table support (no .md table rule in styles.css either) — they currently land as raw pipe text. \"Tasks\" flattens its ### Wave headings into generic H3s, losing the wave shape Build runs on.\n\nThe counted lines here are all cheap: files with a new-file count, tasks by wave and done, risks with a revert each."
+    },
+    {
+      "id": "note-labels",
+      "x": 4140,
+      "y": -350,
+      "w": 400,
+      "text": "THE WHOLE FEATURE, ON ONE PAGE\n\nSince the labels are fixed, this table IS the implementation — 22 rows and a fallback. No run, no latency, nothing to cache or invalidate, and nothing that can hallucinate a role for a section.\n\nThe cost of the choice: the narration is generic where a written sentence would have been specific. The counted line under each title is what buys the specificity back, and it is free."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

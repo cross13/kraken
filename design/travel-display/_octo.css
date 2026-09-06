@@ -1,0 +1,289 @@
+/* ---- The three anime octopus directions -------------------------------- */
+.oc { display: block; width: 100%; height: auto; overflow: visible; }
+.oc-w { display: inline-block; line-height: 0; }
+
+/* A: Chibi — squash & stretch, blinking, wiggling. */
+.o-chibi .oc-b { animation: ch-bob 2.4s ease-in-out infinite; transform-origin: 50% 100%; }
+.o-chibi .eyes { transform-box: view-box; transform-origin: 60px 56px; animation: ch-blink 4.4s infinite; }
+.o-chibi .tent { transform-box: fill-box; transform-origin: 50% 0%; animation: ch-wig 1.9s ease-in-out infinite; }
+.o-chibi .blush { animation: ch-blush 2.8s ease-in-out infinite; }
+.o-chibi .shine { animation: ch-shine 4s ease-in-out infinite; }
+.o-chibi.st-sleep .oc-b { animation-duration: 4.2s; }
+.o-chibi.st-sleep .eyes, .o-chibi.st-done .eyes, .o-chibi.st-fail .eyes { animation: none; }
+.o-chibi.st-fail .oc-b { animation: ch-panic 0.34s ease-in-out infinite; }
+.o-chibi.st-done .oc-b { animation: ch-hop 1.5s ease-in-out infinite; }
+.o-chibi .spark { animation: ch-spark 1.5s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 50%; }
+.o-chibi .drop { animation: ch-drop 1.6s ease-in infinite; }
+@keyframes ch-bob {
+  0%, 100% { transform: translateY(0) scale(1.03, 0.97); }
+  45% { transform: translateY(-7px) scale(0.96, 1.05); }
+  70% { transform: translateY(-3px) scale(1, 1); }
+}
+@keyframes ch-hop {
+  0%, 100% { transform: translateY(0) scale(1.06, 0.94); }
+  35% { transform: translateY(-13px) scale(0.93, 1.08); }
+  60% { transform: translateY(0) scale(1.06, 0.94); }
+  75% { transform: translateY(-4px) scale(0.98, 1.02); }
+}
+@keyframes ch-panic {
+  0%, 100% { transform: translateX(-1.5px) rotate(-1.5deg); }
+  50% { transform: translateX(1.5px) rotate(1.5deg); }
+}
+@keyframes ch-blink {
+  0%, 91%, 100% { transform: scaleY(1); }
+  93.5% { transform: scaleY(0.06); }
+  96% { transform: scaleY(1); }
+}
+@keyframes ch-wig { 0%, 100% { transform: rotate(-7deg); } 50% { transform: rotate(7deg); } }
+@keyframes ch-blush { 0%, 100% { opacity: 0.32; } 50% { opacity: 0.6; } }
+@keyframes ch-shine { 0%, 100% { opacity: 0.16; } 50% { opacity: 0.4; } }
+@keyframes ch-spark { 0%, 100% { opacity: 0.2; transform: scale(0.7) rotate(0deg); } 50% { opacity: 1; transform: scale(1.15) rotate(25deg); } }
+@keyframes ch-drop { 0% { opacity: 0; transform: translateY(-3px); } 30% { opacity: 1; } 100% { opacity: 0; transform: translateY(9px); } }
+
+/* B: Visor — anime "on twos": nothing eases, everything snaps to a frame. */
+.o-visor .oc-b { animation: vi-bob 2.8s steps(4, end) infinite; transform-origin: 50% 100%; }
+.o-visor .gleam { animation: vi-sweep 3.4s steps(9, end) infinite; }
+.o-visor .slit { transform-box: view-box; transform-origin: 60px 55px; animation: vi-scan 3.2s steps(3, end) infinite; }
+.o-visor .pip { animation: vi-pip 1.1s steps(2, end) infinite; }
+.o-visor .tent { transform-box: fill-box; transform-origin: 50% 0%; animation: vi-sway 2.4s steps(4, end) infinite; }
+.o-visor .crest { transform-box: view-box; transform-origin: 60px 19px; }
+.o-visor .beacon { animation: vi-beacon 1.7s steps(2, end) infinite; }
+.o-visor .streaks { animation: vi-streak 0.72s steps(3, end) infinite; }
+.o-visor.st-sleep .crest.droop { transform: rotate(-17deg); animation: vi-nod 5.2s steps(3, end) infinite; }
+.o-visor.st-sleep .gleam, .o-visor.st-sleep .slit { animation: none; }
+.o-visor.st-sleep .standby { animation: vi-standby 2.6s steps(2, end) infinite; }
+.o-visor.st-sleep .beacon { animation: vi-beacon 3.4s steps(2, end) infinite; }
+.o-visor.st-fail .oc-b { animation: vi-glitch 0.3s steps(3, end) infinite; }
+.o-visor.st-fail .ghost { animation: vi-ghost 0.3s steps(3, end) infinite; }
+.o-visor.st-fail .scan { animation: vi-scanline 0.9s steps(6, end) infinite; }
+.o-visor.st-done .burst { animation: vi-burst 1.4s steps(4, end) infinite; transform-box: fill-box; transform-origin: 50% 50%; }
+@keyframes vi-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes vi-sweep {
+  0% { transform: translateX(-40px); }
+  42% { transform: translateX(106px); }
+  100% { transform: translateX(106px); }
+}
+@keyframes vi-scan { 0%, 100% { transform: translateX(-4.5px); } 50% { transform: translateX(4.5px); } }
+@keyframes vi-pip { 0%, 100% { opacity: 1; } 50% { opacity: 0.15; } }
+@keyframes vi-sway { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+@keyframes vi-nod { 0%, 100% { transform: rotate(-17deg); } 50% { transform: rotate(-23deg); } }
+@keyframes vi-standby { 0%, 100% { opacity: 0.9; } 50% { opacity: 0.15; } }
+@keyframes vi-beacon { 0%, 100% { opacity: 1; } 50% { opacity: 0.1; } }
+@keyframes vi-streak { 0% { opacity: 0.75; transform: translateX(4px); } 100% { opacity: 0; transform: translateX(-14px); } }
+@keyframes vi-glitch {
+  0% { transform: translate(0, 0); }
+  33% { transform: translate(-2.5px, 1px); }
+  66% { transform: translate(2px, -1.5px); }
+  100% { transform: translate(0, 0); }
+}
+@keyframes vi-ghost {
+  0% { opacity: 0; transform: translate(0, 0); }
+  33% { opacity: 0.85; transform: translate(3px, -1px); }
+  66% { opacity: 0.5; transform: translate(-3px, 1px); }
+  100% { opacity: 0; transform: translate(0, 0); }
+}
+@keyframes vi-scanline { 0% { transform: translateY(-8px); opacity: 0.9; } 100% { transform: translateY(14px); opacity: 0.2; } }
+@keyframes vi-burst { 0%, 100% { opacity: 0.2; transform: scale(0.6); } 50% { opacity: 1; transform: scale(1.15); } }
+
+/* C: Ink — the line boils: three drawings, eight frames a second. */
+.o-ink .boil { opacity: 0; animation: ik-boil 0.375s steps(1, end) infinite; }
+.o-ink .boil-1 { animation-delay: 0s; }
+.o-ink .boil-2 { animation-delay: 0.125s; }
+.o-ink .boil-3 { animation-delay: 0.25s; }
+.o-ink .oc-b { animation: ik-breathe 3.4s ease-in-out infinite; transform-origin: 50% 100%; }
+.o-ink .speed { animation: ik-speed 0.6s linear infinite; }
+.o-ink.st-sleep .oc-b { animation-duration: 5.4s; }
+.o-ink.st-fail .oc-b { animation: ik-jolt 0.5s steps(2, end) infinite; }
+@keyframes ik-boil { 0%, 33.32% { opacity: 1; } 33.33%, 100% { opacity: 0; } }
+@keyframes ik-breathe { 0%, 100% { transform: translateY(0) scale(1, 1); } 50% { transform: translateY(-4px) scale(0.985, 1.02); } }
+@keyframes ik-speed { 0% { opacity: 0.85; transform: translateX(0); } 100% { opacity: 0; transform: translateX(-13px); } }
+@keyframes ik-jolt { 0%, 100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg); } }
+
+/* D: Pixel — two drawings at 4fps. No tweening exists on an LCD. */
+.o-pixel .oc-b { animation: none; }
+.o-pixel .frame { opacity: 0; }
+.o-pixel .frame-1 { animation: px-a 0.5s steps(1, end) infinite; }
+.o-pixel .frame-2 { animation: px-b 0.5s steps(1, end) infinite; }
+.o-pixel.st-sleep .frame-1 { animation-duration: 1.6s; }
+.o-pixel.st-sleep .frame-2 { animation-duration: 1.6s; }
+.o-pixel.st-fail .frame-1 { animation-duration: 0.22s; }
+.o-pixel.st-fail .frame-2 { animation-duration: 0.22s; }
+.o-pixel.st-done .frame-1 { animation-duration: 0.34s; }
+.o-pixel.st-done .frame-2 { animation-duration: 0.34s; }
+@keyframes px-a { 0%, 49.9% { opacity: 1; } 50%, 100% { opacity: 0; } }
+@keyframes px-b { 0%, 49.9% { opacity: 0; } 50%, 100% { opacity: 1; } }
+
+/* E: Neon — a tube of light. A bright charge runs the glass; the arms drift. */
+.o-neon .oc-b { animation: ne-float 4.6s ease-in-out infinite; transform-origin: 50% 100%; }
+.o-neon .charge { animation: ne-charge 3.2s linear infinite; }
+.o-neon .arm { transform-box: fill-box; transform-origin: 50% 0%; animation: ne-wave 3.6s ease-in-out infinite; }
+.o-neon .arm-1 { animation-delay: -0.2s; }
+.o-neon .arm-2 { animation-delay: -0.8s; }
+.o-neon .arm-3 { animation-delay: -1.4s; }
+.o-neon .arm-4 { animation-delay: -2s; }
+.o-neon .arm-5 { animation-delay: -2.6s; }
+.o-neon .ne-eyes { animation: ne-pulse 2.4s ease-in-out infinite; }
+.o-neon.st-sleep .oc { opacity: 0.36; animation: ne-breathe 5s ease-in-out infinite; }
+.o-neon.st-sleep .arm { animation-duration: 6s; }
+.o-neon.st-fail .oc { animation: ne-flicker 1.9s steps(1, end) infinite; }
+.o-neon.st-done .halo { animation: ne-halo 2.2s ease-out infinite; transform-box: fill-box; transform-origin: 50% 50%; }
+@keyframes ne-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@keyframes ne-charge { 0% { stroke-dashoffset: 300; } 100% { stroke-dashoffset: -60; } }
+@keyframes ne-wave { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+@keyframes ne-pulse { 0%, 100% { opacity: 0.85; } 50% { opacity: 1; } }
+@keyframes ne-breathe { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.46; } }
+@keyframes ne-flicker {
+  0%, 43%, 47%, 61%, 66%, 100% { opacity: 1; }
+  45%, 63% { opacity: 0.25; }
+  64% { opacity: 0.7; }
+}
+@keyframes ne-halo {
+  0% { opacity: 0.7; transform: scale(0.45); }
+  70% { opacity: 0; transform: scale(1.15); }
+  100% { opacity: 0; transform: scale(1.15); }
+}
+
+/* F: Terminal — it blinks by swapping a character, the way a TTY would. */
+.o-term .oc-b { animation: tm-idle 3.2s steps(2, end) infinite; transform-origin: 50% 100%; }
+.o-term .frame { opacity: 0; }
+.o-term .frame-1 { animation: tm-a 3.2s steps(1, end) infinite; }
+.o-term .frame-2 { animation: tm-b 3.2s steps(1, end) infinite; }
+.o-term .aside { animation: tm-cursor 1.1s steps(2, end) infinite; }
+.o-term.st-sleep .frame-1, .o-term.st-sleep .frame-2 { animation-duration: 5.2s; }
+.o-term.st-sleep .oc-b { animation-duration: 5.2s; }
+.o-term.st-fail .frame-1, .o-term.st-fail .frame-2 { animation-duration: 0.5s; }
+.o-term.st-done .frame-1, .o-term.st-done .frame-2 { animation-duration: 1.4s; }
+@keyframes tm-a { 0%, 87.9% { opacity: 1; } 88%, 100% { opacity: 0; } }
+@keyframes tm-b { 0%, 87.9% { opacity: 0; } 88%, 100% { opacity: 1; } }
+@keyframes tm-idle { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+@keyframes tm-cursor { 0%, 100% { opacity: 1; } 50% { opacity: 0.1; } }
+
+/* G: Shoujo — everything is slow and graceful, and the eyes never stop glinting. */
+.o-shojo .oc-b { animation: sj-float 3.8s ease-in-out infinite; transform-origin: 50% 100%; }
+.o-shojo .eyes { transform-box: view-box; transform-origin: 60px 56px; animation: sj-blink 5.2s infinite; }
+.o-shojo .hi { animation: sj-glint 2.6s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 50%; }
+.o-shojo .band { animation: sj-band 4.4s ease-in-out infinite; }
+.o-shojo .spark { animation: sj-spark 2.2s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 50%; }
+.o-shojo .tent { transform-box: fill-box; transform-origin: 50% 0%; animation: sj-sway 3.6s ease-in-out infinite; }
+.o-shojo .blush { animation: sj-blush 3.2s ease-in-out infinite; }
+.o-shojo .rimlight { animation: sj-rim 4s ease-in-out infinite; }
+.o-shojo .tear { animation: sj-tear 2.4s ease-in infinite; }
+.o-shojo.st-sleep .eyes { animation: none; }
+.o-shojo.st-sleep .oc-b, .o-shojo.st-sleep .tent { animation-duration: 6s; }
+.o-shojo.st-done .spark { animation-duration: 1.2s; }
+.o-shojo.st-fail .oc-b { animation: sj-quiver 0.6s ease-in-out infinite; }
+@keyframes sj-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@keyframes sj-blink { 0%, 93%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.05); } 97% { transform: scaleY(1); } }
+@keyframes sj-glint { 0%, 100% { opacity: 0.85; transform: scale(0.94); } 50% { opacity: 1; transform: scale(1.12); } }
+@keyframes sj-band { 0%, 100% { opacity: 0.28; } 50% { opacity: 0.55; } }
+@keyframes sj-spark { 0%, 100% { opacity: 0.15; transform: scale(0.55) rotate(0deg); } 50% { opacity: 1; transform: scale(1.1) rotate(45deg); } }
+@keyframes sj-sway { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
+@keyframes sj-blush { 0%, 100% { opacity: 0.75; } 50% { opacity: 1; } }
+@keyframes sj-rim { 0%, 100% { opacity: 0.35; } 50% { opacity: 0.65; } }
+@keyframes sj-tear { 0% { opacity: 0; transform: translateY(-4px) scaleY(0.5); } 35% { opacity: 1; transform: translateY(0) scaleY(1); } 100% { opacity: 0; transform: translateY(16px) scaleY(1.15); } }
+@keyframes sj-quiver { 0%, 100% { transform: translateX(-1px); } 50% { transform: translateX(1px); } }
+
+/* H: Shounen — hold the pose, then strike. Nothing drifts; things snap. */
+.o-shounen .oc-b { animation: sn-bob 1.6s cubic-bezier(0.2, 0, 0.1, 1) infinite; transform-origin: 50% 100%; }
+.o-shounen .tent { transform-box: fill-box; transform-origin: 50% 0%; animation: sn-lash 1.6s cubic-bezier(0.3, 0, 0.15, 1) infinite; }
+.o-shounen .aura { animation: sn-aura 0.34s steps(3, end) infinite; transform-box: fill-box; transform-origin: 50% 50%; }
+.o-shounen .speed { animation: sn-rush 0.5s linear infinite; }
+.o-shounen .glint { animation: sn-glint 2.2s steps(2, end) infinite; }
+.o-shounen .gloom { animation: sn-gloom 3.4s ease-in-out infinite; }
+.o-shounen.st-done .flash { animation: sn-impact 1.5s steps(2, end) infinite; }
+.o-shounen.st-sleep .oc-b { animation: sn-slump 4.4s ease-in-out infinite; }
+.o-shounen.st-fail .oc-b { animation: sn-drop 2.6s ease-in-out infinite; }
+@keyframes sn-bob { 0%, 55%, 100% { transform: translateY(0) scale(1, 1); } 62% { transform: translateY(-9px) scale(0.96, 1.05); } 78% { transform: translateY(-2px) scale(1.02, 0.99); } }
+@keyframes sn-lash { 0%, 55%, 100% { transform: rotate(-4deg); } 68% { transform: rotate(9deg); } }
+@keyframes sn-aura { 0%, 100% { opacity: 0.35; transform: scale(0.97); } 33% { opacity: 0.7; transform: scale(1.03); } 66% { opacity: 0.5; transform: scale(1); } }
+@keyframes sn-rush { 0% { opacity: 0.9; transform: translateX(10px); } 100% { opacity: 0; transform: translateX(-16px); } }
+@keyframes sn-glint { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+@keyframes sn-gloom { 0%, 100% { opacity: 0.45; transform: translateY(0); } 50% { opacity: 0.7; transform: translateY(3px); } }
+@keyframes sn-impact { 0%, 100% { opacity: 0; } 50% { opacity: 0.55; } }
+@keyframes sn-slump { 0%, 100% { transform: translateY(2px) scale(1.02, 0.98); } 50% { transform: translateY(0) scale(1, 1); } }
+@keyframes sn-drop { 0%, 100% { transform: translateY(3px) scale(1.03, 0.97); } 50% { transform: translateY(1px) scale(1, 1); } }
+
+/* I: OVA — 1988 on tape: three-frame holds, halation bloom, and the picture
+   never sits perfectly still because the telecine didn't either. */
+.o-ova .oc-b { animation: ov-hold 2.4s steps(3, end) infinite; transform-origin: 50% 100%; }
+.o-ova .tent { transform-box: fill-box; transform-origin: 50% 0%; animation: ov-sway 3.2s steps(3, end) infinite; }
+.o-ova .halation { animation: ov-bloom 3.6s ease-in-out infinite; }
+.o-ova .halo-e { animation: ov-eye 3s ease-in-out infinite; }
+.o-ova .scanlines { animation: ov-scan 2.8s linear infinite; }
+.o-ova.st-sleep .oc-b, .o-ova.st-sleep .tent { animation-duration: 5s; }
+.o-ova.st-done .halation { animation-duration: 1.6s; }
+.o-ova.st-fail .oc { animation: ov-tracking 1.7s steps(4, end) infinite; }
+@keyframes ov-hold { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@keyframes ov-sway { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
+@keyframes ov-bloom { 0%, 100% { opacity: 0.1; stroke-width: 10; } 50% { opacity: 0.22; stroke-width: 13; } }
+@keyframes ov-eye { 0%, 100% { opacity: 0.9; } 50% { opacity: 1; } }
+@keyframes ov-scan { 0% { transform: translateY(0); } 100% { transform: translateY(3px); } }
+@keyframes ov-tracking {
+  0%, 74%, 100% { transform: translateX(0); }
+  76% { transform: translateX(-3px); }
+  80% { transform: translateX(2px); }
+  84% { transform: translateX(0); }
+}
+
+/* A2: Samurai — the chibi's squash & stretch, plus the follow-through that
+   makes armour read as armour: the helmet and the neck guard arrive a beat
+   after the head does. The katana's pose is the state; its motion is the verb. */
+.o-samurai .oc-b { animation: ch-bob 2.4s ease-in-out infinite; transform-origin: 50% 100%; }
+.o-samurai .eyes { transform-box: view-box; transform-origin: 60px 56px; animation: ch-blink 4.4s infinite; }
+.o-samurai .tent, .o-samurai .hand { transform-box: fill-box; transform-origin: 50% 0%; animation: ch-wig 1.9s ease-in-out infinite; }
+.o-samurai .blush { animation: ch-blush 2.8s ease-in-out infinite; }
+.o-samurai .crest { transform-box: view-box; transform-origin: 60px 50px; animation: sm-lag 2.4s ease-in-out infinite; animation-delay: -0.13s; }
+.o-samurai .shikoro { transform-box: view-box; transform-origin: 60px 58px; animation: sm-lag-far 2.4s ease-in-out infinite; animation-delay: -0.22s; }
+.o-samurai .swordwrap { transform-box: view-box; }
+.o-samurai.st-work .sword { transform-box: view-box; transform-origin: 96px 88px; animation: sm-cut 2.8s cubic-bezier(0.2, 0, 0.05, 1) infinite; }
+.o-samurai.st-work .slash { animation: sm-slash 2.8s ease-out infinite; }
+.o-samurai.st-think .sword { transform-box: view-box; transform-origin: 100px 88px; animation: sm-ready 3.2s ease-in-out infinite; }
+.o-samurai.st-done .sword { transform-box: view-box; transform-origin: 100px 86px; animation: sm-flick 2.2s cubic-bezier(0.25, 0, 0.1, 1) infinite; }
+.o-samurai.st-done .chiburi { animation: sm-chiburi 2.2s ease-out infinite; }
+.o-samurai.st-done .oc-b { animation: ch-hop 1.5s ease-in-out infinite; }
+.o-samurai.st-done .petal { animation: sm-petal 4.2s linear infinite; transform-box: fill-box; transform-origin: 50% 50%; }
+.o-samurai.st-sleep .oc-b { animation-duration: 4.2s; }
+.o-samurai.st-sleep .crest, .o-samurai.st-sleep .shikoro { animation-duration: 4.2s; }
+.o-samurai.st-sleep .eyes { animation: none; }
+.o-samurai.st-sleep .zt { animation: sm-z 3.2s ease-out infinite; }
+.o-samurai.st-fail .eyes { animation: none; }
+.o-samurai.st-fail .oc-b { animation: ch-panic 0.34s ease-in-out infinite; }
+.o-samurai.st-fail .drop { animation: ch-drop 1.6s ease-in infinite; }
+@keyframes sm-lag {
+  0%, 100% { transform: translateY(1.3px) rotate(0.9deg); }
+  45% { transform: translateY(-1.3px) rotate(-0.9deg); }
+}
+@keyframes sm-lag-far {
+  0%, 100% { transform: translateY(2.2px) rotate(1.6deg); }
+  45% { transform: translateY(-2.2px) rotate(-1.6deg); }
+}
+@keyframes sm-cut {
+  0%, 52% { transform: rotate(0deg); }
+  60% { transform: rotate(-26deg); }
+  66% { transform: rotate(38deg); }
+  80% { transform: rotate(-4deg); }
+  100% { transform: rotate(0deg); }
+}
+@keyframes sm-slash {
+  0%, 60% { opacity: 0; stroke-dasharray: 0 200; }
+  66% { opacity: 0.9; stroke-dasharray: 130 200; }
+  84%, 100% { opacity: 0; stroke-dasharray: 130 200; }
+}
+@keyframes sm-ready { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-1.5px, 1.5px); } }
+@keyframes sm-flick {
+  0%, 44% { transform: rotate(0deg); }
+  54% { transform: rotate(-22deg); }
+  70% { transform: rotate(3deg); }
+  100% { transform: rotate(0deg); }
+}
+@keyframes sm-chiburi { 0%, 50% { opacity: 0; } 58% { opacity: 0.95; } 78%, 100% { opacity: 0; } }
+@keyframes sm-petal {
+  0% { opacity: 0; transform: translate(0, -14px) rotate(0deg); }
+  15% { opacity: 0.95; }
+  100% { opacity: 0; transform: translate(-14px, 26px) rotate(220deg); }
+}
+@keyframes sm-z {
+  0% { opacity: 0; transform: translate(0, 0) scale(0.8); }
+  25% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-13px, -22px) scale(1.15); }
+}

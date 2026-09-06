@@ -1,0 +1,290 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+  <style>
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; }
+a { color: #8AD000; }
+a:hover { color: #A6E62E; }
+.root {
+  width: 2560px;
+  height: 720px;
+  background: #1A1A1A;
+  color: #F2F2F2;
+  font-family: 'Hanken Grotesk', system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+.mono { font-family: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace; font-variant-numeric: tabular-nums; }
+.disp { font-family: 'Space Grotesk', 'Hanken Grotesk', sans-serif; }
+.trunc { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.grow { flex: 1 1 auto; min-width: 0; }
+.sep { color: #4A4A4A; }
+.bar {
+  height: 48px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 16px;
+  border-bottom: 1px solid #333333;
+}
+.mark { width: 30px; height: 30px; display: grid; place-items: center; background: #2A2A2A; box-shadow: 0 0 0 1px rgba(118, 185, 0, 0.5); flex: none; }
+.hd-title { font-size: 15px; font-weight: 600; color: #FAFAFA; line-height: 1.15; }
+.hd-sub { font-size: 11px; color: #848484; line-height: 1.3; margin-top: 2px; }
+.slots { display: flex; gap: 3px; align-items: center; }
+.slot { width: 7px; height: 16px; background: #333333; }
+.slot.on { background: #76B900; }
+.slot.wait { background: #4E3A73; }
+.cap { font-size: 11px; color: #848484; letter-spacing: 0.02em; }
+.btn { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 9px; font-size: 12px; border: 1px solid #393939; background: transparent; color: #C8C8C8; }
+.btn.danger { border-color: rgba(224, 83, 60, 0.5); color: #FF8A72; background: rgba(224, 83, 60, 0.12); }
+.zoombox { display: flex; align-items: center; height: 26px; border: 1px solid #393939; color: #A8A8A8; }
+.zoombox > * { display: grid; place-items: center; height: 24px; padding: 0 7px; font-size: 11px; }
+.chip { display: inline-flex; align-items: center; gap: 4px; height: 17px; padding: 0 5px; font-size: 10px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; flex: none; }
+.chip.task { background: rgba(118, 185, 0, 0.16); color: #A6E62E; }
+.chip.spec { background: rgba(155, 107, 255, 0.18); color: #C9A9FF; }
+.chip.chat { background: rgba(255, 255, 255, 0.07); color: #C8C8C8; }
+.chip.hook { background: transparent; box-shadow: inset 0 0 0 1px rgba(118, 185, 0, 0.45); color: #A6E62E; }
+.chip.audit { background: transparent; box-shadow: inset 0 0 0 1px rgba(155, 107, 255, 0.45); color: #C9A9FF; }
+.tid { font-size: 12px; color: #C8C8C8; flex: none; }
+.meta { font-size: 11px; color: #848484; }
+.time { font-size: 13px; color: #C4F06A; font-weight: 500; flex: none; }
+.time.idle { color: #848484; }
+.log { font-size: 11px; line-height: 1.5; }
+.log div { white-space: pre; overflow: hidden; text-overflow: ellipsis; }
+.l-tool { color: #C9A9FF; }
+.l-res { color: #848484; }
+.l-txt { color: #ECECEC; }
+.l-think { color: #848484; font-style: italic; }
+.spin { animation: sp 1.1s linear infinite; }
+@keyframes sp { to { transform: rotate(360deg); } }
+/* Direction D — The colony: one octopus per run. Position = which spec it
+   belongs to, tether = what it waits on, expression = status. */
+.tank { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 12px; padding: 12px 14px; }
+.zones { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 900fr 584fr 464fr 536fr; gap: 16px; }
+.zone { position: relative; border: 1px dashed #333333; background: #1E1E1E; overflow: hidden; }
+.zone.live { border-color: #3E4A2C; background: #1F221B; }
+.zone-hd { position: absolute; top: 0; left: 0; right: 0; z-index: 4; padding: 8px 11px 0; display: flex; align-items: center; gap: 8px; }
+.zone-name { font-size: 14px; font-weight: 600; color: #ECECEC; line-height: 1.2; }
+.zone-sub { font-size: 11px; color: #848484; }
+.zprog { display: flex; gap: 2px; width: 96px; }
+.zprog i { flex: 1 1 0; height: 3px; background: #333333; display: block; }
+.zprog i.done { background: #76B900; }
+.zprog i.run { background: #C4F06A; }
+.zprog i.wait { background: #4E3A73; }
+.tether { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
+.tether path { fill: none; stroke: #4E3A73; stroke-width: 1.5; stroke-dasharray: 5 7; animation: dashmove 1.4s linear infinite; }
+
+/* --- the mascot --- */
+.m { position: absolute; width: 54px; z-index: 2; animation: drift 9s ease-in-out infinite; animation-delay: var(--d, 0s); }
+.m.big { width: 108px; }
+.m.small { width: 34px; }
+.mb { animation: bob 2.9s ease-in-out infinite; animation-delay: var(--d, 0s); }
+.m.sleep .mb { animation-duration: 4.6s; }
+.m.fail .mb { animation: shake 0.4s ease-in-out infinite; }
+.m.sleep, .m.done, .m.fail { animation: none; }
+.m svg { display: block; width: 100%; height: auto; overflow: visible; }
+.m .tent { transform-box: fill-box; transform-origin: 50% 0%; animation: sway 2.4s ease-in-out infinite; }
+.m.sleep .tent { animation-duration: 5s; }
+.m .eyes { animation: scan 3.4s linear infinite; }
+.m.sleep .eyes, .m.done .eyes, .m.fail .eyes { animation: none; }
+.m.work { --rim: #8AD000; --bod: #2A2A2A; --eye: #C4F06A; }
+.m.think { --rim: #9B6BFF; --bod: #241E33; --eye: #C9A9FF; }
+.m.sleep { --rim: #4E3A73; --bod: #1F1F1F; --eye: #6E5A93; }
+.m.done { --rim: #4E6B0E; --bod: #212418; --eye: #A6E62E; }
+.m.fail { --rim: #E0533C; --bod: #2A1D1A; --eye: #FF8A72; }
+.m .rim { stroke: var(--rim); }
+.m .bod { fill: var(--bod); stroke: var(--rim); }
+.m .eye { fill: var(--eye); stroke: none; }
+.m .eyeline { stroke: var(--eye); fill: none; }
+
+/* --- speech bubble --- */
+.bub { position: absolute; bottom: 100%; margin-bottom: 13px; left: 50%; transform: translateX(-50%); background: #232323; border: 1px solid #3E3E3E; padding: 5px 9px; white-space: nowrap; z-index: 5; }
+.bub.l { left: -4px; transform: none; }
+.bub.r { left: auto; right: -4px; transform: none; }
+.bub b { display: block; font-size: 11.5px; color: #ECECEC; font-weight: 500; }
+.bub em { display: block; font-style: normal; font-size: 10.5px; color: #848484; margin-top: 2px; }
+.bub::after { content: ""; position: absolute; bottom: -5px; left: 16px; width: 8px; height: 8px; background: #232323; border-right: 1px solid #3E3E3E; border-bottom: 1px solid #3E3E3E; transform: rotate(45deg); }
+.bub.mid::after { left: 50%; margin-left: -4px; }
+.bub.rt::after { left: auto; right: 16px; }
+.bub.think { border-color: #4A3A6B; }
+.bub.sleep { background: #1E1E1E; border-color: #333333; }
+.bub.sleep b { color: #A8A8A8; }
+.bub.fail { border-color: rgba(224, 83, 60, 0.55); }
+.bub.fail b { color: #FF8A72; }
+.dots { display: inline-flex; gap: 3px; margin-left: 5px; vertical-align: 1px; }
+.dots i { width: 3px; height: 3px; background: #A6E62E; display: block; animation: dots 1.2s infinite; }
+.zzz { position: absolute; top: -4px; left: 60%; z-index: 5; }
+.zzz span { position: absolute; font-size: 12px; color: #6E5A93; font-weight: 600; animation: zfloat 3.2s ease-out infinite; }
+
+/* --- name tag --- */
+.tag { position: absolute; top: 100%; margin-top: 7px; left: 50%; transform: translateX(-50%); text-align: center; white-space: nowrap; z-index: 3; }
+.tag b { display: block; font-size: 12px; color: #C8C8C8; font-weight: 500; }
+.tag em { display: block; font-style: normal; font-size: 10.5px; color: #848484; margin-top: 1px; }
+.tag .t { color: #C4F06A; }
+.tag .w { color: #6E5A93; }
+.tag .f { color: #FF8A72; }
+
+/* --- pair interaction --- */
+.spark { position: absolute; z-index: 3; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.spark i { width: 4px; height: 4px; background: #C4F06A; display: block; animation: spark 1.1s ease-in-out infinite; }
+.spark span { font-size: 10px; color: #6F8A3A; letter-spacing: 0.04em; white-space: nowrap; }
+
+/* --- recent reef --- */
+.reef { height: 112px; flex: none; border: 1px dashed #2F2F2F; background: #1C1C1C; display: flex; align-items: center; gap: 12px; padding: 0 16px; }
+.reef-l { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #848484; font-weight: 600; writing-mode: vertical-rl; transform: rotate(180deg); }
+.reef-item { display: flex; align-items: center; gap: 11px; padding-right: 22px; }
+.reef-item .m { position: static; }
+.reef-item .txt b { display: block; font-size: 12px; color: #A8A8A8; font-weight: 500; }
+.reef-item .txt em { display: block; font-style: normal; font-size: 11px; color: #848484; margin-top: 2px; }
+.legend-dash { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: #848484; }
+.legend-dash i { width: 22px; height: 0; border-top: 1.5px dashed #4E3A73; display: block; }
+
+@keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes drift { 0%, 100% { transform: translateX(-11px); } 50% { transform: translateX(11px); } }
+@keyframes sway { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+@keyframes scan { 0% { transform: translateX(-6px); } 40% { transform: translateX(6px); } 46% { transform: translateX(-6px); } 86% { transform: translateX(6px); } 100% { transform: translateX(-6px); } }
+@keyframes zfloat { 0% { opacity: 0; transform: translate(0, 0) scale(0.8); } 25% { opacity: 1; } 100% { opacity: 0; transform: translate(15px, -28px) scale(1.15); } }
+@keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-2px); } 75% { transform: translateX(2px); } }
+@keyframes dashmove { to { stroke-dashoffset: -24; } }
+@keyframes spark { 0%, 100% { opacity: 0.25; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } }
+@keyframes dots { 0%, 80%, 100% { opacity: 0.2; } 40% { opacity: 1; } }
+
+/* --- Direction D, opened: one mascot pulled forward, the colony compressed --- */
+.split2 { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 1180px minmax(0, 1fr); gap: 12px; padding: 12px 14px; }
+.fpanel { display: flex; flex-direction: column; min-height: 0; min-width: 0; border: 1px solid rgba(118, 185, 0, 0.45); background: #282C21; overflow: hidden; }
+.fhead { padding: 16px 20px 14px; border-bottom: 1px solid #333333; display: flex; gap: 22px; align-items: flex-start; flex: none; }
+.fmasc { width: 108px; flex: none; position: relative; }
+.fmasc .m { position: static; }
+.ftitle { font-size: 21px; font-weight: 600; color: #FAFAFA; line-height: 1.22; }
+.ftime { font-size: 30px; color: #C4F06A; font-weight: 500; line-height: 1; }
+.params { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px 22px; margin-top: 13px; }
+.param { display: flex; gap: 7px; align-items: baseline; min-width: 0; }
+.param b { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #848484; font-weight: 600; flex: none; }
+.param span { font-size: 12px; color: #ECECEC; }
+.flog { flex: 1 1 auto; min-height: 0; background: #1A1A1A; padding: 12px 20px; font-size: 13px; line-height: 1.55; overflow: hidden; }
+.colony-mini { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 12px; min-height: 0; min-width: 0; }
+.compact .bub { display: none; }
+.compact .zone-name { font-size: 12.5px; }
+.compact .zone-sub { font-size: 10px; }
+.compact .zone-hd { padding: 7px 9px 0; gap: 6px; }
+.compact .zprog { width: 62px; }
+.compact .tag { margin-top: 5px; }
+.compact .tag b { font-size: 10.5px; }
+.compact .tag em { font-size: 9.5px; }
+.compact .zzz { transform: scale(0.7); }
+.compact .spark span { display: none; }
+.backbtn { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; font-size: 12px; border: 1px solid #4A5A2E; background: rgba(118, 185, 0, 0.12); color: #A6E62E; }
+  </style>
+</helmet>
+<div class="root">
+  <div class="bar">
+    <div class="mark">
+      <svg viewBox="46 26 108 146" width="17" height="23" style="display:block">
+        <path d="M 62,106 C 54,124 50,138 58,150" fill="none" stroke="#8AD000" stroke-width="8" stroke-linecap="round"></path>
+        <path d="M 80,112 C 76,132 74,148 80,162" fill="none" stroke="#8AD000" stroke-width="8" stroke-linecap="round"></path>
+        <path d="M 120,112 C 124,132 126,148 120,162" fill="none" stroke="#8AD000" stroke-width="8" stroke-linecap="round"></path>
+        <path d="M 138,106 C 146,124 150,138 142,150" fill="none" stroke="#8AD000" stroke-width="8" stroke-linecap="round"></path>
+        <path d="M 55,112 C 46,68 62,36 100,32 C 138,36 154,68 145,112 L 134,120 L 125,108 L 112,122 L 100,112 L 88,122 L 75,108 L 66,120 Z" fill="#2A2A2A" stroke="#8AD000" stroke-width="3" stroke-linejoin="round"></path>
+        <path d="M 72,68 L 92,76 L 92,84 L 72,76 Z" fill="#C4F06A"></path>
+        <path d="M 128,68 L 108,76 L 108,84 L 128,76 Z" fill="#C4F06A"></path>
+      </svg>
+    </div>
+    <div>
+      <div class="hd-title disp">6 agents running <span class="sep">&#183;</span> <span style="color: #C9A9FF; font-weight: 500">2 queued</span></div>
+      <div class="hd-sub mono">kraken <span class="sep">&#183;</span> claude-opus-5</div>
+    </div>
+    <div style="width: 1px; height: 26px; background: #333333; margin: 0 2px"></div>
+    <div style="display: flex; align-items: center; gap: 9px">
+      <div class="slots"><div class="slot on"></div><div class="slot on"></div><div class="slot on"></div><div class="slot wait"></div><div class="slot wait"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div></div>
+      <div class="cap mono">3<span class="sep">/</span>8 task slots</div>
+    </div>
+    <div style="width: 1px; height: 26px; background: #333333; margin: 0 2px"></div>
+    <div class="legend-dash"><i></i> waiting on</div>
+    
+    <div class="grow"></div>
+    <button class="backbtn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M19 12H5M12 19l-7-7 7-7"></path></svg> Back to the colony</button>
+    <button class="btn danger"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style="display:block"><rect x="4" y="4" width="16" height="16"></rect></svg> Stop all</button>
+    <div class="zoombox"><div>&#8722;</div><div class="mono" style="border-left: 1px solid #393939; border-right: 1px solid #393939; min-width: 44px">100%</div><div>+</div></div>
+    <button class="btn" style="padding: 0 8px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:block"><circle cx="12" cy="12" r="10"></circle><path d="M12 18a6 6 0 0 0 0-12z" fill="currentColor"></path></svg></button>
+    <button class="btn" style="padding: 0 8px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:block"><path d="M8 3v3a2 2 0 0 1-2 2H3M21 8h-3a2 2 0 0 1-2-2V3M3 16h3a2 2 0 0 1 2 2v3M16 21v-3a2 2 0 0 1 2-2h3"></path></svg></button>
+  </div>
+  <div class="split2">
+    <div class="fpanel">
+  <div class="fhead">
+    <div class="fmasc"><div class="m work big" style="--d: -1.8s"><div class="bub mid"><b>npm run typecheck<span class="dots"><i></i><i style="animation-delay:.2s"></i><i style="animation-delay:.4s"></i></span></b><em>electron + web</em></div><div class="mb"><svg viewBox="46 26 108 146"><path class="tent rim" style="animation-delay: -0.1s" d="M 62,106 C 54,124 50,138 58,150" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -0.7s" d="M 80,112 C 76,132 74,148 80,162" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -1.2s" d="M 100,114 C 100,134 98,152 102,166" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -1.7s" d="M 120,112 C 124,132 126,148 120,162" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -2.2s" d="M 138,106 C 146,124 150,138 142,150" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="bod" d="M 55,112 C 46,68 62,36 100,32 C 138,36 154,68 145,112 L 134,120 L 125,108 L 112,122 L 100,112 L 88,122 L 75,108 L 66,120 Z" stroke-width="3" stroke-linejoin="round"></path><g class="eyes"><path class="eye" d="M 72,68 L 92,76 L 92,84 L 72,76 Z"></path><path class="eye" d="M 128,68 L 108,76 L 108,84 L 128,76 Z"></path></g></svg></div></div></div>
+    <div class="grow">
+      <div style="display: flex; align-items: flex-start; gap: 16px">
+        <div class="grow">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px">
+            <span class="chip task">Task</span>
+            <span class="tid mono" style="font-size: 13px">T7</span>
+            <span class="meta">Wave 1 <span class="sep">&#183;</span> travel-display <span class="sep">&#183;</span> 1 of 3</span>
+          </div>
+          <div class="ftitle disp">Cache the fleet snapshot so a display opened mid-run isn&#39;t empty</div>
+        </div>
+        <div style="text-align: right; flex: none">
+          <div class="ftime mono">06:03</div>
+          <div class="meta" style="margin-top: 6px">running</div>
+        </div>
+      </div>
+      <div class="params">
+        <div class="param"><b>Agent</b><span class="trunc">electron-pro</span></div>
+        <div class="param"><b>Model</b><span class="trunc">claude-opus-5</span></div>
+        <div class="param"><b>Backend</b><span class="trunc">cli</span></div>
+        <div class="param"><b>Route</b><span class="trunc">specialist-match</span></div>
+        <div class="param"><b>Scope</b><span class="trunc">global</span></div>
+        <div class="param"><b>Permission</b><span class="trunc">acceptEdits</span></div>
+        <div class="param"><b>Skill</b><span class="trunc">sdd-feature</span></div>
+        <div class="param"><b>Blocking</b><span class="trunc">T8, T9</span></div>
+        <div class="param"><b>Tools</b><span class="trunc">Read, Edit, Write, Bash</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="flog log mono">
+    <div class="l-tool">&#9679; Read electron/main.ts</div>
+    <div class="l-res">    2540 lines</div>
+    <div class="l-think">  The main window only pushes when its registry changes, so a</div>
+    <div class="l-think">  display opened mid-run never receives anything.</div>
+    <div class="l-tool">&#9679; Edit electron/main.ts</div>
+    <div class="l-res">    + let lastFleet: FleetSnapshot = [];</div>
+    <div class="l-res">    + wideWindow.webContents.on(&#39;did-finish-load&#39;, () =&gt; {</div>
+    <div class="l-res">    +   wideWindow?.webContents.send(&#39;fleet:sync&#39;, lastFleet);</div>
+    <div class="l-res">    + });</div>
+    <div class="l-tool">&#9679; Edit electron/preload.ts</div>
+    <div class="l-res">    + request: () =&gt; ipcRenderer.send(&#39;fleet:request&#39;),</div>
+    <div class="l-txt">did-finish-load can beat React&#39;s first effect, so the renderer</div>
+    <div class="l-txt">also pulls the cached snapshot the moment it subscribes.</div>
+    <div class="l-tool">&#9679; Bash npm run typecheck</div>
+    <div class="l-res">    tsc --noEmit -p tsconfig.node.json</div>
+    <div class="l-res">    tsc --noEmit -p tsconfig.web.json</div>
+    <div class="l-res">    clean</div>
+    <div class="l-tool">&#9679; Edit docs/subsystems.md</div>
+    <div class="l-think">  documenting the two-half handshake&#8230;</div>
+  </div>
+</div>
+    <div class="colony-mini compact">
+      <div class="zone live"><div class="zone-hd"><span class="zone-name disp">auth-refresh</span><span class="zone-sub">Wave 2 of 3</span><span class="grow"></span><span class="zprog"><i class="done"></i><i class="done"></i><i class="run"></i><i class="run"></i><i class="wait"></i><i class="wait"></i></span></div><svg class="tether" viewBox="0 0 664 318" preserveAspectRatio="none"><path d="M 430,214 C 350,196 250,176 152,146"></path><path d="M 540,232 C 440,210 250,180 158,150"></path></svg><div class="m work small" style="left: 17%; top: 36%; --d: -0.4s"><div class="mb"><svg viewBox="46 26 108 146"><path class="tent rim" style="animation-delay: -0.1s" d="M 62,106 C 54,124 50,138 58,150" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -0.7s" d="M 80,112 C 76,132 74,148 80,162" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -1.2s" d="M 100,114 C 100,134 98,152 102,166" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -1.7s" d="M 120,112 C 124,132 126,148 120,162" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -2.2s" d="M 138,106 C 146,124 150,138 142,150" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="bod" d="M 55,112 C 46,68 62,36 100,32 C 138,36 154,68 145,112 L 134,120 L 125,108 L 112,122 L 100,112 L 88,122 L 75,108 L 66,120 Z" stroke-width="3" stroke-linejoin="round"></path><g class="eyes"><path class="eye" d="M 72,68 L 92,76 L 92,84 L 72,76 Z"></path><path class="eye" d="M 128,68 L 108,76 L 108,84 L 128,76 Z"></path></g></svg></div><div class="tag"><b class="mono t">T3 &#183; 04:12</b><em>editing session.ts</em></div></div><div class="m work small" style="left: 38%; top: 42%; --d: -2.6s"><div class="mb"><svg viewBox="46 26 108 146"><path class="tent rim" style="animation-delay: -0.1s" d="M 62,106 C 54,124 50,138 58,150" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -0.7s" d="M 80,112 C 76,132 74,148 80,162" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -1.2s" d="M 100,114 C 100,134 98,152 102,166" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -1.7s" d="M 120,112 C 124,132 126,148 120,162" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -2.2s" d="M 138,106 C 146,124 150,138 142,150" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="bod" d="M 55,112 C 46,68 62,36 100,32 C 138,36 154,68 145,112 L 134,120 L 125,108 L 112,122 L 100,112 L 88,122 L 75,108 L 66,120 Z" stroke-width="3" stroke-linejoin="round"></path><g class="eyes"><path class="eye" d="M 72,68 L 92,76 L 92,84 L 72,76 Z"></path><path class="eye" d="M 128,68 L 108,76 L 108,84 L 128,76 Z"></path></g></svg></div><div class="tag"><b class="mono t">T4 &#183; 02:47</b><em>writing banner</em></div></div><div class="m sleep small" style="left: 63%; top: 58%; --d: -1.1s"><div class="zzz"><span style="animation-delay: 0s">z</span><span style="animation-delay: 1.1s; left: 7px; top: -6px">z</span><span style="animation-delay: 2.2s; left: 14px; top: -12px">z</span></div><div class="mb"><svg viewBox="46 26 108 146"><path class="tent rim" style="animation-delay: -0.1s" d="M 62,106 C 54,124 50,138 58,150" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -0.7s" d="M 80,112 C 76,132 74,148 80,162" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -1.2s" d="M 100,114 C 100,134 98,152 102,166" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -1.7s" d="M 120,112 C 124,132 126,148 120,162" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -2.2s" d="M 138,106 C 146,124 150,138 142,150" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="bod" d="M 55,112 C 46,68 62,36 100,32 C 138,36 154,68 145,112 L 134,120 L 125,108 L 112,122 L 100,112 L 88,122 L 75,108 L 66,120 Z" stroke-width="3" stroke-linejoin="round"></path><g class="eyes"><path class="eyeline" d="M 71,77 L 93,77" stroke-width="4.5" stroke-linecap="round"></path><path class="eyeline" d="M 107,77 L 129,77" stroke-width="4.5" stroke-linecap="round"></path></g></svg></div><div class="tag"><b class="mono w">T5</b><em>on T3</em></div></div><div class="m sleep small" style="left: 80%; top: 64%; --d: -3.3s"><div class="zzz"><span style="animation-delay: 0s">z</span><span style="animation-delay: 1.1s; left: 7px; top: -6px">z</span><span style="animation-delay: 2.2s; left: 14px; top: -12px">z</span></div><div class="mb"><svg viewBox="46 26 108 146"><path class="tent rim" style="animation-delay: -0.1s" d="M 62,106 C 54,124 50,138 58,150" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -0.7s" d="M 80,112 C 76,132 74,148 80,162" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -1.2s" d="M 100,114 C 100,134 98,152 102,166" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -1.7s" d="M 120,112 C 124,132 126,148 120,162" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -2.2s" d="M 138,106 C 146,124 150,138 142,150" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="bod" d="M 55,112 C 46,68 62,36 100,32 C 138,36 154,68 145,112 L 134,120 L 125,108 L 112,122 L 100,112 L 88,122 L 75,108 L 66,120 Z" stroke-width="3" stroke-linejoin="round"></path><g class="eyes"><path class="eyeline" d="M 71,77 L 93,77" stroke-width="4.5" stroke-linecap="round"></path><path class="eyeline" d="M 107,77 L 129,77" stroke-width="4.5" stroke-linecap="round"></path></g></svg></div><div class="tag"><b class="mono w">T6</b><em>on T3, T4</em></div></div></div>
+      <div class="zone live"><div class="zone-hd"><span class="zone-name disp">travel-display</span><span class="zone-sub">Wave 1 of 2</span><span class="grow"></span><span class="zprog"><i class="run"></i><i class="wait"></i><i class="wait"></i></span></div><svg class="tether" viewBox="0 0 664 318" preserveAspectRatio="none"><path d="M 400,206 C 320,186 220,160 152,144"></path><path d="M 540,226 C 430,200 240,166 158,148"></path></svg><div class="m work small" style="left: 17%; top: 34%; --d: -1.8s; box-shadow: 0 0 0 2px rgba(118,185,0,.55); padding: 3px"><div class="mb"><svg viewBox="46 26 108 146"><path class="tent rim" style="animation-delay: -0.1s" d="M 62,106 C 54,124 50,138 58,150" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -0.7s" d="M 80,112 C 76,132 74,148 80,162" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -1.2s" d="M 100,114 C 100,134 98,152 102,166" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -1.7s" d="M 120,112 C 124,132 126,148 120,162" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -2.2s" d="M 138,106 C 146,124 150,138 142,150" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="bod" d="M 55,112 C 46,68 62,36 100,32 C 138,36 154,68 145,112 L 134,120 L 125,108 L 112,122 L 100,112 L 88,122 L 75,108 L 66,120 Z" stroke-width="3" stroke-linejoin="round"></path><g class="eyes"><path class="eye" d="M 72,68 L 92,76 L 92,84 L 72,76 Z"></path><path class="eye" d="M 128,68 L 108,76 L 108,84 L 128,76 Z"></path></g></svg></div><div class="tag"><b class="mono t">T7 &#183; 06:03</b><em>open &#8212; typecheck</em></div></div><div class="m sleep small" style="left: 58%; top: 56%; --d: -0.9s"><div class="zzz"><span style="animation-delay: 0s">z</span><span style="animation-delay: 1.1s; left: 7px; top: -6px">z</span><span style="animation-delay: 2.2s; left: 14px; top: -12px">z</span></div><div class="mb"><svg viewBox="46 26 108 146"><path class="tent rim" style="animation-delay: -0.1s" d="M 62,106 C 54,124 50,138 58,150" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -0.7s" d="M 80,112 C 76,132 74,148 80,162" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -1.2s" d="M 100,114 C 100,134 98,152 102,166" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -1.7s" d="M 120,112 C 124,132 126,148 120,162" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -2.2s" d="M 138,106 C 146,124 150,138 142,150" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="bod" d="M 55,112 C 46,68 62,36 100,32 C 138,36 154,68 145,112 L 134,120 L 125,108 L 112,122 L 100,112 L 88,122 L 75,108 L 66,120 Z" stroke-width="3" stroke-linejoin="round"></path><g class="eyes"><path class="eyeline" d="M 71,77 L 93,77" stroke-width="4.5" stroke-linecap="round"></path><path class="eyeline" d="M 107,77 L 129,77" stroke-width="4.5" stroke-linecap="round"></path></g></svg></div><div class="tag"><b class="mono w">T8</b><em>on T7</em></div></div><div class="m sleep small" style="left: 79%; top: 62%; --d: -2.7s"><div class="zzz"><span style="animation-delay: 0s">z</span><span style="animation-delay: 1.1s; left: 7px; top: -6px">z</span><span style="animation-delay: 2.2s; left: 14px; top: -12px">z</span></div><div class="mb"><svg viewBox="46 26 108 146"><path class="tent rim" style="animation-delay: -0.1s" d="M 62,106 C 54,124 50,138 58,150" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -0.7s" d="M 80,112 C 76,132 74,148 80,162" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -1.2s" d="M 100,114 C 100,134 98,152 102,166" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -1.7s" d="M 120,112 C 124,132 126,148 120,162" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -2.2s" d="M 138,106 C 146,124 150,138 142,150" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="bod" d="M 55,112 C 46,68 62,36 100,32 C 138,36 154,68 145,112 L 134,120 L 125,108 L 112,122 L 100,112 L 88,122 L 75,108 L 66,120 Z" stroke-width="3" stroke-linejoin="round"></path><g class="eyes"><path class="eyeline" d="M 71,77 L 93,77" stroke-width="4.5" stroke-linecap="round"></path><path class="eyeline" d="M 107,77 L 129,77" stroke-width="4.5" stroke-linecap="round"></path></g></svg></div><div class="tag"><b class="mono w">T9</b><em>on T8</em></div></div></div>
+      <div class="zone live"><div class="zone-hd"><span class="zone-name disp">billing-portal</span><span class="zone-sub">Plan &#183; drafting</span><span class="grow"></span><span class="zprog"><i class="done"></i><i class="run"></i><i class=""></i></span></div><div class="m think small" style="left: 22%; top: 38%; --d: -1.4s"><div class="mb"><svg viewBox="46 26 108 146"><path class="tent rim" style="animation-delay: -0.1s" d="M 62,106 C 54,124 50,138 58,150" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -0.7s" d="M 80,112 C 76,132 74,148 80,162" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -1.2s" d="M 100,114 C 100,134 98,152 102,166" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -1.7s" d="M 120,112 C 124,132 126,148 120,162" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -2.2s" d="M 138,106 C 146,124 150,138 142,150" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="bod" d="M 55,112 C 46,68 62,36 100,32 C 138,36 154,68 145,112 L 134,120 L 125,108 L 112,122 L 100,112 L 88,122 L 75,108 L 66,120 Z" stroke-width="3" stroke-linejoin="round"></path><g class="eyes"><path class="eye" d="M 72,68 L 92,76 L 92,84 L 72,76 Z"></path><path class="eye" d="M 128,68 L 108,76 L 108,84 L 128,76 Z"></path></g></svg></div><div class="tag"><b class="mono t">00:38</b><em>drafting plan.md</em></div></div><div style="position: absolute; right: 9px; bottom: 9px; z-index: 3; border: 1px solid #3A2F52; background: #241E33; padding: 5px 8px; font-size: 10.5px; color: #C9A9FF">4 open decisions</div></div>
+      <div class="zone"><div class="zone-hd"><span class="zone-name disp">Assistant &amp; system</span><span class="zone-sub">chat &#183; hook &#183; failed</span><span class="grow"></span><span class="zprog"><i class="run"></i><i class="run"></i><i class=""></i></span></div><div class="m work small" style="left: 16%; top: 34%; --d: -3.9s"><div class="mb"><svg viewBox="46 26 108 146"><path class="tent rim" style="animation-delay: -0.1s" d="M 62,106 C 54,124 50,138 58,150" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -0.7s" d="M 80,112 C 76,132 74,148 80,162" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -1.2s" d="M 100,114 C 100,134 98,152 102,166" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -1.7s" d="M 120,112 C 124,132 126,148 120,162" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -2.2s" d="M 138,106 C 146,124 150,138 142,150" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="bod" d="M 55,112 C 46,68 62,36 100,32 C 138,36 154,68 145,112 L 134,120 L 125,108 L 112,122 L 100,112 L 88,122 L 75,108 L 66,120 Z" stroke-width="3" stroke-linejoin="round"></path><g class="eyes"><path class="eye" d="M 72,68 L 92,76 L 92,84 L 72,76 Z"></path><path class="eye" d="M 128,68 L 108,76 L 108,84 L 128,76 Z"></path></g></svg></div><div class="tag"><b class="mono t">00:09</b><em>answering you</em></div></div><div class="m work small" style="left: 45%; top: 46%; --d: -1.6s"><div class="mb"><svg viewBox="46 26 108 146"><path class="tent rim" style="animation-delay: -0.1s" d="M 62,106 C 54,124 50,138 58,150" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -0.7s" d="M 80,112 C 76,132 74,148 80,162" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -1.2s" d="M 100,114 C 100,134 98,152 102,166" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -1.7s" d="M 120,112 C 124,132 126,148 120,162" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -2.2s" d="M 138,106 C 146,124 150,138 142,150" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="bod" d="M 55,112 C 46,68 62,36 100,32 C 138,36 154,68 145,112 L 134,120 L 125,108 L 112,122 L 100,112 L 88,122 L 75,108 L 66,120 Z" stroke-width="3" stroke-linejoin="round"></path><g class="eyes"><path class="eye" d="M 72,68 L 92,76 L 92,84 L 72,76 Z"></path><path class="eye" d="M 128,68 L 108,76 L 108,84 L 128,76 Z"></path></g></svg></div><div class="tag"><b class="mono t">01:22</b><em>hook &#183; git diff</em></div></div><div class="m fail small" style="left: 74%; top: 56%; --d: 0s"><div class="mb"><svg viewBox="46 26 108 146"><path class="tent rim" style="animation-delay: -0.1s" d="M 62,106 C 54,124 50,138 58,150" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -0.7s" d="M 80,112 C 76,132 74,148 80,162" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -1.2s" d="M 100,114 C 100,134 98,152 102,166" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -1.7s" d="M 120,112 C 124,132 126,148 120,162" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="tent rim" style="animation-delay: -2.2s" d="M 138,106 C 146,124 150,138 142,150" fill="none" stroke-width="8" stroke-linecap="round"></path><path class="bod" d="M 55,112 C 46,68 62,36 100,32 C 138,36 154,68 145,112 L 134,120 L 125,108 L 112,122 L 100,112 L 88,122 L 75,108 L 66,120 Z" stroke-width="3" stroke-linejoin="round"></path><g class="eyes"><path class="eyeline" d="M 73,69 L 91,85 M 91,69 L 73,85" stroke-width="4" stroke-linecap="round"></path><path class="eyeline" d="M 109,69 L 127,85 M 127,69 L 109,85" stroke-width="4" stroke-linecap="round"></path></g></svg></div><div class="tag"><b class="mono f">failed</b><em>audit</em></div></div></div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":2560,"height":720}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

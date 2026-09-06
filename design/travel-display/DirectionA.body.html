@@ -1,0 +1,325 @@
+<div class="root">
+
+  <div class="bar">
+    <div class="mark">
+      <svg viewBox="46 26 108 146" width="17" height="23" class="ico">
+        <path d="M 62,106 C 54,124 50,138 58,150" fill="none" stroke="#8AD000" stroke-width="8" stroke-linecap="round"></path>
+        <path d="M 80,112 C 76,132 74,148 80,162" fill="none" stroke="#8AD000" stroke-width="8" stroke-linecap="round"></path>
+        <path d="M 120,112 C 124,132 126,148 120,162" fill="none" stroke="#8AD000" stroke-width="8" stroke-linecap="round"></path>
+        <path d="M 138,106 C 146,124 150,138 142,150" fill="none" stroke="#8AD000" stroke-width="8" stroke-linecap="round"></path>
+        <path d="M 55,112 C 46,68 62,36 100,32 C 138,36 154,68 145,112 L 134,120 L 125,108 L 112,122 L 100,112 L 88,122 L 75,108 L 66,120 Z" fill="#2A2A2A" stroke="#8AD000" stroke-width="3" stroke-linejoin="round"></path>
+        <path d="M 72,68 L 92,76 L 92,84 L 72,76 Z" fill="#C4F06A"></path>
+        <path d="M 128,68 L 108,76 L 108,84 L 128,76 Z" fill="#C4F06A"></path>
+      </svg>
+    </div>
+
+    <div>
+      <div class="hd-title disp">6 agents running <span class="sep">·</span> <span style="color: #C9A9FF; font-weight: 500">2 queued</span></div>
+      <div class="hd-sub mono">kraken <span class="sep">·</span> claude-opus-5 <span class="sep">·</span> auth-refresh, travel-display, billing-portal</div>
+    </div>
+
+    <div style="width: 1px; height: 26px; background: #333333; margin: 0 2px"></div>
+
+    <div style="display: flex; align-items: center; gap: 9px">
+      <div class="slots">
+        <div class="slot on"></div>
+        <div class="slot on"></div>
+        <div class="slot on"></div>
+        <div class="slot wait"></div>
+        <div class="slot wait"></div>
+        <div class="slot"></div>
+        <div class="slot"></div>
+        <div class="slot"></div>
+      </div>
+      <div class="cap mono">3<span class="sep">/</span>8 task slots</div>
+    </div>
+
+    <div class="grow"></div>
+
+    <button class="btn danger">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" class="ico"><rect x="4" y="4" width="16" height="16"></rect></svg>
+      Stop all
+    </button>
+    <div class="zoombox">
+      <div>&#8722;</div>
+      <div class="mono" style="border-left: 1px solid #393939; border-right: 1px solid #393939; min-width: 44px">100%</div>
+      <div>+</div>
+    </div>
+    <button class="btn" style="padding: 0 8px">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="ico"><circle cx="12" cy="12" r="10"></circle><path d="M12 18a6 6 0 0 0 0-12z" fill="currentColor"></path></svg>
+    </button>
+    <button class="btn" style="padding: 0 8px">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="ico"><path d="M8 3v3a2 2 0 0 1-2 2H3M21 8h-3a2 2 0 0 1-2-2V3M3 16h3a2 2 0 0 1 2 2v3M16 21v-3a2 2 0 0 1 2-2h3"></path></svg>
+    </button>
+  </div>
+
+  <div class="wall">
+
+    <!-- 1 -->
+    <div class="t run">
+      <div class="t-head">
+        <span class="chip task"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="ico"><path d="m3 17 2 2 4-4M3 7l2 2 4-4M13 6h8M13 12h8M13 18h8"></path></svg>Task</span>
+        <span class="tid mono">T3</span>
+        <span class="meta trunc">Wave 2 <span class="sep">·</span> auth-refresh</span>
+        <span class="grow"></span>
+        <span class="time mono">04:12</span>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#76B900" stroke-width="2.5" stroke-linecap="round" class="ico spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#848484" stroke-width="2" stroke-linecap="round" class="ico"><path d="M18 6 6 18M6 6l12 12"></path></svg>
+      </div>
+      <div class="t-title trunc">Move refresh-token rotation into the session store</div>
+      <div class="t-agent"><span class="trunc">spec-task-executor <span class="sep">·</span> opus-5 <span class="sep">·</span> workspace</span></div>
+      <div class="wavebar"><i style="width: 33%"></i></div>
+      <div class="t-log log mono">
+        <div class="l-tool">&#9679; Read src/lib/session.ts</div>
+        <div class="l-res">  218 lines</div>
+        <div class="l-tool">&#9679; Edit src/lib/session.ts</div>
+        <div class="l-res">  + rotate(t: RefreshToken): Promise&lt;Session&gt;</div>
+        <div class="l-res">  - refreshToken(raw: string)</div>
+        <div class="l-tool">&#9679; Bash npm run typecheck</div>
+        <div class="l-think">  wiring the rotation into useSession&#8230;</div>
+      </div>
+    </div>
+
+    <!-- 2 -->
+    <div class="t run">
+      <div class="t-head">
+        <span class="chip task"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="ico"><path d="m3 17 2 2 4-4M3 7l2 2 4-4M13 6h8M13 12h8M13 18h8"></path></svg>Task</span>
+        <span class="tid mono">T4</span>
+        <span class="meta trunc">Wave 2 <span class="sep">·</span> auth-refresh</span>
+        <span class="grow"></span>
+        <span class="time mono">02:47</span>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#76B900" stroke-width="2.5" stroke-linecap="round" class="ico spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#848484" stroke-width="2" stroke-linecap="round" class="ico"><path d="M18 6 6 18M6 6l12 12"></path></svg>
+      </div>
+      <div class="t-title trunc">Add the re-auth banner to the app shell</div>
+      <div class="t-agent"><span class="trunc">frontend-ui <span class="sep">·</span> opus-5 <span class="sep">·</span> workspace</span></div>
+      <div class="wavebar"><i style="width: 33%"></i></div>
+      <div class="t-log log mono">
+        <div class="l-tool">&#9679; Grep "AssistantDrawer" src/components</div>
+        <div class="l-res">  3 matches</div>
+        <div class="l-tool">&#9679; Write src/components/ReAuthBanner.tsx</div>
+        <div class="l-tool">&#9679; Edit src/App.tsx</div>
+        <div class="l-res">  + {expired &amp;&amp; &lt;ReAuthBanner /&gt;}</div>
+        <div class="l-txt">The banner reuses the agent-tint ground so it</div>
+        <div class="l-txt">reads as "needs you", not as an error.</div>
+      </div>
+    </div>
+
+    <!-- 3 -->
+    <div class="t run">
+      <div class="t-head">
+        <span class="chip task"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="ico"><path d="m3 17 2 2 4-4M3 7l2 2 4-4M13 6h8M13 12h8M13 18h8"></path></svg>Task</span>
+        <span class="tid mono">T7</span>
+        <span class="meta trunc">Wave 1 <span class="sep">·</span> travel-display</span>
+        <span class="grow"></span>
+        <span class="time mono">06:03</span>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#76B900" stroke-width="2.5" stroke-linecap="round" class="ico spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#848484" stroke-width="2" stroke-linecap="round" class="ico"><path d="M18 6 6 18M6 6l12 12"></path></svg>
+      </div>
+      <div class="t-title trunc">Cache the fleet snapshot so a display opened mid-run isn't empty</div>
+      <div class="t-agent"><span class="trunc">electron-pro <span class="sep">·</span> opus-5 <span class="sep">·</span> global</span></div>
+      <div class="wavebar"><i style="width: 78%"></i></div>
+      <div class="t-log log mono">
+        <div class="l-tool">&#9679; Edit electron/main.ts</div>
+        <div class="l-res">  + let lastFleet: FleetSnapshot = [];</div>
+        <div class="l-tool">&#9679; Edit electron/preload.ts</div>
+        <div class="l-res">  + request: () =&gt; ipcRenderer.send('fleet:request')</div>
+        <div class="l-tool">&#9679; Bash npm run typecheck</div>
+        <div class="l-res">  tsc --noEmit -p tsconfig.node.json</div>
+        <div class="l-res">  tsc --noEmit -p tsconfig.web.json</div>
+      </div>
+    </div>
+
+    <!-- 4 -->
+    <div class="t run">
+      <div class="t-head">
+        <span class="chip spec"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="ico"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v5h5"></path></svg>Spec</span>
+        <span class="meta trunc">Plan <span class="sep">·</span> billing-portal</span>
+        <span class="grow"></span>
+        <span class="time mono">00:38</span>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#76B900" stroke-width="2.5" stroke-linecap="round" class="ico spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#848484" stroke-width="2" stroke-linecap="round" class="ico"><path d="M18 6 6 18M6 6l12 12"></path></svg>
+      </div>
+      <div class="t-title trunc">Drafting plan.md from the approved requirements</div>
+      <div class="t-agent"><span class="trunc">spec-architect <span class="sep">·</span> opus-5 <span class="sep">·</span> skill: sdd-feature</span></div>
+      <div class="wavebar"></div>
+      <div class="t-log log mono">
+        <div class="l-txt">## Approach</div>
+        <div class="l-txt"></div>
+        <div class="l-txt">The portal reuses the github.ts pattern: a</div>
+        <div class="l-txt">dependency-free REST wrapper with the token</div>
+        <div class="l-txt">in safeStorage, exposed over billing:* IPC.</div>
+        <div class="l-think">  writing "Affected files"&#8230;</div>
+      </div>
+    </div>
+
+    <!-- 5 -->
+    <div class="t run">
+      <div class="t-head">
+        <span class="chip hook"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="ico"><rect x="4" y="8" width="16" height="12"></rect><path d="M12 8V4M9 14h.01M15 14h.01"></path></svg>Hook</span>
+        <span class="meta trunc">wave-complete <span class="sep">·</span> auth-refresh</span>
+        <span class="grow"></span>
+        <span class="time mono">01:22</span>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#76B900" stroke-width="2.5" stroke-linecap="round" class="ico spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#848484" stroke-width="2" stroke-linecap="round" class="ico"><path d="M18 6 6 18M6 6l12 12"></path></svg>
+      </div>
+      <div class="t-title trunc">code-validate-improve</div>
+      <div class="t-agent"><span class="trunc">code-reviewer <span class="sep">·</span> opus-5 <span class="sep">·</span> fired by Wave 1</span></div>
+      <div class="wavebar"></div>
+      <div class="t-log log mono">
+        <div class="l-tool">&#9679; Bash git diff --stat HEAD</div>
+        <div class="l-res">  6 files changed, 214 insertions(+)</div>
+        <div class="l-tool">&#9679; Read src/lib/session.ts</div>
+        <div class="l-txt">Two findings so far, both style. Nothing</div>
+        <div class="l-txt">blocking Wave 2 from starting.</div>
+      </div>
+    </div>
+
+    <!-- 6 -->
+    <div class="t run">
+      <div class="t-head">
+        <span class="chip chat"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="ico"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>Chat</span>
+        <span class="meta trunc">Assistant</span>
+        <span class="grow"></span>
+        <span class="time mono">00:09</span>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#76B900" stroke-width="2.5" stroke-linecap="round" class="ico spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#848484" stroke-width="2" stroke-linecap="round" class="ico"><path d="M18 6 6 18M6 6l12 12"></path></svg>
+      </div>
+      <div class="t-title trunc">How does steering get injected into a run?</div>
+      <div class="t-agent"><span class="trunc">claude <span class="sep">·</span> opus-5</span></div>
+      <div class="wavebar"></div>
+      <div class="t-log log mono">
+        <div class="l-txt">composeSteeringSystem resolves the inclusion</div>
+        <div class="l-txt">modes and is prepended to payload.system</div>
+        <div class="l-txt">inside streamClaude &#8212; so chat, task and</div>
+        <div class="l-txt">hook runs all get it uniformly, and pinned</div>
+      </div>
+    </div>
+
+    <!-- 7 queued -->
+    <div class="t q">
+      <div class="t-head">
+        <span class="chip task" style="background: rgba(255,255,255,0.06); color: #A8A8A8"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="ico"><path d="m3 17 2 2 4-4M3 7l2 2 4-4M13 6h8M13 12h8M13 18h8"></path></svg>Task</span>
+        <span class="tid mono">T5</span>
+        <span class="meta trunc">Wave 2 <span class="sep">·</span> auth-refresh</span>
+        <span class="grow"></span>
+        <span class="time idle mono">queued</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="#4E3A73" class="ico"><rect x="5" y="5" width="14" height="14"></rect></svg>
+      </div>
+      <div class="t-title trunc">Update the session tests for the new rotation</div>
+      <div class="t-agent"><span class="trunc">spec-task-executor <span class="sep">·</span> opus-5</span></div>
+      <div class="wavebar"><i style="width: 33%"></i></div>
+      <div class="t-wait">
+        <div class="meta">Waiting on</div>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap">
+          <span class="dep mono">T3</span>
+        </div>
+        <div class="meta" style="margin-top: auto">Next up when a task slot frees.</div>
+      </div>
+    </div>
+
+    <!-- 8 queued -->
+    <div class="t q">
+      <div class="t-head">
+        <span class="chip task" style="background: rgba(255,255,255,0.06); color: #A8A8A8"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="ico"><path d="m3 17 2 2 4-4M3 7l2 2 4-4M13 6h8M13 12h8M13 18h8"></path></svg>Task</span>
+        <span class="tid mono">T6</span>
+        <span class="meta trunc">Wave 2 <span class="sep">·</span> auth-refresh</span>
+        <span class="grow"></span>
+        <span class="time idle mono">queued</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="#4E3A73" class="ico"><rect x="5" y="5" width="14" height="14"></rect></svg>
+      </div>
+      <div class="t-title trunc">Document the token rotation contract in docs/</div>
+      <div class="t-agent"><span class="trunc">docs-writer <span class="sep">·</span> opus-5</span></div>
+      <div class="wavebar"><i style="width: 33%"></i></div>
+      <div class="t-wait">
+        <div class="meta">Waiting on</div>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap">
+          <span class="dep mono">T3</span>
+          <span class="dep mono">T4</span>
+        </div>
+        <div class="meta" style="margin-top: auto">Last task of Wave 2.</div>
+      </div>
+    </div>
+
+    <!-- 9 done -->
+    <div class="t past">
+      <div class="t-head">
+        <span class="chip task" style="background: rgba(255,255,255,0.06); color: #A8A8A8"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="ico"><path d="m3 17 2 2 4-4M3 7l2 2 4-4M13 6h8M13 12h8M13 18h8"></path></svg>Task</span>
+        <span class="tid mono">T2</span>
+        <span class="meta trunc">Wave 1 <span class="sep">·</span> auth-refresh</span>
+        <span class="grow"></span>
+        <span class="time idle mono">3m 41s</span>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#76B900" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="ico"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><path d="m9 11 3 3L22 4"></path></svg>
+      </div>
+      <div class="t-title trunc">Add SessionStore.rotate()</div>
+      <div class="t-agent"><span class="trunc">spec-task-executor <span class="sep">·</span> 3 files changed</span></div>
+      <div class="wavebar"><i style="width: 100%"></i></div>
+      <div class="t-log log mono" style="opacity: 0.75">
+        <div class="l-tool">&#9679; Bash npm run typecheck</div>
+        <div class="l-res">  clean</div>
+        <div class="l-txt">rotate() now owns the refresh cycle; callers</div>
+        <div class="l-txt">no longer touch the raw token.</div>
+      </div>
+    </div>
+
+    <!-- 10 done -->
+    <div class="t past">
+      <div class="t-head">
+        <span class="chip task" style="background: rgba(255,255,255,0.06); color: #A8A8A8"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="ico"><path d="m3 17 2 2 4-4M3 7l2 2 4-4M13 6h8M13 12h8M13 18h8"></path></svg>Task</span>
+        <span class="tid mono">T1</span>
+        <span class="meta trunc">Wave 1 <span class="sep">·</span> auth-refresh</span>
+        <span class="grow"></span>
+        <span class="time idle mono">1m 58s</span>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#76B900" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="ico"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><path d="m9 11 3 3L22 4"></path></svg>
+      </div>
+      <div class="t-title trunc">Extract the token helpers into lib/tokens.ts</div>
+      <div class="t-agent"><span class="trunc">spec-task-executor <span class="sep">·</span> 2 files changed</span></div>
+      <div class="wavebar"><i style="width: 100%"></i></div>
+      <div class="t-log log mono" style="opacity: 0.75">
+        <div class="l-tool">&#9679; Write src/lib/tokens.ts</div>
+        <div class="l-res">  64 lines</div>
+        <div class="l-txt">Pure helpers, no store access &#8212; T2 can</div>
+        <div class="l-txt">build the rotation on top of these.</div>
+      </div>
+    </div>
+
+    <!-- 11 error -->
+    <div class="t past" style="border-color: rgba(224,83,60,0.4)">
+      <div class="t-head">
+        <span class="chip audit"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="ico"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5M12 16.5h.01"></path></svg>Audit</span>
+        <span class="meta trunc">auth-refresh</span>
+        <span class="grow"></span>
+        <span class="time mono" style="color: #FF8A72">failed</span>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FF8A72" stroke-width="2.5" stroke-linecap="round" class="ico"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5M12 16.5h.01"></path></svg>
+      </div>
+      <div class="t-title trunc">Drift check against plan.md</div>
+      <div class="t-agent"><span class="trunc">spec-doctor <span class="sep">·</span> 0m 52s</span></div>
+      <div class="wavebar"><i style="width: 100%; background: #E0533C"></i></div>
+      <div class="t-log log mono">
+        <div style="color: #FF8A72">Error: tasks.md has no ## Tasks section</div>
+        <div class="l-res">  at deriveTasks (specActions.ts:118)</div>
+        <div class="l-txt" style="opacity: 0.75">Re-run after Wave 2 regenerates tasks.md.</div>
+      </div>
+    </div>
+
+    <!-- 12 cancelled -->
+    <div class="t past">
+      <div class="t-head">
+        <span class="chip chat"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="ico"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>Chat</span>
+        <span class="meta trunc">Assistant</span>
+        <span class="grow"></span>
+        <span class="time idle mono">cancelled</span>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#848484" stroke-width="2.5" stroke-linecap="round" class="ico"><circle cx="12" cy="12" r="9"></circle><path d="M5.6 5.6l12.8 12.8"></path></svg>
+      </div>
+      <div class="t-title trunc">Explain the agent router precedence</div>
+      <div class="t-agent"><span class="trunc">claude <span class="sep">·</span> 0m 14s</span></div>
+      <div class="wavebar"></div>
+      <div class="t-log log mono" style="opacity: 0.7">
+        <div class="l-txt">Precedence is per-task @agent, then the chat</div>
+        <div class="l-txt">override, then the best-matching installed</div>
+        <div class="l-res">  stopped by you</div>
+      </div>
+    </div>
+
+  </div>
+</div>
