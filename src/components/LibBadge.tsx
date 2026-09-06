@@ -65,8 +65,8 @@ export function LibBadge({
       className={cn(
         'text-[9px] px-1.5 py-0.5 rounded flex items-center gap-1 hover:brightness-125 transition',
         kind === 'agent'
-          ? 'bg-accent/15 text-accent'
-          : 'bg-sky-500/15 text-sky-300'
+          ? 'bg-agent/15 text-agent-text'
+          : 'bg-ink-50/[0.06] text-dim'
       )}
     >
       <Icon size={9} />

@@ -33,9 +33,21 @@ module.exports = {
           2: v('--accent2'),
           fg: v('--accent-fg'),
           muted: 'rgb(var(--accent) / 0.16)',
+          // Green fails contrast as small text — use `text-accent-text` there.
+          text: v('--accent-text'),
+          num: v('--accent-num'),
+        },
+        // Second accent: agent output, waiting, "needs your decision".
+        agent: {
+          DEFAULT: v('--agent'),
+          2: v('--agent2'),
+          fg: v('--agent-fg'),
+          text: v('--agent-text'),
+          tint: v('--agent-tint'),
         },
         // Semantic design tokens (new) — also themed.
         card: v('--card'),
+        raised: v('--raised'),
         elev: v('--elev'),
         rail: v('--rail'),
         panel: v('--panel'),
@@ -44,18 +56,45 @@ module.exports = {
         good: v('--good'),
         ok: v('--good'),
         warn: v('--warn'),
-        danger: v('--danger'),
+        danger: {
+          DEFAULT: v('--danger'),
+          text: v('--danger-text'),
+        },
         bad: v('--danger'),
       },
-      fontFamily: {
-        sans: ['Hanken Grotesk', 'Geist', 'Inter', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
-        display: ['Space Grotesk', 'Hanken Grotesk', 'Geist', 'system-ui', 'sans-serif'],
-        mono: ['JetBrains Mono', 'Geist Mono', 'SF Mono', 'Menlo', 'monospace'],
+      // Themed motion: `transition` is 150ms on the legacy themes and 120ms on
+      // Signal, and `duration-bar` is the progress-fill timing.
+      transitionDuration: {
+        DEFAULT: 'var(--dur)',
+        bar: 'var(--dur-bar)',
       },
+      // Themed shape scale — `rounded-lg` is 8px on Abyss and 0 on Signal.
+      // `full` stays literal so dots, avatars and circular pills survive.
+      borderRadius: {
+        none: '0',
+        sm: 'var(--radius-sm)',
+        DEFAULT: 'var(--radius)',
+        md: 'var(--radius-md)',
+        lg: 'var(--radius-lg)',
+        xl: 'var(--radius-xl)',
+        '2xl': 'var(--radius-2xl)',
+        '3xl': 'var(--radius-3xl)',
+        full: 'var(--radius-full)',
+      },
+      // One source of truth for the three families: the stacks live in
+      // styles.css as `--font-*` (bundled @fontsource-variable packages first),
+      // so CSS rules and Tailwind classes can never drift apart.
+      fontFamily: {
+        sans: ['var(--font-sans)'],
+        display: ['var(--font-display)'],
+        mono: ['var(--font-mono)'],
+      },
+      // Themed elevation — Signal switches shadows off entirely and turns the
+      // glow into the accent hairline its palette allows.
       boxShadow: {
-        panel: '0 1px 0 rgba(255,255,255,0.04) inset, 0 0 0 1px rgba(255,255,255,0.04)',
-        glow: '0 0 0 1px rgb(var(--accent) / 0.4), 0 0 40px -10px rgb(var(--accent) / 0.6)',
-        card: '0 12px 34px rgba(0,0,0,0.34)',
+        panel: 'var(--shadow-panel)',
+        glow: 'var(--shadow-glow)',
+        card: 'var(--shadow-card)',
       },
       animation: {
         'pulse-slow': 'pulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
@@ -67,7 +106,7 @@ module.exports = {
         blink: 'blink 1.6s ease-in-out infinite',
         // Mission Control: shimmering progress fill + a steady status pulse.
         flow: 'flow 1.2s linear infinite',
-        'pulse-dot': 'pulseDot 1.4s ease-in-out infinite',
+        'pulse-dot': 'pulseDot 1.8s ease-in-out infinite',
         'slide-in': 'slideIn 0.22s cubic-bezier(0.2, 0.8, 0.2, 1) both',
       },
       keyframes: {

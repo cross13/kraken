@@ -12,7 +12,7 @@ import {
 import { useWorkspace } from '../../stores/workspace';
 import { useUi } from '../../stores/ui';
 import { useModuleConfig } from '../../stores/moduleConfig';
-import { renderMarkdown } from '../../lib/markdown';
+import { Markdown } from '../Markdown';
 import { skillScaffold, skillPath, slugify } from '../../lib/library';
 import { cn } from '../../lib/cn';
 import type { SkillMeta } from '../../../electron/shared/types';
@@ -32,7 +32,7 @@ const EXPLAINER = [
   },
   {
     heading: 'How one gets injected',
-    body: 'The governing SDD skill (sdd-feature / sdd-bugfix by spec kind) is injected into every spec + task run. Kraken additionally injects a domain skill when it confidently matches the work.',
+    body: 'The governing SDD skill (sdd-feature / sdd-bugfix by spec kind) is injected into every spec + task run. Octo additionally injects a domain skill when it confidently matches the work.',
   },
   {
     heading: 'Which is best for a task',
@@ -196,7 +196,7 @@ function SkillDetail({ skill }: { skill: SkillMeta }) {
   const toggleSkill = useModuleConfig((s) => s.toggleSkill);
 
   useEffect(() => {
-    window.kraken.skills.read(skill.path).then(setBody);
+    window.octo.skills.read(skill.path).then(setBody);
   }, [skill.path]);
 
   const isSdd = skill.name === 'sdd-feature' || skill.name === 'sdd-bugfix';
@@ -212,7 +212,7 @@ function SkillDetail({ skill }: { skill: SkillMeta }) {
             <h2 className="font-display text-[19px] font-bold text-ink-50 truncate">{skill.name}</h2>
             <ScopeChip scope={skill.scope} />
             {isSdd && (
-              <span className="text-[9.5px] font-mono px-1.5 py-0.5 rounded uppercase tracking-wide bg-sky-500/15 text-sky-300">
+              <span className="text-[9.5px] font-mono px-1.5 py-0.5 rounded uppercase tracking-wide bg-ink-50/[0.06] text-dim">
                 governing
               </span>
             )}
@@ -263,7 +263,7 @@ function SkillDetail({ skill }: { skill: SkillMeta }) {
 
       <ModuleSection title="Injected instructions" desc="The full SKILL.md body prepended to the system prompt.">
         <div className="rounded-xl bg-ink-950 ring-1 ring-ink-800/40 px-5 py-4">
-          <div className="md" dangerouslySetInnerHTML={{ __html: renderMarkdown(body) }} />
+          <Markdown source={body} />
         </div>
       </ModuleSection>
     </div>
@@ -294,7 +294,7 @@ function NewSkillDialog({
     setErr(null);
     try {
       const path = skillPath(root, slug);
-      await window.kraken.fs.write(path, skillScaffold(slug, description.trim()));
+      await window.octo.fs.write(path, skillScaffold(slug, description.trim()));
       await refreshAll();
       onCreated(path);
     } catch (e) {

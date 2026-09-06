@@ -15,11 +15,16 @@ export type LibrarySection =
   | 'hooks'
   | 'steering'
   | 'routing'
+  | 'tickets'
   | 'appearance'
   | 'settings';
 
-/** Stages of the spec flow. `requirements` covers bugfix analysis for bug specs. */
-export type SpecStage = 'requirements' | 'design' | 'tasks' | 'ship';
+/**
+ * Stages of the spec flow. `define` covers bugfix analysis for bug specs, and
+ * `build` covers both running the tasks and shipping — Ship is a panel inside
+ * that stage, not a stage of its own.
+ */
+export type SpecStage = 'define' | 'plan' | 'build';
 
 /** Right slide-over content — detail views that used to be center tabs. */
 export type Overlay =
@@ -62,9 +67,32 @@ function saveNum(key: string, n: number) {
   }
 }
 
+function loadBool(key: string, fallback: boolean) {
+  try {
+    const v = localStorage.getItem(key);
+    return v === null ? fallback : v === '1';
+  } catch {
+    return fallback;
+  }
+}
+function saveBool(key: string, b: boolean) {
+  try {
+    localStorage.setItem(key, b ? '1' : '0');
+  } catch {
+    // ignore (e.g. storage disabled)
+  }
+}
+
+const STAGE_FOR_PHASE: Record<SpecMeta['phase'], SpecStage> = {
+  requirements: 'define',
+  plan: 'plan',
+  build: 'build',
+  done: 'build',
+};
+
 /** The stage a spec should open on, given its phase. */
 export function stageForPhase(phase: SpecMeta['phase']): SpecStage {
-  return phase === 'done' ? 'ship' : phase;
+  return STAGE_FOR_PHASE[phase];
 }
 
 interface UiStore {
@@ -75,6 +103,8 @@ interface UiStore {
   activeSpecId: string | null;
   specStage: SpecStage;
   openSpec: (specId: string, stage?: SpecStage) => void;
+  /** Leave the spec surface with no spec selected (after a delete or a reset). */
+  closeSpec: () => void;
   setSpecStage: (stage: SpecStage) => void;
 
   // ---- Activity surface ----
@@ -96,6 +126,30 @@ interface UiStore {
   explorerOpen: boolean;
   toggleExplorer: () => void;
 
+  /**
+   * The spec flow's **briefing** aside — who runs this step and how. On by
+   * default: the whole point is that you don't have to go looking for it.
+   */
+  specAsideOpen: boolean;
+  toggleSpecAside: () => void;
+
+  /**
+   * **Quick Start** — the guided first hour. A full-window mode rather than a
+   * fifth surface: the four are singletons you live in, and this is one you
+   * finish and leave. Auto-opens once on a brand-new install (see `App.tsx`).
+   */
+  quickStartOpen: boolean;
+  setQuickStart: (b: boolean) => void;
+
+  /**
+   * **Zen** — the full-window reading mode for the document on screen
+   * (`views/ZenReader`). Not an overlay: it takes the whole viewport rather
+   * than sliding in beside the surface, so it lives on its own flag.
+   */
+  zenOpen: boolean;
+  setZen: (b: boolean) => void;
+  toggleZen: () => void;
+
   // ---- Slide-over overlay (file / agent / skill / run / questions / hook / repo) ----
   overlay: Overlay | null;
   openOverlay: (o: Overlay) => void;
@@ -115,17 +169,20 @@ interface UiStore {
 
 export const useUi = create<UiStore>((set, get) => ({
   surface: 'home',
-  setSurface: (s) => set({ surface: s }),
+  // Zen belongs to the document on screen: navigating away closes it.
+  setSurface: (s) => set({ surface: s, zenOpen: s === 'spec' && get().zenOpen }),
 
   activeSpecId: null,
-  specStage: 'requirements',
+  specStage: 'define',
   openSpec: (specId, stage) =>
     set((s) => ({
       surface: 'spec',
       activeSpecId: specId,
-      specStage: stage ?? (specId === s.activeSpecId ? s.specStage : 'requirements'),
+      specStage: stage ?? (specId === s.activeSpecId ? s.specStage : 'define'),
     })),
-  setSpecStage: (stage) => set({ specStage: stage }),
+  closeSpec: () =>
+    set({ surface: 'home', activeSpecId: null, specStage: 'define', zenOpen: false }),
+  setSpecStage: (stage) => set({ specStage: stage, zenOpen: false }),
 
   activityTab: 'runs',
   openActivity: (tab) =>
@@ -138,15 +195,30 @@ export const useUi = create<UiStore>((set, get) => ({
   assistantOpen: false,
   toggleAssistant: () => set((s) => ({ assistantOpen: !s.assistantOpen })),
   setAssistantOpen: (b) => set({ assistantOpen: b }),
-  assistantWidth: clampAssistant(loadNum('kraken.chatWidth', 420)),
+  assistantWidth: clampAssistant(loadNum('octo.chatWidth', 420)),
   setAssistantWidth: (n) => {
     const w = clampAssistant(n);
-    saveNum('kraken.chatWidth', w);
+    saveNum('octo.chatWidth', w);
     set({ assistantWidth: w });
   },
 
   explorerOpen: false,
   toggleExplorer: () => set((s) => ({ explorerOpen: !s.explorerOpen })),
+
+  quickStartOpen: false,
+  setQuickStart: (b) => set({ quickStartOpen: b }),
+
+  specAsideOpen: loadBool('octo.specAside', true),
+  toggleSpecAside: () =>
+    set((s) => {
+      const next = !s.specAsideOpen;
+      saveBool('octo.specAside', next);
+      return { specAsideOpen: next };
+    }),
+
+  zenOpen: false,
+  setZen: (b) => set({ zenOpen: b }),
+  toggleZen: () => set((s) => ({ zenOpen: !s.zenOpen })),
 
   overlay: null,
   openOverlay: (o) => set({ overlay: o }),

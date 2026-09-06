@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { useWorkspace } from '../../stores/workspace';
 import { useUi } from '../../stores/ui';
-import { renderMarkdown } from '../../lib/markdown';
+import { Markdown } from '../Markdown';
 import { cn } from '../../lib/cn';
 import type {
   SteeringFile,
@@ -30,7 +30,7 @@ import { ModuleHeader, ModuleTabs, ModuleSection, Explainer, Callout, ScopeChip 
 const EXPLAINER = [
   {
     heading: 'What steering is',
-    body: 'Markdown docs in .kraken/steering/ that carry project context — product, stack, conventions, domain knowledge. Kraken prepends the resolved set to every run\'s system prompt (chat, spec drafting, tasks, hooks).',
+    body: 'Markdown docs in .octo/steering/ that carry project context — product, stack, conventions, domain knowledge. Octo prepends the resolved set to every run\'s system prompt (chat, spec drafting, tasks, hooks).',
   },
   {
     heading: 'Always in context',
@@ -327,7 +327,7 @@ function RootDocDetail({ doc }: { doc: SteeringFile }) {
       </Callout>
       <ModuleSection title="Content" desc="Injected verbatim into every run's system prompt.">
         <div className="rounded-xl bg-ink-950 ring-1 ring-ink-800/40 px-5 py-4">
-          <div className="md" dangerouslySetInnerHTML={{ __html: renderMarkdown(doc.body) }} />
+          <Markdown source={doc.body} />
         </div>
       </ModuleSection>
     </div>
@@ -567,7 +567,7 @@ function PreviewPane() {
     if (!root) return;
     setLoading(true);
     const files = testPath.trim() ? [testPath.trim()] : [];
-    window.kraken.steering
+    window.octo.steering
       .preview(root, { files, manualRefs: [] })
       .then(setPreview)
       .finally(() => setLoading(false));

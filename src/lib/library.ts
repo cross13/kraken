@@ -1,5 +1,5 @@
-import type { AgentMeta, SkillMeta } from '../../electron/shared/types';
-import { routeAgent, type Action } from './agentRouter';
+import type { AgentMeta, SeedReport, SkillMeta } from '../../electron/shared/types';
+import { routeAgent, type Action, type RouteReason } from './agentRouter';
 import { ROUTABLE_ACTIONS, type RoutableAction } from '../stores/moduleConfig';
 
 /** kebab-case a display name into a safe file/skill slug. */
@@ -76,16 +76,24 @@ export function skillScaffold(name: string, description: string): string {
   ].join('\n');
 }
 
+/** Human label for why the router landed on an agent — shown wherever a route is explained. */
+export const REASON_LABEL: Record<RouteReason, string> = {
+  'per-task': 'Per-task @agent',
+  'chat-override': 'Chat override',
+  pinned: 'Pinned',
+  default: 'Bundled default',
+  specialist: 'Best specialist',
+  generic: 'Generic Claude',
+};
+
 function buildAction(key: RoutableAction, taskText: string): Action {
   switch (key) {
     case 'requirements':
       return { kind: 'spec-file', file: 'requirements', specKind: 'feature' };
     case 'bugfix':
       return { kind: 'spec-file', file: 'bugfix', specKind: 'bugfix' };
-    case 'design':
-      return { kind: 'spec-file', file: 'design', specKind: 'feature' };
-    case 'tasks':
-      return { kind: 'spec-file', file: 'tasks', specKind: 'feature' };
+    case 'plan':
+      return { kind: 'spec-file', file: 'plan', specKind: 'feature' };
     case 'task-execute':
       return { kind: 'task-execute', taskText };
     case 'task-refine':
@@ -114,4 +122,17 @@ export function actionsRoutingTo(
     if (routed.name === agentName) out.push({ key: a.key, label: a.label });
   }
   return out;
+}
+
+/**
+ * One line describing what a *Seed defaults* run did. Seeding is now an upgrade,
+ * not just a first install: a bundled default the user never edited is rewritten
+ * with the current version, one they edited is kept untouched.
+ */
+export function seedSummary(report: SeedReport): string {
+  const bits: string[] = [];
+  if (report.created.length) bits.push(`${report.created.length} installed`);
+  if (report.upgraded.length) bits.push(`${report.upgraded.length} updated`);
+  if (report.kept.length) bits.push(`${report.kept.length} kept (edited)`);
+  return bits.length ? bits.join(' · ') : 'Already up to date';
 }

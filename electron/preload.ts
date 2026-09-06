@@ -1,12 +1,23 @@
 import { contextBridge, ipcRenderer, webFrame } from 'electron';
 import type {
   AgentMeta,
+  BranchSummary,
+  McpCallResult,
+  McpToolMeta,
+  TicketAction,
+  TicketCapability,
+  TicketProviderConfig,
+  TicketSummary,
+  DataResetOptions,
+  DataResetReport,
+  DataUsage,
   DirEntry,
   ErrorRow,
   RunRow,
   RunFileRow,
   RunFileCount,
   SpecFileChange,
+  SeedReport,
   SkillMeta,
   SpecEventRow,
   SpecRunStat,
@@ -46,12 +57,15 @@ const api = {
     getLast: () => ipcRenderer.invoke('workspace:get-last') as Promise<string | null>,
     getRecents: () => ipcRenderer.invoke('workspace:get-recents') as Promise<string[]>,
     open: (p: string) => ipcRenderer.invoke('workspace:open', p) as Promise<string>,
+    /** Upgrade-only re-seed of the bundled library; reports what it changed. */
+    seedUpgrade: (root: string) =>
+      ipcRenderer.invoke('workspace:seed-upgrade', root) as Promise<SeedReport>,
     listTree: (p: string) => ipcRenderer.invoke('workspace:list-tree', p) as Promise<DirEntry[]>,
   },
   specs: {
     list: (root: string) => ipcRenderer.invoke('specs:list', root) as Promise<SpecMeta[]>,
-    create: (root: string, name: string, kind: SpecKind) =>
-      ipcRenderer.invoke('specs:create', root, name, kind) as Promise<SpecMeta>,
+    create: (root: string, name: string, kind: SpecKind, brief?: string) =>
+      ipcRenderer.invoke('specs:create', root, name, kind, brief) as Promise<SpecMeta>,
     read: (root: string, id: string) =>
       ipcRenderer.invoke('specs:read', root, id) as Promise<{
         meta: SpecMeta;
@@ -66,23 +80,29 @@ const api = {
     delete: (root: string, id: string) =>
       ipcRenderer.invoke('specs:delete', root, id) as Promise<void>,
   },
+  /** Wholesale reset of the SDD data — specs on disk + the history DB. */
+  data: {
+    usage: (root: string) => ipcRenderer.invoke('data:usage', root) as Promise<DataUsage>,
+    reset: (root: string, opts: DataResetOptions) =>
+      ipcRenderer.invoke('data:reset', root, opts) as Promise<DataResetReport>,
+  },
   skills: {
     list: (root: string) => ipcRenderer.invoke('skills:list', root) as Promise<SkillMeta[]>,
     read: (p: string) => ipcRenderer.invoke('skills:read', p) as Promise<string>,
     seedDefaults: (root: string) =>
-      ipcRenderer.invoke('skills:create-default', root) as Promise<void>,
+      ipcRenderer.invoke('skills:create-default', root) as Promise<SeedReport>,
   },
   agents: {
     list: (root: string) => ipcRenderer.invoke('agents:list', root) as Promise<AgentMeta[]>,
     read: (p: string) => ipcRenderer.invoke('agents:read', p) as Promise<string>,
     seedDefaults: (root: string) =>
-      ipcRenderer.invoke('agents:create-default', root) as Promise<void>,
+      ipcRenderer.invoke('agents:create-default', root) as Promise<SeedReport>,
   },
   steering: {
     list: (root: string) =>
       ipcRenderer.invoke('steering:list', root) as Promise<SteeringFile[]>,
     seedDefaults: (root: string) =>
-      ipcRenderer.invoke('steering:create-default', root) as Promise<void>,
+      ipcRenderer.invoke('steering:create-default', root) as Promise<SeedReport>,
     write: (root: string, input: SteeringWriteInput) =>
       ipcRenderer.invoke('steering:write', root, input) as Promise<SteeringFile>,
     remove: (root: string, filePath: string) =>
@@ -120,7 +140,7 @@ const api = {
       ctx: { root?: string; specId?: string | null; fileHints?: string[] }
     ) => ipcRenderer.invoke('hooks:fire-one', root, id, ctx) as Promise<void>,
     seedDefaults: (root: string) =>
-      ipcRenderer.invoke('hooks:create-default', root) as Promise<void>,
+      ipcRenderer.invoke('hooks:create-default', root) as Promise<SeedReport>,
     generateFromNl: (root: string, description: string) =>
       ipcRenderer.invoke('hooks:generate-from-nl', root, description) as Promise<void>,
     listRuns: (opts: { workspacePath?: string | null; limit?: number }) =>
@@ -139,6 +159,101 @@ const api = {
   mcp: {
     list: (root?: string | null) =>
       ipcRenderer.invoke('mcp:list', root) as Promise<McpServerMeta[]>,
+    /** Connect, handshake and read `tools/list`, with a suggested capability map. */
+    listTools: (args: { root?: string | null; server: string; url?: string }) =>
+      ipcRenderer.invoke('mcp:list-tools', args) as Promise<{
+        ok: boolean;
+        tools: McpToolMeta[];
+        map?: Partial<Record<TicketCapability, string>>;
+        error?: string;
+        authRequired?: boolean;
+        /** The exchange that failed — url, status, session state, server's own words. */
+        detail?: Record<string, unknown>;
+        server?: { name: string; url?: string; type: string; scope: string };
+        auth?: 'none' | 'manual' | 'oauth';
+      }>,
+  },
+
+  // Trackers, over MCP. Every write is planned as explicit tool calls first
+  // (`plan`) and only sent once confirmed (`apply`).
+  tickets: {
+    listProviders: (root: string) =>
+      ipcRenderer.invoke('tickets:list-providers', root) as Promise<TicketProviderConfig[]>,
+    saveProvider: (args: { root: string; provider: TicketProviderConfig }) =>
+      ipcRenderer.invoke('tickets:save-provider', args) as Promise<TicketProviderConfig[]>,
+    deleteProvider: (args: { root: string; id: string }) =>
+      ipcRenderer.invoke('tickets:delete-provider', args) as Promise<TicketProviderConfig[]>,
+    /** Open tickets across every enabled tracker, for seeding a spec from one. */
+    listOpen: (args: { root: string; limit?: number }) =>
+      ipcRenderer.invoke('tickets:list-open', args) as Promise<
+        { provider: TicketProviderConfig; tickets: TicketSummary[]; error?: string }[]
+      >,
+    /** The clients / projects this tracker scopes tickets by. */
+    listScopes: (args: { root: string; providerId: string }) =>
+      ipcRenderer.invoke('tickets:list-scopes', args) as Promise<{
+        ok: boolean;
+        scopes: { key: string; label: string }[];
+        error?: string;
+        /** Present only when the call worked but nothing could be read out of it. */
+        raw?: { tool: string; text: string; structured: unknown };
+      }>,
+    /** The ticket's content, shaped into the documents a spec starts from. */
+    seed: (args: {
+      root: string;
+      providerId: string;
+      ticket: TicketSummary;
+      kind: 'feature' | 'bugfix';
+    }) =>
+      ipcRenderer.invoke('tickets:seed', args) as Promise<{
+        ok: boolean;
+        seed: { brief: string; requirements: string; plan: string | null };
+        error?: string;
+      }>,
+    /** Attach an existing ticket to a spec, without creating anything. */
+    link: (args: { root: string; specId: string; ticket: TicketSummary }) =>
+      ipcRenderer.invoke('tickets:link', args) as Promise<SpecMeta | null>,
+    hasToken: (server: string) => ipcRenderer.invoke('tickets:has-token', server) as Promise<boolean>,
+    /** How this server is authenticated right now. */
+    authStatus: (server: string) =>
+      ipcRenderer.invoke('tickets:auth-status', server) as Promise<{
+        mode: 'none' | 'manual' | 'oauth';
+        account?: string;
+        expiresAt?: number;
+        issuer?: string;
+      }>,
+    /**
+     * Start the interactive OAuth sign-in. Resolves when the browser redirect
+     * lands — the promise is the completion signal, so there is nothing to
+     * subscribe to.
+     */
+    signIn: (args: { root?: string | null; server: string; scope?: string }) =>
+      ipcRenderer.invoke('tickets:sign-in', args) as Promise<{
+        ok: boolean;
+        expiresAt?: number;
+        error?: string;
+      }>,
+    signOut: (server: string) => ipcRenderer.invoke('tickets:sign-out', server) as Promise<void>,
+    setToken: (args: { server: string; token: string | null }) =>
+      ipcRenderer.invoke('tickets:set-token', args) as Promise<void>,
+    plan: (args: { root: string; specId: string; event: unknown }) =>
+      ipcRenderer.invoke('tickets:plan', args) as Promise<
+        { provider: TicketProviderConfig; actions: TicketAction[] }[]
+      >,
+    apply: (args: {
+      root: string;
+      specId: string;
+      providerId: string;
+      actions: TicketAction[];
+      eventId: string;
+    }) =>
+      ipcRenderer.invoke('tickets:apply', args) as Promise<{
+        ok: boolean;
+        results: McpCallResult[];
+        error?: string;
+        meta?: SpecMeta | null;
+      }>,
+    call: (args: { root: string; providerId: string; tool: string; args: Record<string, unknown> }) =>
+      ipcRenderer.invoke('tickets:call', args) as Promise<McpCallResult>,
   },
   settings: {
     getModel: () => ipcRenderer.invoke('settings:get-model') as Promise<string>,
@@ -194,6 +309,9 @@ const api = {
         upstream: string | null;
         hasOrigin: boolean;
       }>,
+    /** Commits + per-file line counts this branch adds on top of its base. */
+    branchSummary: (args: { cwd: string; base?: string }) =>
+      ipcRenderer.invoke('git:branch-summary', args) as Promise<BranchSummary>,
     listChanges: (cwd: string) =>
       ipcRenderer.invoke('git:list-changes', cwd) as Promise<{
         ok: boolean;
@@ -393,6 +511,8 @@ const api = {
     },
   },
   shell: {
+    /** Electron's clipboard, not the DOM's — it works without a secure context. */
+    copy: (text: string) => ipcRenderer.invoke('shell:copy', text) as Promise<void>,
     openUrl: (url: string) => ipcRenderer.invoke('shell:open-url', url) as Promise<void>,
   },
   // Travel Display — the optional wide second window (the fleet monitor).
@@ -417,6 +537,8 @@ const api = {
   // Live-run mirror: the main window pushes, the travel window subscribes.
   fleet: {
     push: (runs: FleetSnapshot) => ipcRenderer.send('fleet:push', runs),
+    /** Ask the main process to replay the last snapshot into THIS renderer. */
+    request: () => ipcRenderer.send('fleet:request'),
     onSync: (handler: (runs: FleetSnapshot) => void) => {
       const listener = (_: unknown, runs: FleetSnapshot) => handler(runs);
       ipcRenderer.on('fleet:sync', listener);
@@ -427,6 +549,6 @@ const api = {
   },
 };
 
-contextBridge.exposeInMainWorld('kraken', api);
+contextBridge.exposeInMainWorld('octo', api);
 
-export type KrakenApi = typeof api;
+export type OctoApi = typeof api;

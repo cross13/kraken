@@ -11,8 +11,7 @@ import { setRouterConfig, type RouterConfig } from '../lib/agentRouter';
 export type RoutableAction =
   | 'requirements'
   | 'bugfix'
-  | 'design'
-  | 'tasks'
+  | 'plan'
   | 'task-execute'
   | 'task-refine'
   | 'polish'
@@ -21,8 +20,7 @@ export type RoutableAction =
 export const ROUTABLE_ACTIONS: { key: RoutableAction; label: string; hint: string }[] = [
   { key: 'requirements', label: 'Requirements', hint: 'Draft & refine feature requirements' },
   { key: 'bugfix', label: 'Bug analysis', hint: 'Analyze & triage a bug report' },
-  { key: 'design', label: 'Design', hint: 'Draft & refine the design document' },
-  { key: 'tasks', label: 'Task planning', hint: 'Break the design into dependency waves' },
+  { key: 'plan', label: 'Plan', hint: 'Draft the technical plan and its task waves' },
   { key: 'task-execute', label: 'Task execution', hint: 'Run a task — the parallel workhorse' },
   { key: 'task-refine', label: 'Task refine', hint: 'Adjust a completed task from feedback' },
   { key: 'polish', label: 'Polish', hint: 'Final review pass when all tasks are done' },
@@ -45,16 +43,29 @@ export const DEFAULTS: ModuleConfig = {
   disabledSkills: [],
 };
 
-const KEY = 'kraken.moduleConfig';
+const KEY = 'octo.moduleConfig';
 
 function load(): ModuleConfig {
   try {
     const v = localStorage.getItem(KEY);
-    if (v) return { ...DEFAULTS, ...(JSON.parse(v) as Partial<ModuleConfig>) };
+    if (v) return migrate({ ...DEFAULTS, ...(JSON.parse(v) as Partial<ModuleConfig>) });
   } catch {
     // ignore
   }
   return { ...DEFAULTS };
+}
+
+/**
+ * Pins used to be keyed by the `design` and `tasks` actions; both collapsed into
+ * `plan` when the design and task documents merged. Carry a pinned agent over
+ * rather than silently dropping the user's choice.
+ */
+function migrate(c: ModuleConfig): ModuleConfig {
+  const pins = c.pinnedAgents as Record<string, string>;
+  if (!pins.plan && (pins.design || pins.tasks)) pins.plan = pins.design ?? pins.tasks;
+  delete pins.design;
+  delete pins.tasks;
+  return c;
 }
 function save(c: ModuleConfig) {
   try {

@@ -1,5 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
+import type { BranchCommit, BranchFile, BranchSummary } from './shared/types.js';
 
 export interface GitStatus {
   isRepo: boolean;
@@ -491,4 +492,120 @@ export function gitCommitPush(
   }
 
   return { ok: true, output, commitHash: hash, pushed: true };
+}
+
+// ---------- What a branch actually contains ----------
+
+
+function emptyBranchSummary(error?: string): BranchSummary {
+  return {
+    ok: false,
+    branch: null,
+    base: null,
+    baseGuessed: false,
+    commits: [],
+    files: [],
+    added: 0,
+    deleted: 0,
+    dirty: false,
+    error,
+  };
+}
+
+/**
+ * Resolve the branch this one should be compared against.
+ *
+ * `origin/HEAD` is the honest answer when it is set, because it is what the
+ * remote itself calls default. It frequently isn't set on a fresh clone, so we
+ * fall back to the usual names and say so via `baseGuessed` rather than
+ * pretending we know.
+ */
+function resolveBase(cwd: string, preferred?: string): { base: string | null; guessed: boolean } {
+  const exists = (ref: string) => git(cwd, ['rev-parse', '--verify', '--quiet', ref]).status === 0;
+
+  if (preferred && exists(preferred)) return { base: preferred, guessed: false };
+
+  const head = git(cwd, ['symbolic-ref', '--quiet', 'refs/remotes/origin/HEAD']);
+  if (head.status === 0) {
+    const ref = head.stdout.trim().replace('refs/remotes/', '');
+    if (ref && exists(ref)) return { base: ref, guessed: false };
+  }
+  for (const ref of ['origin/main', 'origin/master', 'main', 'master']) {
+    if (exists(ref)) return { base: ref, guessed: true };
+  }
+  return { base: null, guessed: false };
+}
+
+/**
+ * Everything the current branch adds on top of its base: the commits, and the
+ * per-file line counts.
+ *
+ * The diff uses three dots (`base...HEAD`), i.e. against the merge base — the
+ * changes *this branch introduced*, not the ones that happened on the base
+ * meanwhile. That is the difference between a PR description and a diff against
+ * whatever main looks like today.
+ */
+export function gitBranchSummary(cwd: string, preferredBase?: string): BranchSummary {
+  if (!cwd || !existsSync(cwd)) return emptyBranchSummary();
+  if (git(cwd, ['rev-parse', '--is-inside-work-tree']).status !== 0) {
+    return emptyBranchSummary('Not a git repository.');
+  }
+
+  const branch = gitCurrentBranch(cwd);
+  const { base, guessed } = resolveBase(cwd, preferredBase);
+  const dirty = git(cwd, ['status', '--porcelain']).stdout.trim().length > 0;
+
+  if (!base) {
+    return {
+      ...emptyBranchSummary('No base branch to compare against (no origin/HEAD, main or master).'),
+      branch,
+      dirty,
+    };
+  }
+  // A branch that has never diverged (or a repo with no commits) is not an error.
+  const range = `${base}...HEAD`;
+
+  // Unit separator between fields, record separator between commits: a commit
+  // subject can contain anything, tabs and newlines included.
+  const log = git(cwd, ['log', `--format=%H%x1f%s%x1f%an%x1f%aI%x1e`, `${base}..HEAD`]);
+  if (log.status !== 0) {
+    return { ...emptyBranchSummary(log.stderr.trim() || 'Could not read the branch log.'), branch, dirty };
+  }
+  const commits: BranchCommit[] = log.stdout
+    .split('\x1e')
+    .map((rec) => rec.replace(/^\n/, ''))
+    .filter((rec) => rec.trim())
+    .map((rec) => {
+      const [hash, subject, author, date] = rec.split('\x1f');
+      return { hash: hash ?? '', subject: subject ?? '', author: author ?? '', date: date ?? '' };
+    });
+
+  const numstat = git(cwd, ['diff', '--numstat', range]);
+  const namestat = git(cwd, ['diff', '--name-status', range]);
+  const statusByPath = new Map<string, string>();
+  for (const line of namestat.stdout.split('\n')) {
+    if (!line.trim()) continue;
+    const [code, ...rest] = line.split('\t');
+    // Renames come through as `R100\told\tnew`; key on the destination.
+    statusByPath.set(rest[rest.length - 1], (code ?? '').charAt(0));
+  }
+
+  const files: BranchFile[] = [];
+  let added = 0;
+  let deleted = 0;
+  for (const line of numstat.stdout.split('\n')) {
+    if (!line.trim()) continue;
+    const [a, d, ...rest] = line.split('\t');
+    let p = rest[rest.length - 1];
+    if (p?.startsWith('"') && p.endsWith('"')) p = p.slice(1, -1);
+    const binary = a === '-' || d === '-';
+    const na = binary ? 0 : Number(a) || 0;
+    const nd = binary ? 0 : Number(d) || 0;
+    added += na;
+    deleted += nd;
+    files.push({ path: p, status: statusByPath.get(p) ?? 'M', added: na, deleted: nd, binary });
+  }
+  files.sort((x, y) => y.added + y.deleted - (x.added + x.deleted));
+
+  return { ok: true, branch, base, baseGuessed: guessed, commits, files, added, deleted, dirty };
 }

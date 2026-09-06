@@ -53,7 +53,7 @@ export function TerminalView({
     // Clicking a URL Claude emits opens it in Chrome via the main process.
     term.loadAddon(
       new WebLinksAddon((_e, uri) => {
-        void window.kraken.shell.openUrl(uri);
+        void window.octo.shell.openUrl(uri);
       })
     );
     term.open(host);
@@ -71,14 +71,14 @@ export function TerminalView({
 
     // Renderer → PTY keystrokes.
     const inputDisposable = term.onData((data) => {
-      window.kraken.terminal.write(tabId, data);
+      window.octo.terminal.write(tabId, data);
     });
 
     // PTY → renderer output.
-    const offData = window.kraken.terminal.onData((ev) => {
+    const offData = window.octo.terminal.onData((ev) => {
       if (ev.termId === tabId) term.write(ev.data);
     });
-    const offExit = window.kraken.terminal.onExit((ev) => {
+    const offExit = window.octo.terminal.onExit((ev) => {
       if (ev.termId !== tabId) return;
       term.write(`\r\n\x1b[2m[process exited${ev.exitCode ? ` (code ${ev.exitCode})` : ''}]\x1b[0m\r\n`);
     });
@@ -86,11 +86,11 @@ export function TerminalView({
     // Keep the PTY size in sync with the panel.
     const ro = new ResizeObserver(() => {
       safeFit();
-      window.kraken.terminal.resize(tabId, term.cols, term.rows);
+      window.octo.terminal.resize(tabId, term.cols, term.rows);
     });
     ro.observe(host);
 
-    window.kraken.terminal
+    window.octo.terminal
       .create({
         termId: tabId,
         cwd: rootRef.current,
@@ -112,7 +112,7 @@ export function TerminalView({
       inputDisposable.dispose();
       offData();
       offExit();
-      window.kraken.terminal.kill(tabId);
+      window.octo.terminal.kill(tabId);
       termRef.current = null;
       term.dispose();
     };

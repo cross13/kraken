@@ -11,8 +11,8 @@ import {
 } from 'lucide-react';
 import { useWorkspace } from '../../stores/workspace';
 import { useOrchestrator } from '../../stores/orchestrator';
-import { renderMarkdown } from '../../lib/markdown';
-import { KrakenLoader } from '../KrakenLoader';
+import { Markdown } from '../Markdown';
+import { OctoLoader } from '../OctoLoader';
 import { cn } from '../../lib/cn';
 import type { SpecMeta, SpecFileChange } from '../../../electron/shared/types';
 
@@ -53,7 +53,7 @@ export function CompletionSummary({
   const summaryPath = `${meta.path}/summary.md`;
 
   const loadFiles = useCallback(() => {
-    window.kraken.history
+    window.octo.history
       .listSpecFiles({ workspacePath: root ?? null, specId: meta.id })
       .then(setFiles)
       .catch(() => setFiles([]));
@@ -62,7 +62,7 @@ export function CompletionSummary({
   useEffect(() => {
     loadFiles();
     let alive = true;
-    window.kraken.fs
+    window.octo.fs
       .read(summaryPath)
       .then((t) => {
         if (!alive) return;
@@ -107,7 +107,7 @@ export function CompletionSummary({
       status: 'running',
     });
 
-    const off = window.kraken.claude.onEvent((ev) => {
+    const off = window.octo.claude.onEvent((ev) => {
       if (ev.requestId !== requestId) return;
       if (ev.type === 'delta' && ev.text) {
         acc += ev.text;
@@ -117,7 +117,7 @@ export function CompletionSummary({
         off();
         finishRun(requestId, 'done');
         setSummarizing(false);
-        if (acc.trim()) void window.kraken.fs.write(summaryPath, acc);
+        if (acc.trim()) void window.octo.fs.write(summaryPath, acc);
       }
       if (ev.type === 'error') {
         off();
@@ -138,12 +138,12 @@ Use this structure:
 - **Changes** — a few bullets grouping the work by area.
 - **Files** — for each changed file below, one line: \`path\` — what changed and why.
 
-To ground it, read \`${specRel}/${reqLabel}\` and \`${specRel}/design.md\`, and inspect the changed files (and \`git diff\` if available). Be concise and factual — do not invent changes.
+To ground it, read \`${specRel}/${reqLabel}\` and \`${specRel}/plan.md\`, and inspect the changed files (and \`git diff\` if available). Be concise and factual — do not invent changes.
 
 Files changed in this spec (${files.length}):
 ${fileList}`;
 
-    window.kraken.claude.stream({
+    window.octo.claude.stream({
       requestId,
       system,
       messages: [{ role: 'user', content: userText }],
@@ -216,9 +216,9 @@ ${fileList}`;
                       title={f.path}
                     >
                       {created ? (
-                        <FilePlus2 size={12} className="text-emerald-400 shrink-0" />
+                        <FilePlus2 size={12} className="text-good shrink-0" />
                       ) : (
-                        <FilePen size={12} className="text-sky-400 shrink-0" />
+                        <FilePen size={12} className="text-dim shrink-0" />
                       )}
                       <span className="font-mono truncate">{f.path}</span>
                       <span className="ml-auto flex items-center gap-1 shrink-0">
@@ -247,15 +247,15 @@ ${fileList}`;
               Summary
             </h4>
             {summary ? (
-              <div
+              <Markdown
+                source={summary}
                 className={cn(
-                  'md text-[12px] leading-relaxed max-h-72 overflow-y-auto pr-1',
+                  'text-[12px] leading-relaxed max-h-72 overflow-y-auto pr-1',
                   summarizing && 'opacity-80'
                 )}
-                dangerouslySetInnerHTML={{ __html: renderMarkdown(summary) }}
               />
             ) : summarizing ? (
-              <KrakenLoader size="sm" label="Generating summary…" className="py-4" />
+              <OctoLoader size="sm" label="Generating summary…" className="py-4" />
             ) : (
               <p className="text-[11px] text-ink-500">
                 Click Generate summary for a brief description of everything that changed.

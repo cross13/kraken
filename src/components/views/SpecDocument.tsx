@@ -1,31 +1,70 @@
 import { useMemo } from 'react';
 import { CheckCircle2, Circle, CheckSquare, Square, FileText } from 'lucide-react';
 import { parseSpecDoc, highlightEars, type SpecSection } from '../../lib/specSections';
-import { renderMarkdown } from '../../lib/markdown';
+import { Markdown } from '../Markdown';
 import { cn } from '../../lib/cn';
 
 /**
- * Read mode for Requirements / Bugfix / Design documents — renders the markdown
- * as a spacious column of structured section cards (one per H2), with EARS
- * acceptance criteria and checkbox lists shown as clean checklists.
+ * Read mode for Requirements / Bugfix / Plan documents — renders the markdown
+ * as structured section cards (one per H2), with EARS acceptance criteria and
+ * checkbox lists shown as clean checklists.
+ *
+ * The cards flow into a **auto-fitting grid** rather than one narrow column:
+ * the window is wide, and a spec is a set of sections to scan, not a novel to
+ * read top to bottom. Each card keeps its own comfortable measure, and wide
+ * displays get two or three of them side by side instead of empty gutters.
  */
-export function SpecDocument({ md, onEdit }: { md: string; onEdit?: () => void }) {
+export function SpecDocument({
+  md,
+  onEdit,
+  source,
+}: {
+  md: string;
+  onEdit?: () => void;
+  /** What a draft of this document would be grounded in — shown while it is empty. */
+  source?: { label: string; text: string } | null;
+}) {
   const doc = useMemo(() => parseSpecDoc(md), [md]);
 
+  // An empty document is genuinely empty now — specs no longer start as a
+  // skeleton of `<placeholder>` tokens. So this state carries the weight of the
+  // first impression, and it shows the material a draft would use rather than
+  // just saying there is none.
   if (!md.trim()) {
     return (
-      <div className="h-full grid place-items-center px-6">
-        <div className="max-w-sm text-center">
-          <div className="w-12 h-12 mx-auto grid place-items-center rounded-2xl bg-accent/12 text-accent mb-4">
-            <FileText size={22} />
-          </div>
+      <div className="h-full overflow-y-auto grid place-items-center px-6 py-8">
+        <div className={cn('w-full', source ? 'max-w-xl' : 'max-w-sm text-center')}>
+          {!source && (
+            <div className="w-12 h-12 mx-auto grid place-items-center rounded-2xl bg-accent/12 text-accent mb-4">
+              <FileText size={22} />
+            </div>
+          )}
           <h3 className="font-display text-base font-semibold text-ink-50 mb-1.5">
-            Nothing here yet
+            {source ? 'Ready to draft' : 'Nothing here yet'}
           </h3>
           <p className="text-[13px] text-dim leading-relaxed mb-4">
-            Use <b className="text-ink-100">Ask Claude</b> in the header to draft this document,
-            or switch to <b className="text-ink-100">Edit</b> to write it yourself.
+            {source ? (
+              <>
+                This document is empty. <b className="text-ink-100">Draft with Claude</b> at the
+                bottom of the screen writes it from {source.label} below.
+              </>
+            ) : (
+              <>
+                Use <b className="text-ink-100">Draft with Claude</b> at the bottom of the screen,
+                or switch to <b className="text-ink-100">Edit</b> (⌘E) and write it yourself.
+              </>
+            )}
           </p>
+          {source && (
+            <div className="rounded-lg border border-ink-700/70 bg-card p-3.5 mb-4">
+              <div className="text-[10px] uppercase tracking-[0.07em] text-ink-500 font-semibold mb-2">
+                {source.label}
+              </div>
+              <pre className="whitespace-pre-wrap break-words text-[12px] leading-relaxed text-dim font-sans max-h-[320px] overflow-y-auto">
+                {source.text}
+              </pre>
+            </div>
+          )}
           {onEdit && (
             <button
               onClick={onEdit}
@@ -41,15 +80,17 @@ export function SpecDocument({ md, onEdit }: { md: string; onEdit?: () => void }
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="k-read py-10 space-y-5">
+      <div className="k-wide py-8">
         {doc.title && (
-          <h1 className="font-display text-[30px] font-bold text-ink-50 leading-tight mb-1">
+          <h1 className="font-display text-[30px] font-bold text-ink-50 leading-tight mb-5">
             {doc.title}
           </h1>
         )}
-        {doc.sections.map((s, i) => (
-          <SectionCard key={s.id} section={s} index={i + 1} />
-        ))}
+        <div className="k-cards items-start" style={{ ['--k-card' as string]: '540px' }}>
+          {doc.sections.map((s, i) => (
+            <SectionCard key={s.id} section={s} index={i + 1} />
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -91,10 +132,7 @@ function SectionCard({ section, index }: { section: SpecSection; index: number }
           ))}
         </ul>
       ) : (
-        <div
-          className="md text-[14px] leading-relaxed"
-          dangerouslySetInnerHTML={{ __html: renderMarkdown(section.body) }}
-        />
+        <Markdown source={section.body} className="text-[14px] leading-relaxed" />
       )}
     </section>
   );

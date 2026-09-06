@@ -69,7 +69,7 @@ export function HookEditor({ hookId }: { hookId?: string }) {
     if (!root) return;
     const id = draft.id || slugify(draft.title);
     const hook = { ...draft, id } as HookConfig;
-    await window.kraken.hooks.write(root, hook);
+    await window.octo.hooks.write(root, hook);
     await refreshAll();
     setSaved(true);
     if (isNew) openOverlay({ kind: 'hook', hookId: id });
@@ -77,19 +77,19 @@ export function HookEditor({ hookId }: { hookId?: string }) {
 
   const remove = async () => {
     if (!root || !draft.id) return;
-    await window.kraken.hooks.delete(root, draft.id);
+    await window.octo.hooks.delete(root, draft.id);
     await refreshAll();
     closeOverlay();
   };
 
   const runNow = async () => {
     if (!root || !draft.id) return;
-    await window.kraken.hooks.fireOne(root, draft.id, { root });
+    await window.octo.hooks.fireOne(root, draft.id, { root });
   };
 
   const generate = async () => {
     if (!root || !nl.trim()) return;
-    await window.kraken.hooks.generateFromNl(root, nl.trim());
+    await window.octo.hooks.generateFromNl(root, nl.trim());
     setNl('');
   };
 
@@ -117,7 +117,7 @@ export function HookEditor({ hookId }: { hookId?: string }) {
             {!isNew && (
               <button
                 onClick={remove}
-                className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-md border border-ink-700 text-red-400/80 hover:text-red-400"
+                className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-md border border-ink-700 text-danger/80 hover:text-danger"
               >
                 <Trash2 size={12} /> Delete
               </button>
@@ -149,7 +149,7 @@ export function HookEditor({ hookId }: { hookId?: string }) {
               </button>
             </div>
             <p className="text-[10px] text-ink-500 mt-1.5">
-              Claude writes a hook JSON into .kraken/hooks/. Refresh the Hooks list when it
+              Claude writes a hook JSON into .octo/hooks/. Refresh the Hooks list when it
               finishes.
             </p>
           </div>

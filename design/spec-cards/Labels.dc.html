@@ -1,0 +1,84 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+  <style>
+    body { margin: 0; background: #1a1a1a; font-family: 'Hanken Grotesk', system-ui, -apple-system, sans-serif; color: #f2f2f2; }
+    * { box-sizing: border-box; }
+    a { color: #a6e62e; } a:hover { color: #c4f06a; }
+    .mono { font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; }
+    .disp { font-family: 'Space Grotesk', 'Hanken Grotesk', system-ui, sans-serif; }
+    .row { display: flex; gap: 18px; align-items: baseline; padding: 7px 0; border-bottom: 1px solid #2a2a2a; }
+    .h { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: #ececec; width: 250px; flex-shrink: 0; }
+    .r { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .09em; color: #a6e62e; width: 290px; flex-shrink: 0; }
+    .r.v { color: #c9a9ff; }
+    .l { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-style: italic; color: #848484; }
+    .grp { display: flex; align-items: center; gap: 12px; margin: 24px 0 8px; }
+    .grp .n { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #fafafa; }
+    .grp .rule { flex: 1; height: 1px; background: #2f2f2f; }
+    .grp .c { font-size: 11.5px; color: #848484; }
+  </style>
+</helmet>
+
+<div style="width: 940px; height: 1060px; display: flex; flex-direction: column; background: #1e1e1e; overflow: hidden;">
+  <div style="padding: 28px 30px 26px; display: flex; flex-direction: column;">
+
+    <h1 class="disp" style="margin: 0 0 5px; font-size: 22px; font-weight: 700; color: #fafafa; letter-spacing: -.01em;">The heading map</h1>
+    <p style="margin: 0; max-width: 66ch; font-size: 13.5px; line-height: 1.6; color: #c8c8c8;">
+      The whole narration layer is this table &mdash; a heading, lowercased, looks up a role and the
+      connective that leads into it. No Claude run, no latency, nothing to cache or invalidate.
+      Everything else on a beat (the counted line under the title) comes from the parsed section.
+    </p>
+
+    <div class="grp"><span class="n">requirements.md &middot; bugfix.md</span><span class="rule"></span><span class="c">11 headings</span></div>
+
+    <div class="row"><span class="h">## Introduction</span><span class="r">THE PROBLEM</span><span class="l">&mdash; opens the document</span></div>
+    <div class="row"><span class="h">## User Stories</span><span class="r">WHO ASKS FOR IT</span><span class="l">so who wants this?</span></div>
+    <div class="row"><span class="h">## Acceptance Criteria</span><span class="r">WHAT MUST BE TRUE</span><span class="l">which, to be buildable, means</span></div>
+    <div class="row"><span class="h">## Out of Scope</span><span class="r">WHAT WE WON&rsquo;T DO</span><span class="l">and, just as deliberately</span></div>
+    <div class="row"><span class="h">## Non-Functional Requirements</span><span class="r">THE LIMITS IT HOLDS INSIDE</span><span class="l">all of it inside</span></div>
+    <div class="row"><span class="h">## Open Questions</span><span class="r v">WHAT WE STILL DON&rsquo;T KNOW</span><span class="l">except that</span></div>
+    <div class="row"><span class="h">## Resolved Decisions</span><span class="r">WHAT WE ALREADY SETTLED</span><span class="l">having settled</span></div>
+    <div class="row"><span class="h">## Reproduction</span><span class="r">HOW TO SEE IT</span><span class="l">&mdash; opens a bugfix</span></div>
+    <div class="row"><span class="h">## Current Behavior</span><span class="r">WHAT IT DOES NOW</span><span class="l">today</span></div>
+    <div class="row"><span class="h">## Expected Behavior</span><span class="r">WHAT IT SHOULD DO</span><span class="l">instead</span></div>
+    <div class="row"><span class="h">## Unchanged Behavior</span><span class="r">WHAT MUST NOT BREAK</span><span class="l">and what must not move</span></div>
+
+    <div class="grp"><span class="n">plan.md</span><span class="rule"></span><span class="c">11 headings</span></div>
+
+    <div class="row"><span class="h">&gt; objective</span><span class="r">WHAT WE COMMIT TO</span><span class="l">&mdash; opens the plan</span></div>
+    <div class="row"><span class="h">## Approach</span><span class="r">THE STRATEGY, AND WHAT WE TURNED DOWN</span><span class="l">so how do we get there?</span></div>
+    <div class="row"><span class="h">## Affected files</span><span class="r">WHERE IT LANDS IN THE CODE</span><span class="l">which touches</span></div>
+    <div class="row"><span class="h">## Backend changes</span><span class="r">THE SHAPE IT COMMITS TO</span><span class="l">committing to</span></div>
+    <div class="row"><span class="h">## Frontend changes</span><span class="r">WHAT THE USER TOUCHES</span><span class="l">and on screen</span></div>
+    <div class="row"><span class="h">## Key implementation details</span><span class="r">THE PARTS YOU WOULD OTHERWISE GUESS</span><span class="l">down to</span></div>
+    <div class="row"><span class="h">## Risks and rollback</span><span class="r">WHERE THIS COULD GO WRONG</span><span class="l">and if it goes wrong</span></div>
+    <div class="row"><span class="h">## Verification</span><span class="r">HOW WE WILL KNOW</span><span class="l">so we prove it by</span></div>
+    <div class="row"><span class="h">## Tasks</span><span class="r">THE ORDER OF WORK</span><span class="l">in this order</span></div>
+    <div class="row"><span class="h">## Open Questions</span><span class="r v">WHAT WE STILL DON&rsquo;T KNOW</span><span class="l">except that</span></div>
+    <div class="row"><span class="h">## Critical Decisions</span><span class="r v">WHERE REALITY CHANGED THE PLAN</span><span class="l">and once it met the code</span></div>
+
+    <div style="margin-top: 22px; padding: 14px 16px; background: #232323; border: 1px solid #393939; border-left: 2px solid #4a4a4a;">
+      <div style="display: flex; align-items: baseline; gap: 14px;">
+        <span class="mono" style="font-size: 10px; letter-spacing: .1em; color: #6e6e6e;">SECTION</span>
+        <span class="mono" style="font-size: 11.5px; color: #ececec;">## anything else</span>
+      </div>
+      <p style="margin: 8px 0 0; max-width: 74ch; font-size: 12.5px; line-height: 1.6; color: #c8c8c8;">
+        A heading the map doesn&rsquo;t know still renders as a beat &mdash; dashed node, the neutral
+        <span class="mono" style="font-size: 11px; color: #a8a8a8;">SECTION</span> kicker, no connective, and the counted
+        line if the content is countable. Nothing is dropped and nothing is invented. Adding a role later
+        is one line in the table, not a migration.
+      </p>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

@@ -60,16 +60,16 @@ export function CommandBar() {
   }, []);
 
   useEffect(() => {
-    window.kraken.settings.getModel().then(setModel);
-    window.kraken.settings.getBackend().then(setBackend);
-    window.kraken.settings.hasApiKey().then(setHasKey);
-    window.kraken.cli.detect().then((s) => setCliFound(s.found));
+    window.octo.settings.getModel().then(setModel);
+    window.octo.settings.getBackend().then(setBackend);
+    window.octo.settings.hasApiKey().then(setHasKey);
+    window.octo.cli.detect().then((s) => setCliFound(s.found));
   }, []);
 
   // Reflect whether the Travel Display (wide second window) is currently open.
   useEffect(() => {
-    window.kraken.win.isWideOpen().then(setWideOpen);
-    return window.kraken.win.onWideState((s) => setWideOpen(s.open));
+    window.octo.win.isWideOpen().then(setWideOpen);
+    return window.octo.win.onWideState((s) => setWideOpen(s.open));
   }, []);
 
   useEffect(() => {
@@ -78,7 +78,7 @@ export function CommandBar() {
       return;
     }
     const read = () =>
-      window.kraken.git
+      window.octo.git
         .status(root)
         .then((s) => setBranch(s.isRepo ? s.branch : null))
         .catch(() => setBranch(null));
@@ -148,7 +148,7 @@ export function CommandBar() {
           </button>
           <IconButton
             active={wideOpen}
-            onClick={() => window.kraken.win.toggleWide()}
+            onClick={() => window.octo.win.toggleWide()}
             title="Travel Display — a wide run monitor for a second screen"
           >
             <MonitorSmartphone size={15} />

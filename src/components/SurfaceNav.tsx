@@ -1,7 +1,7 @@
 import { Home, FileCode2, Activity, LibraryBig } from 'lucide-react';
 import { useUi, type Surface } from '../stores/ui';
 import { useOrchestrator } from '../stores/orchestrator';
-import { KrakenLogo } from './KrakenLogo';
+import { OctoMark } from './OctoMark';
 import { cn } from '../lib/cn';
 
 const NAV: { surface: Surface; icon: React.ReactNode; label: string }[] = [
@@ -26,7 +26,7 @@ export function SurfaceNav() {
     <nav className="w-[60px] shrink-0 flex flex-col items-center pt-1 pb-3 gap-1.5">
       {/* brand mark — the rail's anchor, the kit's app tile */}
       <div className="mb-3 w-10 h-10 grid place-items-center rounded-[12px] octo-tile">
-        <KrakenLogo className="w-[22px] h-[27px]" />
+        <OctoMark className="w-[26px]" />
       </div>
 
       {NAV.map((it) => {

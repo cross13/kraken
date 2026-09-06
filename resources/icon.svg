@@ -1,23 +1,26 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-  <!-- App icon: the Octopus Brand Kit mark on the kit's app tile.
+  <!-- App icon: the Octopus Brand Kit mark on a Signal tile. Inverted on purpose
+       versus the in-app mark: at 32px in a dock a dark tile with a thin rim
+       disappears, so the icon uses the palette's primary-button treatment —
+       brand green as fill, #0F1400 as the only ink allowed on it.
        Rasterize with `npm run icon` (scripts/render-icon.mjs) after editing. -->
   <defs>
     <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#001224"/>
-      <stop offset="1" stop-color="#001A33"/>
+      <stop offset="0" stop-color="#8AD000"/>
+      <stop offset="1" stop-color="#76B900"/>
     </linearGradient>
     <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#00BBDD"/>
-      <stop offset="1" stop-color="#003973"/>
+      <stop offset="0" stop-color="#0F1400"/>
+      <stop offset="1" stop-color="#0F1400"/>
     </linearGradient>
     <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#001A33"/>
-      <stop offset="1" stop-color="#000A14"/>
+      <stop offset="0" stop-color="#1E1E1E"/>
+      <stop offset="1" stop-color="#0F1400"/>
     </linearGradient>
   </defs>
 
   <rect x="100" y="100" width="824" height="824" rx="222" fill="url(#tile)"/>
-  <rect x="103" y="103" width="818" height="818" rx="219" fill="none" stroke="rgba(0,187,221,0.25)" stroke-width="6"/>
+  <rect x="103" y="103" width="818" height="818" rx="219" fill="none" stroke="rgba(15,20,0,0.28)" stroke-width="6"/>
 
   <svg x="232" y="162" width="560" height="700" viewBox="40 24 120 150" overflow="visible">
     <path d="M 62,106 C 54,124 50,138 58,150" fill="none" stroke="url(#rim)" stroke-width="8" stroke-linecap="round"/>
@@ -26,7 +29,7 @@
     <path d="M 120,112 C 124,132 126,148 120,162" fill="none" stroke="url(#rim)" stroke-width="8" stroke-linecap="round"/>
     <path d="M 138,106 C 146,124 150,138 142,150" fill="none" stroke="url(#rim)" stroke-width="8" stroke-linecap="round"/>
     <path d="M 55,112 C 46,68 62,36 100,32 C 138,36 154,68 145,112 L 134,120 L 125,108 L 112,122 L 100,112 L 88,122 L 75,108 L 66,120 Z" fill="url(#body)" stroke="url(#rim)" stroke-width="3" stroke-linejoin="round"/>
-    <path d="M 72,68 L 92,76 L 92,84 L 72,76 Z" fill="#7DF3FF"/>
-    <path d="M 128,68 L 108,76 L 108,84 L 128,76 Z" fill="#7DF3FF"/>
+    <path d="M 72,68 L 92,76 L 92,84 L 72,76 Z" fill="#C4F06A"/>
+    <path d="M 128,68 L 108,76 L 108,84 L 128,76 Z" fill="#C4F06A"/>
   </svg>
 </svg>

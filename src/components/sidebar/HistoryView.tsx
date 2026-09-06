@@ -26,8 +26,8 @@ export function HistoryView() {
 
   const refresh = async () => {
     const [r, s] = await Promise.all([
-      window.kraken.history.listRuns({ workspacePath: root ?? null, limit: 200 }),
-      window.kraken.history.stats(root ?? null),
+      window.octo.history.listRuns({ workspacePath: root ?? null, limit: 200 }),
+      window.octo.history.stats(root ?? null),
     ]);
     setRuns(r);
     setStats(s);

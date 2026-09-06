@@ -4,8 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Kraken is an Electron desktop app for running the Spec-Driven Development (SDD) loop:
-requirements → design → tasks → execution. It drives Claude through one of two
+Octo is an Electron desktop app for running the Spec-Driven Development (SDD) loop:
+requirements → plan → build (tasks + execution). It drives Claude through one of two
 interchangeable backends — the user's **local Claude CLI** (default) or the **Anthropic
 API SDK** — selected at runtime in Settings. Specs are plain markdown on disk; agents and
 skills are read from the standard Claude Code locations (`.claude/agents`, `.claude/skills`,
@@ -35,11 +35,16 @@ npm run dev          # electron-vite dev server + Electron with HMR (renderer on
 npm run build        # production build into out/
 npm run start        # preview the production build
 npm run typecheck    # runs BOTH typecheck:node and typecheck:web — use this before declaring done
+npm run routes       # per-task agent routing table; `-- --check` fails on a wrong pick
+npm run hashes       # SHIPPED_DEFAULT_HASHES for the current bundled bodies; `-- --check` in CI
 npm run package:mac  # build + electron-builder --mac --dir
 ```
 
 There is **no test runner and no linter** configured. `npm run typecheck` is the only
-automated gate; always run it after edits. There is also no `.git` repo here.
+automated gate for the code; always run it after edits. Two invariants it cannot see have their
+own scripts, and both should pass before declaring done: **`npm run routes -- --check`** (a stray
+word in an agent's `description` silently hijacks every task run) and
+**`npm run hashes -- --check`** (an unlisted default body never reaches a cloned workspace).
 
 Two separate TypeScript projects compile independently:
 - `tsconfig.node.json` → `electron/**` (main + preload + shared), Node types only.
@@ -54,10 +59,13 @@ Three Electron layers; data crosses between them **only** through the typed IPC 
 Owns all filesystem, spec, agent/skill, settings, git, history, and Claude-streaming logic.
 Everything is registered in `registerIpc()`. Key responsibilities living here:
 - **Spec lifecycle** — `createSpec`/`readSpec`/`writeSpecFile`/`advanceSpec` plus the
-  markdown `*Template` functions. A spec is a directory under `.kraken/specs/<id>/`
+  markdown `*Template` functions. A spec is a directory under `.octo/specs/<id>/`
   containing `spec.json` (phase + metadata) and the phase markdown files. `advanceSpec`
-  walks the fixed order `requirements → design → tasks → done` and lazily writes the next
-  phase's template file if missing.
+  walks the fixed order `requirements → plan → build → done` and lazily creates the next
+  phase's file if missing. **Documents start empty** — a `<placeholder>` skeleton reads as
+  content, hides whether anything has been authored, and is the first thing a draft has to
+  delete; the shape lives in the drafting prompts and the `spec-*-format` skills instead. Only
+  `tasksTemplate` survives, as the fallback when a spec is advanced without a usable `## Tasks`.
 - **Backend dispatch** — `streamClaude` records a run row, then forks to `streamViaCli`
   or `streamViaApi` based on the `backend` setting. Both emit identical `claude:event`
   IPC messages (`delta` / `done` / `error`) via the shared `emit()`, which also mirrors
@@ -71,13 +79,26 @@ Everything is registered in `registerIpc()`. Key responsibilities living here:
 - **API integration** — `streamViaApi` uses `@anthropic-ai/sdk` `messages.stream()`.
 - **Secrets** — the API key is encrypted with Electron `safeStorage` (OS keychain) and
   persisted via `electron-store`; never stored in plaintext.
-- **Default library** — `seedDefaultAgents`/`seedDefaultSkills` write the bundled SDD agent
-  and skill markdown into the workspace's `.claude/` dirs ("Seed defaults" in the UI).
+- **Default library** — the content lives in **`electron/defaultLibrary.ts`** (dependency-free,
+  so `npm run hashes` can import it with Node's TS stripping); `seedDefaultAgents`/`Skills`/
+  `Steering`/`Hooks` write it into `.claude/` and `.octo/` ("Seed defaults" in the UI). It ships
+  12 agents, 6 skills, 3 steering scaffolds and 3 hooks. Seeding is an **upgrade**, not just a
+  first install: `seedDefaultFile` (`electron/seedDefaults.ts`) rewrites a default the user never
+  edited — recognised via the `seededDefaults` hash ledger plus the bundled
+  `SHIPPED_DEFAULT_HASHES` — and leaves any edited file untouched, returning a `SeedReport`
+  (`created`/`upgraded`/`kept`). **The hash constant is not optional bookkeeping:** the ledger is
+  keyed by absolute path on one machine, so for a cloned repo that constant is the only thing that
+  can tell a default from an edit. Run `npm run hashes` after changing any body;
+  `npm run hashes -- --check` fails when one is missing. `workspace:seed-upgrade` runs the same
+  seeders with `upgradeOnly` on workspace open — it updates an existing library but never installs
+  one unasked — guarded by `LIBRARY_VERSION` / `seededLibraryVersion` so the usual open costs
+  nothing.
 
 ### Preload — `electron/preload.ts`
-Context-isolated bridge. Exposes a single typed object on `window.kraken` (namespaced:
-`workspace`, `specs`, `skills`, `agents`, `fs`, `settings`, `cli`, `git`, `history`, `claude`).
-`KrakenApi` (its `typeof`) is the contract the renderer types against. **When you add or
+Context-isolated bridge. Exposes a single typed object on `window.octo` (namespaced:
+`workspace`, `specs`, `data`, `skills`, `agents`, `fs`, `settings`, `cli`, `git`, `history`,
+`claude`).
+`OctoApi` (its `typeof`) is the contract the renderer types against. **When you add or
 change an IPC handler in `main.ts`, you must update the matching method here**, or the
 renderer can't reach it. Streaming is fire-and-forget: `claude.stream(payload)` sends, and
 results arrive through `claude.onEvent(handler)`.
@@ -104,38 +125,82 @@ results arrive through `claude.onEvent(handler)`.
   `max-w-[NNNpx] mx-auto`;** pick a container. Wide content scrolls inside its own container so a
   surface never scrolls horizontally. See `docs/renderer.md` → Layout & space.
 - **Theming** is variable-driven: every Tailwind colour is `rgb(var(--x) / <alpha-value>)`,
-  with three palettes (Abyss [default], Bioluminescent, Daylight) selected by `<html data-theme>`
+  with four palettes (Signal [default, the brand], Abyss, Bioluminescent, Daylight) selected by `<html data-theme>`
   (see `docs/renderer.md` → Theming). `--accent-fg` is themeable; fonts are Hanken Grotesk (body) /
-  Space Grotesk (`font-display`) / JetBrains Mono. The visual language is **frame + floating
+  Space Grotesk (`font-display`, headings only) / JetBrains Mono, **bundled** via
+  `@fontsource-variable/*` (no CDN — the CSP allows no remote origin) with the stacks defined once
+  as `--font-sans` / `--font-display` / `--font-mono`. Markdown code and the spec editor take their
+  syntax colours from the theme tokens; only the file viewer uses the selectable `--syn-*` palette. The visual language is **frame + floating
   panels** (Kiro-style): `--rail` is the near-black app frame, surfaces float on it as rounded
   panels with a hairline ring; greys are neutral and the purple lives only in the accent.
+- **The brand mark *is* the mascot.** There is one drawing in the app — the chibi octopus samurai
+  (`wide/OctoMascot.tsx`) — at three levels of detail: `full` (≥64px), `simple` (40–64px) and
+  `mark` (14–26px). **`components/OctoMark.tsx`** wraps the `mark` level and is the mark
+  everywhere in the main window (nav rail, Assistant, spec flow, task runner, runs header, Home's
+  hero, `OctoLoader`, the boot splash); it defaults to the colony's `work` face and takes
+  `state` where it stands for a **run** rather than for the app, `animated={false}` (→ `.k-still`)
+  where it should hold completely still. There is no separate logo component — the old `OctoLogo`
+  was removed. Size it with a **width class only**. The app icon (`resources/icon.svg`) is the one
+  hold-out and still carries the older visored mark. See `docs/renderer.md` → Brand.
 - **Layout** is the **four-surface shell** (`App.tsx`): `CommandBar` (brand + ⌘K
   `CommandPalette` + the one live-runs pill + project/model status) → `SurfaceNav` (4 icons) →
   one of **Home · Spec · Activity · Library**, plus the **Assistant** chat drawer (⌘J,
   `AssistantDrawer`), the **Explorer** drawer (⌘⇧E), and a right slide-over **`OverlayPanel`**
   for detail views (file/agent/skill/run viewers, Open Questions, hook editor, the repo panel).
-  There is **no global tab bar and no focus mode** — surfaces are singletons. **Home** (`HomeView`) is
-  the launchpad: its composer **creates specs** (`lib/specActions.ts` — **Plan** streams the
-  requirements draft into the gated flow; **Quick Plan** drafts all three docs with no stops;
+  There is **no global tab bar and no focus mode** — surfaces are singletons. **Quick Start**
+  (`views/QuickStart.tsx`, ⌘K or the first-run card, auto-opened once on a new install) is a
+  full-window mode like Zen: a setup checklist verified against real state, the loop explained, tips
+  specific to how the app behaves, and a *Sharpen your own skills* section that points Claude at the
+  user's installed skills and rewrites them in place. **Home** (`HomeView`) is
+  the launchpad: its composer **creates specs** (`lib/specActions.ts` — **Plan** creates the spec
+  and opens it with **no run started**, keeping the composer text as `SpecMeta.brief` for the
+  explicit *Draft … with Claude* action; **Quick Plan** drafts both docs with no stops;
   `?`-suffixed input goes to the Assistant), plus in-flight spec cards, Shipped recents, a
   Manage mode embedding `SpecsStudio` (analytics + `specs:delete`), and a one-time
-  "Set up Kraken defaults" seeding card. **Spec** (`SpecFlow`) is one continuous guided flow
-  framed like an editor: file tabs (`requirements.md`/`design.md`/`tasks.md`/`summary.md`) +
-  breadcrumb + the spec strip (numbered phase chips: Requirements → Design → Task List → **Ship**),
-  doc stages as line-numbered **Source** (default) / section **Cards** / raw **Edit** over a
-  **gate bar** whose *Approve* advances the phase **and navigates** (*Revise with feedback*
+  "Set up Octo defaults" seeding card. **Spec** (`SpecFlow`) is one continuous guided flow
+  framed like an editor: file tabs (`requirements.md`/`plan.md`/`tasks.md`) +
+  breadcrumb + the spec strip (numbered phase chips: Requirements → Plan → **Build**),
+  doc stages as line-numbered **Source** (default) / section **Cards** / **Review** (the default on both
+  authored docs: on plan.md the acceptance criteria beside the plan, selecting one lights the
+  sections, tasks and files that satisfy it — `SpecReview` + `lib/specTrace.ts`, which reads `AC-n`
+  citations and falls back to block-level vocabulary matching; on requirements.md/bugfix.md the
+  criteria grouped under the user story they answer, with EARS-form and untestable-wording checks
+  and the stories nothing covers — `RequirementsReview` + `lib/reqReview.ts`) / raw **Edit** — a labelled
+  segmented control, plus ⌘E and double-click-to-edit, shown only while a document is on screen —
+  beside it **Zen** (⌘⇧Z, `ZenReader` + `lib/zenDoc.ts`), the full-window reading mode: the flow's
+  chrome gone, one column at a reading measure, an ambient contents spine that follows the scroll,
+  a Focus dim, and **every id in an 84px left gutter** (`AC-3`, `T1`, the story a criterion
+  answers) instead of as a chip inside the sentence — with the gate's Approve at the *end* of the
+  document rather than in permanent chrome — and, beside the document itself, the **stage
+  briefing** aside (`StageBriefing`, toggled from the toolbar, `ui.specAsideOpen`): the mascot in
+  the colony's own states (`work` drafting / `think` with questions open / `sleep` idle), the agent
+  the router *will* pick for this step with the reason it picked it, the skills that get injected
+  and what each contributes, and the real mechanics of the step — the same `explainRoute` the
+  Routing playground runs, shown where the decision actually lands —
+  over a **gate bar** whose *Approve* advances the phase **and navigates** (*Revise with feedback*
   re-drafts inline; *Improve with Claude* runs a critical self-review that refines the doc in
-  place — every step has one, incl. *Improve plan* on Tasks), Tasks as **inline task blocks**
+  place — every step has one, incl. *Improve plan* on Tasks). Approving **Plan** derives
+  `tasks.md` from the plan's `## Tasks` section, and refuses when there isn't one. The plan itself
+  follows the Cursor Plan Mode shape (diagram → affected files → changes **by area** with literal
+  contracts → waves) and **clarifies before drafting**: the Plan stage has two sub-tabs, **Clarify**
+  and `plan.md`, and approving Requirements lands on Clarify (`QuestionsView variant="stage"`) —
+  every question a card with **pre-loaded options** as one-click chips (1–9 from the keyboard),
+  *Other…* for free text and *Ask Claude* to pick one; *Apply decisions* writes
+  `## Resolved Decisions` and drafts the plan. A Plan run started elsewhere that hits an unsettled
+  decision writes its questions into `## Open Questions` and stops instead of guessing (once only;
+  Revise/Improve/Quick Plan pass `noStops`), which flips the stage back to Clarify. Tasks render as
+  **inline task blocks**
   with Kiro-style Start-task actions
-  (`TaskRunner` engine, Run all = autopilot as the primary CTA), and **Ship** (`ShipView`) — the
-  automatic payoff:
+  (`TaskRunner` engine, Run all = autopilot as the primary CTA) under Build's own sub-tabs
+  (`Task list` · `tasks.md` · `Ship`), and **Ship** (`ShipView`) as a panel *inside* Build — the automatic payoff:
   the spec auto-advances to `done` when the last task completes, `CompletionSummary`
   auto-generates into `summary.md`, and branch/Commit all/Create PR sit right there. **Activity**
   (`ActivitySurface`) is the single "what's running" center (Runs = `OrchestratorView`, History,
   Terminals, Graph). **Library** (`LibrarySurface`) consolidates config: Agents · Skills · Hooks ·
   Steering · Routing (`RouterStudio`, now a read-only routing explainer + Advanced pins) ·
   Appearance (`SyntaxStudio`) · Settings (regrouped: Connection / Models incl. the **planning
-  model** / Repository / Advanced). Module config lives in the `moduleConfig` store and is pushed
+  model** / Repository / Advanced / **Danger zone** — the `data:reset` wipe of specs on disk +
+  the history DB, which never touches settings, secrets, agents, skills, hooks or steering). Module config lives in the `moduleConfig` store and is pushed
   into the router via `setRouterConfig`; the old routing-weight knobs are invisible defaults.
 - **Agent routing** (`src/lib/agentRouter.ts`) is content-aware. Precedence: per-task
   `@agent` > chat `@agent` override > best-matching **installed** agent for the action.
@@ -150,25 +215,66 @@ results arrive through `claude.onEvent(handler)`.
   skill-injection toggle live under Library › Routing › Advanced; the scoring weights are
   invisible defaults in `moduleConfig.ts`. `explainRoute` / `scoreAgents` expose the full
   decision (chosen agent + injected skills + ranked candidates) that drives the Routing
-  playground.
+  playground. The bundled bench a task can land on is `frontend-expert` / `backend-expert` /
+  `database-expert` / `docs-expert`, and **their front-matter `description` is load-bearing**:
+  scoring reads only `name + description`, and `IMPLEMENTER_SIGNALS` is appended to *every* task's
+  keywords, so one stray substring (`implement` inside "implementation", `app` inside "approved")
+  makes an agent clear the threshold on every task and beat `spec-task-executor` outright. A
+  specialist's description uses only its own `CAPABILITY_TAGS` vocabulary. **`npm run routes` is
+  the guard** — nothing here type-checks, and this repo has no test runner.
 - **Skills are injected, not just labelled.** `SkillMeta.body` carries the full `SKILL.md`
   text; `skillSystemBlock`/`skillSystemBlocks` build prompt blocks that are prepended to the
-  system prompt. The SDD skill (`sdd-feature`/`sdd-bugfix`, by spec kind) governs spec drafting
-  and task runs; `bestSkillByText` additionally injects a confident domain skill match
-  (e.g. a frontend skill for UI tasks). Chat `/skill` injects that skill's body too. The
-  Running-Tasks **Library verification** panel resolves the chosen agent/skill back to the
-  installed file (root `.claude/` vs global) so you can confirm what's actually in use.
+  system prompt. Three selectors, all in `agentRouter.ts` so the injection toggle and
+  `disabledSkills` apply in one place: `routeSkill` picks the SDD skill (`sdd-feature`/
+  `sdd-bugfix`, by spec kind — three stages, two gates) that frames the stage and its gates;
+  **`routeFormatSkill` picks the document-format skill** (`spec-requirements-format`,
+  `spec-bugfix-format`, `spec-plan-format`, `spec-tasks-format`) that carries the literal shape
+  Octo's parsers demand — injected into every spec-drafting run and, as `tasks`, into task runs,
+  which edit `tasks.md` and `plan.md`'s Critical Decisions; and `bestSkillByText` adds a confident
+  domain match on task runs. Chat `/skill` injects that skill's body too. **The format skills are
+  the source of truth for document shape** — the drafting prompts in `specActions.ts` keep only
+  the minimum contract (injection can be switched off) and the bundled agents carry judgement, not
+  format. The Running-Tasks **Library verification** panel resolves the chosen agent/skill back to
+  the installed file (root `.claude/` vs global) so you can confirm what's actually in use.
+- **`lib/formatCheck.ts`** turns those same parsers into a deterministic check, rendered as a strip
+  above the gate bar, splitting findings into mechanical (one correct answer → *Fix with Claude*)
+  and needing judgement. It is not a hook on purpose: `file-save-in-app` fires on the 400 ms editor
+  autosave and never after a Claude draft. See `docs/renderer.md` → Format check.
 
 ### Persistence — `electron/db.ts` (better-sqlite3)
-App-level history DB at `app.getPath('userData')/kraken.db`. Tables: `specs`, `spec_events`
+App-level history DB at `app.getPath('userData')/octo.db`. Tables: `specs`, `spec_events`
 (phase-advance audit trail), `runs` (every Claude invocation with prompt/response/status/
 duration), `errors`, `hook_runs` (hook-triggered run log). This is global telemetry, separate
 from the per-workspace spec markdown — specs on disk are the source of truth; the DB is a
 queryable mirror + run log.
 
+### Tickets — trackers over MCP (`electron/mcpClient.ts` + `electron/tickets.ts`)
+A small dependency-free **MCP client** (stdio + Streamable HTTP; credentials in `safeStorage`, as
+either a manual `Authorization` value or an OAuth record — separate store slots, because the token
+slot goes straight into the header) plus **OAuth 2.1** in `electron/mcpAuth.ts` (RFC 8414 discovery,
+dynamic registration as a public client, PKCE S256, **ephemeral** loopback redirect created per
+attempt, refresh within 60s of expiry). `tickets:sign-in` stays pending until the redirect lands, so
+there is no push channel. Presets: `tracker`, `jira` (**pinned** tool names in
+`electron/shared/jira.ts` — heuristic discovery would repoint a write capability at a read tool),
+and `generic`
+plus a translation layer from "a moment in a spec's life" to tool calls. Two rules: **every write
+is a `TicketAction` (`{tool, args, summary}`) shown before it is sent** — `tickets:plan` builds,
+`tickets:apply` sends — and **mappings are discovered, not hardcoded**: `discoverToolMap` matches
+Octo's capabilities against the server's own `tools/list`, correctable in Library › Tickets. The
+`tracker` preset is written against that server's real schema; anything else uses `generic`.
+What's pending is derived from **spec state**, not from events firing (`lib/ticketSync.ts` reads
+phase + `meta.branch` + `meta.prUrl` + `meta.ticket.applied[]`), so nothing is lost to a closed
+app and no write happens twice. **Home's composer is not the only way in**: `TicketInbox` lists what is open across the
+trackers under *What should we build?*, and picking one runs `planSpecFromTicket` — the ticket
+becomes the spec's `brief` and the link is written at creation, so nothing has to be reconciled
+later. `normalizeTicketList` is deliberately forgiving about response shape; "not done" is filtered
+client-side because no two trackers agree on the status enum. UI: `TicketsStudio`
+(Library › Tickets) + `TicketInbox` (Home) + `TicketPanel` (compact in the spec briefing aside,
+full in Ship). See `docs/subsystems.md` → Tickets.
+
 ### Hooks — event-driven agent hooks (`electron/main.ts` hooks section)
-JSON files in `.kraken/hooks/*.json` (+ global `~/.kraken/hooks/`), shape = `HookConfig`.
-A Kraken-native engine fires Claude runs on app-level events — `maybeFireHooks(trigger, ctx)`
+JSON files in `.octo/hooks/*.json` (+ global `~/.octo/hooks/`), shape = `HookConfig`.
+A Octo-native engine fires Claude runs on app-level events — `maybeFireHooks(trigger, ctx)`
 is called at trigger points (`advanceSpec` → spec-advance/spec-done; `writeSpecFile` →
 file-save-in-app; TaskRunner → task-complete/wave-complete; manual). `fireHook` reuses
 `streamClaude` (so hook runs appear in History) via `getMainSender()`. **Loop-guard:** hook
@@ -177,7 +283,7 @@ plus a per-hook cooldown (`hookCooldown`). `seedDefaultHooks` ships `code-valida
 (wave-complete) and `docs-changelog` (spec-done). Hooks UI: Library › Hooks (`HooksStudio`) + the overlay `HookEditor`.
 
 ### Steering — project context injection (`electron/main.ts` steering section)
-Markdown in `.kraken/steering/*.md` (+ global, + root AGENTS.md/CLAUDE.md as implicit
+Markdown in `.octo/steering/*.md` (+ global, + root AGENTS.md/CLAUDE.md as implicit
 `always`). `composeSteeringSystem` resolves inclusion modes (always / fileMatch / manual /
 auto) and is prepended to `payload.system` **inside `streamClaude`**, so every run (chat,
 task, hook) gets steering uniformly. Docs can be **pinned** (persisted per workspace in
@@ -199,8 +305,10 @@ cancel, the concurrency control, and the activity log; the top bar and `SurfaceN
 running-count badge. Per-task agent specialization via `- [ ] T1 @agent-name: ...` (parsed in
 `tasks.ts`, precedence in `agentRouter.ts`: per-task > chat override > action default).
 `runWave`/`pump` schedule with failure isolation; **Autopilot** ("Run all", the tasks stage's
-primary CTA) runs all waves autonomously, waiting for blocking hooks between waves. When the last
-task completes the spec **auto-advances to `done` and lands on the Ship stage** (auto-generated
+primary CTA) runs all waves autonomously, waiting for blocking hooks between waves. A task run
+that deviates from the plan appends `### Critical Decision — T3: …` to `plan.md`'s
+`## Critical Decisions`, so the plan never drifts from the code. When the last
+task completes the spec **auto-advances to `done` and the Ship panel opens inside Build** (auto-generated
 summary + commit/PR). `specs:set-phase` allows reopening a phase (Re-sync); the **Audit** action
 routes to `spec-doctor` for drift detection.
 
@@ -215,7 +323,7 @@ Per-workspace git helpers (status, current-branch, create-branch, commit-push, p
 surfaced through `git:*` IPC. `github.ts` is a dependency-free GitHub REST client (token via
 `safeStorage`, same pattern as the API key) exposed through `github:*` IPC — repo resolution
 from the `origin` remote, token validation, and PR list/create/merge. Both are driven from the
-spec's **Ship stage** (`ShipView`: branch → Commit all → Create PR, prefilled from the
+spec's **Ship panel** (`ShipView`: branch → Commit all → Create PR, prefilled from the
 auto-generated summary) and from the global **repo panel** (`SourceControlView variant="page"`,
 opened as an overlay from the command-bar project pill / ⌘K). Both are spec-aware (`ui.activeSpecId`
 resolves "the spec you're working on") and write branch/commit/PR state back into `SpecMeta`.
@@ -239,12 +347,28 @@ Edge, ~2560×720), toggled from the CommandBar (`MonitorSmartphone` icon) or ⌘
 Display*. `createWideWindow()` opens a single `frame:false` second `BrowserWindow` (`wideWindow`),
 placed via the `screen` module on a non-primary display (`pickTravelDisplay()`; compact-bar
 fallback on the primary), loading the same bundle with a `#wide` hash so `src/main.tsx` renders
-`WideApp` instead of `App`. State is **one-directional**: the main window is authoritative and
-pushes a serialized `FleetSnapshot` (`ActiveRun[]` from the `orchestrator` store) via `fleet:push`
-→ forwarded over `fleet:sync`; the travel window is a **read-only mirror** that cancels through the
-existing `claude:cancel`. IPC: `window:{toggle-wide,is-wide-open,wide-state,focus-main}` +
-`fleet:{push,sync}`. Teardown is guarded (closing the main window or unplugging the display closes
-it). See `docs/subsystems.md` → Travel Display.
+`WideApp` instead of `App`. The window is **one colony**: every run in flight is an octopus — a
+**chibi samurai** (`wide/OctoMascot.tsx` — the same drawing the app's brand mark is made of,
+drawn entirely from theme variables so it re-skins with the app) — and everything the creature
+does means something: the **zone** it lives in is its spec,
+its **position** is whether it's moving (live work up top, blocked work sleeping lower-right), the
+dashed violet **leash** is what it waits on (`dependsOn`), its **face** is the status (blinking /
+violet-deciding / `zzz` queued / happy done / crossed-out failed), **its katana's pose is the
+verb** (cutting · sheathed · resting · *chiburi* · driven into the ground), and its **speech
+bubble** is the tool it's running right now (parsed back out of the live `tool` delta).
+`detail="simple"` drops the armour's fine work below ~40px. A **reef** below keeps the last finished runs; the
+header has the task-slot meter and a **quiet toggle** (`.k-quiet`, default-on under
+`prefers-reduced-motion`) that freezes every colony animation. Clicking a creature opens its full
+run detail on the left with the colony compressed beside it (*Esc* to go back).
+State is **one-directional**: the main window is authoritative and pushes a serialized
+`FleetSnapshot` (`{runs, maxConcurrency}` from the `orchestrator` store) via `fleet:push` →
+forwarded over `fleet:sync`; the travel window is a **read-only mirror** that cancels through the existing
+`claude:cancel`. Because the main window only pushes on *change*, the main process caches the last
+snapshot and replays it into a freshly-opened travel window (on `did-finish-load`, and on the
+renderer's own `fleet:request` pull — the two race). IPC:
+`window:{toggle-wide,is-wide-open,wide-state,focus-main}` + `fleet:{push,request,sync}`. Teardown
+is guarded (closing the main window or unplugging the display closes it).
+See `docs/subsystems.md` → Travel Display.
 
 ## Conventions worth knowing
 
@@ -253,7 +377,7 @@ it). See `docs/subsystems.md` → Travel Display.
   types go in `electron/shared/types.ts` (imported by both sides — keep it dependency-free).
 - Both backends must stay behaviorally interchangeable: anything user-visible should flow
   through the common `claude:event` stream, not be special-cased per backend.
-- Spec phase order and the `.kraken/specs/<id>/{spec.json,*.md}` on-disk shape are load-bearing;
+- Spec phase order and the `.octo/specs/<id>/{spec.json,*.md}` on-disk shape are load-bearing;
   changing them affects `createSpec`, `advanceSpec`, `readSpec`, and `listSpecs` together.
 - Agents/skills follow Claude Code's exact format and precedence (workspace overrides global
   on name conflict) — don't invent a parallel format.

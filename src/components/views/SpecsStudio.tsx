@@ -32,7 +32,7 @@ import { ModuleHeader, ModuleTabs, ModuleSection, Explainer, Callout } from '../
 const EXPLAINER = [
   {
     heading: 'What this manages',
-    body: 'Every spec is a folder under .kraken/specs/ (spec.json + phase markdown). This module aggregates the run history mirrored in the app database against those specs so you can see where effort went.',
+    body: 'Every spec is a folder under .octo/specs/ (spec.json + phase markdown). This module aggregates the run history mirrored in the app database against those specs so you can see where effort went.',
   },
   {
     heading: 'The analytics',
@@ -48,11 +48,11 @@ const EXPLAINER = [
   },
 ];
 
-const PHASE_ORDER: SpecPhase[] = ['requirements', 'design', 'tasks', 'done'];
+const PHASE_ORDER: SpecPhase[] = ['requirements', 'plan', 'build', 'done'];
 const PHASE_LABEL: Record<SpecPhase, string> = {
   requirements: 'Requirements',
-  design: 'Design',
-  tasks: 'Tasks',
+  plan: 'Plan',
+  build: 'Build',
   done: 'Done',
 };
 
@@ -87,7 +87,7 @@ export function SpecsStudio() {
 
   const loadStats = () => {
     if (!root) return;
-    window.kraken.history.specRunStats(root).then((rows) => {
+    window.octo.history.specRunStats(root).then((rows) => {
       const map: Record<string, SpecRunStat> = {};
       for (const r of rows) map[r.spec_id] = r;
       setStatsBySpec(map);
@@ -210,7 +210,7 @@ function OverviewTab({
   onOpenSpec: (id: string) => void;
 }) {
   const agg = useMemo(() => {
-    const byPhase: Record<SpecPhase, number> = { requirements: 0, design: 0, tasks: 0, done: 0 };
+    const byPhase: Record<SpecPhase, number> = { requirements: 0, plan: 0, build: 0, done: 0 };
     let features = 0;
     let bugfixes = 0;
     for (const s of specs) {
@@ -436,14 +436,14 @@ function SpecDetail({
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
-    window.kraken.history.listRuns({ workspacePath: root, specId: spec.id, limit: 20 }).then(setRuns);
-    window.kraken.history.listSpecEvents(root, spec.id).then(setEvents);
+    window.octo.history.listRuns({ workspacePath: root, specId: spec.id, limit: 20 }).then(setRuns);
+    window.octo.history.listSpecEvents(root, spec.id).then(setEvents);
   }, [root, spec.id]);
 
   const remove = async () => {
     if (
       !window.confirm(
-        `Delete spec "${spec.name}"?\n\nThis permanently removes its folder (.kraken/specs/${spec.id}) and all mirrored run history. This cannot be undone.`
+        `Delete spec "${spec.name}"?\n\nThis permanently removes its folder (.octo/specs/${spec.id}) and all mirrored run history. This cannot be undone.`
       )
     )
       return;
@@ -470,7 +470,7 @@ function SpecDetail({
             <PhaseBadge phase={spec.phase} />
           </div>
           <p className="text-[12px] text-faint mt-0.5 font-mono truncate">
-            .kraken/specs/{spec.id}
+            .octo/specs/{spec.id}
           </p>
         </div>
         <button
@@ -509,7 +509,7 @@ function SpecDetail({
         )}
         {spec.prNumber && spec.prUrl && (
           <button
-            onClick={() => window.kraken.shell.openUrl(spec.prUrl!)}
+            onClick={() => window.octo.shell.openUrl(spec.prUrl!)}
             className="flex items-center gap-1.5 text-dim px-2.5 py-1 rounded-lg bg-elev hover:text-ink-50"
           >
             PR #{spec.prNumber} <ExternalLink size={10} />

@@ -1,0 +1,290 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+  <style>
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; }
+a { color: #8AD000; }
+a:hover { color: #A6E62E; }
+.root {
+  width: 2560px;
+  height: 720px;
+  background: #1A1A1A;
+  color: #F2F2F2;
+  font-family: 'Hanken Grotesk', system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+.mono { font-family: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace; font-variant-numeric: tabular-nums; }
+.disp { font-family: 'Space Grotesk', 'Hanken Grotesk', sans-serif; }
+.trunc { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.grow { flex: 1 1 auto; min-width: 0; }
+.sep { color: #4A4A4A; }
+.bar {
+  height: 48px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 16px;
+  border-bottom: 1px solid #333333;
+}
+.mark { width: 30px; height: 30px; display: grid; place-items: center; background: #2A2A2A; box-shadow: 0 0 0 1px rgba(118, 185, 0, 0.5); flex: none; }
+.hd-title { font-size: 15px; font-weight: 600; color: #FAFAFA; line-height: 1.15; }
+.hd-sub { font-size: 11px; color: #848484; line-height: 1.3; margin-top: 2px; }
+.slots { display: flex; gap: 3px; align-items: center; }
+.slot { width: 7px; height: 16px; background: #333333; }
+.slot.on { background: #76B900; }
+.slot.wait { background: #4E3A73; }
+.cap { font-size: 11px; color: #848484; letter-spacing: 0.02em; }
+.btn { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 9px; font-size: 12px; border: 1px solid #393939; background: transparent; color: #C8C8C8; }
+.btn.danger { border-color: rgba(224, 83, 60, 0.5); color: #FF8A72; background: rgba(224, 83, 60, 0.12); }
+.zoombox { display: flex; align-items: center; height: 26px; border: 1px solid #393939; color: #A8A8A8; }
+.zoombox > * { display: grid; place-items: center; height: 24px; padding: 0 7px; font-size: 11px; }
+.chip { display: inline-flex; align-items: center; gap: 4px; height: 17px; padding: 0 5px; font-size: 10px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; flex: none; }
+.chip.task { background: rgba(118, 185, 0, 0.16); color: #A6E62E; }
+.chip.spec { background: rgba(155, 107, 255, 0.18); color: #C9A9FF; }
+.chip.chat { background: rgba(255, 255, 255, 0.07); color: #C8C8C8; }
+.chip.hook { background: transparent; box-shadow: inset 0 0 0 1px rgba(118, 185, 0, 0.45); color: #A6E62E; }
+.chip.audit { background: transparent; box-shadow: inset 0 0 0 1px rgba(155, 107, 255, 0.45); color: #C9A9FF; }
+.tid { font-size: 12px; color: #C8C8C8; flex: none; }
+.meta { font-size: 11px; color: #848484; }
+.time { font-size: 13px; color: #C4F06A; font-weight: 500; flex: none; }
+.time.idle { color: #848484; }
+.log { font-size: 11px; line-height: 1.5; }
+.log div { white-space: pre; overflow: hidden; text-overflow: ellipsis; }
+.l-tool { color: #C9A9FF; }
+.l-res { color: #848484; }
+.l-txt { color: #ECECEC; }
+.l-think { color: #848484; font-style: italic; }
+.spin { animation: sp 1.1s linear infinite; }
+@keyframes sp { to { transform: rotate(360deg); } }
+/* ---- The three anime octopus directions -------------------------------- */
+.oc { display: block; width: 100%; height: auto; overflow: visible; }
+.oc-w { display: inline-block; line-height: 0; }
+
+/* A: Chibi — squash & stretch, blinking, wiggling. */
+.o-chibi .oc-b { animation: ch-bob 2.4s ease-in-out infinite; transform-origin: 50% 100%; }
+.o-chibi .eyes { transform-box: view-box; transform-origin: 60px 56px; animation: ch-blink 4.4s infinite; }
+.o-chibi .tent { transform-box: fill-box; transform-origin: 50% 0%; animation: ch-wig 1.9s ease-in-out infinite; }
+.o-chibi .blush { animation: ch-blush 2.8s ease-in-out infinite; }
+.o-chibi .shine { animation: ch-shine 4s ease-in-out infinite; }
+.o-chibi.st-sleep .oc-b { animation-duration: 4.2s; }
+.o-chibi.st-sleep .eyes, .o-chibi.st-done .eyes, .o-chibi.st-fail .eyes { animation: none; }
+.o-chibi.st-fail .oc-b { animation: ch-panic 0.34s ease-in-out infinite; }
+.o-chibi.st-done .oc-b { animation: ch-hop 1.5s ease-in-out infinite; }
+.o-chibi .spark { animation: ch-spark 1.5s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 50%; }
+.o-chibi .drop { animation: ch-drop 1.6s ease-in infinite; }
+@keyframes ch-bob {
+  0%, 100% { transform: translateY(0) scale(1.03, 0.97); }
+  45% { transform: translateY(-7px) scale(0.96, 1.05); }
+  70% { transform: translateY(-3px) scale(1, 1); }
+}
+@keyframes ch-hop {
+  0%, 100% { transform: translateY(0) scale(1.06, 0.94); }
+  35% { transform: translateY(-13px) scale(0.93, 1.08); }
+  60% { transform: translateY(0) scale(1.06, 0.94); }
+  75% { transform: translateY(-4px) scale(0.98, 1.02); }
+}
+@keyframes ch-panic {
+  0%, 100% { transform: translateX(-1.5px) rotate(-1.5deg); }
+  50% { transform: translateX(1.5px) rotate(1.5deg); }
+}
+@keyframes ch-blink {
+  0%, 91%, 100% { transform: scaleY(1); }
+  93.5% { transform: scaleY(0.06); }
+  96% { transform: scaleY(1); }
+}
+@keyframes ch-wig { 0%, 100% { transform: rotate(-7deg); } 50% { transform: rotate(7deg); } }
+@keyframes ch-blush { 0%, 100% { opacity: 0.32; } 50% { opacity: 0.6; } }
+@keyframes ch-shine { 0%, 100% { opacity: 0.16; } 50% { opacity: 0.4; } }
+@keyframes ch-spark { 0%, 100% { opacity: 0.2; transform: scale(0.7) rotate(0deg); } 50% { opacity: 1; transform: scale(1.15) rotate(25deg); } }
+@keyframes ch-drop { 0% { opacity: 0; transform: translateY(-3px); } 30% { opacity: 1; } 100% { opacity: 0; transform: translateY(9px); } }
+
+/* B: Visor — anime "on twos": nothing eases, everything snaps to a frame. */
+.o-visor .oc-b { animation: vi-bob 2.8s steps(4, end) infinite; transform-origin: 50% 100%; }
+.o-visor .gleam { animation: vi-sweep 3.4s steps(9, end) infinite; }
+.o-visor .slit { transform-box: view-box; transform-origin: 60px 55px; animation: vi-scan 3.2s steps(3, end) infinite; }
+.o-visor .pip { animation: vi-pip 1.1s steps(2, end) infinite; }
+.o-visor .tent { transform-box: fill-box; transform-origin: 50% 0%; animation: vi-sway 2.4s steps(4, end) infinite; }
+.o-visor .crest { transform-box: view-box; transform-origin: 60px 19px; }
+.o-visor .beacon { animation: vi-beacon 1.7s steps(2, end) infinite; }
+.o-visor .streaks { animation: vi-streak 0.72s steps(3, end) infinite; }
+.o-visor.st-sleep .crest.droop { transform: rotate(-17deg); animation: vi-nod 5.2s steps(3, end) infinite; }
+.o-visor.st-sleep .gleam, .o-visor.st-sleep .slit { animation: none; }
+.o-visor.st-sleep .standby { animation: vi-standby 2.6s steps(2, end) infinite; }
+.o-visor.st-sleep .beacon { animation: vi-beacon 3.4s steps(2, end) infinite; }
+.o-visor.st-fail .oc-b { animation: vi-glitch 0.3s steps(3, end) infinite; }
+.o-visor.st-fail .ghost { animation: vi-ghost 0.3s steps(3, end) infinite; }
+.o-visor.st-fail .scan { animation: vi-scanline 0.9s steps(6, end) infinite; }
+.o-visor.st-done .burst { animation: vi-burst 1.4s steps(4, end) infinite; transform-box: fill-box; transform-origin: 50% 50%; }
+@keyframes vi-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes vi-sweep {
+  0% { transform: translateX(-40px); }
+  42% { transform: translateX(106px); }
+  100% { transform: translateX(106px); }
+}
+@keyframes vi-scan { 0%, 100% { transform: translateX(-4.5px); } 50% { transform: translateX(4.5px); } }
+@keyframes vi-pip { 0%, 100% { opacity: 1; } 50% { opacity: 0.15; } }
+@keyframes vi-sway { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+@keyframes vi-nod { 0%, 100% { transform: rotate(-17deg); } 50% { transform: rotate(-23deg); } }
+@keyframes vi-standby { 0%, 100% { opacity: 0.9; } 50% { opacity: 0.15; } }
+@keyframes vi-beacon { 0%, 100% { opacity: 1; } 50% { opacity: 0.1; } }
+@keyframes vi-streak { 0% { opacity: 0.75; transform: translateX(4px); } 100% { opacity: 0; transform: translateX(-14px); } }
+@keyframes vi-glitch {
+  0% { transform: translate(0, 0); }
+  33% { transform: translate(-2.5px, 1px); }
+  66% { transform: translate(2px, -1.5px); }
+  100% { transform: translate(0, 0); }
+}
+@keyframes vi-ghost {
+  0% { opacity: 0; transform: translate(0, 0); }
+  33% { opacity: 0.85; transform: translate(3px, -1px); }
+  66% { opacity: 0.5; transform: translate(-3px, 1px); }
+  100% { opacity: 0; transform: translate(0, 0); }
+}
+@keyframes vi-scanline { 0% { transform: translateY(-8px); opacity: 0.9; } 100% { transform: translateY(14px); opacity: 0.2; } }
+@keyframes vi-burst { 0%, 100% { opacity: 0.2; transform: scale(0.6); } 50% { opacity: 1; transform: scale(1.15); } }
+
+/* C: Ink — the line boils: three drawings, eight frames a second. */
+.o-ink .boil { opacity: 0; animation: ik-boil 0.375s steps(1, end) infinite; }
+.o-ink .boil-1 { animation-delay: 0s; }
+.o-ink .boil-2 { animation-delay: 0.125s; }
+.o-ink .boil-3 { animation-delay: 0.25s; }
+.o-ink .oc-b { animation: ik-breathe 3.4s ease-in-out infinite; transform-origin: 50% 100%; }
+.o-ink .speed { animation: ik-speed 0.6s linear infinite; }
+.o-ink.st-sleep .oc-b { animation-duration: 5.4s; }
+.o-ink.st-fail .oc-b { animation: ik-jolt 0.5s steps(2, end) infinite; }
+@keyframes ik-boil { 0%, 33.32% { opacity: 1; } 33.33%, 100% { opacity: 0; } }
+@keyframes ik-breathe { 0%, 100% { transform: translateY(0) scale(1, 1); } 50% { transform: translateY(-4px) scale(0.985, 1.02); } }
+@keyframes ik-speed { 0% { opacity: 0.85; transform: translateX(0); } 100% { opacity: 0; transform: translateX(-13px); } }
+@keyframes ik-jolt { 0%, 100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg); } }
+
+/* D: Pixel — two drawings at 4fps. No tweening exists on an LCD. */
+.o-pixel .oc-b { animation: none; }
+.o-pixel .frame { opacity: 0; }
+.o-pixel .frame-1 { animation: px-a 0.5s steps(1, end) infinite; }
+.o-pixel .frame-2 { animation: px-b 0.5s steps(1, end) infinite; }
+.o-pixel.st-sleep .frame-1 { animation-duration: 1.6s; }
+.o-pixel.st-sleep .frame-2 { animation-duration: 1.6s; }
+.o-pixel.st-fail .frame-1 { animation-duration: 0.22s; }
+.o-pixel.st-fail .frame-2 { animation-duration: 0.22s; }
+.o-pixel.st-done .frame-1 { animation-duration: 0.34s; }
+.o-pixel.st-done .frame-2 { animation-duration: 0.34s; }
+@keyframes px-a { 0%, 49.9% { opacity: 1; } 50%, 100% { opacity: 0; } }
+@keyframes px-b { 0%, 49.9% { opacity: 0; } 50%, 100% { opacity: 1; } }
+
+/* E: Neon — a tube of light. A bright charge runs the glass; the arms drift. */
+.o-neon .oc-b { animation: ne-float 4.6s ease-in-out infinite; transform-origin: 50% 100%; }
+.o-neon .charge { animation: ne-charge 3.2s linear infinite; }
+.o-neon .arm { transform-box: fill-box; transform-origin: 50% 0%; animation: ne-wave 3.6s ease-in-out infinite; }
+.o-neon .arm-1 { animation-delay: -0.2s; }
+.o-neon .arm-2 { animation-delay: -0.8s; }
+.o-neon .arm-3 { animation-delay: -1.4s; }
+.o-neon .arm-4 { animation-delay: -2s; }
+.o-neon .arm-5 { animation-delay: -2.6s; }
+.o-neon .ne-eyes { animation: ne-pulse 2.4s ease-in-out infinite; }
+.o-neon.st-sleep .oc { opacity: 0.36; animation: ne-breathe 5s ease-in-out infinite; }
+.o-neon.st-sleep .arm { animation-duration: 6s; }
+.o-neon.st-fail .oc { animation: ne-flicker 1.9s steps(1, end) infinite; }
+.o-neon.st-done .halo { animation: ne-halo 2.2s ease-out infinite; transform-box: fill-box; transform-origin: 50% 50%; }
+@keyframes ne-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@keyframes ne-charge { 0% { stroke-dashoffset: 300; } 100% { stroke-dashoffset: -60; } }
+@keyframes ne-wave { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+@keyframes ne-pulse { 0%, 100% { opacity: 0.85; } 50% { opacity: 1; } }
+@keyframes ne-breathe { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.46; } }
+@keyframes ne-flicker {
+  0%, 43%, 47%, 61%, 66%, 100% { opacity: 1; }
+  45%, 63% { opacity: 0.25; }
+  64% { opacity: 0.7; }
+}
+@keyframes ne-halo {
+  0% { opacity: 0.7; transform: scale(0.45); }
+  70% { opacity: 0; transform: scale(1.15); }
+  100% { opacity: 0; transform: scale(1.15); }
+}
+
+/* F: Terminal — it blinks by swapping a character, the way a TTY would. */
+.o-term .oc-b { animation: tm-idle 3.2s steps(2, end) infinite; transform-origin: 50% 100%; }
+.o-term .frame { opacity: 0; }
+.o-term .frame-1 { animation: tm-a 3.2s steps(1, end) infinite; }
+.o-term .frame-2 { animation: tm-b 3.2s steps(1, end) infinite; }
+.o-term .aside { animation: tm-cursor 1.1s steps(2, end) infinite; }
+.o-term.st-sleep .frame-1, .o-term.st-sleep .frame-2 { animation-duration: 5.2s; }
+.o-term.st-sleep .oc-b { animation-duration: 5.2s; }
+.o-term.st-fail .frame-1, .o-term.st-fail .frame-2 { animation-duration: 0.5s; }
+.o-term.st-done .frame-1, .o-term.st-done .frame-2 { animation-duration: 1.4s; }
+@keyframes tm-a { 0%, 87.9% { opacity: 1; } 88%, 100% { opacity: 0; } }
+@keyframes tm-b { 0%, 87.9% { opacity: 0; } 88%, 100% { opacity: 1; } }
+@keyframes tm-idle { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+@keyframes tm-cursor { 0%, 100% { opacity: 1; } 50% { opacity: 0.1; } }
+/* The direction sheets: one octopus, five faces, and the real-size check. */
+.root { width: 1200px; height: 800px; }
+.sheet { flex: 1 1 auto; min-height: 0; padding: 20px 22px 22px; display: flex; flex-direction: column; gap: 18px; overflow: hidden; }
+.h2 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #848484; font-weight: 600; display: flex; align-items: center; gap: 9px; margin-bottom: 11px; }
+.h2 i { flex: 1 1 auto; height: 1px; background: #333333; display: block; }
+.hero { display: flex; gap: 30px; align-items: center; }
+.hero-stage { width: 300px; height: 250px; flex: none; display: grid; place-items: center; border: 1px solid #333333; background: #1E1E1E; }
+.hero-copy { flex: 1 1 auto; min-width: 0; }
+.hero-name { font-size: 26px; font-weight: 700; color: #FAFAFA; line-height: 1.15; }
+.hero-copy p { font-size: 13.5px; line-height: 1.55; color: #C8C8C8; margin: 13px 0 0; max-width: 62ch; }
+.hero-copy p b { color: #ECECEC; font-weight: 600; }
+.hero-copy p.con { color: #A8A8A8; border-left: 2px solid #E0533C; padding-left: 11px; }
+.states { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.state { border: 1px solid #333333; background: #1E1E1E; padding: 12px 8px 11px; display: flex; flex-direction: column; align-items: center; gap: 9px; }
+.state-label { font-size: 11.5px; color: #C8C8C8; font-weight: 500; }
+.state-note { font-size: 10.5px; color: #848484; text-align: center; line-height: 1.35; }
+.real { border: 1px dashed #333333; background: #1E1E1E; padding: 14px 18px; display: flex; align-items: center; gap: 38px; }
+.real-item { display: flex; align-items: flex-end; gap: 13px; }
+.real-item .txt b { display: block; font-size: 12px; color: #C8C8C8; font-weight: 500; }
+.real-item .txt em { display: block; font-style: normal; font-size: 11px; color: #848484; margin-top: 3px; }
+.bub2 { background: #232323; border: 1px solid #3E3E3E; padding: 5px 9px; font-size: 11.5px; color: #ECECEC; white-space: nowrap; }
+  </style>
+</helmet>
+<div class="root">
+  <div class="bar">
+    <div class="mark"><span class="oc-w o-term st-work " style="width: 26px; animation-delay: -0.9s"><span class="oc-b" style="display:block; animation-delay: -0.9s"><svg class="oc" viewBox="0 0 120 122" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="17" font-weight="500"><g class="frame frame-1"><text x="6" y="28" xml:space="preserve"><tspan fill="#8AD000">  ╭───────╮</tspan></text><text x="6" y="48" xml:space="preserve"><tspan fill="#8AD000">  │ </tspan><tspan fill="#C4F06A">●   ●</tspan><tspan fill="#8AD000"> │</tspan></text><text x="6" y="68" xml:space="preserve"><tspan fill="#8AD000">  │ </tspan><tspan fill="#C4F06A">── ──</tspan><tspan fill="#8AD000"> │</tspan></text><text x="6" y="88" xml:space="preserve"><tspan fill="#8AD000">  ╰┬─┬─┬─┬╯</tspan></text><text x="6" y="108" xml:space="preserve"><tspan fill="#8AD000">   ╰╯ │ ╰╯</tspan></text></g><g class="frame frame-2"><text x="6" y="28" xml:space="preserve"><tspan fill="#8AD000">  ╭───────╮</tspan></text><text x="6" y="48" xml:space="preserve"><tspan fill="#8AD000">  │ </tspan><tspan fill="#C4F06A">─   ─</tspan><tspan fill="#8AD000"> │</tspan></text><text x="6" y="68" xml:space="preserve"><tspan fill="#8AD000">  │ </tspan><tspan fill="#C4F06A">── ──</tspan><tspan fill="#8AD000"> │</tspan></text><text x="6" y="88" xml:space="preserve"><tspan fill="#8AD000">  ╰┬─┬─┬─┬╯</tspan></text><text x="6" y="108" xml:space="preserve"><tspan fill="#8AD000">   ╰╮ │ ╭╯</tspan></text></g></svg></span></span></div>
+    <div>
+      <div class="hd-title disp">F &#8212; Terminal</div>
+      <div class="hd-sub">Mascota del Travel Display &#183; cinco estados &#183; animada</div>
+    </div>
+  </div>
+  <div class="sheet">
+    <div>
+      <div class="h2">La criatura <i></i> a 300px</div>
+      <div class="hero">
+        <div class="hero-stage"><span class="oc-w o-term st-work " style="width: 210px; animation-delay: 0s"><span class="oc-b" style="display:block; animation-delay: 0s"><svg class="oc" viewBox="0 0 120 122" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="17" font-weight="500"><g class="frame frame-1"><text x="6" y="28" xml:space="preserve"><tspan fill="#8AD000">  ╭───────╮</tspan></text><text x="6" y="48" xml:space="preserve"><tspan fill="#8AD000">  │ </tspan><tspan fill="#C4F06A">●   ●</tspan><tspan fill="#8AD000"> │</tspan></text><text x="6" y="68" xml:space="preserve"><tspan fill="#8AD000">  │ </tspan><tspan fill="#C4F06A">── ──</tspan><tspan fill="#8AD000"> │</tspan></text><text x="6" y="88" xml:space="preserve"><tspan fill="#8AD000">  ╰┬─┬─┬─┬╯</tspan></text><text x="6" y="108" xml:space="preserve"><tspan fill="#8AD000">   ╰╯ │ ╰╯</tspan></text></g><g class="frame frame-2"><text x="6" y="28" xml:space="preserve"><tspan fill="#8AD000">  ╭───────╮</tspan></text><text x="6" y="48" xml:space="preserve"><tspan fill="#8AD000">  │ </tspan><tspan fill="#C4F06A">─   ─</tspan><tspan fill="#8AD000"> │</tspan></text><text x="6" y="68" xml:space="preserve"><tspan fill="#8AD000">  │ </tspan><tspan fill="#C4F06A">── ──</tspan><tspan fill="#8AD000"> │</tspan></text><text x="6" y="88" xml:space="preserve"><tspan fill="#8AD000">  ╰┬─┬─┬─┬╯</tspan></text><text x="6" y="108" xml:space="preserve"><tspan fill="#8AD000">   ╰╮ │ ╭╯</tspan></text></g></svg></span></span></div>
+        <div class="hero-copy">
+          <div class="hero-name disp">F &#8212; Terminal</div>
+          <p>La criatura dibujada con caracteres monoespaciados, como la dibujaría una CLI: marco de box-drawing, ojos que son glifos. <b>Es lo más Octo de las seis</b> &#8212; la app maneja el CLI de Claude, y esto es esa misma tipografía.</p>
+          <p><b>Movimiento.</b> Parpadea <b>cambiando de carácter</b>, no transformando: ● pasa a ─ por un cuadro cada 3.2 segundos, y los brazos cambian de glifo con él. El signo de al lado (z, ?, *, !) late como un cursor.</p>
+          <p class="con"><b>Contra.</b> Muere abajo de 40px: cinco líneas de texto en 34px son 7px por línea, ilegible. Sólo funciona si la colonia cambia &#8212; menos criaturas y más grandes. Es una opción real, pero arrastra una decisión de layout con ella.</p>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="h2">Los cinco estados <i></i> a 92px</div>
+      <div class="states"><div class="state"><span class="oc-w o-term st-work " style="width: 92px; animation-delay: -0.0s"><span class="oc-b" style="display:block; animation-delay: -0.0s"><svg class="oc" viewBox="0 0 120 122" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="17" font-weight="500"><g class="frame frame-1"><text x="6" y="28" xml:space="preserve"><tspan fill="#8AD000">  ╭───────╮</tspan></text><text x="6" y="48" xml:space="preserve"><tspan fill="#8AD000">  │ </tspan><tspan fill="#C4F06A">●   ●</tspan><tspan fill="#8AD000"> │</tspan></text><text x="6" y="68" xml:space="preserve"><tspan fill="#8AD000">  │ </tspan><tspan fill="#C4F06A">── ──</tspan><tspan fill="#8AD000"> │</tspan></text><text x="6" y="88" xml:space="preserve"><tspan fill="#8AD000">  ╰┬─┬─┬─┬╯</tspan></text><text x="6" y="108" xml:space="preserve"><tspan fill="#8AD000">   ╰╯ │ ╰╯</tspan></text></g><g class="frame frame-2"><text x="6" y="28" xml:space="preserve"><tspan fill="#8AD000">  ╭───────╮</tspan></text><text x="6" y="48" xml:space="preserve"><tspan fill="#8AD000">  │ </tspan><tspan fill="#C4F06A">─   ─</tspan><tspan fill="#8AD000"> │</tspan></text><text x="6" y="68" xml:space="preserve"><tspan fill="#8AD000">  │ </tspan><tspan fill="#C4F06A">── ──</tspan><tspan fill="#8AD000"> │</tspan></text><text x="6" y="88" xml:space="preserve"><tspan fill="#8AD000">  ╰┬─┬─┬─┬╯</tspan></text><text x="6" y="108" xml:space="preserve"><tspan fill="#8AD000">   ╰╮ │ ╭╯</tspan></text></g></svg></span></span><div class="state-label">working</div><div class="state-note">● ●, parpadeo por cambio de carácter</div></div><div class="state"><span class="oc-w o-term st-think " style="width: 92px; animation-delay: -0.7s"><span class="oc-b" style="display:block; animation-delay: -0.7s"><svg class="oc" viewBox="0 0 120 122" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="17" font-weight="500"><g class="frame frame-1"><text x="6" y="28" xml:space="preserve"><tspan fill="#B28BFF">  ╭───────╮</tspan></text><text x="6" y="48" xml:space="preserve"><tspan fill="#B28BFF">  │ </tspan><tspan fill="#C9A9FF">○   ○</tspan><tspan fill="#B28BFF"> │</tspan></text><text x="6" y="68" xml:space="preserve"><tspan fill="#B28BFF">  │ </tspan><tspan fill="#C9A9FF"> ─○─ </tspan><tspan fill="#B28BFF"> │</tspan></text><text x="6" y="88" xml:space="preserve"><tspan fill="#B28BFF">  ╰┬─┬─┬─┬╯</tspan></text><text x="6" y="108" xml:space="preserve"><tspan fill="#B28BFF">   ╰╯ │ ╰╯</tspan></text><text class="aside" x="102" y="26" fill="#C9A9FF">?</text></g><g class="frame frame-2"><text x="6" y="28" xml:space="preserve"><tspan fill="#B28BFF">  ╭───────╮</tspan></text><text x="6" y="48" xml:space="preserve"><tspan fill="#B28BFF">  │ </tspan><tspan fill="#C9A9FF">─   ─</tspan><tspan fill="#B28BFF"> │</tspan></text><text x="6" y="68" xml:space="preserve"><tspan fill="#B28BFF">  │ </tspan><tspan fill="#C9A9FF"> ─○─ </tspan><tspan fill="#B28BFF"> │</tspan></text><text x="6" y="88" xml:space="preserve"><tspan fill="#B28BFF">  ╰┬─┬─┬─┬╯</tspan></text><text x="6" y="108" xml:space="preserve"><tspan fill="#B28BFF">   ╰╮ │ ╭╯</tspan></text><text class="aside" x="102" y="26" fill="#C9A9FF">?</text></g></svg></span></span><div class="state-label">deciding</div><div class="state-note">○ ○ con ? al lado</div></div><div class="state"><span class="oc-w o-term st-sleep " style="width: 92px; animation-delay: -1.4s"><span class="oc-b" style="display:block; animation-delay: -1.4s"><svg class="oc" viewBox="0 0 120 122" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="17" font-weight="500"><g class="frame frame-1"><text x="6" y="28" xml:space="preserve"><tspan fill="#5B4880">  ╭───────╮</tspan></text><text x="6" y="48" xml:space="preserve"><tspan fill="#5B4880">  │ </tspan><tspan fill="#6E5A93">─   ─</tspan><tspan fill="#5B4880"> │</tspan></text><text x="6" y="68" xml:space="preserve"><tspan fill="#5B4880">  │ </tspan><tspan fill="#6E5A93">  ○  </tspan><tspan fill="#5B4880"> │</tspan></text><text x="6" y="88" xml:space="preserve"><tspan fill="#5B4880">  ╰┬─┬─┬─┬╯</tspan></text><text x="6" y="108" xml:space="preserve"><tspan fill="#5B4880">   ╰╯ │ ╰╯</tspan></text><text class="aside" x="102" y="26" fill="#6E5A93">z</text></g><g class="frame frame-2"><text x="6" y="28" xml:space="preserve"><tspan fill="#5B4880">  ╭───────╮</tspan></text><text x="6" y="48" xml:space="preserve"><tspan fill="#5B4880">  │ </tspan><tspan fill="#6E5A93">─   ─</tspan><tspan fill="#5B4880"> │</tspan></text><text x="6" y="68" xml:space="preserve"><tspan fill="#5B4880">  │ </tspan><tspan fill="#6E5A93">  ○  </tspan><tspan fill="#5B4880"> │</tspan></text><text x="6" y="88" xml:space="preserve"><tspan fill="#5B4880">  ╰┬─┬─┬─┬╯</tspan></text><text x="6" y="108" xml:space="preserve"><tspan fill="#5B4880">   ╰╮ │ ╭╯</tspan></text><text class="aside" x="102" y="26" fill="#6E5A93">z</text></g></svg></span></span><div class="state-label">queued</div><div class="state-note">─ ─ con z, ciclo lento</div></div><div class="state"><span class="oc-w o-term st-done " style="width: 92px; animation-delay: -2.0999999999999996s"><span class="oc-b" style="display:block; animation-delay: -2.0999999999999996s"><svg class="oc" viewBox="0 0 120 122" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="17" font-weight="500"><g class="frame frame-1"><text x="6" y="28" xml:space="preserve"><tspan fill="#76B900">  ╭───────╮</tspan></text><text x="6" y="48" xml:space="preserve"><tspan fill="#76B900">  │ </tspan><tspan fill="#A6E62E">^   ^</tspan><tspan fill="#76B900"> │</tspan></text><text x="6" y="68" xml:space="preserve"><tspan fill="#76B900">  │ </tspan><tspan fill="#A6E62E">╰───╯</tspan><tspan fill="#76B900"> │</tspan></text><text x="6" y="88" xml:space="preserve"><tspan fill="#76B900">  ╰┬─┬─┬─┬╯</tspan></text><text x="6" y="108" xml:space="preserve"><tspan fill="#76B900">   ╰╯ │ ╰╯</tspan></text><text class="aside" x="102" y="26" fill="#A6E62E">*</text></g><g class="frame frame-2"><text x="6" y="28" xml:space="preserve"><tspan fill="#76B900">  ╭───────╮</tspan></text><text x="6" y="48" xml:space="preserve"><tspan fill="#76B900">  │ </tspan><tspan fill="#A6E62E">^   ^</tspan><tspan fill="#76B900"> │</tspan></text><text x="6" y="68" xml:space="preserve"><tspan fill="#76B900">  │ </tspan><tspan fill="#A6E62E">╰───╯</tspan><tspan fill="#76B900"> │</tspan></text><text x="6" y="88" xml:space="preserve"><tspan fill="#76B900">  ╰┬─┬─┬─┬╯</tspan></text><text x="6" y="108" xml:space="preserve"><tspan fill="#76B900">   ╰╮ │ ╭╯</tspan></text><text class="aside" x="102" y="26" fill="#A6E62E">*</text></g></svg></span></span><div class="state-label">done</div><div class="state-note">^ ^ con boca ╰───╯ y *</div></div><div class="state"><span class="oc-w o-term st-fail " style="width: 92px; animation-delay: -2.8s"><span class="oc-b" style="display:block; animation-delay: -2.8s"><svg class="oc" viewBox="0 0 120 122" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="17" font-weight="500"><g class="frame frame-1"><text x="6" y="28" xml:space="preserve"><tspan fill="#E0533C">  ╭───────╮</tspan></text><text x="6" y="48" xml:space="preserve"><tspan fill="#E0533C">  │ </tspan><tspan fill="#FF8A72">x   x</tspan><tspan fill="#E0533C"> │</tspan></text><text x="6" y="68" xml:space="preserve"><tspan fill="#E0533C">  │ </tspan><tspan fill="#FF8A72">╲───╱</tspan><tspan fill="#E0533C"> │</tspan></text><text x="6" y="88" xml:space="preserve"><tspan fill="#E0533C">  ╰┬─┬─┬─┬╯</tspan></text><text x="6" y="108" xml:space="preserve"><tspan fill="#E0533C">   ╰╯ │ ╰╯</tspan></text><text class="aside" x="102" y="26" fill="#FF8A72">!</text></g><g class="frame frame-2"><text x="6" y="28" xml:space="preserve"><tspan fill="#E0533C">  ╭───────╮</tspan></text><text x="6" y="48" xml:space="preserve"><tspan fill="#E0533C">  │ </tspan><tspan fill="#FF8A72">x   x</tspan><tspan fill="#E0533C"> │</tspan></text><text x="6" y="68" xml:space="preserve"><tspan fill="#E0533C">  │ </tspan><tspan fill="#FF8A72">╲───╱</tspan><tspan fill="#E0533C"> │</tspan></text><text x="6" y="88" xml:space="preserve"><tspan fill="#E0533C">  ╰┬─┬─┬─┬╯</tspan></text><text x="6" y="108" xml:space="preserve"><tspan fill="#E0533C">   ╰╮ │ ╭╯</tspan></text><text class="aside" x="102" y="26" fill="#FF8A72">!</text></g></svg></span></span><div class="state-label">failed</div><div class="state-note">x x, boca ╲───╱, titila rápido</div></div></div>
+    </div>
+    <div>
+      <div class="h2">A tamaño real <i></i> la prueba que importa</div>
+      <div class="real"><div class="real-item"><span class="oc-w o-term st-work " style="width: 54px; animation-delay: -0.3s"><span class="oc-b" style="display:block; animation-delay: -0.3s"><svg class="oc" viewBox="0 0 120 122" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="17" font-weight="500"><g class="frame frame-1"><text x="6" y="28" xml:space="preserve"><tspan fill="#8AD000">  ╭───────╮</tspan></text><text x="6" y="48" xml:space="preserve"><tspan fill="#8AD000">  │ </tspan><tspan fill="#C4F06A">●   ●</tspan><tspan fill="#8AD000"> │</tspan></text><text x="6" y="68" xml:space="preserve"><tspan fill="#8AD000">  │ </tspan><tspan fill="#C4F06A">── ──</tspan><tspan fill="#8AD000"> │</tspan></text><text x="6" y="88" xml:space="preserve"><tspan fill="#8AD000">  ╰┬─┬─┬─┬╯</tspan></text><text x="6" y="108" xml:space="preserve"><tspan fill="#8AD000">   ╰╯ │ ╰╯</tspan></text></g><g class="frame frame-2"><text x="6" y="28" xml:space="preserve"><tspan fill="#8AD000">  ╭───────╮</tspan></text><text x="6" y="48" xml:space="preserve"><tspan fill="#8AD000">  │ </tspan><tspan fill="#C4F06A">─   ─</tspan><tspan fill="#8AD000"> │</tspan></text><text x="6" y="68" xml:space="preserve"><tspan fill="#8AD000">  │ </tspan><tspan fill="#C4F06A">── ──</tspan><tspan fill="#8AD000"> │</tspan></text><text x="6" y="88" xml:space="preserve"><tspan fill="#8AD000">  ╰┬─┬─┬─┬╯</tspan></text><text x="6" y="108" xml:space="preserve"><tspan fill="#8AD000">   ╰╮ │ ╭╯</tspan></text></g></svg></span></span><div class="txt"><b>54px</b><em>tamaño en la colonia</em></div></div><div class="real-item"><span class="oc-w o-term st-work " style="width: 34px; animation-delay: -1.4s"><span class="oc-b" style="display:block; animation-delay: -1.4s"><svg class="oc" viewBox="0 0 120 122" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="17" font-weight="500"><g class="frame frame-1"><text x="6" y="28" xml:space="preserve"><tspan fill="#8AD000">  ╭───────╮</tspan></text><text x="6" y="48" xml:space="preserve"><tspan fill="#8AD000">  │ </tspan><tspan fill="#C4F06A">●   ●</tspan><tspan fill="#8AD000"> │</tspan></text><text x="6" y="68" xml:space="preserve"><tspan fill="#8AD000">  │ </tspan><tspan fill="#C4F06A">── ──</tspan><tspan fill="#8AD000"> │</tspan></text><text x="6" y="88" xml:space="preserve"><tspan fill="#8AD000">  ╰┬─┬─┬─┬╯</tspan></text><text x="6" y="108" xml:space="preserve"><tspan fill="#8AD000">   ╰╯ │ ╰╯</tspan></text></g><g class="frame frame-2"><text x="6" y="28" xml:space="preserve"><tspan fill="#8AD000">  ╭───────╮</tspan></text><text x="6" y="48" xml:space="preserve"><tspan fill="#8AD000">  │ </tspan><tspan fill="#C4F06A">─   ─</tspan><tspan fill="#8AD000"> │</tspan></text><text x="6" y="68" xml:space="preserve"><tspan fill="#8AD000">  │ </tspan><tspan fill="#C4F06A">── ──</tspan><tspan fill="#8AD000"> │</tspan></text><text x="6" y="88" xml:space="preserve"><tspan fill="#8AD000">  ╰┬─┬─┬─┬╯</tspan></text><text x="6" y="108" xml:space="preserve"><tspan fill="#8AD000">   ╰╮ │ ╭╯</tspan></text></g></svg></span></span><div class="txt"><b>34px</b><em>colonia comprimida y arrecife</em></div></div><div class="real-item"><span class="oc-w o-term st-work " style="width: 54px; animation-delay: -2.1s"><span class="oc-b" style="display:block; animation-delay: -2.1s"><svg class="oc" viewBox="0 0 120 122" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="17" font-weight="500"><g class="frame frame-1"><text x="6" y="28" xml:space="preserve"><tspan fill="#8AD000">  ╭───────╮</tspan></text><text x="6" y="48" xml:space="preserve"><tspan fill="#8AD000">  │ </tspan><tspan fill="#C4F06A">●   ●</tspan><tspan fill="#8AD000"> │</tspan></text><text x="6" y="68" xml:space="preserve"><tspan fill="#8AD000">  │ </tspan><tspan fill="#C4F06A">── ──</tspan><tspan fill="#8AD000"> │</tspan></text><text x="6" y="88" xml:space="preserve"><tspan fill="#8AD000">  ╰┬─┬─┬─┬╯</tspan></text><text x="6" y="108" xml:space="preserve"><tspan fill="#8AD000">   ╰╯ │ ╰╯</tspan></text></g><g class="frame frame-2"><text x="6" y="28" xml:space="preserve"><tspan fill="#8AD000">  ╭───────╮</tspan></text><text x="6" y="48" xml:space="preserve"><tspan fill="#8AD000">  │ </tspan><tspan fill="#C4F06A">─   ─</tspan><tspan fill="#8AD000"> │</tspan></text><text x="6" y="68" xml:space="preserve"><tspan fill="#8AD000">  │ </tspan><tspan fill="#C4F06A">── ──</tspan><tspan fill="#8AD000"> │</tspan></text><text x="6" y="88" xml:space="preserve"><tspan fill="#8AD000">  ╰┬─┬─┬─┬╯</tspan></text><text x="6" y="108" xml:space="preserve"><tspan fill="#8AD000">   ╰╮ │ ╭╯</tspan></text></g></svg></span></span><div class="bub2">Edit src/lib/session.ts</div></div></div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":1200,"height":800}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

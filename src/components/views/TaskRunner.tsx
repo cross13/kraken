@@ -14,28 +14,34 @@ import {
 } from 'lucide-react';
 import { parseTasks, isTaskRunnable, summarize, type ParsedTask } from '../../lib/tasks';
 import { draftSpecDoc, firstStageFile } from '../../lib/specActions';
-import { routeAgent, routeSkill, bestSkillByText, skillSystemBlocks } from '../../lib/agentRouter';
+import {
+  routeAgent,
+  routeSkill,
+  routeFormatSkill,
+  bestSkillByText,
+  skillSystemBlocks,
+} from '../../lib/agentRouter';
 import { resolveAgent, resolveSkill } from '../../lib/verifyLibrary';
 import { useChat } from '../../stores/chat';
 import { useWorkspace } from '../../stores/workspace';
 import { useModels } from '../../stores/models';
 import { useOrchestrator, isOrchestrated } from '../../stores/orchestrator';
 import { cn } from '../../lib/cn';
-import { KrakenLogo } from '../KrakenLogo';
+import { OctoMark } from '../OctoMark';
 import { TaskInspector } from './TaskInspector';
-import type { SpecMeta } from '../../../electron/shared/types';
+import type { SkillMeta, SpecMeta } from '../../../electron/shared/types';
 
 interface Props {
   meta: SpecMeta;
   tasksMd: string;
-  designMd: string;
+  planMd: string;
   requirementsMd: string;
   onReload: () => void;
   /** called when the last task completes and the spec advances to Ship */
   onShip?: () => void;
 }
 
-export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload, onShip }: Props) {
+export function TaskRunner({ meta, tasksMd, planMd, requirementsMd, onReload, onShip }: Props) {
   const doc = useMemo(() => parseTasks(tasksMd), [tasksMd]);
   const stats = useMemo(() => summarize(doc), [doc]);
   const [refiningTaskId, setRefiningTaskId] = useState<string | null>(null);
@@ -53,6 +59,9 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload, 
   // The SDD skill governing this spec (sdd-feature / sdd-bugfix); a per-task
   // domain skill (e.g. a frontend skill) is matched at launch time.
   const specSkillMeta = routeSkill(meta.kind, skills);
+  // A task run edits two documents whose shape the app parses: it ticks its own
+  // line in tasks.md, and records deviations under plan.md's Critical Decisions.
+  const tasksFormatSkill = routeFormatSkill('tasks', skills);
 
   // Orchestration: multiple specialized agents can run in parallel within a wave.
   const runs = useOrchestrator((s) => s.runs);
@@ -88,7 +97,7 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload, 
       meta,
       files: {
         [firstStageFile(meta.kind)]: requirementsMd,
-        design: designMd,
+        plan: planMd,
         tasks: tasksMd,
       },
       file: 'tasks',
@@ -98,7 +107,7 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload, 
 
   // Load the configured concurrency once.
   useEffect(() => {
-    window.kraken.settings.getMaxConcurrency().then(setMaxConcurrency);
+    window.octo.settings.getMaxConcurrency().then(setMaxConcurrency);
   }, [setMaxConcurrency]);
 
   // Scheduler state lives in refs so event callbacks see fresh values.
@@ -176,7 +185,7 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload, 
       dependsOn: opts.dependsOn,
     });
 
-    const off = window.kraken.claude.onEvent((ev) => {
+    const off = window.octo.claude.onEvent((ev) => {
       if (ev.requestId !== requestId) return;
       if (ev.type === 'delta' && ev.text) appendDelta(assistantId, ev.text, ev.channel);
       if (ev.type === 'done') {
@@ -185,7 +194,7 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload, 
         finishRun(requestId, 'done');
         onReload();
         if (opts.fireComplete && opts.task && root) {
-          void window.kraken.hooks.fire('task-complete', {
+          void window.octo.hooks.fire('task-complete', {
             root,
             specId: meta.id,
             taskId: opts.task.id,
@@ -207,7 +216,7 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload, 
       .filter(Boolean)
       .join('\n\n---\n\n');
 
-    window.kraken.claude.stream({
+    window.octo.claude.stream({
       requestId,
       system: composedSystem,
       messages: [{ role: 'user', content: opts.userText }],
@@ -227,6 +236,12 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload, 
     });
   };
 
+  /** Every skill a run injects, comma-joined — Activity would otherwise name one. */
+  const skillNames = (list: (SkillMeta | null | undefined)[]) => {
+    const names = [...new Set(list.filter(Boolean).map((s) => s!.name))];
+    return names.length ? names.join(', ') : null;
+  };
+
   const runTaskInternal = (task: ParsedTask, onSettled?: (ok: boolean) => void) => {
     const routed = routeAgent(
       { kind: 'task-execute', taskAgent: task.agent, taskText: task.description },
@@ -234,26 +249,26 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload, 
       selectedAgent
     );
     const domainSkill = bestSkillByText(task.description, skills);
-    const chosenSkill = domainSkill ?? specSkillMeta;
+    const injected = [specSkillMeta, tasksFormatSkill, domainSkill];
     launchRun({
       task,
       source: `task:${task.id}`,
       kind: 'task',
       title: `${task.id}: ${task.description}`,
-      skill: chosenSkill?.name ?? null,
-      skillBlock: skillSystemBlocks([specSkillMeta, domainSkill]),
+      skill: skillNames(injected),
+      skillBlock: skillSystemBlocks(injected),
       wave: task.waveLabel,
       agentName: routed.name,
       agentLabel: 'spec-task-executor',
       agentBody: routed.body,
-      systemText: buildExecutorSystem(meta, specRel, task, requirementsMd, designMd, tasksMd),
+      systemText: buildExecutorSystem(meta, specRel, task, requirementsMd, planMd, tasksMd),
       userText: `Execute task **${task.id}**: ${task.description}`,
       model: useModels.getState().modelFor('task'),
       fireComplete: true,
       onSettled,
       routeReason: routed.reason,
       agentScope: resolveAgent(routed.name, agents).scope ?? null,
-      skillScope: resolveSkill(chosenSkill?.name, skills).scope ?? null,
+      skillScope: resolveSkill((domainSkill ?? specSkillMeta)?.name, skills).scope ?? null,
       dependsOn: task.dependencies,
     });
   };
@@ -283,7 +298,7 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload, 
           waveCtxRef.current = null;
           // Only fire wave-complete when every task in the wave succeeded.
           if (ctx && root && !waveFailedRef.current) {
-            void window.kraken.hooks.fire('wave-complete', {
+            void window.octo.hooks.fire('wave-complete', {
               root,
               specId: meta.id,
               specKind: meta.kind,
@@ -314,24 +329,24 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload, 
       selectedAgent
     );
     const domainSkill = bestSkillByText(task.description, skills);
-    const chosenSkill = domainSkill ?? specSkillMeta;
+    const injected = [specSkillMeta, tasksFormatSkill, domainSkill];
     launchRun({
       task,
       source: `refine:${task.id}`,
       kind: 'refine',
       title: `Refine ${task.id}: ${task.description}`,
-      skill: chosenSkill?.name ?? null,
-      skillBlock: skillSystemBlocks([specSkillMeta, domainSkill]),
+      skill: skillNames(injected),
+      skillBlock: skillSystemBlocks(injected),
       wave: task.waveLabel,
       agentName: routed.name,
       agentLabel: 'spec-task-executor',
       agentBody: routed.body,
-      systemText: buildRefineSystem(meta, specRel, task, feedback, requirementsMd, designMd, tasksMd),
+      systemText: buildRefineSystem(meta, specRel, task, feedback, requirementsMd, planMd, tasksMd),
       userText: `Refine task **${task.id}**: ${task.description}\n\n**Feedback:** ${feedback}`,
       model: useModels.getState().modelFor('refine'),
       routeReason: routed.reason,
       agentScope: resolveAgent(routed.name, agents).scope ?? null,
-      skillScope: resolveSkill(chosenSkill?.name, skills).scope ?? null,
+      skillScope: resolveSkill((domainSkill ?? specSkillMeta)?.name, skills).scope ?? null,
       dependsOn: task.dependencies,
     });
   };
@@ -375,7 +390,7 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload, 
     Object.values(all)
       .filter((r) => (isOrchestrated(r) || r.kind === 'hook') && r.specId === meta.id)
       .forEach((r) => {
-        void window.kraken.claude.cancel(r.requestId);
+        void window.octo.claude.cancel(r.requestId);
         useOrchestrator.getState().finishRun(r.requestId, 'cancelled');
       });
   };
@@ -393,7 +408,7 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload, 
 
   const readFreshTasks = async () => {
     try {
-      const md = await window.kraken.fs.read(`${meta.path}/tasks.md`);
+      const md = await window.octo.fs.read(`${meta.path}/tasks.md`);
       return parseTasks(md);
     } catch {
       return parseTasks(tasksMd);
@@ -414,7 +429,7 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload, 
         (h) => h.enabled && h.trigger === 'wave-complete' && h.blocking
       );
       const fire = () =>
-        void window.kraken.hooks.fire('wave-complete', {
+        void window.octo.hooks.fire('wave-complete', {
           root,
           specId: meta.id,
           specKind: meta.kind,
@@ -443,7 +458,7 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload, 
         resolve();
       };
 
-      const off = window.kraken.hooks.onEvent((ev) => {
+      const off = window.octo.hooks.onEvent((ev) => {
         if (ev.trigger !== 'wave-complete') return;
         if (ev.type === 'started') {
           inflight++;
@@ -468,7 +483,7 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload, 
 
   /** Release a stuck blocking hook: cancel its run(s) and let autopilot proceed. */
   const unblockHook = () => {
-    blockingHookReqsRef.current.forEach((id) => void window.kraken.claude.cancel(id));
+    blockingHookReqsRef.current.forEach((id) => void window.octo.claude.cancel(id));
     unblockHookRef.current = true; // force-resolve even if the terminal event is lost
   };
 
@@ -497,8 +512,8 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload, 
       }
       // All waves done → advance the spec to 'done' (fires spec-done → docs hook).
       const after = await readFreshTasks();
-      if (after.tasks.length > 0 && after.tasks.every((t) => t.done) && meta.phase === 'tasks') {
-        await window.kraken.specs.advance(root, meta.id);
+      if (after.tasks.length > 0 && after.tasks.every((t) => t.done) && meta.phase === 'build') {
+        await window.octo.specs.advance(root, meta.id);
         onReload();
       }
     } finally {
@@ -519,10 +534,10 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload, 
   useEffect(() => {
     if (advancedRef.current || !root) return;
     if (!stats.allDone || stats.total === 0 || anyRunning || autopilotOn) return;
-    if (meta.phase !== 'tasks') return;
+    if (meta.phase !== 'build') return;
     advancedRef.current = true;
     void (async () => {
-      await window.kraken.specs.advance(root, meta.id);
+      await window.octo.specs.advance(root, meta.id);
       onReload();
       onShip?.();
     })();
@@ -538,9 +553,9 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload, 
   if (doc.tasks.length === 0) {
     const phaseHint =
       meta.phase === 'requirements'
-        ? `This spec is in the **${meta.phase}** phase. Advance twice (→ design → tasks) to generate tasks.md, then come back here.`
-        : meta.phase === 'design'
-          ? `This spec is in the **${meta.phase}** phase. Advance once (→ tasks) to generate tasks.md, then come back here.`
+        ? `This spec is in the **${meta.phase}** phase. Advance twice (→ plan → build) to generate tasks.md, then come back here.`
+        : meta.phase === 'plan'
+          ? `This spec is in the **${meta.phase}** phase. Advance once (→ build) to generate tasks.md, then come back here.`
           : `tasks.md exists but no tasks are parsed yet. Click **Ask Claude** above to have it draft real, executable tasks.`;
     return (
       <div className="h-full grid place-items-center bg-ink-950 px-6">
@@ -573,7 +588,7 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload, 
   const changeConcurrency = async (n: number) => {
     const clamped = Math.max(1, Math.min(8, n));
     setMaxConcurrency(clamped);
-    await window.kraken.settings.setMaxConcurrency(clamped);
+    await window.octo.settings.setMaxConcurrency(clamped);
   };
 
   return (
@@ -594,7 +609,7 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload, 
               </div>
               <div className="mt-1.5 w-[260px] h-[4px] rounded-full bg-elev overflow-hidden">
                 <div
-                  className={cn('h-full transition-all', stats.allDone ? 'bg-good' : 'bg-accent')}
+                  className={cn('h-full transition-all duration-bar', stats.allDone ? 'bg-good' : 'bg-accent')}
                   style={{ width: `${stats.pctDone}%` }}
                 />
               </div>
@@ -631,7 +646,7 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload, 
               <button
                 onClick={unblockHook}
                 title="A blocking hook is running. Unblock cancels it and lets the run continue."
-                className="text-[11px] flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 hover:bg-amber-500/30"
+                className="text-[11px] flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-warn/20 text-warn hover:bg-warn/30"
               >
                 <Unlock size={11} /> Unblock
               </button>
@@ -691,7 +706,7 @@ export function TaskRunner({ meta, tasksMd, designMd, requirementsMd, onReload, 
         </div>
 
         {waitingOnHook && (
-          <div className="flex items-center gap-2 text-[11px] text-amber-300 bg-amber-500/10 rounded-lg px-2.5 py-1.5">
+          <div className="flex items-center gap-2 text-[11px] text-warn bg-warn/10 rounded-lg px-2.5 py-1.5">
             <Loader2 size={12} className="animate-spin shrink-0" />
             <span className="flex-1">
               Waiting on a blocking hook to finish before the next wave. If it's stuck, click{' '}
@@ -830,7 +845,7 @@ function TaskCard({
       <div className="flex items-center gap-2 mb-1 text-[12px]">
         {state === 'running' ? (
           <span className="flex items-center gap-1.5 text-accent">
-            <KrakenLogo animated className="w-3.5 h-[17px]" /> Task in progress
+            <OctoMark animated className="w-4" /> Task in progress
           </span>
         ) : state === 'ready' && !refining ? (
           <button
@@ -964,7 +979,7 @@ function buildExecutorSystem(
   specRel: string,
   task: ParsedTask,
   requirementsMd: string,
-  designMd: string,
+  planMd: string,
   tasksMd: string
 ): string {
   const reqLabel = meta.kind === 'feature' ? 'requirements.md' : 'bugfix.md';
@@ -975,10 +990,10 @@ function buildExecutorSystem(
 **Wave**: ${task.waveLabel}${
     task.dependencies.length ? ` (depends on ${task.dependencies.join(', ')})` : ''
   }
-**Spec files**: \`${specRel}/${reqLabel}\`, \`${specRel}/design.md\`, \`${specRel}/tasks.md\`
+**Spec files**: \`${specRel}/${reqLabel}\`, \`${specRel}/plan.md\`, \`${specRel}/tasks.md\`
 
 ## Before editing
-1. Re-read \`${specRel}/${reqLabel}\` and \`${specRel}/design.md\` to ground yourself.
+1. Re-read \`${specRel}/${reqLabel}\` and \`${specRel}/plan.md\` to ground yourself.
 2. Locate the target source files in the workspace.
 
 ## To execute
@@ -988,6 +1003,18 @@ function buildExecutorSystem(
   - Change \`- [ ] ${task.id}\` to \`- [x] ${task.id}\`.
 - In your chat reply, briefly list the files you changed and the outcome.
 
+## Keep the plan alive
+If the implementation **deviated from \`${specRel}/plan.md\`**, or you had to make a non-obvious
+call the plan doesn't cover (a different data shape, an extra file, a rejected approach, a
+dependency), record it in the plan so it never drifts from the code:
+
+- Append to \`${specRel}/plan.md\` under \`## Critical Decisions\` — create that section at the
+  **end** of the file if it isn't there.
+- Format: \`### Critical Decision — ${task.id}: <short title>\`, then one line each for **what**
+  you decided, **why**, and **what it affects** (files or later tasks).
+- Never rewrite the plan's \`## Tasks\` section, and never edit the plan for a decision the plan
+  already made. A task that matched the plan appends nothing.
+
 ## Hard rules
 - Do not start any other task — only ${task.id}.
 - Do not invent behaviors that aren't in the spec.
@@ -996,8 +1023,8 @@ function buildExecutorSystem(
 ## Reference — current ${reqLabel}
 ${requirementsMd || '(empty)'}
 
-## Reference — current design.md
-${designMd || '(empty)'}
+## Reference — current plan.md
+${planMd || '(empty)'}
 
 ## Reference — current tasks.md
 ${tasksMd}`;
@@ -1009,7 +1036,7 @@ function buildRefineSystem(
   task: ParsedTask,
   feedback: string,
   requirementsMd: string,
-  designMd: string,
+  planMd: string,
   tasksMd: string
 ): string {
   const reqLabel = meta.kind === 'feature' ? 'requirements.md' : 'bugfix.md';
@@ -1018,7 +1045,7 @@ function buildRefineSystem(
 **Spec**: ${meta.name} (${meta.kind})
 **Task**: ${task.id} — ${task.description}
 **Wave**: ${task.waveLabel}
-**Spec files**: \`${specRel}/${reqLabel}\`, \`${specRel}/design.md\`, \`${specRel}/tasks.md\`
+**Spec files**: \`${specRel}/${reqLabel}\`, \`${specRel}/plan.md\`, \`${specRel}/tasks.md\`
 
 ## User feedback on the previous output
 > ${feedback.split('\n').join('\n> ')}
@@ -1028,7 +1055,8 @@ function buildRefineSystem(
 2. Make **targeted** adjustments that address the feedback — do not redo unrelated work, do not touch other tasks.
 3. If the change requires touching tests or docs, do that too. Bias to the smallest correct delta.
 4. Keep \`${specRel}/tasks.md\` in sync: the checkbox for ${task.id} should remain \`[x]\` if the task is still complete after your refinement.
-5. In your chat reply, briefly state what you changed and why, and whether the feedback is now fully addressed.
+5. If the refinement moved the implementation away from \`${specRel}/plan.md\`, append the decision to that file under \`## Critical Decisions\` (create the section at the end if missing) as \`### Critical Decision — ${task.id}: <short title>\` with what / why / what it affects. Never touch the plan's \`## Tasks\` section.
+6. In your chat reply, briefly state what you changed and why, and whether the feedback is now fully addressed.
 
 ## Hard rules
 - Only refine ${task.id}. Do not start or modify other tasks.
@@ -1038,8 +1066,8 @@ function buildRefineSystem(
 ## Reference — current ${reqLabel}
 ${requirementsMd || '(empty)'}
 
-## Reference — current design.md
-${designMd || '(empty)'}
+## Reference — current plan.md
+${planMd || '(empty)'}
 
 ## Reference — current tasks.md
 ${tasksMd}`;

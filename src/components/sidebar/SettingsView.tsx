@@ -17,16 +17,24 @@ import {
   FolderGit2,
   FolderOpen,
   GitBranch,
+  AlertTriangle,
+  Database,
+  FileText,
+  Loader2,
 } from 'lucide-react';
 import { Settings as SettingsIcon } from 'lucide-react';
 import { SidebarHeader } from '../SidebarShell';
 import { cn } from '../../lib/cn';
 import { useWorkspace } from '../../stores/workspace';
 import { useModels } from '../../stores/models';
+import { useOrchestrator } from '../../stores/orchestrator';
+import { useUi } from '../../stores/ui';
 import type {
   McpServerMeta,
   GitHubTokenStatus,
   ModelInfo,
+  DataResetReport,
+  DataUsage,
 } from '../../../electron/shared/types';
 
 type Backend = 'cli' | 'api';
@@ -72,12 +80,12 @@ export function SettingsView({ variant = 'panel' }: { variant?: 'panel' | 'page'
   const [branch, setBranch] = useState<string | null>(null);
 
   useEffect(() => {
-    window.kraken.settings.hasApiKey().then(setHasKey);
-    window.kraken.settings.getModel().then(setModel);
-    window.kraken.settings.getBackend().then(setBackend);
-    window.kraken.settings.getPermissions().then(setPerms);
-    window.kraken.mcp.list().then(setMcp).catch(() => setMcp([]));
-    window.kraken.github.tokenStatus().then(setGithub).catch(() => setGithub(null));
+    window.octo.settings.hasApiKey().then(setHasKey);
+    window.octo.settings.getModel().then(setModel);
+    window.octo.settings.getBackend().then(setBackend);
+    window.octo.settings.getPermissions().then(setPerms);
+    window.octo.mcp.list().then(setMcp).catch(() => setMcp([]));
+    window.octo.github.tokenStatus().then(setGithub).catch(() => setGithub(null));
     redetectCli();
   }, []);
 
@@ -88,9 +96,9 @@ export function SettingsView({ variant = 'panel' }: { variant?: 'panel' | 'page'
   }, [root, hasKey, refreshModels]);
 
   useEffect(() => {
-    window.kraken.workspace.getRecents().then(setRecents).catch(() => setRecents([]));
+    window.octo.workspace.getRecents().then(setRecents).catch(() => setRecents([]));
     if (root) {
-      window.kraken.git
+      window.octo.git
         .status(root)
         .then((s) => setBranch(s.isRepo ? s.branch : null))
         .catch(() => setBranch(null));
@@ -101,38 +109,38 @@ export function SettingsView({ variant = 'panel' }: { variant?: 'panel' | 'page'
 
   const saveGhToken = async () => {
     if (!ghTokenInput.trim()) return;
-    await window.kraken.github.setToken(ghTokenInput.trim());
+    await window.octo.github.setToken(ghTokenInput.trim());
     setGhTokenInput('');
     setGhEditing(false);
-    setGithub(await window.kraken.github.tokenStatus());
+    setGithub(await window.octo.github.tokenStatus());
   };
 
   const clearGhToken = async () => {
-    await window.kraken.github.clearToken();
-    setGithub(await window.kraken.github.tokenStatus());
+    await window.octo.github.clearToken();
+    setGithub(await window.octo.github.tokenStatus());
   };
 
   const savePerms = async (next: Partial<Permissions>) => {
     if (!perms) return;
     const merged = { ...perms, ...next };
     setPerms(merged);
-    await window.kraken.settings.setPermissions(next);
+    await window.octo.settings.setPermissions(next);
   };
 
   const redetectCli = async () => {
     setCli(null);
-    const status = await window.kraken.cli.detect();
+    const status = await window.octo.cli.detect();
     setCli(status);
   };
 
   const changeBackend = async (b: Backend) => {
     setBackend(b);
-    await window.kraken.settings.setBackend(b);
+    await window.octo.settings.setBackend(b);
   };
 
   const saveKey = async () => {
     if (!keyInput.trim()) return;
-    await window.kraken.settings.setApiKey(keyInput.trim());
+    await window.octo.settings.setApiKey(keyInput.trim());
     setKeyInput('');
     setEditing(false);
     setHasKey(true);
@@ -141,13 +149,13 @@ export function SettingsView({ variant = 'panel' }: { variant?: 'panel' | 'page'
   };
 
   const clearKey = async () => {
-    await window.kraken.settings.clearApiKey();
+    await window.octo.settings.clearApiKey();
     setHasKey(false);
   };
 
   const changeModel = async (m: string) => {
     setModel(m);
-    await window.kraken.settings.setModel(m);
+    await window.octo.settings.setModel(m);
   };
 
   // As a page, the sections flow into an auto-fitting multi-column grid — a
@@ -300,7 +308,7 @@ export function SettingsView({ variant = 'panel' }: { variant?: 'panel' | 'page'
             <Cpu size={12} /> Planning model
           </h3>
           <p className="text-[10px] text-ink-500 leading-snug mb-2">
-            Optional second model for the thinking-heavy planning steps (requirements, design,
+            Optional second model for the thinking-heavy planning steps (requirements, plan,
             tasks, audit). Execution always uses the model above.
           </p>
           <div className="rounded-md border border-ink-800 bg-ink-900/60 p-1">
@@ -555,9 +563,11 @@ export function SettingsView({ variant = 'panel' }: { variant?: 'panel' | 'page'
           </div>
         </section>
 
+        {root && <DangerZone root={root} />}
+
         <section className="text-[10px] text-ink-500 leading-relaxed border-t border-ink-800 pt-3">
           <p className="mb-1">
-            Specs live in <code className="text-ink-300">.kraken/specs/</code>.
+            Specs live in <code className="text-ink-300">.octo/specs/</code>.
           </p>
           <p>
             Agents and skills are read from <code className="text-ink-300">.claude/agents/</code> and{' '}
@@ -598,12 +608,12 @@ export function SettingsView({ variant = 'panel' }: { variant?: 'panel' | 'page'
   );
 }
 
-/** Chip that says *how* Kraken knows about a model — never implies more. */
+/** Chip that says *how* Octo knows about a model — never implies more. */
 function SourceChip({ source }: { source: ModelInfo['source'] }) {
   const meta = {
     api: { label: 'your account', cls: 'bg-good/15 text-ok', title: 'Returned by the Anthropic Models API for your stored key.' },
     'cli-config': { label: 'local config', cls: 'bg-accent/15 text-accent', title: 'Named in your local Claude Code settings.' },
-    catalog: { label: 'not verified', cls: 'bg-ink-700/70 text-ink-300', title: 'Known model id from Kraken’s bundled catalog. Availability not checked.' },
+    catalog: { label: 'not verified', cls: 'bg-ink-700/70 text-ink-300', title: 'Known model id from Octo’s bundled catalog. Availability not checked.' },
   }[source];
   return (
     <span
@@ -669,7 +679,7 @@ function ModelSourceNote({
     return (
       <p className="text-[10px] text-ink-500 leading-snug mb-2">
         Verified against the Anthropic Models API with your stored key. Entries marked{' '}
-        <b className="text-ink-300">not verified</b> are known ids Kraken hasn't confirmed you can
+        <b className="text-ink-300">not verified</b> are known ids Octo hasn't confirmed you can
         reach.
       </p>
     );
@@ -678,7 +688,7 @@ function ModelSourceNote({
   return (
     <p className="text-[10px] text-ink-500 leading-snug mb-2">
       {backend === 'cli'
-        ? 'Read from your local Claude Code config plus Kraken’s catalog. Add an API key to verify the full list against your account — the CLI has no way to list models without starting a billable run.'
+        ? 'Read from your local Claude Code config plus Octo’s catalog. Add an API key to verify the full list against your account — the CLI has no way to list models without starting a billable run.'
         : 'Add an API key to list the models your account can actually reach.'}
     </p>
   );
@@ -720,6 +730,191 @@ function BackendCard({
       </div>
       <div className="text-[10px] text-ink-400 leading-snug">{description}</div>
     </button>
+  );
+}
+
+/**
+ * Danger zone — start clean.
+ *
+ * Wipes only what the SDD loop produces: the spec folders on disk (`.octo/specs`
+ * plus anything left in a pre-rename `.kraken/specs`) and the mirrored rows in
+ * the history DB. Settings, secrets, agents, skills, hooks and steering survive,
+ * because losing those is losing your setup, not your clutter.
+ *
+ * Two locks before anything is deleted: no run may be in flight (the main
+ * process refuses too), and the user has to type RESET.
+ */
+function DangerZone({ root }: { root: string }) {
+  const [usage, setUsage] = useState<DataUsage | null>(null);
+  const [wipeSpecs, setWipeSpecs] = useState(true);
+  const [wipeHistory, setWipeHistory] = useState(true);
+  const [allWorkspaces, setAllWorkspaces] = useState(false);
+  const [confirm, setConfirm] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [report, setReport] = useState<DataResetReport | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const refreshAll = useWorkspace((s) => s.refreshAll);
+  const clearLog = useOrchestrator((s) => s.clearLog);
+  const closeSpec = useUi((s) => s.closeSpec);
+  const running = useOrchestrator((s) =>
+    Object.values(s.runs).filter((r) => r.status === 'running' || r.status === 'queued').length
+  );
+
+  const loadUsage = () => {
+    window.octo.data
+      .usage(root)
+      .then(setUsage)
+      .catch(() => setUsage(null));
+  };
+  useEffect(loadUsage, [root]);
+
+  const scoped = allWorkspaces ? usage?.all : usage?.workspace;
+  const nothingSelected = !wipeSpecs && !wipeHistory;
+  const armed = confirm.trim().toUpperCase() === 'RESET' && !nothingSelected && !running && !busy;
+
+  const run = async () => {
+    if (!armed) return;
+    setBusy(true);
+    setError(null);
+    setReport(null);
+    try {
+      const r = await window.octo.data.reset(root, {
+        specs: wipeSpecs,
+        history: wipeHistory,
+        historyScope: allWorkspaces ? 'all' : 'workspace',
+      });
+      setReport(r);
+      setConfirm('');
+      closeSpec();
+      clearLog();
+      await refreshAll();
+      loadUsage();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section>
+      <h3 className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-bad font-semibold mb-2">
+        <AlertTriangle size={12} /> Danger zone
+      </h3>
+      <div className="rounded-md border border-bad/30 bg-bad/[0.05] p-3 space-y-3">
+        <p className="text-[10.5px] text-ink-300 leading-snug">
+          Start clean on the current methodology: delete the specs on disk and the run history.
+          Your settings, API key, GitHub token, agents, skills, hooks and steering are{' '}
+          <span className="text-ink-100">not</span> touched.
+        </p>
+
+        <div className="space-y-2.5">
+          <ToggleRow
+            icon={<FileText size={13} />}
+            title="Spec files"
+            description={
+              usage
+                ? `${usage.specsOnDisk} spec folder(s) under .octo/specs${
+                    usage.legacySpecsOnDisk
+                      ? ` + ${usage.legacySpecsOnDisk} left in .kraken/specs`
+                      : ''
+                  } — deleted from disk, permanently.`
+                : 'Every spec folder under .octo/specs — deleted from disk, permanently.'
+            }
+            enabled={wipeSpecs}
+            onToggle={setWipeSpecs}
+            tone="warn"
+          />
+          <ToggleRow
+            icon={<Database size={13} />}
+            title="History database"
+            description={
+              scoped
+                ? `${scoped.runs} run(s), ${scoped.specEvents} phase event(s), ${scoped.hookRuns} hook run(s), ${scoped.runFiles} file touch(es), ${scoped.errors} error(s).`
+                : 'Runs, phase events, hook runs, file touches and errors.'
+            }
+            enabled={wipeHistory}
+            onToggle={setWipeHistory}
+            tone="warn"
+          />
+          {wipeHistory && (
+            <div className="flex items-center gap-2 pl-[21px]">
+              <button
+                onClick={() => setAllWorkspaces(false)}
+                className={cn(
+                  'text-[10px] px-2 py-1 rounded-md border transition',
+                  !allWorkspaces
+                    ? 'border-warn/50 bg-warn/10 text-warn'
+                    : 'border-ink-800 text-ink-400 hover:text-ink-200'
+                )}
+              >
+                This project
+              </button>
+              <button
+                onClick={() => setAllWorkspaces(true)}
+                className={cn(
+                  'text-[10px] px-2 py-1 rounded-md border transition',
+                  allWorkspaces
+                    ? 'border-bad/50 bg-bad/10 text-bad'
+                    : 'border-ink-800 text-ink-400 hover:text-ink-200'
+                )}
+              >
+                Every project ({usage?.all.runs ?? '—'} runs)
+              </button>
+            </div>
+          )}
+        </div>
+
+        {running > 0 ? (
+          <p className="text-[10px] text-warn leading-snug flex items-start gap-1.5">
+            <AlertCircle size={11} className="mt-px shrink-0" />
+            {running} run(s) still active — stop them in Activity › Runs first.
+          </p>
+        ) : (
+          <div className="flex items-center gap-2">
+            <input
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              placeholder="Type RESET to confirm"
+              disabled={nothingSelected}
+              className="flex-1 text-xs px-2 py-1.5 rounded-md bg-ink-950 border border-ink-800 focus:border-bad outline-none font-mono disabled:opacity-40"
+            />
+            <button
+              onClick={run}
+              disabled={!armed}
+              className="text-xs px-3 py-1.5 rounded-md bg-bad/90 text-white font-semibold hover:bg-bad disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1.5"
+            >
+              {busy ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+              Delete permanently
+            </button>
+          </div>
+        )}
+
+        {error && (
+          <p className="text-[10px] text-bad leading-snug flex items-start gap-1.5">
+            <AlertCircle size={11} className="mt-px shrink-0" /> {error}
+          </p>
+        )}
+        {report && (
+          <p className="text-[10px] text-ok leading-snug flex items-start gap-1.5">
+            <Check size={11} className="mt-px shrink-0" />
+            Removed {report.specsDeleted + report.legacySpecsDeleted} spec folder(s)
+            {report.history
+              ? ` and ${
+                  report.history.runs +
+                  report.history.specEvents +
+                  report.history.hookRuns +
+                  report.history.runFiles +
+                  report.history.errors +
+                  report.history.specs
+                } history row(s)`
+              : ''}
+            . Clean slate.
+          </p>
+        )}
+      </div>
+    </section>
   );
 }
 

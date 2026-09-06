@@ -6,6 +6,7 @@ import { AssistantDrawer } from './components/AssistantDrawer';
 import { ExplorerDrawer } from './components/ExplorerDrawer';
 import { ResizeHandle } from './components/ResizeHandle';
 import { HomeView } from './components/views/HomeView';
+import { QuickStart } from './components/views/QuickStart';
 import { SpecFlow } from './components/views/SpecFlow';
 import { ActivitySurface } from './components/views/ActivitySurface';
 import { LibrarySurface } from './components/views/LibrarySurface';
@@ -23,6 +24,8 @@ export default function App() {
   const toggleAssistant = useUi((s) => s.toggleAssistant);
   const closeOverlay = useUi((s) => s.closeOverlay);
   const toggleExplorer = useUi((s) => s.toggleExplorer);
+  const quickStartOpen = useUi((s) => s.quickStartOpen);
+  const setQuickStart = useUi((s) => s.setQuickStart);
 
   // Restore the last workspace, then fade out the boot splash (index.html).
   // A short floor keeps the brand animation from flashing on fast boots.
@@ -35,6 +38,16 @@ export default function App() {
       setTimeout(() => {
         splash.classList.add('done');
         setTimeout(() => splash.remove(), 400);
+        // First launch only. Shown once and remembered, because an onboarding
+        // screen that reappears is one people learn to dismiss without reading.
+        try {
+          if (!localStorage.getItem('octo.quickStartSeen')) {
+            localStorage.setItem('octo.quickStartSeen', '1');
+            useUi.getState().setQuickStart(true);
+          }
+        } catch {
+          // storage disabled — skip the tour rather than fail the boot
+        }
       }, wait);
     });
   }, [restoreLast]);
@@ -50,6 +63,7 @@ export default function App() {
         e.preventDefault();
         toggleExplorer();
       }
+      // Quick Start and Zen own Escape themselves, on the capture phase.
       if (e.key === 'Escape') closeOverlay();
     };
     window.addEventListener('keydown', onKey);
@@ -62,8 +76,13 @@ export default function App() {
   // window immediately shows what's already running.
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
-    const push = () =>
-      window.kraken.fleet.push(Object.values(useOrchestrator.getState().runs));
+    const push = () => {
+      const s = useOrchestrator.getState();
+      window.octo.fleet.push({
+        runs: Object.values(s.runs),
+        maxConcurrency: s.maxConcurrency,
+      });
+    };
     const schedule = () => {
       if (timer) return;
       timer = setTimeout(() => {
@@ -73,7 +92,7 @@ export default function App() {
     };
     push();
     const unsub = useOrchestrator.subscribe((s, prev) => {
-      if (s.runs !== prev.runs) schedule();
+      if (s.runs !== prev.runs || s.maxConcurrency !== prev.maxConcurrency) schedule();
     });
     return () => {
       if (timer) clearTimeout(timer);
@@ -86,7 +105,7 @@ export default function App() {
   // process, so this global listener is the only place they get registered on
   // the renderer side.
   useEffect(() => {
-    const off = window.kraken.hooks.onEvent((ev) => {
+    const off = window.octo.hooks.onEvent((ev) => {
       const store = useOrchestrator.getState();
       if (ev.type === 'started') {
         store.startRun({
@@ -112,6 +131,9 @@ export default function App() {
     // The frame (title bar, icon rail, canvas) is the darkest surface; the
     // working panels float on it with rounded corners + a hairline ring.
     <div className="h-full w-full flex flex-col bg-rail text-ink-100 font-sans">
+      {/* Full-window, above everything, like Zen. */}
+      {quickStartOpen && <QuickStart onClose={() => setQuickStart(false)} />}
+
       <CommandBar />
       <div className="flex-1 min-h-0 flex">
         <SurfaceNav />

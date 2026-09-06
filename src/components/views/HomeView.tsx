@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Sparkles,
+  GraduationCap,
   ArrowUpRight,
   Zap,
   Bug,
@@ -18,8 +19,10 @@ import { useChat } from '../../stores/chat';
 import { useOrchestrator } from '../../stores/orchestrator';
 import { planSpec, quickPlanSpec, specKindFromText } from '../../lib/specActions';
 import { SpecsStudio } from './SpecsStudio';
-import { KrakenLogo } from '../KrakenLogo';
+import { TicketInbox } from './TicketInbox';
+import { OctoMark } from '../OctoMark';
 import { cn } from '../../lib/cn';
+import { seedSummary } from '../../lib/library';
 import type { SpecMeta, SpecKind } from '../../../electron/shared/types';
 
 function ago(iso?: string) {
@@ -37,17 +40,17 @@ function ago(iso?: string) {
 
 const PHASE_INDEX: Record<SpecMeta['phase'], number> = {
   requirements: 0,
-  design: 1,
-  tasks: 2,
+  plan: 1,
+  build: 2,
   done: 3,
 };
 
-const FIRST_RUN_KEY = 'kraken.firstRunDismissed';
+const FIRST_RUN_KEY = 'octo.firstRunDismissed';
 
 /**
- * Home — the launchpad. The composer creates specs (Plan = gated flow,
- * Quick Plan = draft all three docs with no stops); below it, in-flight specs
- * with live status, shipped recents, and the Manage (analytics) mode.
+ * Home — the launchpad. The composer creates specs (Plan = gated flow, no run
+ * until you ask for one; Quick Plan = draft both docs with no stops); below it,
+ * in-flight specs with live status, shipped recents, and the Manage mode.
  */
 export function HomeView() {
   const root = useWorkspace((s) => s.root);
@@ -56,7 +59,11 @@ export function HomeView() {
   const specs = useWorkspace((s) => s.specs);
   const agents = useWorkspace((s) => s.agents);
   const skills = useWorkspace((s) => s.skills);
+  const libraryUpgrade = useWorkspace((s) => s.libraryUpgrade);
+  const dismissLibraryUpgrade = useWorkspace((s) => s.dismissLibraryUpgrade);
   const openSpec = useUi((s) => s.openSpec);
+  const openLibrary = useUi((s) => s.openLibrary);
+  const setQuickStart = useUi((s) => s.setQuickStart);
   const composerNonce = useUi((s) => s.composerNonce);
   const setAssistantOpen = useUi((s) => s.setAssistantOpen);
   const setPendingPrompt = useChat((s) => s.setPendingPrompt);
@@ -160,15 +167,15 @@ export function HomeView() {
       <div className="h-full overflow-y-auto bg-ink-950 grid place-items-center px-6">
         <div className="max-w-md w-full text-center">
           <div className="w-16 h-16 mx-auto grid place-items-center rounded-2xl octo-tile">
-            <KrakenLogo animated glow className="w-9 h-11" />
+            <OctoMark animated glow detail="simple" className="w-11" />
           </div>
           <h1 className="mt-5 text-2xl font-semibold tracking-tight text-ink-50">
-            Welcome to Kraken
+            Welcome to Octo
           </h1>
           <p className="mt-2 text-sm text-dim leading-relaxed">
             Open any folder to begin. Specs live in{' '}
             <code className="font-mono text-[12px] text-accent-2 bg-accent/15 px-1.5 py-0.5 rounded">
-              .kraken/specs/
+              .octo/specs/
             </code>
             ; your existing{' '}
             <code className="font-mono text-[12px] text-accent-2 bg-accent/15 px-1.5 py-0.5 rounded">
@@ -271,7 +278,7 @@ export function HomeView() {
             <button
               onClick={() => start('quick')}
               disabled={!command.trim() || !!creating}
-              title="Quick Plan — draft requirements, design & tasks with no approval stops"
+              title="Quick Plan — draft requirements and the plan with no approval stops"
               className="flex items-center gap-1.5 rounded-[10px] px-3 py-2 bg-elev text-dim text-[13px] font-semibold hover:text-ink-50 transition disabled:opacity-40"
             >
               {creating === 'quick' ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
@@ -280,7 +287,7 @@ export function HomeView() {
             <button
               onClick={() => start('plan')}
               disabled={!command.trim() || !!creating}
-              title="Plan — create the spec and draft requirements; you approve each phase"
+              title="Plan — create the spec and open Requirements. Nothing runs until you press Draft"
               className="flex items-center gap-1.5 rounded-[10px] px-3.5 py-2 bg-gradient-to-br from-accent to-accent-2 text-white text-[13px] font-semibold shadow-glow hover:opacity-95 transition disabled:opacity-40"
             >
               {creating === 'plan' ? (
@@ -293,9 +300,10 @@ export function HomeView() {
           </div>
           <div className="flex items-center gap-2.5 mt-2.5 px-1">
             <span className="text-[11.5px] text-faint">
-              <b className="text-dim font-medium">Plan</b> walks Requirements → Design → Tasks with
-              approval gates · <b className="text-dim font-medium">Quick Plan</b> drafts all three
-              and lands on Tasks ready to run
+              <b className="text-dim font-medium">Plan</b> walks Requirements → Plan → Build with
+              approval gates, drafting only when you ask ·{' '}
+              <b className="text-dim font-medium">Quick Plan</b> drafts both docs with no stops and
+              lands on Build ready to run
             </span>
           </div>
 
@@ -344,19 +352,59 @@ export function HomeView() {
           )}
         </div>
 
+        {/* Work that already exists somewhere else. Above the upgrade notice and
+            the first-run card because it is the answer to the question the page
+            just asked, not a piece of housekeeping. */}
+        <TicketInbox />
+
+        {/* Library upgraded on open — said once, then dismissed. Only appears
+            when a default the user never edited was actually rewritten. */}
+        {libraryUpgrade && (
+          <div className="flex items-center gap-4 border border-ink-700 rounded-[14px] bg-card px-5 py-3.5 mb-8">
+            <Sparkles size={15} className="text-accent shrink-0" />
+            <div className="flex-1 min-w-0">
+              <div className="text-[12.5px] text-ink-100">
+                Octo's bundled library was updated in this workspace
+              </div>
+              <div className="text-[11.5px] text-faint truncate">
+                {seedSummary(libraryUpgrade)} — anything you had edited was left alone.
+              </div>
+            </div>
+            <button
+              onClick={() => openLibrary('agents')}
+              className="shrink-0 text-xs px-3 py-1.5 rounded-lg bg-elev text-ink-100 hover:bg-line transition"
+            >
+              Review
+            </button>
+            <button
+              onClick={dismissLibraryUpgrade}
+              title="Dismiss"
+              className="shrink-0 w-7 h-7 grid place-items-center rounded-md text-faint hover:text-ink-50 hover:bg-elev"
+            >
+              <X size={13} />
+            </button>
+          </div>
+        )}
+
         {/* first-run setup */}
         {agents.length === 0 && !firstRunDismissed && (
           <div className="flex items-center gap-4 border border-accent/30 rounded-[14px] bg-accent/[0.06] px-5 py-4 mb-8">
             <span className="text-xl">🐙</span>
             <div className="flex-1 min-w-0">
-              <div className="text-[13px] font-semibold text-ink-50">Set up Kraken defaults</div>
+              <div className="text-[13px] font-semibold text-ink-50">Set up Octo defaults</div>
               <div className="text-[11.5px] text-faint">
                 Installs the bundled SDD agents, skills, steering docs, and hooks into this
                 workspace's <code className="font-mono">.claude/</code> and{' '}
-                <code className="font-mono">.kraken/</code> — one click, fully editable later in
+                <code className="font-mono">.octo/</code> — one click, fully editable later in
                 the Library.
               </div>
             </div>
+            <button
+              onClick={() => setQuickStart(true)}
+              className="shrink-0 flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg bg-elev text-ink-100 hover:bg-line transition"
+            >
+              <GraduationCap size={13} /> Quick start
+            </button>
             <button
               onClick={seed}
               disabled={seeding}
@@ -416,7 +464,7 @@ export function HomeView() {
               {shipped.map((s) => (
                 <button
                   key={s.id}
-                  onClick={() => openSpec(s.id, 'ship')}
+                  onClick={() => openSpec(s.id, 'build')}
                   className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] bg-card border border-ink-800 hover:border-accent/40 transition text-left"
                 >
                   <CheckCircle2 size={15} className="text-good shrink-0" />
@@ -437,7 +485,7 @@ export function HomeView() {
             <div className="text-[14px] font-semibold text-ink-50 mb-1">No specs yet</div>
             <p className="text-[12px] text-faint">
               Describe what you want to build in the box above — <b>Plan</b> creates the spec and
-              drafts requirements while you watch.
+              opens Requirements, seeded with your description and ready to draft.
             </p>
           </div>
         )}
@@ -489,9 +537,11 @@ function SpecCard({
   const running = runningCount > 0;
   const status = running
     ? { label: `${runningCount} running`, cls: 'text-good', dot: 'bg-good', pulse: true }
-    : spec.phase === 'tasks'
-      ? { label: 'Ready to run', cls: 'text-accent-2', dot: 'bg-accent', pulse: false }
-      : { label: 'Awaiting approval', cls: 'text-accent-2', dot: 'bg-accent', pulse: false };
+    : spec.phase === 'build'
+      ? // green is "press me / in progress"…
+        { label: 'Ready to run', cls: 'text-accent-text', dot: 'bg-accent', pulse: false }
+      : // …violet is "this one is waiting on you".
+        { label: 'Awaiting approval', cls: 'text-agent-text', dot: 'bg-agent', pulse: false };
 
   return (
     <div

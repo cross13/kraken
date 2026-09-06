@@ -3,7 +3,7 @@ import type { ModelInfo, ModelDiscovery } from '../../electron/shared/types';
 
 // Model routing, collapsed to two knobs: the global default model (Settings →
 // Models, persisted in the main process) and an optional **planning model**
-// used for the thinking-heavy spec steps (requirements / design / tasks /
+// used for the thinking-heavy spec steps (requirements / plan / tasks /
 // audit). Execution steps (task / refine / polish / chat) always use the
 // global default. Purely renderer-side: the resolved id is passed as
 // `payload.model` on the Claude stream, so no backend change is needed.
@@ -16,7 +16,7 @@ import type { ModelInfo, ModelDiscovery } from '../../electron/shared/types';
 
 export type StepKey =
   | 'requirements'
-  | 'design'
+  | 'plan'
   | 'tasks'
   | 'task'
   | 'refine'
@@ -27,9 +27,9 @@ export type StepKey =
 export type ModelOption = ModelInfo;
 
 /** Steps that use the planning model when one is set. */
-const PLANNING_STEPS: ReadonlySet<StepKey> = new Set(['requirements', 'design', 'tasks', 'audit']);
+const PLANNING_STEPS: ReadonlySet<StepKey> = new Set(['requirements', 'plan', 'tasks', 'audit']);
 
-const KEY = 'kraken.planningModel';
+const KEY = 'octo.planningModel';
 
 function load(): string {
   try {
@@ -90,7 +90,7 @@ export const useModels = create<ModelsStore>((set, get) => ({
   refresh: async (workspacePath) => {
     set({ loading: true });
     try {
-      const discovery = await window.kraken.models.list(workspacePath ?? null);
+      const discovery = await window.octo.models.list(workspacePath ?? null);
       set({ discovery, available: sortModels(discovery.models) });
     } catch {
       // Discovery is best-effort — leave whatever list we already had.

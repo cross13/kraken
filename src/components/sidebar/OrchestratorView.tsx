@@ -18,7 +18,7 @@ import {
   Wand2,
   Trash2,
 } from 'lucide-react';
-import { KrakenLogo } from '../KrakenLogo';
+import { OctoMark } from '../OctoMark';
 import { cn } from '../../lib/cn';
 import { useOrchestrator } from '../../stores/orchestrator';
 import type { ActiveRun, FinishedRun, RunKind } from '../../../electron/shared/types';
@@ -26,11 +26,11 @@ import type { ActiveRun, FinishedRun, RunKind } from '../../../electron/shared/t
 const KIND_META: Record<RunKind, { label: string; icon: React.ReactNode; cls: string }> = {
   task: { label: 'Task', icon: <ListChecks size={11} />, cls: 'bg-accent/15 text-accent' },
   refine: { label: 'Refine', icon: <Wand2 size={11} />, cls: 'bg-accent/15 text-accent' },
-  polish: { label: 'Polish', icon: <Sparkles size={11} />, cls: 'bg-purple-500/15 text-purple-300' },
+  polish: { label: 'Polish', icon: <Sparkles size={11} />, cls: 'bg-agent/15 text-agent-text' },
   chat: { label: 'Chat', icon: <MessageSquare size={11} />, cls: 'bg-ink-700 text-ink-200' },
-  spec: { label: 'Spec', icon: <FileText size={11} />, cls: 'bg-sky-500/15 text-sky-300' },
-  audit: { label: 'Audit', icon: <Stethoscope size={11} />, cls: 'bg-amber-500/15 text-amber-300' },
-  hook: { label: 'Hook', icon: <Bot size={11} />, cls: 'bg-emerald-500/15 text-emerald-300' },
+  spec: { label: 'Spec', icon: <FileText size={11} />, cls: 'bg-ink-50/[0.06] text-dim' },
+  audit: { label: 'Audit', icon: <Stethoscope size={11} />, cls: 'bg-warn/15 text-warn' },
+  hook: { label: 'Hook', icon: <Bot size={11} />, cls: 'bg-good/15 text-good' },
 };
 
 function kindMeta(kind?: RunKind) {
@@ -72,17 +72,17 @@ export function OrchestratorView() {
   }, [active.length]);
 
   useEffect(() => {
-    window.kraken.settings.getMaxConcurrency().then(setMaxConcurrency);
+    window.octo.settings.getMaxConcurrency().then(setMaxConcurrency);
   }, [setMaxConcurrency]);
 
   const changeConcurrency = async (n: number) => {
     const clamped = Math.max(1, Math.min(8, n));
     setMaxConcurrency(clamped);
-    await window.kraken.settings.setMaxConcurrency(clamped);
+    await window.octo.settings.setMaxConcurrency(clamped);
   };
 
   const cancelOne = (run: ActiveRun) => {
-    window.kraken.claude.cancel(run.requestId);
+    window.octo.claude.cancel(run.requestId);
     finishRun(run.requestId, 'cancelled');
   };
 
@@ -102,7 +102,7 @@ export function OrchestratorView() {
             )}
           >
             {active.length > 0 ? (
-              <KrakenLogo animated className="w-4 h-5" />
+              <OctoMark animated className="w-[18px]" />
             ) : (
               <Network size={16} />
             )}

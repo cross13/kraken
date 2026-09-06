@@ -1,0 +1,415 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+  <style>
+    body { margin: 0; background: #1a1a1a; font-family: 'Hanken Grotesk', system-ui, -apple-system, sans-serif; color: #c8c8c8; }
+    * { box-sizing: border-box; }
+    a { color: #a6e62e; text-decoration: none; border-bottom: 1px solid rgba(166,230,46,.35); }
+    a:hover { color: #c4f06a; border-bottom-color: #c4f06a; }
+    .mono { font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; }
+    .disp { font-family: 'Space Grotesk', 'Hanken Grotesk', system-ui, sans-serif; }
+    .scroll { overflow-y: auto; scrollbar-width: thin; scrollbar-color: #2f2f2f transparent; }
+    .scroll::-webkit-scrollbar { width: 10px; }
+    .scroll::-webkit-scrollbar-thumb { background: #2f2f2f; }
+    .spine:hover .lbl { color: #ececec; }
+    p { margin: 0 0 1.15em; }
+    h2 { margin: 0 0 16px; }
+    .lead strong, .lead b { color: #f2f2f2; font-weight: 600; }
+    code { font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: .84em; color: #ececec; background: rgba(250,250,250,.06); padding: 1px 5px; }
+    .kw { font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: .8em; font-weight: 500; letter-spacing: .04em; color: #a6e62e; }
+    .ctl:hover { color: #ececec; }
+    td, th { text-align: left; vertical-align: top; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; height: 980px; display: flex; flex-direction: column; background: #1a1a1a; overflow: hidden;">
+
+  <!-- reading progress: the only permanent chrome, 2px tall -->
+  <div style="height: 2px; background: rgba(250,250,250,.05); flex-shrink: 0;">
+    <div style="{{progressStyle}}"></div>
+  </div>
+
+  <!-- top strip: what you are reading, and the three levers. Nothing else. -->
+  <div style="display: flex; align-items: center; padding: 14px 28px 0 32px; flex-shrink: 0;">
+    <span class="mono" style="font-size: 11px; letter-spacing: .05em; color: #6a6a6a;">plan.md</span>
+    <span class="mono" style="font-size: 11px; color: #454545; margin: 0 9px;">/</span>
+    <span class="mono" style="font-size: 11px; color: #6a6a6a;">Clarify before the plan</span>
+
+    <div style="margin-left: auto; display: flex; align-items: center; gap: 22px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span class="mono" style="font-size: 10px; letter-spacing: .12em; color: #454545;">MEASURE</span>
+        <sc-for list="{{measures}}" as="m" hint-placeholder-count="2">
+          <div class="ctl" style="{{m.style}}" onClick="{{m.pick}}">{{m.label}}</div>
+        </sc-for>
+      </div>
+      <div class="ctl" style="{{focusStyle}}" onClick="{{toggleFocus}}" title="Dims every section but the one you are reading">{{focusLabel}}</div>
+      <span class="mono" style="font-size: 10.5px; color: #454545;">Esc</span>
+    </div>
+  </div>
+
+  <div style="flex: 1; display: flex; min-height: 0;">
+
+    <!-- the spine: where you are in the document, and how far is left -->
+    <div style="width: 252px; flex-shrink: 0; padding: 46px 0 0 32px; display: flex; flex-direction: column;">
+      <div class="mono" style="font-size: 10px; letter-spacing: .14em; color: #454545; margin-bottom: 18px;">CONTENTS</div>
+      <div style="display: flex; flex-direction: column; gap: 1px;">
+        <sc-for list="{{spine}}" as="s" hint-placeholder-count="9">
+          <div class="spine" style="{{s.row}}" onClick="{{s.pick}}">
+            <div style="{{s.tick}}"></div>
+            <span class="mono" style="{{s.num}}">{{s.n}}</span>
+            <span class="lbl" style="{{s.lbl}}">{{s.label}}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="margin-top: auto; padding: 0 0 26px;">
+        <div style="height: 1px; background: rgba(250,250,250,.07); margin-bottom: 12px; width: 150px;"></div>
+        <div class="mono" style="font-size: 10.5px; color: #565656; line-height: 1.7;">
+          9 sections<br>~6 min read<br>drafted 4h ago
+        </div>
+      </div>
+    </div>
+
+    <!-- the document -->
+    <div class="scroll" style="flex: 1; min-width: 0;">
+      <div style="display: flex; justify-content: center; padding: 46px 40px 0;">
+        <div style="{{stackStyle}}">
+
+          <!-- title -->
+          <div style="display: flex; gap: 28px; margin-bottom: 58px;">
+            <div style="width: 84px; flex-shrink: 0;"></div>
+            <div style="{{colStyle}}">
+              <div class="mono" style="font-size: 10.5px; letter-spacing: .16em; color: #6a6a6a; margin-bottom: 16px;">TECHNICAL PLAN</div>
+              <h1 class="disp" style="font-size: 36px; font-weight: 600; line-height: 1.14; letter-spacing: -.015em; color: #fafafa; margin: 0 0 22px;">Clarify before the plan</h1>
+              <div style="border-left: 2px solid #76b900; padding-left: 18px; color: #ececec; font-size: 18px; line-height: 1.6;">
+                Stop the plan from guessing the decisions only you can make.
+                <span style="color: #848484;">Appetite: M. Risk: low.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 01 Approach -->
+          <div style="{{sec.approach}}">
+            <div style="width: 84px; flex-shrink: 0; text-align: right; padding-top: 9px;">
+              <span class="mono" style="font-size: 11px; color: #565656;">01</span>
+            </div>
+            <div style="{{colStyle}}">
+              <h2 class="disp" style="font-size: 22px; font-weight: 600; letter-spacing: -.008em; color: #fafafa;">Approach</h2>
+              <p class="lead">Approving Requirements no longer drafts the plan. It opens a <b>Clarify round</b>: Claude proposes the decisions the plan would otherwise guess, each as one question carrying two to four concrete options. Applying the answers writes <code>## Resolved Decisions</code> into <code>plan.md</code>, and only then does it draft.</p>
+              <p>Two alternatives were rejected. Asking mid-run means the answer arrives after the plan has already committed to a shape. A free-text questionnaire means nobody fills it in.</p>
+
+              <div style="margin: 26px 0 6px; padding: 24px 22px; background: #202020; display: flex; align-items: center; gap: 14px;">
+                <div style="padding: 9px 14px; background: #2a2a2a; border: 1px solid #393939; font-size: 12.5px; color: #c8c8c8;">Requirements approved</div>
+                <svg width="16" height="10" viewBox="0 0 16 10" fill="none" style="flex-shrink: 0;"><path d="M1 5h13M10 1l4 4-4 4" stroke="#6a6a6a" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <div style="padding: 9px 14px; background: #2a2140; border: 1px solid #4a3d73; font-size: 12.5px; color: #c9a9ff;">Clarify</div>
+                <svg width="16" height="10" viewBox="0 0 16 10" fill="none" style="flex-shrink: 0;"><path d="M1 5h13M10 1l4 4-4 4" stroke="#6a6a6a" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <div style="padding: 9px 14px; background: #2a2a2a; border: 1px solid #393939; font-size: 12.5px; color: #c8c8c8;">Resolved Decisions</div>
+                <svg width="16" height="10" viewBox="0 0 16 10" fill="none" style="flex-shrink: 0;"><path d="M1 5h13M10 1l4 4-4 4" stroke="#6a6a6a" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <div style="padding: 9px 14px; background: #2a2a2a; border: 1px solid #393939; font-size: 12.5px; color: #c8c8c8;">plan.md</div>
+              </div>
+              <div class="mono" style="font-size: 10.5px; color: #565656;">Fig. 1 — the stage order after this plan</div>
+            </div>
+          </div>
+
+          <!-- 02 Affected files -->
+          <div style="{{sec.files}}">
+            <div style="width: 84px; flex-shrink: 0; text-align: right; padding-top: 9px;">
+              <span class="mono" style="font-size: 11px; color: #565656;">02</span>
+            </div>
+            <div style="{{colStyle}}">
+              <h2 class="disp" style="font-size: 22px; font-weight: 600; letter-spacing: -.008em; color: #fafafa;">Affected files</h2>
+              <table style="width: 100%; border-collapse: collapse; font-size: 14.5px; line-height: 1.55;">
+                <tr>
+                  <th class="mono" style="padding: 0 20px 9px 0; font-size: 10px; font-weight: 500; letter-spacing: .13em; color: #6a6a6a; border-bottom: 1px solid rgba(250,250,250,.1); width: 44%;">FILE</th>
+                  <th class="mono" style="padding: 0 0 9px; font-size: 10px; font-weight: 500; letter-spacing: .13em; color: #6a6a6a; border-bottom: 1px solid rgba(250,250,250,.1);">CHANGE</th>
+                </tr>
+                <tr>
+                  <td class="mono" style="padding: 13px 20px 13px 0; font-size: 12.5px; color: #ececec; border-bottom: 1px solid rgba(250,250,250,.05);">electron/main.ts:1029</td>
+                  <td style="padding: 13px 0; color: #c8c8c8; border-bottom: 1px solid rgba(250,250,250,.05);">advanceSpec lands on Clarify instead of drafting</td>
+                </tr>
+                <tr>
+                  <td class="mono" style="padding: 13px 20px 13px 0; font-size: 12.5px; color: #ececec; border-bottom: 1px solid rgba(250,250,250,.05);">src/lib/specQuestions.ts</td>
+                  <td style="padding: 13px 0; color: #c8c8c8; border-bottom: 1px solid rgba(250,250,250,.05);">new — parses Open Questions into option chips</td>
+                </tr>
+                <tr>
+                  <td class="mono" style="padding: 13px 20px 13px 0; font-size: 12.5px; color: #ececec; border-bottom: 1px solid rgba(250,250,250,.05);">views/QuestionsView.tsx</td>
+                  <td style="padding: 13px 0; color: #c8c8c8; border-bottom: 1px solid rgba(250,250,250,.05);">gains variant="stage" — the Clarify panel</td>
+                </tr>
+                <tr>
+                  <td class="mono" style="padding: 13px 20px 13px 0; font-size: 12.5px; color: #ececec;">views/SpecFlow.tsx:273</td>
+                  <td style="padding: 13px 0; color: #c8c8c8;">the Plan stage gets two sub-tabs</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+
+          <!-- 03 Backend -->
+          <div style="{{sec.backend}}">
+            <div style="width: 84px; flex-shrink: 0; text-align: right; padding-top: 9px;">
+              <span class="mono" style="font-size: 11px; color: #565656;">03</span>
+            </div>
+            <div style="{{colStyle}}">
+              <h2 class="disp" style="font-size: 22px; font-weight: 600; letter-spacing: -.008em; color: #fafafa;">Main process</h2>
+              <p>One shape crosses the IPC boundary, and it is the whole contract:</p>
+              <pre class="mono" style="margin: 0 0 20px; padding: 20px 22px; background: #202020; font-size: 12.5px; line-height: 1.75; color: #a8a8a8; overflow-x: auto;">type SpecQuestion = {
+  id: string;          <span style="color: #565656;">// "Q1"</span>
+  prompt: string;
+  options: string[];   <span style="color: #565656;">// 2–4, each a full sentence</span>
+  answer?: string;     <span style="color: #565656;">// set once resolved</span>
+};</pre>
+              <p><code>plan:draft</code> gains <code>noStops: boolean</code>. Quick Plan, Revise and Improve pass <b>true</b> and never stop; every other caller passes false and stops once.</p>
+            </div>
+          </div>
+
+          <!-- 04 Frontend -->
+          <div style="{{sec.frontend}}">
+            <div style="width: 84px; flex-shrink: 0; text-align: right; padding-top: 9px;">
+              <span class="mono" style="font-size: 11px; color: #565656;">04</span>
+            </div>
+            <div style="{{colStyle}}">
+              <h2 class="disp" style="font-size: 22px; font-weight: 600; letter-spacing: -.008em; color: #fafafa;">Renderer</h2>
+              <p>The Plan stage becomes two sub-tabs — <b>Clarify</b> and <b>plan.md</b> — the way Build already holds Task list, tasks.md and Ship. Approving Requirements lands on Clarify.</p>
+              <ul style="margin: 0 0 1.15em; padding-left: 22px; color: #c8c8c8;">
+                <li style="margin-bottom: 9px;">Every question is a card. Its options are chips, answerable on keys <b>1</b> through <b>9</b>.</li>
+                <li style="margin-bottom: 9px;"><b>Other…</b> opens free text; <b>Ask Claude</b> picks an option and says why.</li>
+                <li><b>Apply decisions</b> writes the section and drafts the plan in one action.</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- 05 Key details -->
+          <div style="{{sec.details}}">
+            <div style="width: 84px; flex-shrink: 0; text-align: right; padding-top: 9px;">
+              <span class="mono" style="font-size: 11px; color: #565656;">05</span>
+            </div>
+            <div style="{{colStyle}}">
+              <h2 class="disp" style="font-size: 22px; font-weight: 600; letter-spacing: -.008em; color: #fafafa;">Key implementation details</h2>
+              <p>The specifics an executor would otherwise have to guess.</p>
+              <ul style="margin: 0; padding-left: 22px; color: #c8c8c8;">
+                <li style="margin-bottom: 9px;">A plan run stops <b>at most once</b>. The second run through the same spec drafts whatever it has.</li>
+                <li style="margin-bottom: 9px;">Questions are written to <code>## Open Questions</code> in <code>plan.md</code>, not held in memory — a crash loses nothing.</li>
+                <li style="margin-bottom: 9px;">An option chip is a full sentence, so the resolved decision reads as prose in the plan.</li>
+                <li>Answering resolves the question <b>in place</b>; the list never reorders under the cursor.</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- 06 Verification -->
+          <div style="{{sec.verify}}">
+            <div style="width: 84px; flex-shrink: 0; text-align: right; padding-top: 9px;">
+              <span class="mono" style="font-size: 11px; color: #565656;">06</span>
+            </div>
+            <div style="{{colStyle}}">
+              <h2 class="disp" style="font-size: 22px; font-weight: 600; letter-spacing: -.008em; color: #fafafa;">Verification</h2>
+              <p>Every acceptance criterion, and how it is proven.</p>
+              <div style="display: flex; flex-direction: column; gap: 14px;">
+                <div style="display: flex; gap: 14px;">
+                  <span class="mono" style="font-size: 11.5px; color: #a6e62e; padding-top: 4px; flex-shrink: 0;">AC-1</span>
+                  <span style="font-size: 15px; line-height: 1.6;"><span class="kw">WHEN</span> Requirements is approved <span class="kw">THEN</span> the stage opens on Clarify — asserted in the stage-transition test.</span>
+                </div>
+                <div style="display: flex; gap: 14px;">
+                  <span class="mono" style="font-size: 11.5px; color: #a6e62e; padding-top: 4px; flex-shrink: 0;">AC-3</span>
+                  <span style="font-size: 15px; line-height: 1.6;"><span class="kw">WHEN</span> an option is clicked <span class="kw">THEN</span> that question resolves in place — asserted on the rendered card.</span>
+                </div>
+                <div style="display: flex; gap: 14px;">
+                  <span class="mono" style="font-size: 11.5px; color: #a6e62e; padding-top: 4px; flex-shrink: 0;">AC-6</span>
+                  <span style="font-size: 15px; line-height: 1.6;"><span class="kw">IF</span> a plan run returns questions <span class="kw">THEN</span> the stage flips back to Clarify — asserted on the run handler.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 07 Tasks -->
+          <div style="{{sec.tasks}}">
+            <div style="width: 84px; flex-shrink: 0; text-align: right; padding-top: 9px;">
+              <span class="mono" style="font-size: 11px; color: #565656;">07</span>
+            </div>
+            <div style="{{colStyle}}">
+              <h2 class="disp" style="font-size: 22px; font-weight: 600; letter-spacing: -.008em; color: #fafafa;">Tasks</h2>
+              <p style="margin-bottom: 24px;">Five changes across three waves. Wave 2 depends on the parser landing.</p>
+
+              <div style="display: flex; gap: 20px; margin-bottom: 10px;">
+                <span class="mono" style="font-size: 10px; letter-spacing: .13em; color: #565656; width: 56px; flex-shrink: 0; padding-top: 5px;">WAVE 1</span>
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 12px;">
+                  <div style="display: flex; gap: 12px; align-items: flex-start;">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink: 0; margin-top: 5px;"><rect width="14" height="14" fill="#76b900"/><path d="M3.4 7.2l2.4 2.4 4.8-5" stroke="#0f1400" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <span style="font-size: 15.5px; line-height: 1.6; color: #6a6a6a;"><span class="mono" style="font-size: 12px;">T1</span> &nbsp;Parse Open Questions into SpecQuestion[] <span style="color: #454545;">— outcome: a malformed list yields zero questions, never a crash.</span></span>
+                  </div>
+                  <div style="display: flex; gap: 12px; align-items: flex-start;">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink: 0; margin-top: 5px;"><rect width="14" height="14" fill="#76b900"/><path d="M3.4 7.2l2.4 2.4 4.8-5" stroke="#0f1400" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <span style="font-size: 15.5px; line-height: 1.6; color: #6a6a6a;"><span class="mono" style="font-size: 12px;">T2</span> &nbsp;Teach the drafting prompt to emit options <span style="color: #454545;">— outcome: every question ships 2–4 of them.</span></span>
+                  </div>
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 20px; margin-bottom: 10px;">
+                <span class="mono" style="font-size: 10px; letter-spacing: .13em; color: #565656; width: 56px; flex-shrink: 0; padding-top: 5px;">WAVE 2</span>
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 12px;">
+                  <div style="display: flex; gap: 12px; align-items: flex-start;">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink: 0; margin-top: 5px;"><rect x=".75" y=".75" width="12.5" height="12.5" stroke="#565656" stroke-width="1.5"/></svg>
+                    <span style="font-size: 15.5px; line-height: 1.6; color: #c8c8c8;"><span class="mono" style="font-size: 12px; color: #a8a8a8;">T3</span> &nbsp;Question cards with chip options and keys 1–9 <span style="color: #6a6a6a;">— outcome: a round of six is answerable without the mouse.</span></span>
+                  </div>
+                  <div style="display: flex; gap: 12px; align-items: flex-start;">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink: 0; margin-top: 5px;"><rect x=".75" y=".75" width="12.5" height="12.5" stroke="#565656" stroke-width="1.5"/></svg>
+                    <span style="font-size: 15.5px; line-height: 1.6; color: #c8c8c8;"><span class="mono" style="font-size: 12px; color: #a8a8a8;">T4</span> &nbsp;Land Approve-Requirements on Clarify <span style="color: #6a6a6a;">— outcome: no run starts until decisions are applied.</span></span>
+                  </div>
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 20px;">
+                <span class="mono" style="font-size: 10px; letter-spacing: .13em; color: #565656; width: 56px; flex-shrink: 0; padding-top: 5px;">WAVE 3</span>
+                <div style="flex: 1;">
+                  <div style="display: flex; gap: 12px; align-items: flex-start;">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink: 0; margin-top: 5px;"><rect x=".75" y=".75" width="12.5" height="12.5" stroke="#565656" stroke-width="1.5"/></svg>
+                    <span style="font-size: 15.5px; line-height: 1.6; color: #c8c8c8;"><span class="mono" style="font-size: 12px; color: #a8a8a8;">T5</span> &nbsp;Write Resolved Decisions, then draft <span style="color: #6a6a6a;">— outcome: the drafted plan cites the answers it was given.</span></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 08 Open questions -->
+          <div style="{{sec.open}}">
+            <div style="width: 84px; flex-shrink: 0; text-align: right; padding-top: 9px;">
+              <span class="mono" style="font-size: 11px; color: #c9a9ff;">08</span>
+              <div class="mono" style="font-size: 9.5px; color: #7a6aa8; margin-top: 5px;">for you</div>
+            </div>
+            <div style="{{colStyle}}">
+              <h2 class="disp" style="font-size: 22px; font-weight: 600; letter-spacing: -.008em; color: #fafafa;">Open questions</h2>
+              <div style="display: flex; gap: 12px; align-items: flex-start;">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink: 0; margin-top: 6px;"><rect x=".75" y=".75" width="12.5" height="12.5" stroke="#9b6bff" stroke-width="1.5"/></svg>
+                <span style="font-size: 16px; line-height: 1.65; color: #ececec;">Should a spec that already carries Resolved Decisions ever re-open Clarify, or is one round final?</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 09 Critical decisions -->
+          <div style="{{sec.decisions}}">
+            <div style="width: 84px; flex-shrink: 0; text-align: right; padding-top: 9px;">
+              <span class="mono" style="font-size: 11px; color: #565656;">09</span>
+              <div class="mono" style="font-size: 9.5px; color: #7a6aa8; margin-top: 5px;">from T3</div>
+            </div>
+            <div style="{{colStyle}}">
+              <h2 class="disp" style="font-size: 22px; font-weight: 600; letter-spacing: -.008em; color: #fafafa;">Critical decisions</h2>
+              <p style="color: #848484; font-size: 14.5px;">Appended while the build ran, so the plan never drifts from the code.</p>
+              <div style="border-left: 2px solid #9b6bff; padding-left: 18px;">
+                <div class="mono" style="font-size: 11.5px; color: #c9a9ff; margin-bottom: 8px;">T3 — options render as chips, not a select</div>
+                <p style="margin: 0; font-size: 15.5px; color: #c8c8c8;">A native select hides the tradeoffs behind a click, and the whole point of the round is that you can read every option at once. Chips wrap onto a second line instead.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- the end: where the one action lives -->
+          <div style="display: flex; gap: 28px; margin: 76px 0 120px;">
+            <div style="width: 84px; flex-shrink: 0;"></div>
+            <div style="{{colStyle}}">
+              <div style="height: 1px; background: rgba(250,250,250,.08); margin-bottom: 30px;"></div>
+              <div style="display: flex; align-items: center; gap: 18px;">
+                <div>
+                  <div class="disp" style="font-size: 15px; font-weight: 600; color: #ececec; margin-bottom: 3px;">End of plan</div>
+                  <div class="mono" style="font-size: 11px; color: #6a6a6a;">9 sections · 1 open question · 5 tasks in 3 waves</div>
+                </div>
+                <div style="margin-left: auto; display: flex; align-items: center; gap: 8px;">
+                  <div class="ctl" style="padding: 10px 14px; font-size: 13px; color: #a8a8a8;">Back to editor</div>
+                  <div style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: #76b900; color: #0f1400; font-size: 13px; font-weight: 600;">
+                    Approve plan
+                    <svg width="13" height="9" viewBox="0 0 13 9" fill="none"><path d="M0 4.5h11M7.5 1l3.5 3.5-3.5 3.5" stroke="#0f1400" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":980},"bodySize":{"editor":"range","default":17.5,"min":15,"max":21,"step":0.5,"unit":"px","section":"Reading"}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { active: 'approach', focus: true, measure: 'comfort' };
+  }
+
+  sections() {
+    return [
+      { id: 'approach',  n: '01', label: 'Approach' },
+      { id: 'files',     n: '02', label: 'Affected files' },
+      { id: 'backend',   n: '03', label: 'Main process' },
+      { id: 'frontend',  n: '04', label: 'Renderer' },
+      { id: 'details',   n: '05', label: 'Key implementation details' },
+      { id: 'verify',    n: '06', label: 'Verification' },
+      { id: 'tasks',     n: '07', label: 'Tasks' },
+      { id: 'open',      n: '08', label: 'Open questions' },
+      { id: 'decisions', n: '09', label: 'Critical decisions' }
+    ];
+  }
+
+  renderVals() {
+    const body = this.props.bodySize ?? 17.5;
+    const wide = this.state.measure === 'wide';
+    const focus = this.state.focus;
+    const active = this.state.active;
+    const list = this.sections();
+    const idx = Math.max(0, list.findIndex((s) => s.id === active));
+
+    const colW = wide ? 940 : 752;
+    const colStyle = 'width: ' + colW + 'px; font-size: ' + body + 'px; line-height: 1.72; color: #c8c8c8;';
+    const stackStyle = 'width: ' + (colW + 112) + 'px; transition: width 200ms ease;';
+
+    const sec = {};
+    for (const s of list) {
+      const on = !focus || s.id === active;
+      sec[s.id] = 'display: flex; gap: 28px; margin-bottom: 60px; transition: opacity 220ms ease; opacity: ' +
+        (on ? '1' : '0.26') + ';';
+    }
+
+    const spine = list.map((s, i) => ({
+      n: s.n,
+      label: s.label,
+      row: 'position: relative; display: flex; align-items: baseline; gap: 11px; padding: 6px 14px 6px 0; cursor: pointer;',
+      tick: 'position: absolute; left: -12px; top: 7px; bottom: 7px; width: 2px; background: ' +
+        (s.id === active ? '#76b900' : 'transparent') + ';',
+      num: 'font-size: 10px; color: ' + (s.id === active ? '#a6e62e' : '#454545') + ';',
+      lbl: 'font-size: 12.5px; line-height: 1.4; transition: color 150ms; color: ' +
+        (s.id === active ? '#fafafa' : i < idx ? '#6a6a6a' : '#8a8a8a') + ';',
+      pick: () => this.setState({ active: s.id })
+    }));
+
+    const measures = [
+      { key: 'comfort', label: 'Comfortable' },
+      { key: 'wide', label: 'Wide' }
+    ].map((m) => ({
+      label: m.label,
+      style: 'font-size: 11.5px; cursor: pointer; transition: color 150ms; color: ' +
+        (this.state.measure === m.key ? '#ececec' : '#565656') + ';',
+      pick: () => this.setState({ measure: m.key })
+    }));
+
+    return {
+      colStyle,
+      stackStyle,
+      sec,
+      spine,
+      measures,
+      progressStyle: 'height: 2px; width: ' + Math.round(((idx + 1) / list.length) * 100) +
+        '%; background: #76b900; transition: width 260ms ease;',
+      focusLabel: focus ? 'Focus on' : 'Focus off',
+      focusStyle: 'font-size: 11.5px; cursor: pointer; transition: color 150ms; color: ' +
+        (focus ? '#a6e62e' : '#565656') + ';',
+      toggleFocus: () => this.setState({ focus: !this.state.focus })
+    };
+  }
+}
+</script>
+</body>
+</html>

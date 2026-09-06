@@ -20,12 +20,13 @@ import {
   ROUTABLE_ACTIONS,
   type RoutableAction,
 } from '../../stores/moduleConfig';
-import { renderMarkdown } from '../../lib/markdown';
+import { Markdown } from '../Markdown';
 import {
   agentScaffold,
   agentPath,
   slugify,
   actionsRoutingTo,
+  seedSummary,
 } from '../../lib/library';
 import { cn } from '../../lib/cn';
 import type { AgentMeta } from '../../../electron/shared/types';
@@ -40,7 +41,7 @@ import {
 const EXPLAINER = [
   {
     heading: 'What an agent is',
-    body: 'A markdown file in .claude/agents/ with front-matter (name, description, model, tools) and a body that becomes the system prompt. Kraken loads workspace agents first, then global ~/.claude ones.',
+    body: 'A markdown file in .claude/agents/ with front-matter (name, description, model, tools) and a body that becomes the system prompt. Octo loads workspace agents first, then global ~/.claude ones.',
   },
   {
     heading: 'How one gets picked',
@@ -63,6 +64,14 @@ export function AgentsStudio() {
   const [query, setQuery] = useState('');
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  // What the last "Seed defaults" run did — seeding upgrades untouched defaults,
+  // so the outcome is worth saying out loud. Clears itself.
+  const [seedNote, setSeedNote] = useState<string | null>(null);
+
+  const seed = async () => {
+    setSeedNote(seedSummary(await seedDefaults()));
+    window.setTimeout(() => setSeedNote(null), 8000);
+  };
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -93,8 +102,10 @@ export function AgentsStudio() {
             >
               <Plus size={13} /> New agent
             </button>
+            {seedNote && <span className="text-[11.5px] text-faint">{seedNote}</span>}
             <button
-              onClick={seedDefaults}
+              onClick={seed}
+              title="Install the bundled library, and update any default you haven't edited"
               className="flex items-center gap-1.5 text-[12px] px-3 h-8 rounded-lg bg-elev text-dim hover:text-ink-50"
             >
               <Wand2 size={13} /> Seed defaults
@@ -235,7 +246,7 @@ function AgentDetail({ agent, agents }: { agent: AgentMeta; agents: AgentMeta[] 
   const pinAgent = useModuleConfig((s) => s.pinAgent);
 
   useEffect(() => {
-    window.kraken.agents.read(agent.path).then(setBody);
+    window.octo.agents.read(agent.path).then(setBody);
   }, [agent.path]);
 
   const isChatAgent = selectedAgent === agent.name;
@@ -365,7 +376,7 @@ function AgentDetail({ agent, agents }: { agent: AgentMeta; agents: AgentMeta[] 
       {/* body */}
       <ModuleSection title="System prompt" desc="The full agent body injected into the model.">
         <div className="rounded-xl bg-ink-950 ring-1 ring-ink-800/40 px-5 py-4">
-          <div className="md" dangerouslySetInnerHTML={{ __html: renderMarkdown(body) }} />
+          <Markdown source={body} />
         </div>
       </ModuleSection>
     </div>
@@ -396,7 +407,7 @@ function NewAgentDialog({
     setErr(null);
     try {
       const path = agentPath(root, slug);
-      await window.kraken.fs.write(path, agentScaffold(slug, description.trim()));
+      await window.octo.fs.write(path, agentScaffold(slug, description.trim()));
       await refreshAll();
       onCreated(path);
     } catch (e) {

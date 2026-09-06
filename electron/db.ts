@@ -3,6 +3,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { app } from 'electron';
 import type {
+  HistoryCounts,
   SpecMeta,
   SpecPhase,
   RunRow,
@@ -33,7 +34,7 @@ const SCHEMA = [
     workspace_path TEXT NOT NULL,
     name TEXT NOT NULL,
     kind TEXT NOT NULL CHECK (kind IN ('feature','bugfix')),
-    phase TEXT NOT NULL CHECK (phase IN ('requirements','design','tasks','done')),
+    phase TEXT NOT NULL CHECK (phase IN ('requirements','plan','build','done')),
     fs_path TEXT NOT NULL,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
@@ -141,12 +142,28 @@ export function initDb(): Database.Database {
   if (db) return db;
   const dir = app.getPath('userData');
   fs.mkdirSync(dir, { recursive: true });
-  const file = path.join(dir, 'kraken.db');
+  const file = path.join(dir, 'octo.db');
+  // Renamed with the app (Kraken → Octo). main.ts carries the userData folder
+  // over, so the database may still be sitting there under its old name — WAL
+  // sidecars included, since orphaning those would drop uncommitted pages.
+  if (!fs.existsSync(file)) {
+    for (const ext of ['', '-wal', '-shm']) {
+      const legacy = path.join(dir, `kraken.db${ext}`);
+      if (fs.existsSync(legacy)) {
+        try {
+          fs.renameSync(legacy, `${file}${ext}`);
+        } catch {
+          // best-effort: a missing sidecar just means a checkpointed database
+        }
+      }
+    }
+  }
   db = new Database(file);
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
   for (const stmt of SCHEMA) db.exec(stmt);
   migrateRuns(db);
+  migrateSpecPhases(db);
   reconcileOrphanedRuns(db);
   return db;
 }
@@ -196,6 +213,45 @@ function migrateRuns(d: Database.Database) {
       // column already exists — expected on up-to-date databases
     }
   }
+}
+
+/**
+ * v2 — the SDD phases `design` and `tasks` became `plan` and `build`.
+ * `specs.phase` carries a CHECK constraint and SQLite cannot alter one in
+ * place, so the table is rebuilt and `spec_events` is rewritten in the same
+ * transaction. Guarded by `user_version` so it runs exactly once; on a fresh
+ * database it rebuilds an empty table, which is harmless.
+ */
+function migrateSpecPhases(d: Database.Database) {
+  if ((d.pragma('user_version', { simple: true }) as number) >= 2) return;
+  const renamed = (col: string) =>
+    `CASE ${col} WHEN 'design' THEN 'plan' WHEN 'tasks' THEN 'build' ELSE ${col} END`;
+  d.transaction(() => {
+    d.exec(`CREATE TABLE specs_v2 (
+      id TEXT NOT NULL,
+      workspace_path TEXT NOT NULL,
+      name TEXT NOT NULL,
+      kind TEXT NOT NULL CHECK (kind IN ('feature','bugfix')),
+      phase TEXT NOT NULL CHECK (phase IN ('requirements','plan','build','done')),
+      fs_path TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      PRIMARY KEY (workspace_path, id)
+    )`);
+    d.exec(
+      `INSERT INTO specs_v2 (id, workspace_path, name, kind, phase, fs_path, created_at, updated_at)
+         SELECT id, workspace_path, name, kind, ${renamed('phase')}, fs_path, created_at, updated_at
+           FROM specs`
+    );
+    // DROP takes the old indexes with it, so both are recreated after the swap.
+    d.exec(`DROP TABLE specs`);
+    d.exec(`ALTER TABLE specs_v2 RENAME TO specs`);
+    d.exec(`CREATE INDEX IF NOT EXISTS idx_specs_workspace ON specs(workspace_path)`);
+    d.exec(`CREATE INDEX IF NOT EXISTS idx_specs_updated ON specs(updated_at DESC)`);
+    d.exec(`UPDATE spec_events SET from_phase = ${renamed('from_phase')}`);
+    d.exec(`UPDATE spec_events SET to_phase = ${renamed('to_phase')}`);
+  })();
+  d.pragma('user_version = 2');
 }
 
 function require_db(): Database.Database {
@@ -250,6 +306,64 @@ export function deleteSpec(workspacePath: string, id: string) {
     d.prepare(`DELETE FROM specs WHERE workspace_path = ? AND id = ?`).run(workspacePath, id);
   });
   tx();
+}
+
+// ---------- Wholesale clear (Settings › Danger zone) ----------
+
+/**
+ * Every history table, in delete-safe order (children before `runs`), with the
+ * where-clause that scopes it to one workspace. `undefined` means "every
+ * workspace" — the whole DB.
+ *
+ * `errors` and `run_files` carry a nullable `workspace_path`, so they are also
+ * matched through their `run_id`; otherwise rows written before that column was
+ * populated would survive a workspace-scoped clear as orphans.
+ */
+function historyTargets(workspacePath?: string) {
+  const runIds = `SELECT id FROM runs WHERE workspace_path IS ?`;
+  const all = workspacePath === undefined;
+  const own = () => (all ? { where: '', args: [] as unknown[] } : { where: 'WHERE workspace_path IS ?', args: [workspacePath] as unknown[] });
+  const viaRun = () =>
+    all
+      ? { where: '', args: [] as unknown[] }
+      : { where: `WHERE workspace_path IS ? OR run_id IN (${runIds})`, args: [workspacePath, workspacePath] as unknown[] };
+  return [
+    { key: 'errors' as const, table: 'errors', ...viaRun() },
+    { key: 'runFiles' as const, table: 'run_files', ...viaRun() },
+    { key: 'runs' as const, table: 'runs', ...own() },
+    { key: 'specEvents' as const, table: 'spec_events', ...own() },
+    { key: 'hookRuns' as const, table: 'hook_runs', ...own() },
+    { key: 'specs' as const, table: 'specs', ...own() },
+  ];
+}
+
+/** How many rows a clear would remove — shown before asking for confirmation. */
+export function historyCounts(workspacePath?: string): HistoryCounts {
+  const d = require_db();
+  const out: HistoryCounts = { specs: 0, specEvents: 0, runs: 0, runFiles: 0, errors: 0, hookRuns: 0 };
+  for (const t of historyTargets(workspacePath)) {
+    out[t.key] = (
+      d.prepare(`SELECT COUNT(*) AS n FROM ${t.table} ${t.where}`).get(...t.args) as { n: number }
+    ).n;
+  }
+  return out;
+}
+
+/**
+ * Delete history rows for one workspace, or the whole DB when `workspacePath`
+ * is omitted. One transaction; returns what it removed. `VACUUM` runs after it
+ * (it cannot run inside a transaction) so the file actually shrinks.
+ */
+export function clearHistory(workspacePath?: string): HistoryCounts {
+  const d = require_db();
+  const counts = historyCounts(workspacePath);
+  const targets = historyTargets(workspacePath);
+  const tx = d.transaction(() => {
+    for (const t of targets) d.prepare(`DELETE FROM ${t.table} ${t.where}`).run(...t.args);
+  });
+  tx();
+  d.exec('VACUUM');
+  return counts;
 }
 
 /** Per-spec run aggregates (runs, errors, cancelled, total time, last activity). */

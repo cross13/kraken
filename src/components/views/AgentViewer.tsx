@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Bot } from 'lucide-react';
-import { renderMarkdown } from '../../lib/markdown';
+import { Markdown } from '../Markdown';
 
 export function AgentViewer({ path }: { path: string }) {
   const [content, setContent] = useState('');
   useEffect(() => {
-    window.kraken.agents.read(path).then(setContent);
+    window.octo.agents.read(path).then(setContent);
   }, [path]);
 
   return (
@@ -15,7 +15,7 @@ export function AgentViewer({ path }: { path: string }) {
           <Bot size={13} className="text-accent" />
           <span className="font-mono">{path}</span>
         </div>
-        <div className="md" dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }} />
+        <Markdown source={content} />
       </div>
     </div>
   );

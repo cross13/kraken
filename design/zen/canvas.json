@@ -1,0 +1,67 @@
+{
+  "pages": [
+    { "id": "page-1", "name": "Zen mode" },
+    { "id": "page-2", "name": "Directions" }
+  ],
+  "artboards": [
+    {
+      "file": "Main.dc.html",
+      "page": "page-1",
+      "x": 0, "y": 0, "w": 1440, "h": 980,
+      "title": "Zen · plan.md",
+      "is_interactive": true
+    },
+    {
+      "file": "Requirements.dc.html",
+      "page": "page-1",
+      "x": 1560, "y": 0, "w": 1440, "h": 980,
+      "title": "Zen · requirements.md",
+      "is_interactive": true
+    },
+    {
+      "file": "Narrow.dc.html",
+      "page": "page-1",
+      "x": 3120, "y": 0, "w": 1000, "h": 760,
+      "title": "Narrow window"
+    },
+    {
+      "file": "DirectionB.dc.html",
+      "page": "page-2",
+      "x": 0, "y": 0, "w": 760, "h": 540,
+      "title": "B · Paged"
+    },
+    {
+      "file": "DirectionC.dc.html",
+      "page": "page-2",
+      "x": 880, "y": 0, "w": 760, "h": 540,
+      "title": "C · Paper"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "note-zen",
+      "page": "page-1",
+      "x": 0, "y": -250, "w": 420,
+      "text": "ZEN · plan.md — click a section in Contents, toggle Focus\n\nEverything the reading doesn't need is gone: no file tabs, no phase strip, no segmented control, no gate bar. What is left is one 72-character column, 17.5px on 1.72 leading, and a Contents spine that tells you where you are.\n\nThe idea worth arguing about is THE MARGIN. Every id the app knows — the section number, AC-3, wave 1, \"from T3\" — sits in an 84px gutter to the left, in mono, at #565656. The prose line is never interrupted by a chip, and the structure is still scannable. Violet in the margin means \"needs you\": Open questions, Critical decisions.\n\nThe single action lives at the END of the document, not in permanent chrome. You read the plan, then you approve it."
+    },
+    {
+      "id": "note-req",
+      "page": "page-1",
+      "x": 1560, "y": -250, "w": 420,
+      "text": "ZEN · requirements.md — the same mode, the other document\n\nSame spine, same margin, same one column. What changes is what the margin carries: US-1, and under each criterion the story it answers.\n\nEARS keywords (WHEN / THEN / SHALL / WHILE / IF) are the one place colour enters the prose, and they earn it — they are what makes a generated criterion scannable instead of a wall.\n\nThe two findings from the Review canvas are here too, but quiet: US-3 with no criterion, AC-7 saying \"feel responsive\". A violet line, not a panel. Zen reports; Review argues."
+    },
+    {
+      "id": "note-narrow",
+      "page": "page-1",
+      "x": 3120, "y": -250, "w": 380,
+      "text": "BELOW ~1180px\n\nThe margin has nowhere to go, so the id moves ABOVE the block instead of beside it, and Contents folds into one control in the top strip that names the section you are in.\n\nMeasure drops out — at this width there is only one sensible measure. Focus stays; it is the control that matters most when the window is small."
+    },
+    {
+      "id": "note-dirs",
+      "page": "page-2",
+      "x": 0, "y": -190, "w": 420,
+      "text": "TWO I DID NOT BUILD\n\nKept so the choice is visible. Both are sketches, not candidates — Main is the one to react to.\n\nB trades lookup for focus. C trades the theme contract for readability. If either For column matters more to you than its Against, say so and I will rebuild Main on it."
+    }
+  ],
+  "launch": { "view": "canvas", "page": "page-1" }
+}

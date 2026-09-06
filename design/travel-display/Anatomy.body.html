@@ -1,0 +1,100 @@
+<div class="root">
+
+  <div class="bar">
+    <div class="mark">
+      <svg viewBox="46 26 108 146" width="17" height="23" class="ico">
+        <path d="M 62,106 C 54,124 50,138 58,150" fill="none" stroke="#8AD000" stroke-width="8" stroke-linecap="round"></path>
+        <path d="M 80,112 C 76,132 74,148 80,162" fill="none" stroke="#8AD000" stroke-width="8" stroke-linecap="round"></path>
+        <path d="M 120,112 C 124,132 126,148 120,162" fill="none" stroke="#8AD000" stroke-width="8" stroke-linecap="round"></path>
+        <path d="M 138,106 C 146,124 150,138 142,150" fill="none" stroke="#8AD000" stroke-width="8" stroke-linecap="round"></path>
+        <path d="M 55,112 C 46,68 62,36 100,32 C 138,36 154,68 145,112 L 134,120 L 125,108 L 112,122 L 100,112 L 88,122 L 75,108 L 66,120 Z" fill="#2A2A2A" stroke="#8AD000" stroke-width="3" stroke-linejoin="round"></path>
+        <path d="M 72,68 L 92,76 L 92,84 L 72,76 Z" fill="#C4F06A"></path>
+        <path d="M 128,68 L 108,76 L 108,84 L 128,76 Z" fill="#C4F06A"></path>
+      </svg>
+    </div>
+    <div>
+      <div class="hd-title disp">Tile anatomy</div>
+      <div class="hd-sub">Direction A, shown at 1:1 &#8212; 625 &#215; 210 in a 2560 &#215; 720 frame</div>
+    </div>
+  </div>
+
+  <div class="sheet">
+
+    <div class="h2">The tile <i></i> 4 columns &#215; 3 rows, 10px gap, 14px page padding</div>
+
+    <div class="stage">
+      <div class="t">
+        <div class="t-head">
+          <span class="chip task"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="ico"><path d="m3 17 2 2 4-4M3 7l2 2 4-4M13 6h8M13 12h8M13 18h8"></path></svg>Task</span>
+          <span class="tid mono">T3</span>
+          <span class="meta trunc">Wave 2 <span class="sep">·</span> auth-refresh</span>
+          <span class="grow"></span>
+          <span class="time mono">04:12</span>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#76B900" stroke-width="2.5" stroke-linecap="round" class="ico spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#848484" stroke-width="2" stroke-linecap="round" class="ico"><path d="M18 6 6 18M6 6l12 12"></path></svg>
+        </div>
+        <div class="t-title trunc">Move refresh-token rotation into the session store</div>
+        <div class="t-agent trunc">spec-task-executor <span class="sep">·</span> opus-5 <span class="sep">·</span> workspace</div>
+        <div class="wavebar"><i style="width: 33%"></i></div>
+        <div class="t-log log mono">
+          <div class="l-tool">&#9679; Read src/lib/session.ts</div>
+          <div class="l-res">  218 lines</div>
+          <div class="l-tool">&#9679; Edit src/lib/session.ts</div>
+          <div class="l-res">  + rotate(t: RefreshToken): Promise&lt;Session&gt;</div>
+          <div class="l-res">  - refreshToken(raw: string)</div>
+          <div class="l-tool">&#9679; Bash npm run typecheck</div>
+          <div class="l-think">  wiring the rotation into useSession&#8230;</div>
+        </div>
+      </div>
+
+      <div class="callouts">
+        <div class="co"><b>1</b><span>Identity line, 17px &#8212; kind chip, task id, wave, spec. <em>One line, everything the eye needs to place the run.</em></span></div>
+        <div class="co"><b>2</b><span>Elapsed at 13px in <span class="mono" style="color: #C4F06A">accent-num</span>, tabular. <em>The only number that moves; it earns the brightest ink.</em></span></div>
+        <div class="co"><b>3</b><span>Title, 13.5px <span class="mono" style="color: #ECECEC">ink-200</span>, single line with ellipsis.</span></div>
+        <div class="co"><b>4</b><span>Agent &#183; model &#183; scope, 11px <span class="mono" style="color: #848484">ink-600</span>.</span></div>
+        <div class="co"><b>5</b><span>Wave progress, 2px. <em>Real completion (3 of 6 tasks), not an indeterminate shimmer.</em></span></div>
+        <div class="co"><b>6</b><span>Live log on <span class="mono" style="color: #A8A8A8">rail #1A1A1A</span> &#8212; 625px wide fits ~62 mono chars, so tool calls stop wrapping. <em>This is the change that makes the wall readable.</em></span></div>
+        <div class="co"><b>7</b><span>Channel colours are the app&#39;s: tool <span class="mono" style="color: #C9A9FF">agent-text</span>, result <span class="mono" style="color: #848484">ink-600</span>, text <span class="mono" style="color: #ECECEC">ink-200</span>, thinking italic.</span></div>
+      </div>
+    </div>
+
+    <div class="cols">
+      <div class="col">
+        <div class="h2">Metrics <i></i> Signal, radius 0, no shadow</div>
+        <div class="spec">
+          <div class="sr"><b>Frame</b><span class="mono">2560 &#215; 720</span></div>
+          <div class="sr"><b>Header</b><span class="mono">48px &#183; border-bottom 1px #333333</span></div>
+          <div class="sr"><b>Tile</b><span class="mono">625 &#215; 210 &#183; gap 10 &#183; pad 10/14/12</span></div>
+          <div class="sr"><b>Running tile</b><span class="mono">bg #282C21 &#183; border rgba(118,185,0,.45)</span></div>
+          <div class="sr"><b>Idle tile</b><span class="mono">bg #232323 &#183; border #393939</span></div>
+          <div class="sr"><b>Past tile</b><span class="mono">bg #1C1C1C &#183; border #2F2F2F</span></div>
+          <div class="sr"><b>Log</b><span class="mono">11px / 1.5 &#183; 7 lines &#183; JetBrains Mono</span></div>
+          <div class="sr"><b>Type</b><span class="mono">Hanken 11&#8211;13.5 &#183; Space Grotesk header</span></div>
+        </div>
+      </div>
+
+      <div class="col">
+        <div class="h2">Kind chips <i></i> green executes, violet decides</div>
+        <div class="sw">
+          <span class="chip task"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="ico"><path d="m3 17 2 2 4-4M3 7l2 2 4-4M13 6h8M13 12h8M13 18h8"></path></svg>Task</span>
+          <span class="chip spec"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="ico"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v5h5"></path></svg>Spec</span>
+          <span class="chip hook"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="ico"><rect x="4" y="8" width="16" height="12"></rect><path d="M12 8V4M9 14h.01M15 14h.01"></path></svg>Hook</span>
+          <span class="chip audit"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="ico"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5M12 16.5h.01"></path></svg>Audit</span>
+          <span class="chip chat"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="ico"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>Chat</span>
+        </div>
+        <div class="h2" style="margin-top: 4px">Status <i></i> and the header meter</div>
+        <div class="legend">
+          <div class="lg"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#76B900" stroke-width="2.5" stroke-linecap="round" class="ico spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg> running &#8212; elapsed counts up</div>
+          <div class="lg"><svg width="12" height="12" viewBox="0 0 24 24" fill="#4E3A73" class="ico"><rect x="5" y="5" width="14" height="14"></rect></svg> queued &#8212; shows what it waits on</div>
+          <div class="lg"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#76B900" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="ico"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><path d="m9 11 3 3L22 4"></path></svg> done &#8212; total duration</div>
+          <div class="lg"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FF8A72" stroke-width="2.5" stroke-linecap="round" class="ico"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5M12 16.5h.01"></path></svg> failed &#8212; the error is the log</div>
+          <div class="lg" style="margin-top: 3px">
+            <span class="slots"><i class="slot on"></i><i class="slot on"></i><i class="slot on"></i><i class="slot wait"></i><i class="slot wait"></i><i class="slot"></i><i class="slot"></i><i class="slot"></i></span>
+            <span>task slots &#8212; filled, queued, free (maxConcurrency)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

@@ -137,7 +137,7 @@ function RunningCard({ run }: { run: ActiveRun }) {
         <span className="ml-auto font-mono text-[10px] text-faint">{elapsed(run.startedAt)}</span>
         <button
           onClick={() => {
-            void window.kraken.claude.cancel(run.requestId);
+            void window.octo.claude.cancel(run.requestId);
             finishRun(run.requestId, 'cancelled');
           }}
           title="Stop this run"

@@ -16,7 +16,7 @@ import {
   type RoutableAction,
 } from '../../stores/moduleConfig';
 import { explainRoute, type RouteReason } from '../../lib/agentRouter';
-import { buildAction } from '../../lib/library';
+import { buildAction, REASON_LABEL } from '../../lib/library';
 import { cn } from '../../lib/cn';
 import type { SpecKind } from '../../../electron/shared/types';
 import { ModuleHeader, ModuleSection, Explainer, Callout, ScopeChip } from '../ModuleShell';
@@ -24,7 +24,7 @@ import { ModuleHeader, ModuleSection, Explainer, Callout, ScopeChip } from '../M
 const EXPLAINER = [
   {
     heading: 'Routing just works',
-    body: 'For every step Kraken picks the best-fitting installed agent and injects the right skills automatically: per-task @agent → chat override → your pin → strongest keyword specialist (project-local wins ties) → bundled default → generic.',
+    body: 'For every step Octo picks the best-fitting installed agent and injects the right skills automatically: per-task @agent → chat override → your pin → strongest keyword specialist (project-local wins ties) → bundled default → generic.',
   },
   {
     heading: 'See why, before you run',
@@ -35,15 +35,6 @@ const EXPLAINER = [
     body: 'The tuning weights are sensible constants now. If routing picks wrong for a step, pin an agent under Advanced — pins beat everything except an explicit @agent.',
   },
 ];
-
-const REASON_LABEL: Record<RouteReason, string> = {
-  'per-task': 'Per-task @agent',
-  'chat-override': 'Chat override',
-  pinned: 'Pinned',
-  default: 'Bundled default',
-  specialist: 'Best specialist',
-  generic: 'Generic Claude',
-};
 
 /**
  * Routing — a read-only "why was this agent chosen" explainer, plus a
@@ -186,8 +177,9 @@ function RoutingPlayground() {
                 {result.governingSkill && (
                   <SkillChip name={result.governingSkill.name} kind="governing" />
                 )}
+                {result.formatSkill && <SkillChip name={result.formatSkill.name} kind="format" />}
                 {result.domainSkill && <SkillChip name={result.domainSkill.name} kind="domain" />}
-                {!result.governingSkill && !result.domainSkill && (
+                {!result.governingSkill && !result.formatSkill && !result.domainSkill && (
                   <span className="text-[12px] text-faint">None</span>
                 )}
               </div>
@@ -343,8 +335,9 @@ function AdvancedSection() {
             <div className="min-w-0 flex-1">
               <div className="text-[12.5px] text-ink-100">Auto-inject matching skills</div>
               <div className="text-[11px] text-faint">
-                The governing SDD skill on every run, plus a domain skill when it confidently
-                matches the task. Disable individual skills from the Skills section.
+                The governing SDD skill and the document-format skill on every run that writes a
+                spec document, plus a domain skill when it confidently matches the task. Disable
+                individual skills from the Skills section.
               </div>
             </div>
             <span
@@ -391,7 +384,7 @@ function ReasonBadge({ reason }: { reason: RouteReason }) {
         ? 'bg-accent/15 text-accent'
         : reason === 'specialist'
           ? 'bg-good/12 text-good'
-          : 'bg-sky-500/15 text-sky-300';
+          : 'bg-ink-50/[0.06] text-dim';
   return (
     <span className={cn('text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1', tone)}>
       {reason === 'pinned' && <Pin size={9} />}
@@ -400,12 +393,23 @@ function ReasonBadge({ reason }: { reason: RouteReason }) {
   );
 }
 
-function SkillChip({ name, kind }: { name: string; kind: 'governing' | 'domain' }) {
+function SkillChip({ name, kind }: { name: string; kind: 'governing' | 'format' | 'domain' }) {
   return (
     <span
+      title={
+        kind === 'governing'
+          ? 'Stage and gate framing for the whole spec'
+          : kind === 'format'
+            ? 'The literal document shape Octo parses'
+            : 'Matched this task\u2019s domain'
+      }
       className={cn(
         'flex items-center gap-1 text-[11.5px] px-2 py-1 rounded-lg font-medium',
-        kind === 'governing' ? 'bg-sky-500/12 text-sky-300' : 'bg-good/12 text-good'
+        kind === 'domain'
+          ? 'bg-good/12 text-good'
+          : kind === 'format'
+            ? 'bg-agent/12 text-agent-text'
+            : 'bg-ink-50/[0.05] text-dim'
       )}
     >
       <Sparkles size={11} /> {name}

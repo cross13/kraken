@@ -140,10 +140,10 @@ export function Callout({
     <div
       className={cn(
         'flex items-start gap-2.5 rounded-lg px-3.5 py-2.5 text-[12px] leading-relaxed',
-        tone === 'info' ? 'bg-accent/[0.07] text-dim' : 'bg-amber-500/[0.08] text-amber-200/90'
+        tone === 'info' ? 'bg-accent/[0.07] text-dim' : 'bg-warn/[0.08] text-warn/90'
       )}
     >
-      <Info size={14} className={cn('mt-0.5 shrink-0', tone === 'info' ? 'text-accent' : 'text-amber-400')} />
+      <Info size={14} className={cn('mt-0.5 shrink-0', tone === 'info' ? 'text-accent' : 'text-warn')} />
       <div className="min-w-0">{children}</div>
     </div>
   );

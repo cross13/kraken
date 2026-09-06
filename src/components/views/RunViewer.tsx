@@ -11,7 +11,7 @@ import {
   FilePlus2,
   FilePen,
 } from 'lucide-react';
-import { renderMarkdown } from '../../lib/markdown';
+import { Markdown } from '../Markdown';
 import { cn } from '../../lib/cn';
 import type { RunRow, RunFileRow } from '../../../electron/shared/types';
 
@@ -34,8 +34,8 @@ export function RunViewer({ runId }: { runId: string }) {
     let active = true;
     const load = async () => {
       const [r, f] = await Promise.all([
-        window.kraken.history.getRun(runId),
-        window.kraken.history.listRunFiles(runId),
+        window.octo.history.getRun(runId),
+        window.octo.history.listRunFiles(runId),
       ]);
       if (!active) return;
       if (!r) setNotFound(true);
@@ -102,9 +102,9 @@ export function RunViewer({ runId }: { runId: string }) {
                   className="flex items-center gap-2 text-[12px] text-ink-200 rounded px-1.5 py-1 hover:bg-ink-800/40"
                 >
                   {f.op === 'write' ? (
-                    <FilePlus2 size={13} className="text-emerald-400 shrink-0" />
+                    <FilePlus2 size={13} className="text-good shrink-0" />
                   ) : (
-                    <FilePen size={13} className="text-sky-400 shrink-0" />
+                    <FilePen size={13} className="text-dim shrink-0" />
                   )}
                   <span className="font-mono break-all">{f.path}</span>
                   <span className="text-[10px] text-ink-500 ml-auto shrink-0">
@@ -135,7 +135,7 @@ export function RunViewer({ runId }: { runId: string }) {
 
         {run.response && (
           <Section title="Response">
-            <div className="md" dangerouslySetInnerHTML={{ __html: renderMarkdown(run.response) }} />
+            <Markdown source={run.response} />
           </Section>
         )}
 
@@ -175,14 +175,14 @@ function ActiveContext({ run }: { run: RunRow }) {
           )}
         </div>
         <div className="flex items-start gap-2">
-          <Sparkles size={13} className="text-sky-300 shrink-0 mt-0.5" />
+          <Sparkles size={13} className="text-dim shrink-0 mt-0.5" />
           <span className="text-[11px] text-ink-400 w-12 shrink-0">Skills</span>
           {skills.length > 0 ? (
             <span className="flex flex-wrap gap-1">
               {skills.map((s) => (
                 <span
                   key={s}
-                  className="text-[11px] px-1.5 py-0.5 rounded bg-sky-500/15 text-sky-300 font-medium flex items-center gap-1"
+                  className="text-[11px] px-1.5 py-0.5 rounded bg-ink-50/[0.06] text-dim font-medium flex items-center gap-1"
                 >
                   <CheckCircle2 size={10} /> {s}
                 </span>

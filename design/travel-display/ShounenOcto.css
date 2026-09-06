@@ -1,0 +1,21 @@
+/* The direction sheets: one octopus, five faces, and the real-size check. */
+.root { width: 1200px; height: 800px; }
+.sheet { flex: 1 1 auto; min-height: 0; padding: 20px 22px 22px; display: flex; flex-direction: column; gap: 18px; overflow: hidden; }
+.h2 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #848484; font-weight: 600; display: flex; align-items: center; gap: 9px; margin-bottom: 11px; }
+.h2 i { flex: 1 1 auto; height: 1px; background: #333333; display: block; }
+.hero { display: flex; gap: 30px; align-items: center; }
+.hero-stage { width: 300px; height: 250px; flex: none; display: grid; place-items: center; border: 1px solid #333333; background: #1E1E1E; }
+.hero-copy { flex: 1 1 auto; min-width: 0; }
+.hero-name { font-size: 26px; font-weight: 700; color: #FAFAFA; line-height: 1.15; }
+.hero-copy p { font-size: 13.5px; line-height: 1.55; color: #C8C8C8; margin: 13px 0 0; max-width: 62ch; }
+.hero-copy p b { color: #ECECEC; font-weight: 600; }
+.hero-copy p.con { color: #A8A8A8; border-left: 2px solid #E0533C; padding-left: 11px; }
+.states { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.state { border: 1px solid #333333; background: #1E1E1E; padding: 12px 8px 11px; display: flex; flex-direction: column; align-items: center; gap: 9px; }
+.state-label { font-size: 11.5px; color: #C8C8C8; font-weight: 500; }
+.state-note { font-size: 10.5px; color: #848484; text-align: center; line-height: 1.35; }
+.real { border: 1px dashed #333333; background: #1E1E1E; padding: 14px 18px; display: flex; align-items: center; gap: 38px; }
+.real-item { display: flex; align-items: flex-end; gap: 13px; }
+.real-item .txt b { display: block; font-size: 12px; color: #C8C8C8; font-weight: 500; }
+.real-item .txt em { display: block; font-style: normal; font-size: 11px; color: #848484; margin-top: 3px; }
+.bub2 { background: #232323; border: 1px solid #3E3E3E; padding: 5px 9px; font-size: 11.5px; color: #ECECEC; white-space: nowrap; }

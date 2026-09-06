@@ -1,0 +1,491 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+  <style>
+    body { margin: 0; background: #1a1a1a; font-family: 'Hanken Grotesk', system-ui, -apple-system, sans-serif; color: #f2f2f2; }
+    * { box-sizing: border-box; }
+    a { color: #a6e62e; } a:hover { color: #c4f06a; }
+    .mono { font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; }
+    .disp { font-family: 'Space Grotesk', 'Hanken Grotesk', system-ui, sans-serif; }
+    .scroll { overflow-y: auto; scrollbar-width: thin; scrollbar-color: #3d3d3d transparent; }
+    .scroll::-webkit-scrollbar { width: 9px; height: 9px; }
+    .scroll::-webkit-scrollbar-thumb { background: #3d3d3d; }
+    .beat { cursor: pointer; transition: opacity 120ms; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; height: 2650px; display: flex; flex-direction: column; background: #1e1e1e; overflow: hidden;">
+
+  <div style="display: flex; align-items: flex-end; gap: 2px; padding: 6px 16px 0; border-bottom: 1px solid rgba(250,250,250,.05); flex-shrink: 0;">
+    <div style="padding: 10px 14px; font-size: 13px; color: #a8a8a8;">requirements.md</div>
+    <div style="position: relative; padding: 10px 14px; font-size: 13px; color: #fafafa; background: rgba(250,250,250,.03);">
+      plan.md
+      <span style="position: absolute; left: 8px; right: 8px; bottom: -1px; height: 2px; background: #76b900;"></span>
+    </div>
+    <div style="padding: 10px 14px; font-size: 13px; color: #848484;">tasks.md</div>
+
+    <div style="margin-left: auto; display: flex; align-items: center; gap: 10px; padding-bottom: 6px;">
+      <span class="mono" style="font-size: 11px; color: #848484;">saved</span>
+      <div style="display: flex; background: rgba(250,250,250,.04); padding: 2px;">
+        <div style="display: flex; align-items: center; gap: 6px; padding: 6px 10px; font-size: 12px; color: #a8a8a8;">
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M5 3L2 7l3 4M9 3l3 4-3 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="square"></path></svg>
+          Source
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; padding: 6px 10px; font-size: 12px; color: #fafafa; background: #333333;">
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 3h4a1.5 1.5 0 011.5 1.5V12A1.5 1.5 0 006 11H2zM12 3H8a1.5 1.5 0 00-1.5 1.5V12A1.5 1.5 0 018 11h4z" stroke="currentColor" stroke-width="1.2"></path></svg>
+          Cards
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; padding: 6px 10px; font-size: 12px; color: #a8a8a8;">
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M6 8a2.6 2.6 0 000 3.6l.7.7a2.6 2.6 0 003.6-3.6M8 6a2.6 2.6 0 000-3.6l-.7-.7a2.6 2.6 0 00-3.6 3.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"></path></svg>
+          Review
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; padding: 6px 10px; font-size: 12px; color: #a8a8a8;">
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M9.5 2.5l2 2L5 11H3V9z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"></path></svg>
+          Edit
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; align-items: center; gap: 14px; padding: 8px 20px; flex-shrink: 0;">
+    <span class="disp" style="font-size: 13.5px; font-weight: 600; color: #fafafa;">Spec: Clarify before the plan</span>
+    <span class="mono" style="font-size: 11px; color: #848484;">&rsaquo; clarify-round &rsaquo; plan.md</span>
+    <div style="margin-left: auto; display: flex; align-items: center; gap: 6px;">
+      <div style="display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 6px; color: #a8a8a8;">
+        <span style="width: 19px; height: 19px; display: grid; place-items: center; font-size: 10.5px; font-weight: 600; background: rgba(118,185,0,.18); color: #a6e62e;">&#10003;</span>
+        <span style="font-size: 12.5px;">Requirements</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 6px; background: #333333; color: #fafafa;">
+        <span style="width: 19px; height: 19px; display: grid; place-items: center; font-size: 10.5px; font-weight: 600; background: #76b900; color: #0f1400;">2</span>
+        <span style="font-size: 12.5px; font-weight: 500;">Plan</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 6px; color: #848484;">
+        <span style="width: 19px; height: 19px; display: grid; place-items: center; font-size: 10.5px; font-weight: 600; background: rgba(250,250,250,.07); color: #848484;">3</span>
+        <span style="font-size: 12.5px;">Build</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="scroll" style="flex: 1; min-height: 0;">
+    <div style="max-width: 1000px; margin: 0 auto; padding: 26px 32px 30px;">
+
+      <h1 class="disp" style="margin: 0 0 6px; font-size: 26px; font-weight: 700; color: #fafafa; letter-spacing: -.01em;">Plan &mdash; Clarify before the plan</h1>
+
+      <div style="display: flex; align-items: center; gap: 12px; padding: 10px 0 14px; border-bottom: 1px solid #2f2f2f; margin-bottom: 22px;">
+        <span class="mono" style="font-size: 11px; color: #848484;">10 sections &middot; strategy to shipping order</span>
+        <span style="width: 1px; height: 12px; background: #393939;"></span>
+        <div style="{{reasonStyle}}" onClick="{{toggleReason}}">{{reasonLabel}}</div>
+        <span style="margin-left: auto; font-size: 11.5px; color: #848484;">{{hint}}</span>
+      </div>
+
+      <div style="display: flex; flex-direction: column;">
+        <sc-for list="{{beats}}" as="b" hint-placeholder-count="10">
+          <div class="beat" style="{{b.wrapStyle}}" onClick="{{b.focus}}">
+
+            <sc-if value="{{b.hasLink}}" hint-placeholder-val="{{ true }}">
+              <div style="display: flex; gap: 18px; height: 42px;">
+                <div style="width: 22px; flex-shrink: 0; display: flex; justify-content: center;">
+                  <span style="width: 1px; height: 100%; background: #333333;"></span>
+                </div>
+                <span class="mono" style="align-self: center; font-size: 11px; font-style: italic; color: #6e6e6e;">{{b.link}}</span>
+              </div>
+            </sc-if>
+
+            <div style="display: flex; gap: 18px;">
+              <div style="width: 22px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center;">
+                <span class="mono" style="{{b.nodeStyle}}">{{b.num}}</span>
+                <span style="flex: 1; width: 1px; background: #333333; margin-top: 6px;"></span>
+              </div>
+
+              <div style="flex: 1; min-width: 0; padding-bottom: 4px;">
+
+                <div style="display: flex; align-items: baseline; gap: 12px; min-height: 14px;">
+                  <sc-if value="{{b.showRole}}" hint-placeholder-val="{{ true }}">
+                    <span class="mono" style="{{b.roleStyle}}">{{b.role}}</span>
+                  </sc-if>
+                  <sc-if value="{{b.unknown}}" hint-placeholder-val="{{ true }}">
+                    <span class="mono" style="font-size: 9.5px; letter-spacing: .1em; color: #6e6e6e;">SECTION</span>
+                  </sc-if>
+                  <span class="mono" style="margin-left: auto; font-size: 10.5px; color: #6e6e6e; flex-shrink: 0;">{{b.heading}}</span>
+                </div>
+
+                <div style="display: flex; align-items: baseline; gap: 10px;">
+                  <h2 class="disp" style="{{b.titleStyle}}">{{b.title}}</h2>
+                  <sc-if value="{{b.badge}}" hint-placeholder-val="{{ true }}">
+                    <span class="mono" style="font-size: 9.5px; letter-spacing: .06em; padding: 2px 6px; background: rgba(118,185,0,.14); color: #a6e62e;">{{b.badgeText}}</span>
+                  </sc-if>
+                </div>
+
+                <sc-if value="{{b.hasFact}}" hint-placeholder-val="{{ true }}">
+                  <div style="display: flex; align-items: baseline; gap: 8px; margin-top: 3px;">
+                    <span class="mono" style="font-size: 11.5px; color: #a8a8a8;">{{b.fact}}</span>
+                    <sc-if value="{{b.hasFlag}}" hint-placeholder-val="{{ true }}">
+                      <span class="mono" style="font-size: 11.5px; color: #c9a9ff;">{{b.flag}}</span>
+                    </sc-if>
+                  </div>
+                </sc-if>
+
+                <div style="padding-top: 10px;">
+
+                  <sc-if value="{{b.isProse}}" hint-placeholder-val="{{ true }}">
+                    <div style="max-width: 68ch; display: flex; flex-direction: column; gap: 9px;">
+                      <sc-for list="{{b.paras}}" as="p" hint-placeholder-count="1">
+                        <p style="margin: 0; font-size: 13.5px; line-height: 1.65; color: #c8c8c8;">{{p.text}}</p>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+
+                  <sc-if value="{{b.isApproach}}" hint-placeholder-val="{{ true }}">
+                    <div style="display: flex; flex-direction: column; gap: 14px;">
+                      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                        <sc-for list="{{b.nodes}}" as="n" hint-placeholder-count="4">
+                          <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="{{n.boxStyle}}">{{n.label}}</div>
+                            <sc-if value="{{n.arrow}}" hint-placeholder-val="{{ true }}">
+                              <span style="font-size: 13px; color: #6e6e6e;">&rarr;</span>
+                            </sc-if>
+                          </div>
+                        </sc-for>
+                      </div>
+                      <div style="max-width: 68ch; display: flex; flex-direction: column; gap: 9px;">
+                        <sc-for list="{{b.paras}}" as="p" hint-placeholder-count="1">
+                          <p style="margin: 0; font-size: 13.5px; line-height: 1.65; color: #c8c8c8;">{{p.text}}</p>
+                        </sc-for>
+                      </div>
+                    </div>
+                  </sc-if>
+
+                  <sc-if value="{{b.isFiles}}" hint-placeholder-val="{{ true }}">
+                    <div style="display: flex; flex-direction: column;">
+                      <div style="display: flex; gap: 16px; padding: 0 0 7px; border-bottom: 1px solid #393939;">
+                        <span class="mono" style="font-size: 10px; letter-spacing: .06em; width: 300px; flex-shrink: 0; color: #848484;">FILE</span>
+                        <span class="mono" style="font-size: 10px; letter-spacing: .06em; color: #848484;">CHANGE</span>
+                      </div>
+                      <sc-for list="{{b.files}}" as="f" hint-placeholder-count="6">
+                        <div style="display: flex; gap: 16px; align-items: baseline; padding: 7px 0; border-bottom: 1px solid #2a2a2a;">
+                          <span style="display: flex; align-items: baseline; gap: 8px; width: 300px; flex-shrink: 0;">
+                            <span class="mono" style="{{f.opStyle}}">{{f.op}}</span>
+                            <span class="mono" style="font-size: 12px; color: #ececec; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{f.path}}</span>
+                          </span>
+                          <span style="font-size: 12.5px; line-height: 1.5; color: #c8c8c8;">{{f.change}}</span>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+
+                  <sc-if value="{{b.isCode}}" hint-placeholder-val="{{ true }}">
+                    <pre class="mono scroll" style="margin: 0; padding: 12px 14px; background: #1a1a1a; border: 1px solid #393939; font-size: 12px; line-height: 1.6; color: #ececec; overflow-x: auto;">{{b.code}}</pre>
+                  </sc-if>
+
+                  <sc-if value="{{b.isRisks}}" hint-placeholder-val="{{ true }}">
+                    <div style="display: flex; flex-direction: column;">
+                      <sc-for list="{{b.risks}}" as="r" hint-placeholder-count="2">
+                        <div style="display: flex; gap: 16px; align-items: baseline; padding: 9px 0; border-bottom: 1px solid #2a2a2a;">
+                          <span style="width: 240px; flex-shrink: 0; font-size: 13px; line-height: 1.5; color: #ececec;">{{r.risk}}</span>
+                          <span style="flex: 1; font-size: 12.5px; line-height: 1.5; color: #c8c8c8;">{{r.mitigation}}</span>
+                          <span class="mono" style="width: 180px; flex-shrink: 0; font-size: 11px; color: #848484;">{{r.revert}}</span>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+
+                  <sc-if value="{{b.isBullets}}" hint-placeholder-val="{{ true }}">
+                    <div style="display: flex; flex-direction: column; gap: 8px; max-width: 74ch;">
+                      <sc-for list="{{b.bullets}}" as="x" hint-placeholder-count="3">
+                        <div style="display: flex; gap: 10px; align-items: baseline;">
+                          <span style="width: 3px; height: 3px; background: #6e6e6e; flex-shrink: 0;"></span>
+                          <span style="font-size: 13px; line-height: 1.55; color: #c8c8c8;">{{x.text}}</span>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+
+                  <sc-if value="{{b.isWaves}}" hint-placeholder-val="{{ true }}">
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                      <sc-for list="{{b.waves}}" as="w" hint-placeholder-count="2">
+                        <div style="display: flex; flex-direction: column;">
+                          <div style="display: flex; align-items: center; gap: 10px; padding-bottom: 6px;">
+                            <span class="mono" style="font-size: 10.5px; letter-spacing: .06em; color: #a6e62e;">{{w.label}}</span>
+                            <span style="font-size: 11.5px; color: #848484;">{{w.note}}</span>
+                            <span style="flex: 1; height: 1px; background: #333333;"></span>
+                            <span class="mono" style="font-size: 10.5px; color: #848484;">{{w.count}}</span>
+                          </div>
+                          <sc-for list="{{w.tasks}}" as="t" hint-placeholder-count="3">
+                            <div style="display: flex; gap: 11px; align-items: baseline; padding: 7px 0; border-bottom: 1px solid #2a2a2a;">
+                              <span style="{{t.boxStyle}}">{{t.mark}}</span>
+                              <span class="mono" style="{{t.idStyle}}">{{t.id}}</span>
+                              <span style="flex: 1; font-size: 13px; line-height: 1.5; color: #ececec;">{{t.text}}</span>
+                              <span style="font-size: 12px; font-style: italic; color: #848484;">{{t.outcome}}</span>
+                              <span class="mono" style="font-size: 10.5px; width: 74px; text-align: right; flex-shrink: 0; color: #9b6bff;">{{t.agent}}</span>
+                            </div>
+                          </sc-for>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+
+                  <sc-if value="{{b.isChecks}}" hint-placeholder-val="{{ true }}">
+                    <div style="display: flex; flex-direction: column; gap: 9px;">
+                      <sc-for list="{{b.checks}}" as="q" hint-placeholder-count="2">
+                        <div style="display: flex; gap: 10px; align-items: baseline;">
+                          <span style="{{q.boxStyle}}">{{q.mark}}</span>
+                          <span style="{{q.textStyle}}">{{q.text}}</span>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+
+                  <sc-if value="{{b.isDecisions}}" hint-placeholder-val="{{ true }}">
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                      <sc-for list="{{b.decisions}}" as="d" hint-placeholder-count="1">
+                        <div style="padding: 12px 14px; background: #2a2140; border-left: 2px solid #9b6bff;">
+                          <div style="display: flex; align-items: baseline; gap: 10px;">
+                            <span class="mono" style="font-size: 11px; color: #c9a9ff;">{{d.task}}</span>
+                            <span style="font-size: 13px; font-weight: 600; color: #ececec;">{{d.title}}</span>
+                            <span class="mono" style="margin-left: auto; font-size: 10.5px; color: #848484;">{{d.when}}</span>
+                          </div>
+                          <p style="margin: 7px 0 0; font-size: 12.5px; line-height: 1.55; color: #c8c8c8;">{{d.body}}</p>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+
+                </div>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+
+        <div style="display: flex; gap: 18px; padding-top: 6px;">
+          <div style="width: 22px; flex-shrink: 0; display: flex; justify-content: center;">
+            <span style="width: 7px; height: 7px; background: #333333;"></span>
+          </div>
+          <span class="mono" style="font-size: 11px; color: #6e6e6e;">end of plan.md &mdash; approving copies the 5 tasks into tasks.md</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; align-items: center; gap: 12px; padding: 12px 20px; background: rgba(35,35,35,.6); border-top: 1px solid #393939; flex-shrink: 0;">
+    <div style="padding: 8px 14px; font-size: 12.5px; background: #333333; color: #f2f2f2;">Revise with feedback&hellip;</div>
+    <div style="padding: 8px 14px; font-size: 12.5px; background: rgba(155,107,255,.14); color: #c9a9ff;">Improve with Claude</div>
+    <span style="font-size: 11.5px; color: #848484;">AC-7 is not covered, on purpose: it cannot be tested as written</span>
+    <div style="margin-left: auto; display: flex; align-items: center; gap: 8px; padding: 8px 16px; font-size: 12.5px; font-weight: 600; background: #76b900; color: #0f1400;">
+      Approve plan <span style="font-size: 11px;">&rarr;</span> Build
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":2650}}'>
+/* Same fixed map, plan side. No model call: heading -> role + connective. */
+const ROLES = {
+  'objective':                  { role: 'WHAT WE COMMIT TO' },
+  'approach':                   { role: 'THE STRATEGY, AND WHAT WE TURNED DOWN', link: 'so how do we get there?' },
+  'affected files':             { role: 'WHERE IT LANDS IN THE CODE',            link: 'which touches' },
+  'backend changes':            { role: 'THE SHAPE IT COMMITS TO',               link: 'committing to' },
+  'frontend changes':           { role: 'WHAT THE USER TOUCHES',                 link: 'and on screen' },
+  'key implementation details': { role: 'THE PARTS YOU WOULD OTHERWISE GUESS',   link: 'down to' },
+  'risks and rollback':         { role: 'WHERE THIS COULD GO WRONG',             link: 'and if it goes wrong' },
+  'verification':               { role: 'HOW WE WILL KNOW',                      link: 'so we prove it by' },
+  'tasks':                      { role: 'THE ORDER OF WORK',                     link: 'in this order' },
+  'open questions':             { role: 'WHAT WE STILL DON’T KNOW',              link: 'except that', attention: true },
+  'critical decisions':         { role: 'WHERE REALITY CHANGED THE PLAN',        link: 'and once it met the code', attention: true }
+};
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { reason: true, focus: null };
+  }
+
+  data() {
+    return [
+      { key: 'objective', num: '1', title: 'Objective', heading: '> objective', kind: 'prose',
+        paras: [{ text: 'One round of questions between the Requirements gate and the plan draft, so the plan commits to the user’s answer instead of its own. Appetite M, risk low: the round is skippable, and everything it writes is markdown that a git revert undoes.' }] },
+
+      { key: 'approach', num: '2', title: 'Approach', heading: '## Approach', kind: 'approach',
+        nodes: [
+          { label: 'Approve requirements', arrow: true },
+          { label: 'Clarify (questions)', arrow: true, accent: true },
+          { label: 'Resolved Decisions', arrow: true },
+          { label: 'plan.md', arrow: false }
+        ],
+        paras: [{ text: 'Clarify becomes a sub-tab of the Plan stage, not a fourth phase — the phase order stays requirements → plan → build. Turned down: a modal at the gate, which loses every answer on cancel; and a separate questions.md, which is a fourth file nobody opens.' }] },
+
+      { key: 'files', num: '3', title: 'Affected files', heading: '## Affected files', kind: 'files',
+        files: [
+          { op: 'M', path: 'electron/main.ts:940', change: 'advanceSpec writes the Clarify stub when Requirements is approved' },
+          { op: 'A', path: 'src/lib/specQuestions.ts', change: 'parse and write Open Questions / Resolved Decisions' },
+          { op: 'M', path: 'src/components/views/QuestionsView.tsx', change: 'variant="stage", option chips, keys 1 to 9' },
+          { op: 'M', path: 'src/components/views/SpecFlow.tsx:273', change: 'the Plan stage gains the Clarify sub-tab' },
+          { op: 'M', path: 'src/stores/workspace.ts', change: 'resolved decisions ride along with the spec files' },
+          { op: 'M', path: 'docs/subsystems.md', change: 'the clarify round, documented beside steering and hooks' }
+        ] },
+
+      { key: 'backend', num: '4', title: 'Backend changes', heading: '## Backend changes', kind: 'code',
+        code: 'export interface SpecQuestion {\n  id: string;            // "Q1", stable across re-reads\n  text: string;\n  options: string[];     // 2 to 4, pre-loaded by Claude\n  answer?: string;       // written back as Resolved Decisions\n}' },
+
+      { key: 'frontend', num: '5', title: 'Frontend changes', heading: '## Frontend changes', kind: 'prose',
+        paras: [{ text: 'QuestionsView gains a stage variant that renders inside the Plan stage instead of the overlay. SpecFlow owns the sub-tab state and the rule that approving Requirements lands on Clarify. Apply decisions is one action, not two: it writes the section, then drafts the plan if plan.md is still a stub.' }] },
+
+      { key: 'risks', num: '6', title: 'Risks and rollback', heading: '## Risks and rollback', kind: 'risks',
+        risks: [
+          { risk: 'A plan run stops on questions mid-autopilot', mitigation: 'Stops once only; Quick Plan and Revise pass noStops', revert: 'drop the noStops flag' },
+          { risk: 'Resolved Decisions drifts from what the panel shows', mitigation: 'The markdown is the single source; the panel re-reads it', revert: 'revert the section writer' }
+        ] },
+
+      { key: 'verification', num: '7', title: 'Verification', heading: '## Verification', kind: 'bullets',
+        bullets: [
+          { text: 'AC-1 to AC-5: approve Requirements on a fresh spec and answer the round.' },
+          { text: 'AC-6: force a plan run with an unsettled decision, assert the stage flips back to Clarify.' },
+          { text: 'AC-7 is not testable as written and is deliberately not covered.' }
+        ] },
+
+      { key: 'tasks', num: '8', title: 'Tasks', heading: '## Tasks', kind: 'waves', badge: true, badgeText: 'RUNS BUILD',
+        waves: [
+          { label: 'WAVE 1', note: 'no dependencies', count: '3 tasks', tasks: [
+            { id: 'T1', text: 'Parse Open Questions and Resolved Decisions out of requirements.md', outcome: 'round-trips unchanged', done: true, agent: '' },
+            { id: 'T2', text: 'Question card with option chips and the 1 to 9 keys', outcome: 'never needs the mouse', done: true, agent: '@frontend' },
+            { id: 'T3', text: 'Write Resolved Decisions back into the document', outcome: 'answers survive a reload', done: false, agent: '' }
+          ] },
+          { label: 'WAVE 2', note: 'depends on T1, T3', count: '2 tasks', tasks: [
+            { id: 'T4', text: 'Land on Clarify when Requirements is approved', outcome: 'the gate opens the round', done: false, agent: '' },
+            { id: 'T5', text: 'Apply decisions drafts the plan when it is still a stub', outcome: 'one action, not two', done: false, agent: '' }
+          ] }
+        ] },
+
+      { key: 'questions', num: '9', title: 'Open Questions', heading: '## Open Questions', kind: 'checks',
+        checks: [
+          { text: 'Does Quick Plan skip the round, or answer it with the first option?', done: false },
+          { text: 'The round runs once per spec, not once per plan draft.', done: true },
+          { text: 'Questions raised mid-run are written into plan.md, not requirements.md.', done: true }
+        ] },
+
+      { key: 'decisions', num: '10', title: 'Critical Decisions', heading: '## Critical Decisions', kind: 'decisions',
+        decisions: [
+          { task: 'T2', title: 'Chips over a native select', when: 'wave 1', body: 'The plan called for a select. A select hides the tradeoff text that makes an option answerable, so the executor built one-click chips with the tradeoff under each. Same contract, one fewer click.' }
+        ] }
+    ];
+  }
+
+  facts(s) {
+    const n = (k) => (s[k] || []).length;
+    if (s.kind === 'files') {
+      const added = (s.files || []).filter((f) => f.op === 'A').length;
+      return { fact: n('files') + ' files' + (added ? ' · ' + added + ' new' : ''), flag: '' };
+    }
+    if (s.kind === 'code') return { fact: '1 contract block', flag: '' };
+    if (s.kind === 'risks') return { fact: n('risks') + ' risks · each with a revert', flag: '' };
+    if (s.kind === 'bullets') return { fact: n('bullets') + ' items', flag: '' };
+    if (s.kind === 'waves') {
+      let t = 0, done = 0;
+      (s.waves || []).forEach((w) => w.tasks.forEach((x) => { t++; if (x.done) done++; }));
+      return { fact: t + ' tasks in ' + n('waves') + ' waves · ' + done + ' done', flag: '' };
+    }
+    if (s.kind === 'checks') {
+      const done = (s.checks || []).filter((q) => q.done).length;
+      return { fact: done + ' resolved', flag: (n('checks') - done) ? (n('checks') - done) + ' open' : '' };
+    }
+    if (s.kind === 'decisions') return { fact: '', flag: n('decisions') + ' recorded during Build' };
+    if (s.kind === 'approach') return { fact: (s.nodes || []).length + ' steps · 2 alternatives turned down', flag: '' };
+    return { fact: '', flag: '' };
+  }
+
+  renderVals() {
+    const st = this.state || {};
+    const reason = st.reason !== false;
+    const focus = st.focus || null;
+    const list = this.data();
+
+    let prevKnown = false;
+    const beats = list.map((s, i) => {
+      const map = ROLES[s.title.toLowerCase()] || null;
+      const unknown = !map;
+      const attn = !!(map && map.attention);
+      const dim = focus && focus !== s.key;
+      const on = focus === s.key;
+      const f = this.facts(s);
+      const hasLink = reason && !unknown && !!map.link && i > 0 && prevKnown;
+      prevKnown = !unknown;
+      return {
+        num: s.num, title: s.title, heading: s.heading,
+        role: map ? map.role : '', link: map && map.link ? map.link : '',
+        hasLink: hasLink, showRole: reason && !unknown, unknown: reason && unknown,
+        fact: f.fact + (f.fact && f.flag ? '  ·' : ''), flag: f.flag,
+        hasFact: !!(f.fact || f.flag), hasFlag: !!f.flag,
+        badge: !!s.badge, badgeText: s.badgeText || '',
+        isProse: s.kind === 'prose',
+        isApproach: s.kind === 'approach',
+        isFiles: s.kind === 'files',
+        isCode: s.kind === 'code',
+        isRisks: s.kind === 'risks',
+        isBullets: s.kind === 'bullets',
+        isWaves: s.kind === 'waves',
+        isChecks: s.kind === 'checks',
+        isDecisions: s.kind === 'decisions',
+        paras: s.paras || [], bullets: s.bullets || [], risks: s.risks || [],
+        decisions: s.decisions || [], code: s.code || '',
+        wrapStyle: 'opacity: ' + (dim ? '0.34' : '1') + ';',
+        nodeStyle: 'width: 22px; height: 22px; flex-shrink: 0; display: grid; place-items: center; font-size: 11px; ' +
+          (on ? 'background: #76b900; color: #0f1400;'
+              : attn ? 'background: #2a2140; border: 1px solid rgba(155,107,255,.5); color: #c9a9ff;'
+                     : unknown ? 'background: #232323; border: 1px dashed #4a4a4a; color: #848484;'
+                               : 'background: #2a2a2a; border: 1px solid #393939; color: #a8a8a8;'),
+        roleStyle: 'font-size: 9.5px; letter-spacing: .1em; flex-shrink: 0; color: ' + (attn ? '#c9a9ff' : '#a6e62e') + ';',
+        titleStyle: 'margin: 2px 0 0; font-size: 17px; font-weight: 600; color: #fafafa;',
+        focus: () => this.setState({ focus: (this.state && this.state.focus) === s.key ? null : s.key }),
+        nodes: (s.nodes || []).map((n) => ({
+          label: n.label, arrow: !!n.arrow,
+          boxStyle: 'padding: 8px 13px; font-size: 12.5px; border: 1px solid ' + (n.accent ? 'rgba(118,185,0,.45)' : '#393939') +
+            '; background: ' + (n.accent ? 'rgba(118,185,0,.10)' : '#2a2a2a') + '; color: ' + (n.accent ? '#a6e62e' : '#ececec') + ';'
+        })),
+        files: (s.files || []).map((f2) => ({
+          op: f2.op, path: f2.path, change: f2.change,
+          opStyle: 'font-size: 10.5px; width: 12px; flex-shrink: 0; color: ' + (f2.op === 'A' ? '#a6e62e' : '#848484') + ';'
+        })),
+        waves: (s.waves || []).map((w) => ({
+          label: w.label, note: w.note, count: w.count,
+          tasks: w.tasks.map((t) => ({
+            id: t.id, text: t.text, outcome: t.outcome, agent: t.agent,
+            mark: t.done ? '✓' : '',
+            boxStyle: 'width: 13px; height: 13px; flex-shrink: 0; display: grid; place-items: center; font-size: 9px; ' +
+              (t.done ? 'background: rgba(118,185,0,.16); color: #a6e62e; border: 1px solid rgba(118,185,0,.4);'
+                      : 'border: 1px solid #4a4a4a; color: transparent;'),
+            idStyle: 'font-size: 11px; width: 22px; flex-shrink: 0; color: ' + (t.done ? '#a6e62e' : '#a8a8a8') + ';'
+          }))
+        })),
+        checks: (s.checks || []).map((q) => ({
+          text: q.text,
+          mark: q.done ? '✓' : '',
+          boxStyle: 'width: 13px; height: 13px; flex-shrink: 0; display: grid; place-items: center; font-size: 9px; ' +
+            (q.done ? 'background: rgba(118,185,0,.16); color: #a6e62e; border: 1px solid rgba(118,185,0,.4);'
+                    : 'border: 1px solid #9b6bff; color: transparent;'),
+          textStyle: 'font-size: 13px; line-height: 1.5; color: ' + (q.done ? '#848484' : '#ececec') +
+            (q.done ? '; text-decoration: line-through; text-decoration-color: #4a4a4a;' : ';')
+        }))
+      };
+    });
+
+    return {
+      beats: beats,
+      reasonLabel: reason ? 'Narration on' : 'Narration off',
+      reasonStyle: 'padding: 4px 10px; font-size: 11.5px; cursor: pointer; ' +
+        (reason ? 'background: rgba(118,185,0,.14); color: #a6e62e;' : 'background: #2a2a2a; color: #a8a8a8;'),
+      toggleReason: () => this.setState({ reason: !(this.state && this.state.reason !== false) }),
+      hint: focus
+        ? 'Following one step. Click it again to let the rest back in.'
+        : 'Strategy, surface, contract, risk, proof, order — straight from the heading map.'
+    };
+  }
+}
+</script>
+</body>
+</html>

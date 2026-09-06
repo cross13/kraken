@@ -1,0 +1,64 @@
+{
+  "pages": [
+    { "id": "page-1", "name": "Requirements" },
+    { "id": "page-2", "name": "Plan (built)" }
+  ],
+  "artboards": [
+    {
+      "file": "Requirements.dc.html",
+      "page": "page-1",
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 980,
+      "title": "Requirements · Review",
+      "is_interactive": true
+    },
+    {
+      "file": "RequirementsNarrow.dc.html",
+      "page": "page-1",
+      "x": 1560,
+      "y": 0,
+      "w": 1000,
+      "h": 760,
+      "title": "Narrow window"
+    },
+    {
+      "file": "Main.dc.html",
+      "page": "page-2",
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 980,
+      "title": "Plan · Review (shipped)",
+      "is_interactive": true
+    }
+  ],
+  "annotations": [
+    {
+      "id": "note-req",
+      "page": "page-1",
+      "x": 0,
+      "y": -150,
+      "w": 420,
+      "text": "REQUIREMENTS · REVIEW — click a story, then a criterion\n\nThe plan's view answers \"is every criterion covered?\". This one answers the question one step earlier: CAN THIS BE PLANNED?\n\nStories on the left, criteria grouped under the story they serve. Click a story to see only its criteria; click a criterion to check its form, its story and where it lands in the plan.\n\nTwo findings are built into the sample so you can see them: US-3 has no criterion (nothing will be built for it), and AC-7 says \"feel responsive\" — untestable. Both read violet, the palette's \"needs your decision\", not red: neither is broken, both need you."
+    },
+    {
+      "id": "note-narrow",
+      "page": "page-1",
+      "x": 1560,
+      "y": -150,
+      "w": 380,
+      "text": "THE WIDTH TRADEOFF, ANSWERED\n\nYou flagged this on the plan view: below ~1180px two panes stop working.\n\nThe stories collapse into a row of filter chips above the list and the criteria keep the full width. Same reading order, same checks. The plan's Review stacks the same way."
+    },
+    {
+      "id": "note-plan",
+      "page": "page-2",
+      "x": 0,
+      "y": -150,
+      "w": 420,
+      "text": "PLAN · REVIEW — the one you picked, now shipped\n\nKept here as the reference the requirements view is built to match: same coverage strip, same select-to-trace, same violet-for-decide.\n\nWhat changed in the build: coverage reports two strengths, not one. Green where the plan writes the AC id, faded green where it was inferred from wording, red where nothing reaches it. The three unchosen sketches are gone — that decision is made."
+    }
+  ],
+  "launch": { "view": "canvas", "page": "page-1" }
+}

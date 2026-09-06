@@ -22,7 +22,7 @@ export function NewSpecDialog({
     if (!name.trim() || busy) return;
     setBusy(true);
     const spec = await createSpec(name.trim(), kind);
-    openSpec(spec.id, 'requirements');
+    openSpec(spec.id, 'define');
     onClose();
   };
 
@@ -48,7 +48,7 @@ export function NewSpecDialog({
             onClick={() => setKind('feature')}
             icon={<FileCode2 size={18} />}
             title="Feature"
-            description="Requirements → Design → Tasks"
+            description="Requirements → Plan → Build"
             tone="accent"
           />
           <KindCard
@@ -56,7 +56,7 @@ export function NewSpecDialog({
             onClick={() => setKind('bugfix')}
             icon={<Bug size={18} />}
             title="Bugfix"
-            description="Analysis → Design → Tasks"
+            description="Analysis → Plan → Build"
             tone="warn"
           />
         </div>

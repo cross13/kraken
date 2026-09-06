@@ -1,4 +1,4 @@
-// GitHub REST API client. Dependency-free (uses global fetch) so Kraken can
+// GitHub REST API client. Dependency-free (uses global fetch) so Octo can
 // manage branches → pull requests without requiring the `gh` CLI. A Personal
 // Access Token is supplied by the caller (main.ts stores it via safeStorage).
 
@@ -10,7 +10,7 @@ import type {
 import { gitCurrentBranch, gitRemoteUrl } from './git.js';
 
 const API = 'https://api.github.com';
-const UA = 'Kraken-SDD';
+const UA = 'Octo-SDD';
 
 /** Parse owner/repo out of any common GitHub remote URL form. */
 export function parseGitHubRemote(

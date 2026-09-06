@@ -1,4 +1,4 @@
-import { KrakenLogo } from './KrakenLogo';
+import { OctoMark } from './OctoMark';
 import { cn } from '../lib/cn';
 
 // "Reading code" shimmer lines from the brand kit: [width %, indent px, color].
@@ -13,18 +13,22 @@ const CODE_LINES: [number, number, string][] = [
   [36, 32, 'rgba(0,187,221,0.55)'],
 ];
 
+// Width only — the mark is square-ish and sets its own height.
 const MARK_SIZE = {
-  sm: 'w-10 h-[50px]',
-  md: 'w-16 h-20',
-  lg: 'w-24 h-[120px]',
+  sm: 'w-11',
+  md: 'w-[68px]',
+  lg: 'w-[104px]',
 } as const;
 
 /**
- * Branded loader (Octopus Brand Kit "Loader — reading code"): the animated
- * mark over a scrolling code shimmer and three pulsing dots. Use it for
- * blocking/large loading states; small inline spinners stay `Loader2`.
+ * Branded loader ("Loader — reading code"): the animated mark over a scrolling
+ * code shimmer and three pulsing dots. Use it for blocking/large loading
+ * states; small inline spinners stay `Loader2`.
+ *
+ * `sm` is 44px and takes the simplified drawing; from `md` up the octopus is
+ * big enough to wear the whole armour and swing the katana.
  */
-export function KrakenLoader({
+export function OctoLoader({
   label,
   size = 'md',
   showCode = true,
@@ -37,10 +41,10 @@ export function KrakenLoader({
 }) {
   return (
     <div className={cn('flex flex-col items-center gap-4', className)}>
-      <KrakenLogo animated glow variant="dark" className={MARK_SIZE[size]} />
+      <OctoMark animated glow detail={size === 'sm' ? 'simple' : 'full'} className={MARK_SIZE[size]} />
 
       {showCode && (
-        <div className="w-[220px] h-[96px] rounded-[10px] overflow-hidden relative bg-[#000A14] ring-1 ring-[#00BBDD]/[0.14]">
+        <div className="w-[220px] h-[96px] rounded-lg overflow-hidden relative bg-rail ring-1 ring-accent/[0.18]">
           <div
             className="flex flex-col gap-[9px] px-3.5 py-3"
             style={{ animation: 'octo-code-scroll 6s linear infinite' }}
@@ -57,7 +61,8 @@ export function KrakenLoader({
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
-              background: 'linear-gradient(180deg,#000A14,transparent 25%,transparent 75%,#000A14)',
+              background:
+                'linear-gradient(180deg,rgb(var(--rail)),transparent 25%,transparent 75%,rgb(var(--rail)))',
             }}
           />
         </div>
@@ -67,7 +72,7 @@ export function KrakenLoader({
         {[0, 1, 2].map((i) => (
           <span
             key={i}
-            className="w-1.5 h-1.5 rounded-full bg-[#00BBDD]"
+            className="w-1.5 h-1.5 rounded-full bg-accent"
             style={{ animation: `octo-dot-pulse 1.2s ${i * 0.2}s infinite` }}
           />
         ))}

@@ -1,0 +1,297 @@
+<div class="root">
+
+  <div class="bar">
+    <div class="mark">
+      <svg viewBox="46 26 108 146" width="17" height="23" class="ico">
+        <path d="M 62,106 C 54,124 50,138 58,150" fill="none" stroke="#8AD000" stroke-width="8" stroke-linecap="round"></path>
+        <path d="M 80,112 C 76,132 74,148 80,162" fill="none" stroke="#8AD000" stroke-width="8" stroke-linecap="round"></path>
+        <path d="M 120,112 C 124,132 126,148 120,162" fill="none" stroke="#8AD000" stroke-width="8" stroke-linecap="round"></path>
+        <path d="M 138,106 C 146,124 150,138 142,150" fill="none" stroke="#8AD000" stroke-width="8" stroke-linecap="round"></path>
+        <path d="M 55,112 C 46,68 62,36 100,32 C 138,36 154,68 145,112 L 134,120 L 125,108 L 112,122 L 100,112 L 88,122 L 75,108 L 66,120 Z" fill="#2A2A2A" stroke="#8AD000" stroke-width="3" stroke-linejoin="round"></path>
+        <path d="M 72,68 L 92,76 L 92,84 L 72,76 Z" fill="#C4F06A"></path>
+        <path d="M 128,68 L 108,76 L 108,84 L 128,76 Z" fill="#C4F06A"></path>
+      </svg>
+    </div>
+
+    <div>
+      <div class="hd-title disp">6 agents running <span class="sep">·</span> <span style="color: #C9A9FF; font-weight: 500">2 queued</span></div>
+      <div class="hd-sub mono">kraken <span class="sep">·</span> claude-opus-5</div>
+    </div>
+
+    <div style="width: 1px; height: 26px; background: #333333; margin: 0 2px"></div>
+
+    <div style="display: flex; align-items: center; gap: 9px">
+      <div class="slots">
+        <div class="slot on"></div>
+        <div class="slot on"></div>
+        <div class="slot on"></div>
+        <div class="slot wait"></div>
+        <div class="slot wait"></div>
+        <div class="slot"></div>
+        <div class="slot"></div>
+        <div class="slot"></div>
+      </div>
+      <div class="cap mono">3<span class="sep">/</span>8 task slots</div>
+    </div>
+
+    <div style="width: 1px; height: 26px; background: #333333; margin: 0 2px"></div>
+    <div class="cap"><span style="color: #A6E62E; font-weight: 600">Autopilot</span> <span class="sep">·</span> Wave 2 of 3 <span class="sep">·</span> 4 of 12 tasks done</div>
+
+    <div class="grow"></div>
+
+    <button class="btn danger">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" class="ico"><rect x="4" y="4" width="16" height="16"></rect></svg>
+      Stop all
+    </button>
+    <div class="zoombox">
+      <div>&#8722;</div>
+      <div class="mono" style="border-left: 1px solid #393939; border-right: 1px solid #393939; min-width: 44px">100%</div>
+      <div>+</div>
+    </div>
+    <button class="btn" style="padding: 0 8px">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="ico"><circle cx="12" cy="12" r="10"></circle><path d="M12 18a6 6 0 0 0 0-12z" fill="currentColor"></path></svg>
+    </button>
+    <button class="btn" style="padding: 0 8px">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="ico"><path d="M8 3v3a2 2 0 0 1-2 2H3M21 8h-3a2 2 0 0 1-2-2V3M3 16h3a2 2 0 0 1 2 2v3M16 21v-3a2 2 0 0 1 2-2h3"></path></svg>
+    </button>
+  </div>
+
+  <div class="lanes">
+
+    <!-- Lane 1 -->
+    <div class="lane live">
+      <div class="lane-hd">
+        <div style="display: flex; align-items: center; gap: 8px">
+          <span class="lane-name disp trunc">auth-refresh</span>
+          <span class="pill build">Build</span>
+        </div>
+        <div class="lane-sub">Wave 2 of 3 <span class="sep">·</span> 2 done, 2 running, 2 queued</div>
+        <div class="prog">
+          <i class="seg done"></i><i class="seg done"></i><i class="seg run"></i><i class="seg run"></i><i class="seg wait"></i><i class="seg wait"></i>
+        </div>
+      </div>
+      <div class="lane-body">
+        <div class="grp">Wave 1 <i></i> 2 done</div>
+        <div class="row dim">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#76B900" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="ico"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><path d="m9 11 3 3L22 4"></path></svg>
+          <span class="tid mono">T1</span>
+          <span class="row-title trunc grow">Extract the token helpers</span>
+          <span class="meta mono">1m 58s</span>
+        </div>
+        <div class="row dim">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#76B900" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="ico"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><path d="m9 11 3 3L22 4"></path></svg>
+          <span class="tid mono">T2</span>
+          <span class="row-title trunc grow">Add SessionStore.rotate()</span>
+          <span class="meta mono">3m 41s</span>
+        </div>
+
+        <div class="grp">Wave 2 <i></i> running</div>
+        <div class="live-block">
+          <div class="row">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#76B900" stroke-width="2.5" stroke-linecap="round" class="ico spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
+            <span class="tid mono">T3</span>
+            <span class="row-title trunc grow">Move rotation into the session store</span>
+            <span class="time mono">04:12</span>
+          </div>
+          <div class="rowagent trunc">spec-task-executor <span class="sep">·</span> opus-5</div>
+          <div class="rowlog log mono">
+            <div class="l-tool">&#9679; Edit src/lib/session.ts</div>
+            <div class="l-res">  + rotate(t: RefreshToken)</div>
+          </div>
+        </div>
+        <div class="live-block" style="margin-top: 5px">
+          <div class="row">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#76B900" stroke-width="2.5" stroke-linecap="round" class="ico spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
+            <span class="tid mono">T4</span>
+            <span class="row-title trunc grow">Add the re-auth banner</span>
+            <span class="time mono">02:47</span>
+          </div>
+          <div class="rowagent trunc">frontend-ui <span class="sep">·</span> opus-5</div>
+          <div class="rowlog log mono">
+            <div class="l-tool">&#9679; Write ReAuthBanner.tsx</div>
+            <div class="l-res">  47 lines</div>
+          </div>
+        </div>
+        <div class="row dim" style="margin-top: 4px">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="#4E3A73" class="ico"><rect x="5" y="5" width="14" height="14"></rect></svg>
+          <span class="tid mono">T5</span>
+          <span class="row-title trunc grow">Update the session tests</span>
+          <span class="meta mono">on T3</span>
+        </div>
+        <div class="row dim">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="#4E3A73" class="ico"><rect x="5" y="5" width="14" height="14"></rect></svg>
+          <span class="tid mono">T6</span>
+          <span class="row-title trunc grow">Document the rotation contract</span>
+          <span class="meta mono">on T3, T4</span>
+        </div>
+
+        <div class="grp">Wave 3 <i></i> 2 queued</div>
+      </div>
+    </div>
+
+    <!-- Lane 2 -->
+    <div class="lane live">
+      <div class="lane-hd">
+        <div style="display: flex; align-items: center; gap: 8px">
+          <span class="lane-name disp trunc">travel-display</span>
+          <span class="pill build">Build</span>
+        </div>
+        <div class="lane-sub">Wave 1 of 2 <span class="sep">·</span> 1 running, 2 queued</div>
+        <div class="prog">
+          <i class="seg run"></i><i class="seg wait"></i><i class="seg wait"></i><i class="seg"></i><i class="seg"></i>
+        </div>
+      </div>
+      <div class="lane-body">
+        <div class="grp">Wave 1 <i></i> running</div>
+        <div class="live-block">
+          <div class="row">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#76B900" stroke-width="2.5" stroke-linecap="round" class="ico spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
+            <span class="tid mono">T7</span>
+            <span class="row-title trunc grow">Cache the fleet snapshot</span>
+            <span class="time mono">06:03</span>
+          </div>
+          <div class="rowagent trunc">electron-pro <span class="sep">·</span> opus-5</div>
+          <div class="rowlog log mono">
+            <div class="l-tool">&#9679; Edit electron/preload.ts</div>
+            <div class="l-res">  + request: () =&gt; send(&#39;fleet:request&#39;)</div>
+            <div class="l-tool">&#9679; Bash npm run typecheck</div>
+          </div>
+        </div>
+        <div class="row dim" style="margin-top: 4px">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="#4E3A73" class="ico"><rect x="5" y="5" width="14" height="14"></rect></svg>
+          <span class="tid mono">T8</span>
+          <span class="row-title trunc grow">Rebuild the wide view as a grid</span>
+          <span class="meta mono">on T7</span>
+        </div>
+        <div class="row dim">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="#4E3A73" class="ico"><rect x="5" y="5" width="14" height="14"></rect></svg>
+          <span class="tid mono">T9</span>
+          <span class="row-title trunc grow">Update docs/subsystems.md</span>
+          <span class="meta mono">on T8</span>
+        </div>
+        <div class="grp">Wave 2 <i></i> 2 queued</div>
+      </div>
+    </div>
+
+    <!-- Lane 3 -->
+    <div class="lane live">
+      <div class="lane-hd">
+        <div style="display: flex; align-items: center; gap: 8px">
+          <span class="lane-name disp trunc">billing-portal</span>
+          <span class="pill plan">Plan</span>
+        </div>
+        <div class="lane-sub">Requirements approved 12m ago</div>
+        <div class="prog">
+          <i class="seg done"></i><i class="seg run"></i><i class="seg"></i>
+        </div>
+      </div>
+      <div class="lane-body">
+        <div class="grp">Drafting <i></i> plan.md</div>
+        <div class="live-block">
+          <div class="row">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#76B900" stroke-width="2.5" stroke-linecap="round" class="ico spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
+            <span class="row-title trunc grow">Drafting plan.md</span>
+            <span class="time mono">00:38</span>
+          </div>
+          <div class="rowagent trunc">spec-architect <span class="sep">·</span> skill: sdd-feature</div>
+          <div class="rowlog log mono">
+            <div class="l-txt">## Approach</div>
+            <div class="l-txt">The portal reuses the github.ts</div>
+            <div class="l-txt">pattern: a dependency-free REST</div>
+            <div class="l-txt">wrapper with the token in</div>
+            <div class="l-txt">safeStorage, over billing:* IPC.</div>
+            <div class="l-think">  writing "Affected files"&#8230;</div>
+          </div>
+        </div>
+        <div class="grp">Next <i></i> after approval</div>
+        <div class="row dim">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#848484" stroke-width="2" stroke-linecap="round" class="ico"><path d="M12 6v6l4 2"></path><circle cx="12" cy="12" r="9"></circle></svg>
+          <span class="row-title trunc grow">Clarify &#8212; 4 open decisions</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lane 4 -->
+    <div class="lane">
+      <div class="lane-hd">
+        <div style="display: flex; align-items: center; gap: 8px">
+          <span class="lane-name disp trunc">Hooks &amp; audits</span>
+          <span class="pill sys">System</span>
+        </div>
+        <div class="lane-sub">1 running <span class="sep">·</span> 1 failed</div>
+        <div class="prog">
+          <i class="seg run"></i><i class="seg" style="background: #E0533C"></i>
+        </div>
+      </div>
+      <div class="lane-body">
+        <div class="grp">Fired by <i></i> Wave 1 complete</div>
+        <div class="live-block">
+          <div class="row">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#76B900" stroke-width="2.5" stroke-linecap="round" class="ico spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
+            <span class="row-title trunc grow">code-validate-improve</span>
+            <span class="time mono">01:22</span>
+          </div>
+          <div class="rowagent trunc">code-reviewer <span class="sep">·</span> auth-refresh</div>
+          <div class="rowlog log mono">
+            <div class="l-tool">&#9679; Bash git diff --stat HEAD</div>
+            <div class="l-res">  6 files changed, 214 ins(+)</div>
+            <div class="l-txt">Two findings, both style.</div>
+            <div class="l-txt">Nothing blocking Wave 2.</div>
+          </div>
+        </div>
+        <div class="grp">Audit <i></i> failed</div>
+        <div style="background: #241A18; border-left: 2px solid #E0533C">
+          <div class="row" style="padding-left: 9px">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FF8A72" stroke-width="2.5" stroke-linecap="round" class="ico"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5M12 16.5h.01"></path></svg>
+            <span class="row-title trunc grow">Drift check vs plan.md</span>
+            <span class="meta mono">0m 52s</span>
+          </div>
+          <div class="rowlog log mono" style="padding-top: 0">
+            <div style="color: #FF8A72">Error: tasks.md has no ## Tasks</div>
+            <div class="l-res">  specActions.ts:118</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lane 5 -->
+    <div class="lane">
+      <div class="lane-hd">
+        <div style="display: flex; align-items: center; gap: 8px">
+          <span class="lane-name disp trunc">Assistant</span>
+          <span class="pill sys">Chat</span>
+        </div>
+        <div class="lane-sub">1 running <span class="sep">·</span> 1 cancelled</div>
+        <div class="prog">
+          <i class="seg run"></i><i class="seg"></i>
+        </div>
+      </div>
+      <div class="lane-body">
+        <div class="grp">Now <i></i> answering</div>
+        <div class="live-block">
+          <div class="row">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#76B900" stroke-width="2.5" stroke-linecap="round" class="ico spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
+            <span class="row-title trunc grow">How does steering get injected?</span>
+            <span class="time mono">00:09</span>
+          </div>
+          <div class="rowagent trunc">claude <span class="sep">·</span> opus-5</div>
+          <div class="rowlog log mono">
+            <div class="l-txt">composeSteeringSystem resolves</div>
+            <div class="l-txt">the inclusion modes and is</div>
+            <div class="l-txt">prepended to payload.system</div>
+            <div class="l-txt">inside streamClaude &#8212; so chat,</div>
+            <div class="l-txt">task and hook runs all get it</div>
+            <div class="l-txt">uniformly, and pinned docs are</div>
+          </div>
+        </div>
+        <div class="grp">Earlier <i></i> stopped</div>
+        <div class="row dim">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#848484" stroke-width="2.5" stroke-linecap="round" class="ico"><circle cx="12" cy="12" r="9"></circle><path d="M5.6 5.6l12.8 12.8"></path></svg>
+          <span class="row-title trunc grow">Explain the router precedence</span>
+          <span class="meta mono">0m 14s</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

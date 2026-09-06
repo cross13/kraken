@@ -27,7 +27,7 @@ export const useChat = create<ChatStore>((set) => ({
       role: 'system',
       createdAt: Date.now(),
       content:
-        "Welcome to Kraken. Open a workspace and start a spec, or chat below. Type `/` to invoke a skill, `@` to invoke an agent.",
+        "Welcome to Octo. Open a workspace and start a spec, or chat below. Type `/` to invoke a skill, `@` to invoke an agent.",
     },
   ],
   busy: false,

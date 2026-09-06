@@ -1,8 +1,17 @@
-import { app, BrowserWindow, ipcMain, dialog, shell, safeStorage, screen } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  clipboard,
+  ipcMain,
+  dialog,
+  shell,
+  safeStorage,
+  screen,
+} from 'electron';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import fs from 'node:fs/promises';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync, renameSync } from 'node:fs';
 import { spawn, spawnSync } from 'node:child_process';
 import Anthropic from '@anthropic-ai/sdk';
 import Store from 'electron-store';
@@ -21,6 +30,7 @@ import {
   gitUnstage,
   gitStageAll,
   gitUnstageAll,
+  gitBranchSummary,
 } from './git.js';
 import {
   resolveRepo,
@@ -36,6 +46,8 @@ import {
   initDb,
   upsertSpec,
   deleteSpec,
+  clearHistory,
+  historyCounts,
   recordSpecEvent,
   listSpecEvents,
   beginRun,
@@ -57,8 +69,16 @@ import {
   listHookRuns,
 } from './db.js';
 import type {
+  McpCallResult,
+  TicketAction,
+  TicketProviderConfig,
+  TicketSummary,
   AgentMeta,
+  DataResetOptions,
+  DataResetReport,
+  DataUsage,
   DirEntry,
+  FleetSnapshot,
   SkillMeta,
   SpecMeta,
   SpecKind,
@@ -73,18 +93,65 @@ import type {
   McpServerMeta,
   ModelDiscovery,
   ModelInfo,
+  SeedReport,
   StreamChannel,
   TerminalCreateOpts,
   TerminalProfile,
 } from './shared/types.js';
+import { tasksDocFromPlan } from './shared/planTasks.js';
+import { emptyReport, seedDefaultFile, type SeedLedger } from './seedDefaults.js';
+import { McpAuthRequired, McpError, mcpCallTool, mcpListTools } from './mcpClient.js';
+import { JIRA_TOOLS, JIRA_TRANSITIONS_TOOL } from './shared/jira.js';
+import {
+  needsRefresh,
+  refresh as refreshOAuth,
+  signIn as signInOAuth,
+  type OAuthRecord,
+} from './mcpAuth.js';
+import {
+  alreadyApplied,
+  discoverToolMap,
+  isDoneStatus,
+  missingConfig,
+  normalizeScopes,
+  normalizeTicketList,
+  planTicketActions,
+  parseTicketRef,
+  searchArgs,
+  ticketRefArgs,
+  ticketSeed,
+  normalizeTransitions,
+  type TicketHints,
+  type TicketEvent,
+} from './tickets.js';
+import {
+  LIBRARY_VERSION,
+  defaultAgentsLibrary,
+  defaultHooksLibrary,
+  defaultSkillsLibrary,
+  defaultSteeringLibrary,
+} from './defaultLibrary.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Name the app early so userData (DB, settings) lives in a Kraken-named folder
+// Name the app early so userData (DB, settings) lives in an Octo-named folder
 // rather than the default "Electron" directory.
-app.setName('Kraken');
-app.setPath('userData', path.join(app.getPath('appData'), 'Kraken'));
+app.setName('Octo');
+const userDataDir = path.join(app.getPath('appData'), 'Octo');
+// The app was called Kraken until August 2026. That folder holds the history DB
+// and every electron-store setting, so carry it over rather than making a rename
+// look like a factory reset. One-shot: only when Octo's folder doesn't exist yet.
+const legacyUserDataDir = path.join(app.getPath('appData'), 'Kraken');
+if (!existsSync(userDataDir) && existsSync(legacyUserDataDir)) {
+  try {
+    renameSync(legacyUserDataDir, userDataDir);
+  } catch {
+    // Locked or partially copied — a fresh folder is a worse outcome than a
+    // crash here would be, so carry on with an empty one.
+  }
+}
+app.setPath('userData', userDataDir);
 
 type Backend = 'cli' | 'api';
 type PermissionMode = 'default' | 'acceptEdits' | 'bypassPermissions';
@@ -105,6 +172,32 @@ interface StoreSchema {
   maxConcurrency?: number;
   /** Pinned manual-steering doc names, keyed by workspace path. Force-included in every run. */
   steeringPins?: Record<string, string[]>;
+  /**
+   * Hash of the bundled default Octo last wrote to a given absolute path. A file
+   * that still matches is untouched, so seeding may upgrade it in place; see
+   * `seedDefaults.ts`.
+   */
+  seededDefaults?: Record<string, string>;
+  /**
+   * `LIBRARY_VERSION` at the last on-open upgrade pass, per workspace root. When
+   * it matches, opening the workspace skips the scan entirely — the pass runs
+   * unattended on every boot, so it has to cost nothing in the common case.
+   */
+  seededLibraryVersion?: Record<string, number>;
+  /** Tracker providers per workspace — which MCP server, and its tool mapping. */
+  ticketProviders?: Record<string, TicketProviderConfig[]>;
+  /**
+   * Manually-entered credentials for remote MCP servers, encrypted, keyed by
+   * server name. The value is an `Authorization` header value: a bare token is
+   * sent as Bearer, and one that names its own scheme is sent as-is.
+   */
+  mcpTokensEncrypted?: Record<string, string>;
+  /**
+   * OAuth records, encrypted, keyed by server name. Kept apart from
+   * `mcpTokensEncrypted` on purpose — that slot is handed straight to the
+   * `Authorization` header, so JSON in it would be sent as a bearer token.
+   */
+  mcpOAuthEncrypted?: Record<string, string>;
 }
 
 const store = new Store<StoreSchema>({
@@ -119,6 +212,40 @@ const store = new Store<StoreSchema>({
   },
 });
 
+/**
+ * The seeding ledger, backed by electron-store: what Octo last wrote to each
+ * bundled-default path. Reads/writes the whole map (it holds a handful of
+ * entries per workspace).
+ */
+let seedLedgerCache: Record<string, string> | null = null;
+let seedLedgerDirty = false;
+const seedLedgerMap = () => (seedLedgerCache ??= { ...(store.get('seededDefaults') ?? {}) });
+const seedLedger: SeedLedger = {
+  get: (file) => seedLedgerMap()[file],
+  // The four seeders run in parallel, so read-modify-write through the shared
+  // cache rather than re-reading the store each time (a stale copy would drop
+  // whatever a sibling seeder just recorded).
+  set: (file, hash) => {
+    const all = seedLedgerMap();
+    if (all[file] === hash) return;
+    all[file] = hash;
+    seedLedgerDirty = true;
+  },
+  flush: () => {
+    if (!seedLedgerDirty) return;
+    store.set('seededDefaults', seedLedgerMap());
+    seedLedgerDirty = false;
+  },
+};
+
+/**
+ * `upgradeOnly` seeding brings untouched defaults up to date but installs
+ * nothing new — see `seedDefaultFile`. It is what the on-open upgrade pass uses.
+ */
+export interface SeedOpts {
+  upgradeOnly?: boolean;
+}
+
 function getEffectiveTools(): string[] {
   const tools = store.get('allowedTools') ?? DEFAULT_TOOLS;
   const allowBash = store.get('allowBash') ?? false;
@@ -131,6 +258,12 @@ let mainWindow: BrowserWindow | null = null;
 // The optional "Travel Display" — a second, compact window that mirrors the live
 // run registry onto an ultrawide secondary display (e.g. a Corsair Xeneon Edge).
 let wideWindow: BrowserWindow | null = null;
+// Last fleet snapshot pushed by the main window. The travel window can be opened
+// at any moment — long after the runs it should be showing started — and the main
+// window only pushes when its registry *changes*. Without this cache a display
+// opened mid-run stayed on "No agents in flight" until something started or
+// finished. We replay the cache as soon as the new renderer has loaded.
+let lastFleet: FleetSnapshot = { runs: [], maxConcurrency: 2 };
 
 const terminals = new TerminalManager();
 
@@ -275,6 +408,11 @@ function createWideWindow() {
 
   wideWindow.once('ready-to-show', () => wideWindow?.show());
 
+  // Seed the fresh renderer with whatever is already in flight.
+  wideWindow.webContents.on('did-finish-load', () => {
+    wideWindow?.webContents.send('fleet:sync', lastFleet);
+  });
+
   if (process.env.ELECTRON_RENDERER_URL) {
     wideWindow.loadURL(`${process.env.ELECTRON_RENDERER_URL}#wide`);
   } else {
@@ -330,11 +468,15 @@ function registerIpc() {
   ipcMain.handle('workspace:get-last', () => store.get('lastWorkspace') ?? null);
   ipcMain.handle('workspace:get-recents', () => store.get('recentWorkspaces') ?? []);
   ipcMain.handle('workspace:open', (_e, rootPath: string) => openWorkspace(rootPath));
+  // What the on-open upgrade pass changed, so the renderer can say so once.
+  ipcMain.handle('workspace:seed-upgrade', (_e, root: string) => upgradeSeededLibrary(root));
   ipcMain.handle('workspace:list-tree', (_e, root: string) => listTree(root));
 
   ipcMain.handle('specs:list', (_e, root: string) => listSpecs(root));
-  ipcMain.handle('specs:create', (_e, root: string, name: string, kind: SpecKind) =>
-    createSpec(root, name, kind)
+  ipcMain.handle(
+    'specs:create',
+    (_e, root: string, name: string, kind: SpecKind, brief?: string) =>
+      createSpec(root, name, kind, brief)
   );
   ipcMain.handle('specs:read', (_e, root: string, id: string) => readSpec(root, id));
   ipcMain.handle(
@@ -343,6 +485,11 @@ function registerIpc() {
       writeSpecFile(root, id, file, content)
   );
   ipcMain.handle('specs:advance', (_e, root: string, id: string) => advanceSpec(root, id));
+
+  ipcMain.handle('data:usage', (_e, root: string) => dataUsage(root));
+  ipcMain.handle('data:reset', (_e, root: string, opts: DataResetOptions) =>
+    resetData(root, opts)
+  );
   ipcMain.handle('specs:set-phase', (_e, root: string, id: string, phase: SpecPhase) =>
     setSpecPhase(root, id, phase)
   );
@@ -398,7 +545,218 @@ function registerIpc() {
   );
   ipcMain.handle('hooks:list-runs', (_e, opts) => listHookRuns(opts ?? {}));
 
+  ipcMain.handle('shell:copy', (_e, text: string) => clipboard.writeText(text));
   ipcMain.handle('mcp:list', (_e, root?: string | null) => listMcpServers(root));
+  ipcMain.handle(
+    'mcp:list-tools',
+    async (_e, args: { root?: string | null; server: string; url?: string }) => {
+    const found = (await listMcpServers(args.root)).find((s) => s.name === args.server);
+    if (!found) return { ok: false, tools: [], error: `No MCP server named "${args.server}".` };
+    const server = args.url ? { ...found, url: args.url, type: 'http' as const } : found;
+    try {
+      const tools = await mcpListTools({ server, token: await mcpCredential(server) });
+      return { ok: true, tools, map: discoverToolMap(tools) };
+    } catch (err) {
+      return {
+        ok: false,
+        tools: [],
+        ...failure(err),
+        server: { name: server.name, url: server.url, type: server.type, scope: server.scope },
+        auth: oauthRecord(args.server) ? 'oauth' : mcpToken(args.server) ? 'manual' : 'none',
+      };
+    }
+    }
+  );
+
+  // ---- tickets ----
+  ipcMain.handle('tickets:list-providers', (_e, root: string) => ticketProviders(root));
+  ipcMain.handle('tickets:save-provider', (_e, args: { root: string; provider: TicketProviderConfig }) => {
+    const list = ticketProviders(args.root).filter((p) => p.id !== args.provider.id);
+    const next = [...list, args.provider].sort((a, b) => a.label.localeCompare(b.label));
+    saveTicketProviders(args.root, next);
+    return next;
+  });
+  ipcMain.handle('tickets:delete-provider', (_e, args: { root: string; id: string }) => {
+    const next = ticketProviders(args.root).filter((p) => p.id !== args.id);
+    saveTicketProviders(args.root, next);
+    return next;
+  });
+  // Everything open across the configured trackers, for starting a spec from.
+  // Per provider, so one unreachable tracker never hides the others.
+  ipcMain.handle('tickets:list-open', async (_e, args: { root: string; limit?: number }) => {
+    const out: Array<{
+      provider: TicketProviderConfig;
+      tickets: TicketSummary[];
+      error?: string;
+    }> = [];
+    for (const cfg of ticketProviders(args.root)) {
+      if (!cfg.enabled) continue;
+      const gap = missingConfig(cfg);
+      if (gap) {
+        out.push({ provider: cfg, tickets: [], error: gap });
+        continue;
+      }
+      const tool = cfg.tools?.search ?? JIRA_TOOLS.search!;
+      try {
+        const { conn } = await ticketConnection(args.root, cfg.id);
+        const res = await mcpCallTool(conn, tool, searchArgs(cfg, args.limit ?? 25));
+        if (!res.ok) {
+          out.push({ provider: cfg, tickets: [], error: res.text || `${tool} failed.` });
+          continue;
+        }
+        const all = normalizeTicketList(res.structured, res.text, { id: cfg.id, label: cfg.label });
+        out.push({ provider: cfg, tickets: all.filter((t) => !isDoneStatus(t.status)) });
+      } catch (err) {
+        out.push({ provider: cfg, tickets: [], ...failure(err) });
+      }
+    }
+    return out;
+  });
+
+  // The clients / projects this tracker scopes tickets by, for the picker.
+  ipcMain.handle('tickets:list-scopes', async (_e, args: { root: string; providerId: string }) => {
+    try {
+      const { cfg, conn } = await ticketConnection(args.root, args.providerId);
+      const tool = cfg.tools?.scopes;
+      if (!tool) return { ok: false, scopes: [], error: 'No "scopes" tool is mapped for this tracker.' };
+      const res = await mcpCallTool(conn, tool, {});
+      if (!res.ok) return { ok: false, scopes: [], error: res.text || `${tool} failed.` };
+      const scopes = normalizeScopes(res.structured, res.text);
+      // Atlassian's own guidance is to pass the site URL as `cloudId`, and
+      // `getAccessibleAtlassianResources` returns both that and a UUID id.
+      // Prefer the URL, which is also what a human recognises in the picker.
+      const out = cfg.preset === 'jira' ? preferUrlKeys(scopes, res.structured) : scopes;
+      // An empty list means either the account really has no sites or Octo
+      // failed to read the shape it got back. Those need different fixes, so
+      // hand the raw answer up rather than reporting "none" and stopping.
+      return {
+        ok: true,
+        scopes: out,
+        raw: out.length ? undefined : { tool, text: res.text.slice(0, 800), structured: res.structured },
+      };
+    } catch (err) {
+      return { ok: false, scopes: [], ...failure(err) };
+    }
+  });
+
+  // The text a spec should start from, fetched and folded here rather than in
+  // the renderer: the list row carries a title and maybe a summary, while the
+  // ticket itself usually holds the description, an existing plan and criteria.
+  // Falls back to the row when there is no `get` tool or the call fails — a
+  // thinner brief is still a brief.
+  ipcMain.handle(
+    'tickets:seed',
+    async (
+      _e,
+      args: { root: string; providerId: string; ticket: TicketSummary; kind: 'feature' | 'bugfix' }
+    ) => {
+      const fallback = ticketSeed(args.ticket, null, args.kind);
+      try {
+        const { cfg, conn } = await ticketConnection(args.root, args.providerId);
+        const tool = cfg.tools?.get;
+        if (!tool) return { ok: false, seed: fallback, error: 'No "get" tool is mapped.' };
+        const res = await mcpCallTool(conn, tool, ticketRefArgs(cfg, args.ticket.key));
+        if (!res.ok) return { ok: false, seed: fallback, error: res.text || `${tool} failed.` };
+        return { ok: true, seed: ticketSeed(args.ticket, res, args.kind) };
+      } catch (err) {
+        return { ok: false, seed: fallback, ...failure(err) };
+      }
+    }
+  );
+
+  // Attach an existing ticket to a spec. `spec-created` is marked applied
+  // because the ticket is what the spec came from — creating another would be
+  // the duplicate this whole design exists to avoid.
+  ipcMain.handle(
+    'tickets:link',
+    (_e, args: { root: string; specId: string; ticket: TicketSummary }) =>
+      patchSpecMeta(args.root, args.specId, {
+        ticket: {
+          provider: args.ticket.provider,
+          key: args.ticket.key,
+          url: args.ticket.url,
+          title: args.ticket.title,
+          status: args.ticket.status,
+          linkedAt: new Date().toISOString(),
+          applied: ['spec-created'],
+        },
+      })
+  );
+
+  ipcMain.handle('tickets:has-token', (_e, server: string) => Boolean(mcpToken(server)));
+
+  /** How this server is authenticated right now, for the connection panel. */
+  ipcMain.handle('tickets:auth-status', (_e, server: string) => {
+    const rec = oauthRecord(server);
+    if (rec) {
+      return {
+        mode: 'oauth' as const,
+        account: rec.account,
+        expiresAt: rec.expiresAt,
+        issuer: rec.issuer,
+      };
+    }
+    return { mode: mcpToken(server) ? ('manual' as const) : ('none' as const) };
+  });
+
+  /**
+   * Start the interactive sign-in. The promise stays pending until the loopback
+   * redirect lands, so the renderer just awaits it — no push channel needed.
+   */
+  ipcMain.handle(
+    'tickets:sign-in',
+    async (_e, args: { root?: string | null; server: string; scope?: string }) => {
+      const server = (await listMcpServers(args.root)).find((s) => s.name === args.server);
+      if (!server?.url) {
+        return { ok: false, error: `"${args.server}" is not a remote MCP server, so it has no sign-in.` };
+      }
+      try {
+        const existing = oauthRecord(args.server);
+        const rec = await signInOAuth(server.url, (url) => void openUrlInChrome(url), {
+          // Reuse the registration from a previous sign-in; re-registering on
+          // every login would litter the authorization server with clients.
+          clientId: existing?.clientId,
+          scope: args.scope,
+        });
+        setOAuthRecord(args.server, rec);
+        return { ok: true, expiresAt: rec.expiresAt };
+      } catch (err) {
+        return { ok: false, error: err instanceof Error ? err.message : String(err) };
+      }
+    }
+  );
+
+  ipcMain.handle('tickets:sign-out', (_e, server: string) => setOAuthRecord(server, null));
+  ipcMain.handle('tickets:set-token', (_e, args: { server: string; token: string | null }) =>
+    setMcpToken(args.server, args.token)
+  );
+  ipcMain.handle('tickets:plan', (_e, args: { root: string; specId: string; event: TicketEvent }) =>
+    planTicketSync(args.root, args.specId, args.event)
+  );
+  ipcMain.handle(
+    'tickets:apply',
+    (
+      _e,
+      args: {
+        root: string;
+        specId: string;
+        providerId: string;
+        actions: TicketAction[];
+        eventId: string;
+      }
+    ) => applyTicketSync(args.root, args.specId, args.providerId, args.actions, args.eventId)
+  );
+  ipcMain.handle(
+    'tickets:call',
+    async (_e, args: { root: string; providerId: string; tool: string; args: Record<string, unknown> }) => {
+      try {
+        const { conn } = await ticketConnection(args.root, args.providerId);
+        return await mcpCallTool(conn, args.tool, args.args);
+      } catch (err) {
+        return { ok: false, text: failure(err).error, structured: null, ...failure(err) };
+      }
+    }
+  );
 
   ipcMain.handle('fs:read', (_e, p: string) => fs.readFile(p, 'utf8'));
   ipcMain.handle('fs:write', (_e, p: string, content: string) => writeFile(p, content));
@@ -446,6 +804,10 @@ function registerIpc() {
   ipcMain.handle('git:pull', (_e, cwd: string) => gitPull(cwd));
   ipcMain.handle('git:push', (_e, cwd: string) => gitPushCurrent(cwd));
   ipcMain.handle('git:list-changes', (_e, cwd: string) => gitListChanges(cwd));
+  // What this branch adds on top of its base — the PR description's raw material.
+  ipcMain.handle('git:branch-summary', (_e, args: { cwd: string; base?: string }) =>
+    gitBranchSummary(args.cwd, args.base)
+  );
   ipcMain.handle('git:stage', (_e, args: { workspacePath: string; paths: string[] }) =>
     gitStage(args.workspacePath, args.paths)
   );
@@ -659,11 +1021,16 @@ function registerIpc() {
   ipcMain.handle('window:toggle-wide', () => toggleWideWindow());
   ipcMain.handle('window:is-wide-open', () => !!wideWindow && !wideWindow.isDestroyed());
   // The main window pushes its live run registry; forward it to the travel window.
-  ipcMain.on('fleet:push', (_e, runs) => {
+  ipcMain.on('fleet:push', (_e, runs: FleetSnapshot) => {
+    lastFleet = runs;
     if (wideWindow && !wideWindow.isDestroyed()) {
       wideWindow.webContents.send('fleet:sync', runs);
     }
   });
+  // The travel window asks for the cached snapshot the moment it subscribes —
+  // `did-finish-load` can beat React's first effect, so the pull is the reliable
+  // half of the handshake and the push above is the fallback.
+  ipcMain.on('fleet:request', (e) => e.sender.send('fleet:sync', lastFleet));
   // Let the travel window pull focus back to the main window ("reveal in main").
   ipcMain.on('window:focus-main', () => mainWindow?.focus());
 
@@ -709,9 +1076,28 @@ async function pickWorkspace() {
   return res.filePaths[0];
 }
 
+/**
+ * The data directory was `.kraken` until the app was renamed to Octo. Move it
+ * rather than leaving the user's specs, hooks and steering docs orphaned.
+ * One-shot and non-destructive: it only runs when there is no `.octo` to clobber.
+ */
+async function migrateLegacyDataDir(current: string, legacy: string) {
+  if (existsSync(current) || !existsSync(legacy)) return;
+  try {
+    await fs.rename(legacy, current);
+  } catch {
+    // Fall through — ensureDir will create a fresh one.
+  }
+}
+
 async function openWorkspace(rootPath: string) {
-  // Kraken-specific
-  await ensureDir(path.join(rootPath, '.kraken', 'specs'));
+  // Octo-specific
+  await migrateLegacyDataDir(path.join(rootPath, '.octo'), path.join(rootPath, '.kraken'));
+  await migrateLegacyDataDir(
+    path.join(app.getPath('home'), '.octo'),
+    path.join(app.getPath('home'), '.kraken')
+  );
+  await ensureDir(path.join(rootPath, '.octo', 'specs'));
   // Claude Code standard locations — also created so they show up in pickers
   await ensureDir(path.join(rootPath, '.claude', 'agents'));
   await ensureDir(path.join(rootPath, '.claude', 'skills'));
@@ -722,6 +1108,41 @@ async function openWorkspace(rootPath: string) {
   store.set('recentWorkspaces', next);
 
   return rootPath;
+}
+
+/**
+ * Bring a workspace's bundled library up to date when the app ships a new one.
+ *
+ * Strictly **upgrade-only**: it rewrites a default the user never edited and
+ * installs nothing. That distinction is the whole reason this can run on open —
+ * creating the library in someone's tracked tree is a decision, and the
+ * first-run card is where it gets asked. A default the user has edited is left
+ * alone here exactly as it is on demand.
+ *
+ * Guarded by a per-root version so the usual case is a single map lookup rather
+ * than ~24 file reads on every boot.
+ */
+async function upgradeSeededLibrary(root: string): Promise<SeedReport> {
+  const seen = store.get('seededLibraryVersion') ?? {};
+  if (seen[root] === LIBRARY_VERSION) return emptyReport();
+
+  const opts = { upgradeOnly: true } as const;
+  const reports = await Promise.all([
+    seedDefaultSkills(root, opts),
+    seedDefaultAgents(root, opts),
+    seedDefaultSteering(root, opts),
+    seedDefaultHooks(root, opts),
+  ]);
+  store.set('seededLibraryVersion', { ...seen, [root]: LIBRARY_VERSION });
+
+  return reports.reduce<SeedReport>(
+    (acc, r) => ({
+      created: [...acc.created, ...r.created],
+      upgraded: [...acc.upgraded, ...r.upgraded],
+      kept: [...acc.kept, ...r.kept],
+    }),
+    emptyReport()
+  );
 }
 
 async function ensureDir(p: string) {
@@ -742,7 +1163,7 @@ async function readDir(dir: string, depth: number): Promise<DirEntry[]> {
   const items = await fs.readdir(dir, { withFileTypes: true });
   const out: DirEntry[] = [];
   for (const item of items) {
-    if (item.name.startsWith('.') && item.name !== '.kraken' && item.name !== '.claude') continue;
+    if (item.name.startsWith('.') && item.name !== '.octo' && item.name !== '.claude') continue;
     if (item.name === 'node_modules' || item.name === 'out') continue;
     const p = path.join(dir, item.name);
     if (item.isDirectory()) {
@@ -765,7 +1186,7 @@ async function readDir(dir: string, depth: number): Promise<DirEntry[]> {
 // ---------- Specs ----------
 
 async function listSpecs(root: string): Promise<SpecMeta[]> {
-  const specsDir = path.join(root, '.kraken', 'specs');
+  const specsDir = path.join(root, '.octo', 'specs');
   await ensureDir(specsDir);
   const items = await fs.readdir(specsDir, { withFileTypes: true });
   const out: SpecMeta[] = [];
@@ -774,6 +1195,7 @@ async function listSpecs(root: string): Promise<SpecMeta[]> {
     const specPath = path.join(specsDir, item.name);
     const metaPath = path.join(specPath, 'spec.json');
     if (!existsSync(metaPath)) continue;
+    await migrateSpecDir(specPath);
     try {
       const meta = JSON.parse(await fs.readFile(metaPath, 'utf8')) as SpecMeta;
       const enriched = { ...meta, path: specPath };
@@ -799,9 +1221,46 @@ function slugify(name: string) {
     .slice(0, 64);
 }
 
-async function createSpec(root: string, name: string, kind: SpecKind): Promise<SpecMeta> {
+/** Phase names written by versions before the Definir · Plan · Construir refactor. */
+const LEGACY_PHASES: Record<string, SpecPhase> = { design: 'plan', tasks: 'build' };
+
+function normalizePhase(phase: string): SpecPhase {
+  return (LEGACY_PHASES[phase] ?? phase) as SpecPhase;
+}
+
+/**
+ * Lazily migrate one spec directory to the three-stage layout: the `design` /
+ * `tasks` phases become `plan` / `build`, and `design.md` becomes `plan.md`.
+ * Idempotent and cheap (two existsSync checks on the happy path), so it can run
+ * on every list/read. Non-destructive: the rename only happens when there is no
+ * `plan.md` to clobber, and nothing is ever deleted — disk is the source of truth.
+ */
+async function migrateSpecDir(specPath: string): Promise<void> {
+  const legacyDoc = path.join(specPath, 'design.md');
+  const planDoc = path.join(specPath, 'plan.md');
+  if (existsSync(legacyDoc) && !existsSync(planDoc)) {
+    await fs.rename(legacyDoc, planDoc);
+  }
+  const metaPath = path.join(specPath, 'spec.json');
+  if (!existsSync(metaPath)) return;
+  try {
+    const meta = JSON.parse(await fs.readFile(metaPath, 'utf8')) as SpecMeta;
+    const phase = normalizePhase(meta.phase);
+    if (phase === meta.phase) return;
+    await fs.writeFile(metaPath, JSON.stringify({ ...meta, phase }, null, 2), 'utf8');
+  } catch {
+    // corrupt spec.json — listSpecs / readSpec surface it
+  }
+}
+
+async function createSpec(
+  root: string,
+  name: string,
+  kind: SpecKind,
+  brief?: string
+): Promise<SpecMeta> {
   const slug = slugify(name) || `spec-${Date.now()}`;
-  const specsDir = path.join(root, '.kraken', 'specs');
+  const specsDir = path.join(root, '.octo', 'specs');
   await ensureDir(specsDir);
 
   let folder = slug;
@@ -821,13 +1280,18 @@ async function createSpec(root: string, name: string, kind: SpecKind): Promise<S
     path: specPath,
     createdAt: now,
     updatedAt: now,
+    ...(brief?.trim() ? { brief: brief.trim() } : {}),
   };
 
+  // The document starts **empty**, not as a skeleton of `<placeholder>` tokens.
+  // A template reads as content the moment it is on screen: it hides whether
+  // anything has been written, it is what Claude has to delete before it can
+  // write, and its literal tokens were the only thing telling the gate bar
+  // "this has not been authored yet". An empty file says all of that plainly,
+  // and the format lives where it belongs now — in the drafting prompt and the
+  // `spec-*-format` skills.
   const initialFile = kind === 'feature' ? 'requirements.md' : 'bugfix.md';
-  const template =
-    kind === 'feature' ? featureRequirementsTemplate(name) : bugfixTemplate(name);
-
-  await fs.writeFile(path.join(specPath, initialFile), template, 'utf8');
+  await fs.writeFile(path.join(specPath, initialFile), '', 'utf8');
   await fs.writeFile(path.join(specPath, 'spec.json'), JSON.stringify(meta, null, 2), 'utf8');
 
   try {
@@ -845,8 +1309,19 @@ async function createSpec(root: string, name: string, kind: SpecKind): Promise<S
   return meta;
 }
 
+/** The spec's `spec.json` as it is on disk right now, or null if there isn't one. */
+function readSpecMeta(root: string, id: string): SpecMeta | null {
+  const metaPath = path.join(root, '.octo', 'specs', id, 'spec.json');
+  if (!existsSync(metaPath)) return null;
+  try {
+    return JSON.parse(readFileSync(metaPath, 'utf8')) as SpecMeta;
+  } catch {
+    return null;
+  }
+}
+
 function patchSpecMeta(root: string, id: string, patch: Partial<SpecMeta>): SpecMeta | null {
-  const specPath = path.join(root, '.kraken', 'specs', id);
+  const specPath = path.join(root, '.octo', 'specs', id);
   const metaPath = path.join(specPath, 'spec.json');
   if (!existsSync(metaPath)) return null;
   const meta = JSON.parse(readFileSync(metaPath, 'utf8')) as SpecMeta;
@@ -866,10 +1341,11 @@ function patchSpecMeta(root: string, id: string, patch: Partial<SpecMeta>): Spec
 }
 
 async function readSpec(root: string, id: string) {
-  const specPath = path.join(root, '.kraken', 'specs', id);
+  const specPath = path.join(root, '.octo', 'specs', id);
+  await migrateSpecDir(specPath);
   const meta = JSON.parse(await fs.readFile(path.join(specPath, 'spec.json'), 'utf8')) as SpecMeta;
   const files: Record<string, string> = {};
-  for (const f of ['requirements.md', 'bugfix.md', 'design.md', 'tasks.md']) {
+  for (const f of ['requirements.md', 'bugfix.md', 'plan.md', 'tasks.md']) {
     const fp = path.join(specPath, f);
     if (existsSync(fp)) files[f.replace('.md', '')] = await fs.readFile(fp, 'utf8');
   }
@@ -877,7 +1353,7 @@ async function readSpec(root: string, id: string) {
 }
 
 async function writeSpecFile(root: string, id: string, file: string, content: string) {
-  const specPath = path.join(root, '.kraken', 'specs', id);
+  const specPath = path.join(root, '.octo', 'specs', id);
   const filePath = path.join(specPath, `${file}.md`);
   await fs.writeFile(filePath, content, 'utf8');
   const metaPath = path.join(specPath, 'spec.json');
@@ -901,26 +1377,34 @@ async function writeSpecFile(root: string, id: string, file: string, content: st
 }
 
 async function advanceSpec(root: string, id: string) {
-  const specPath = path.join(root, '.kraken', 'specs', id);
+  const specPath = path.join(root, '.octo', 'specs', id);
   const metaPath = path.join(specPath, 'spec.json');
   const meta = JSON.parse(await fs.readFile(metaPath, 'utf8')) as SpecMeta;
-  const order: SpecPhase[] = ['requirements', 'design', 'tasks', 'done'];
-  const idx = order.indexOf(meta.phase);
-  const from = meta.phase;
-  const next = order[Math.min(idx + 1, order.length - 1)];
+  const order: SpecPhase[] = ['requirements', 'plan', 'build', 'done'];
+  const from = normalizePhase(meta.phase);
+  const next = order[Math.min(order.indexOf(from) + 1, order.length - 1)];
   meta.phase = next;
   meta.updatedAt = new Date().toISOString();
   meta.path = specPath;
 
-  if (next === 'design' && !existsSync(path.join(specPath, 'design.md'))) {
+  // Empty for the same reason requirements.md is — see `createSpec`. The Plan
+  // gate already refuses a plan with no usable `## Tasks`, so an empty file
+  // cannot be approved by accident either.
+  if (next === 'plan' && !existsSync(path.join(specPath, 'plan.md'))) {
+    await fs.writeFile(path.join(specPath, 'plan.md'), '', 'utf8');
+  }
+  if (next === 'build' && !existsSync(path.join(specPath, 'tasks.md'))) {
+    // Approving the plan derives tasks.md from its `## Tasks` section: the plan
+    // is the intent, tasks.md is the live state the runner ticks. The template
+    // is only a fallback for a spec advanced without a usable task list (the
+    // Plan gate blocks that in the UI, but hooks and Quick Plan advance too).
+    const planPath = path.join(specPath, 'plan.md');
+    const planMd = existsSync(planPath) ? await fs.readFile(planPath, 'utf8') : '';
     await fs.writeFile(
-      path.join(specPath, 'design.md'),
-      designTemplate(meta.name, meta.kind),
+      path.join(specPath, 'tasks.md'),
+      tasksDocFromPlan(meta.name, planMd) ?? tasksTemplate(meta.name),
       'utf8'
     );
-  }
-  if (next === 'tasks' && !existsSync(path.join(specPath, 'tasks.md'))) {
-    await fs.writeFile(path.join(specPath, 'tasks.md'), tasksTemplate(meta.name), 'utf8');
   }
   await fs.writeFile(metaPath, JSON.stringify(meta, null, 2), 'utf8');
   try {
@@ -939,11 +1423,11 @@ async function advanceSpec(root: string, id: string) {
 
 /** Set a spec to an explicit phase (used by Re-sync to reopen a completed phase). */
 async function setSpecPhase(root: string, id: string, phase: SpecPhase) {
-  const specPath = path.join(root, '.kraken', 'specs', id);
+  const specPath = path.join(root, '.octo', 'specs', id);
   const metaPath = path.join(specPath, 'spec.json');
   const meta = JSON.parse(await fs.readFile(metaPath, 'utf8')) as SpecMeta;
-  const order: SpecPhase[] = ['requirements', 'design', 'tasks', 'done'];
-  const from = meta.phase;
+  const order: SpecPhase[] = ['requirements', 'plan', 'build', 'done'];
+  const from = normalizePhase(meta.phase);
   meta.phase = phase;
   meta.updatedAt = new Date().toISOString();
   meta.path = specPath;
@@ -964,12 +1448,12 @@ async function setSpecPhase(root: string, id: string, phase: SpecPhase) {
 
 /**
  * Permanently delete a spec: remove its on-disk directory
- * (`.kraken/specs/<id>/`) and every mirrored DB row (events, runs + run
+ * (`.octo/specs/<id>/`) and every mirrored DB row (events, runs + run
  * files/errors, hook runs). Disk is the source of truth; the DB cascade keeps
  * history/analytics from dangling.
  */
 async function removeSpec(root: string, id: string): Promise<void> {
-  const specPath = path.join(root, '.kraken', 'specs', id);
+  const specPath = path.join(root, '.octo', 'specs', id);
   if (existsSync(specPath)) {
     await fs.rm(specPath, { recursive: true, force: true });
   }
@@ -980,97 +1464,77 @@ async function removeSpec(root: string, id: string): Promise<void> {
   }
 }
 
-function featureRequirementsTemplate(name: string) {
-  return `# Requirements — ${name}
-
-## Introduction
-Briefly describe the user-facing capability and why it matters.
-
-## User Stories
-- As a <role>, I want <capability>, so that <outcome>.
-
-## Acceptance Criteria (EARS notation)
-- WHEN <event/trigger> THEN the system SHALL <observable behavior>.
-- WHILE <state> THE system SHALL <continuous behavior>.
-- IF <precondition> THEN the system SHALL <conditional behavior>.
-
-## Out of Scope
-- List explicitly excluded behaviors.
-
-## Non-Functional Requirements
-- Performance, security, accessibility, observability.
-
-## Open Questions
-- [ ] <unresolved decision or ambiguity to settle before design>
-`;
+/** The user's own words, quoted at the top of the doc they seed. */
+function briefBlock(brief?: string) {
+  const t = brief?.trim();
+  if (!t) return '';
+  return `\n${t
+    .split('\n')
+    .map((l) => `> ${l}`)
+    .join('\n')}\n`;
 }
 
-function bugfixTemplate(name: string) {
-  return `# Bugfix Analysis — ${name}
+// ---------- Wholesale reset (Settings › Danger zone) ----------
 
-## Reproduction
-1. <step>
-2. <step>
-
-## Current Behavior (defect)
-- WHEN <condition> THEN the system <incorrect behavior>.
-
-## Expected Behavior
-- WHEN <condition> THEN the system SHALL <correct behavior>.
-
-## Unchanged Behavior (regression guards)
-- WHEN <condition> THEN the system SHALL CONTINUE TO <existing behavior>.
-
-## Environment
-- Versions, OS, configuration that matter.
-
-## Open Questions
-- [ ] <unresolved decision or ambiguity to settle before design>
-`;
+/** The two spec roots a workspace can have: the current one and the pre-rename one. */
+function specRoots(root: string) {
+  return [
+    { dir: path.join(root, '.octo', 'specs'), legacy: false },
+    { dir: path.join(root, '.kraken', 'specs'), legacy: true },
+  ];
 }
 
-function designTemplate(name: string, kind: SpecKind) {
-  if (kind === 'bugfix') {
-    return `# Design — ${name}
-
-## Root Cause Analysis
-Trace the defect to the smallest unit of code or state that produced it.
-
-## Fix Approach
-Describe the minimum change that satisfies the bugfix while preserving Unchanged Behavior.
-
-## Validation Properties
-- Bug-reproducing test: SHALL fail on the current code, SHALL pass after the fix.
-- No-regression tests: SHALL pass before and after.
-
-## Risks & Rollback
-`;
+/** Spec folders on disk + history rows, so the UI can say what a reset removes. */
+async function dataUsage(root: string): Promise<DataUsage> {
+  const counts = { specsOnDisk: 0, legacySpecsOnDisk: 0 };
+  for (const { dir, legacy } of specRoots(root)) {
+    if (!existsSync(dir)) continue;
+    const items = await fs.readdir(dir, { withFileTypes: true });
+    const n = items.filter((i) => i.isDirectory()).length;
+    if (legacy) counts.legacySpecsOnDisk += n;
+    else counts.specsOnDisk += n;
   }
-  return `# Design — ${name}
+  return { ...counts, workspace: historyCounts(root), all: historyCounts() };
+}
 
-## Overview
-High-level architecture and motivation for the chosen approach.
+/**
+ * Start clean: delete the spec folders on disk and the mirrored history rows.
+ *
+ * Deliberately scoped to **the data the SDD loop produces**. It never touches
+ * settings, the stored API key / GitHub token, agents, skills, hooks or
+ * steering — wiping those would cost the user their setup, not their clutter.
+ * Refuses while agents are still running, so nothing writes a spec back after
+ * the delete.
+ */
+async function resetData(root: string, opts: DataResetOptions): Promise<DataResetReport> {
+  if (activeStreams.size > 0) {
+    throw new Error(
+      `${activeStreams.size} run(s) still active — stop them from Activity › Runs before resetting.`
+    );
+  }
+  const report: DataResetReport = { specsDeleted: 0, legacySpecsDeleted: 0, history: null };
 
-## Components
-- Component A — responsibility, inputs, outputs.
+  if (opts.specs) {
+    for (const { dir, legacy } of specRoots(root)) {
+      if (!existsSync(dir)) continue;
+      const base = path.resolve(dir);
+      for (const item of await fs.readdir(dir, { withFileTypes: true })) {
+        if (!item.isDirectory()) continue;
+        const target = path.resolve(base, item.name);
+        // Never rm outside the specs directory, whatever readdir hands back.
+        if (!target.startsWith(base + path.sep)) continue;
+        await fs.rm(target, { recursive: true, force: true });
+        if (legacy) report.legacySpecsDeleted++;
+        else report.specsDeleted++;
+      }
+    }
+  }
 
-## Data & State
-- Schemas, persistence, in-flight state.
+  if (opts.history) {
+    report.history = clearHistory(opts.historyScope === 'all' ? undefined : root);
+  }
 
-## Sequence
-\`\`\`
-user → UI → service → store
-\`\`\`
-
-## Error Handling
-- Failure modes and user-visible recovery.
-
-## Testing Strategy
-- Unit, integration, and acceptance test coverage.
-
-## Open Questions
-- [ ] <unresolved design decision to settle before tasks>
-`;
+  return report;
 }
 
 function tasksTemplate(name: string) {
@@ -1104,7 +1568,11 @@ async function listSkills(root: string): Promise<SkillMeta[]> {
     if (!existsSync(dir)) continue;
     const entries = await fs.readdir(dir, { withFileTypes: true });
     for (const e of entries) {
-      if (!e.isDirectory()) continue;
+      // Skill managers (`npx skills add`) install into ~/.agents/skills and
+      // symlink the entry here, and readdir reports a symlink as neither a
+      // directory nor a file — so accept both and let the SKILL.md probe
+      // (which follows the link) decide whether it's really a skill.
+      if (!e.isDirectory() && !e.isSymbolicLink()) continue;
       const skillFile = path.join(dir, e.name, 'SKILL.md');
       if (!existsSync(skillFile)) continue;
       try {
@@ -1191,8 +1659,8 @@ function matchesGlob(filePath: string, glob: string): boolean {
 
 async function listSteering(root: string): Promise<SteeringFile[]> {
   const dirs = [
-    { dir: path.join(root, '.kraken', 'steering'), scope: 'workspace' as const },
-    { dir: path.join(app.getPath('home'), '.kraken', 'steering'), scope: 'global' as const },
+    { dir: path.join(root, '.octo', 'steering'), scope: 'workspace' as const },
+    { dir: path.join(app.getPath('home'), '.octo', 'steering'), scope: 'global' as const },
   ];
   const out: SteeringFile[] = [];
   const seen = new Set<string>();
@@ -1305,61 +1773,24 @@ async function composeSteeringSystem(
   return `<project-steering>\n${included.join('\n\n---\n\n')}\n</project-steering>`;
 }
 
-async function seedDefaultSteering(root: string) {
-  const dir = path.join(root, '.kraken', 'steering');
+async function seedDefaultSteering(root: string, opts?: SeedOpts): Promise<SeedReport> {
+  const dir = path.join(root, '.octo', 'steering');
   await ensureDir(dir);
-  const files: Record<string, string> = {
-    'product.md': `---
-inclusion: always
-description: Product purpose, target users, and goals.
----
-
-# Product
-
-_Describe what this product does, who it is for, and the core problems it solves._
-
-- **Purpose**:
-- **Target users**:
-- **Key goals / non-goals**:
-`,
-    'tech.md': `---
-inclusion: always
-description: Tech stack, frameworks, and engineering conventions.
----
-
-# Tech
-
-_Document the stack so generated code matches it._
-
-- **Languages / frameworks**:
-- **Build / test / lint commands**:
-- **Conventions** (naming, error handling, state, styling):
-`,
-    'structure.md': `---
-inclusion: always
-description: File organization and architectural patterns.
----
-
-# Structure
-
-_Outline how the codebase is organized._
-
-- **Key directories**:
-- **Module boundaries**:
-- **Where new code should go**:
-`,
-  };
+  const files = defaultSteeringLibrary();
+  const report = emptyReport();
   for (const [name, body] of Object.entries(files)) {
     const fp = path.join(dir, name);
-    if (!existsSync(fp)) await fs.writeFile(fp, body, 'utf8');
+    await seedDefaultFile(fp, `steering/${name}`, body, seedLedger, report, opts);
   }
+  seedLedger.flush();
+  return report;
 }
 
-/** Resolve the `.kraken/steering` directory for a scope. */
+/** Resolve the `.octo/steering` directory for a scope. */
 function steeringDir(root: string, scope: 'workspace' | 'global'): string {
   return scope === 'global'
-    ? path.join(app.getPath('home'), '.kraken', 'steering')
-    : path.join(root, '.kraken', 'steering');
+    ? path.join(app.getPath('home'), '.octo', 'steering')
+    : path.join(root, '.octo', 'steering');
 }
 
 /** Create or update a steering doc as a frontmatter markdown file. */
@@ -1395,16 +1826,16 @@ async function writeSteering(root: string, input: SteeringWriteInput): Promise<S
   };
 }
 
-/** True when a path lives under any `.kraken/steering` directory (guards deletes). */
+/** True when a path lives under any `.octo/steering` directory (guards deletes). */
 function isInSteeringDir(p: string): boolean {
   const norm = p.replace(/\\/g, '/');
-  return norm.includes('/.kraken/steering/');
+  return norm.includes('/.octo/steering/');
 }
 
-/** Delete a steering doc. Refuses paths outside `.kraken/steering` (e.g. root CLAUDE.md). */
+/** Delete a steering doc. Refuses paths outside `.octo/steering` (e.g. root CLAUDE.md). */
 async function deleteSteering(filePath: string): Promise<void> {
   if (!isInSteeringDir(filePath)) {
-    throw new Error('Refusing to delete a file outside .kraken/steering');
+    throw new Error('Refusing to delete a file outside .octo/steering');
   }
   if (existsSync(filePath)) await fs.rm(filePath);
 }
@@ -1422,7 +1853,7 @@ function setSteeringPins(root: string, names: string[]): string[] {
   return deduped;
 }
 
-// ---------- Hooks (Kraken-native agent hooks) ----------
+// ---------- Hooks (Octo-native agent hooks) ----------
 
 const HOOK_COOLDOWN_MS = 4000;
 const hookCooldown = new Map<string, number>(); // hookId -> last fire ms
@@ -1469,8 +1900,8 @@ function finalizeHookRun(requestId: string, type: 'done' | 'error', error?: stri
 
 async function listHooks(root: string): Promise<HookConfig[]> {
   const dirs = [
-    { dir: path.join(root, '.kraken', 'hooks'), scope: 'workspace' as const },
-    { dir: path.join(app.getPath('home'), '.kraken', 'hooks'), scope: 'global' as const },
+    { dir: path.join(root, '.octo', 'hooks'), scope: 'workspace' as const },
+    { dir: path.join(app.getPath('home'), '.octo', 'hooks'), scope: 'global' as const },
   ];
   const out: HookConfig[] = [];
   const seen = new Set<string>();
@@ -1495,7 +1926,7 @@ async function listHooks(root: string): Promise<HookConfig[]> {
 }
 
 async function writeHook(root: string, hook: HookConfig): Promise<HookConfig> {
-  const dir = path.join(root, '.kraken', 'hooks');
+  const dir = path.join(root, '.octo', 'hooks');
   await ensureDir(dir);
   const id = hook.id || `hook-${Date.now()}`;
   const file = path.join(dir, `${id}.json`);
@@ -1507,7 +1938,7 @@ async function writeHook(root: string, hook: HookConfig): Promise<HookConfig> {
 }
 
 async function deleteHook(root: string, id: string): Promise<void> {
-  const file = path.join(root, '.kraken', 'hooks', `${id}.json`);
+  const file = path.join(root, '.octo', 'hooks', `${id}.json`);
   if (existsSync(file)) await fs.rm(file);
 }
 
@@ -1524,10 +1955,10 @@ function composeHookSystem(hook: HookConfig, ctx: HookFireContext, agentBody: st
   parts.push(`# Hook: ${hook.title}`);
   if (hook.description) parts.push(hook.description);
   if (ctx.specId) {
-    const specRel = path.join('.kraken', 'specs', ctx.specId);
+    const specRel = path.join('.octo', 'specs', ctx.specId);
     parts.push(
       `This hook fired for spec \`${ctx.specId}\`. Relevant files live under \`${specRel}/\` ` +
-        `(requirements.md / bugfix.md, design.md, tasks.md).`
+        `(requirements.md / bugfix.md, plan.md, tasks.md).`
     );
   }
   if (ctx.fileHints && ctx.fileHints.length) {
@@ -1666,9 +2097,9 @@ async function generateHookFromNl(root: string, description: string): Promise<vo
   const sender = getMainSender();
   if (!sender) return;
   const requestId = `hookgen-${Date.now()}`;
-  const system = `You generate a Kraken hook config from a description. Reply with ONLY a JSON object (no prose, no code fences) matching:
+  const system = `You generate a Octo hook config from a description. Reply with ONLY a JSON object (no prose, no code fences) matching:
 {"id": "kebab-id", "title": "...", "description": "...", "trigger": "spec-advance|spec-done|task-complete|wave-complete|file-save-in-app|manual", "enabled": true, "actionType": "ask-claude|run-command", "agent": "agent-name-or-null", "instructions": "prompt for ask-claude", "command": "shell for run-command", "blocking": false}
-Write the JSON file to .kraken/hooks/<id>.json using the Write tool, then stop.`;
+Write the JSON file to .octo/hooks/<id>.json using the Write tool, then stop.`;
   void streamClaude(sender, {
     requestId,
     source: 'hook:generate',
@@ -1678,55 +2109,20 @@ Write the JSON file to .kraken/hooks/<id>.json using the Write tool, then stop.`
   });
 }
 
-async function seedDefaultHooks(root: string) {
-  const dir = path.join(root, '.kraken', 'hooks');
+async function seedDefaultHooks(root: string, opts?: SeedOpts): Promise<SeedReport> {
+  const dir = path.join(root, '.octo', 'hooks');
   await ensureDir(dir);
   const hooks = defaultHooksLibrary();
+  const report = emptyReport();
   for (const hook of hooks) {
     const file = path.join(dir, `${hook.id}.json`);
-    if (!existsSync(file)) await fs.writeFile(file, JSON.stringify(hook, null, 2), 'utf8');
+    const body = JSON.stringify(hook, null, 2);
+    await seedDefaultFile(file, `hooks/${hook.id}.json`, body, seedLedger, report, opts);
   }
+  seedLedger.flush();
+  return report;
 }
 
-function defaultHooksLibrary(): Array<Omit<HookConfig, 'scope' | 'path'>> {
-  return [
-    {
-      id: 'code-validate-improve',
-      title: 'Validate & improve code',
-      description: 'After a wave completes, typecheck, review the diff, and apply safe fixes.',
-      trigger: 'wave-complete',
-      enabled: true,
-      blocking: true,
-      actionType: 'ask-claude',
-      agent: 'code-reviewer',
-      instructions: `A wave of tasks just completed.
-
-1. Run \`npm run typecheck\` via Bash and read the output. (Requires Bash enabled in Settings → Permissions.)
-2. Review the git diff for this wave for correctness, regressions vs the spec's acceptance criteria, and reuse opportunities.
-3. Apply ONLY safe, mechanical fixes directly with the Edit tool: type errors, obvious bugs, dead code, unused imports.
-4. For anything risky or ambiguous, DO NOT edit — list it in your reply for the developer to decide.
-
-Keep your reply concise: typecheck result, fixes applied, and open concerns.`,
-    },
-    {
-      id: 'docs-changelog',
-      title: 'Update CHANGELOG & docs',
-      description: 'When a spec reaches done, update the CHANGELOG and docs.',
-      trigger: 'spec-done',
-      enabled: true,
-      blocking: false,
-      actionType: 'ask-claude',
-      agent: 'spec-task-executor',
-      instructions: `This spec just reached the 'done' phase.
-
-1. Read the spec's requirements.md / bugfix.md and design.md.
-2. Prepend a dated entry to CHANGELOG.md at the repo root (create it with a "Keep a Changelog" header if missing), summarizing the user-facing change under Added / Changed / Fixed.
-3. Add or update a short section under docs/ (create docs/<spec-id>.md if there is no docs structure yet; otherwise extend the most relevant existing doc).
-
-Match the existing tone and formatting. Keep your chat reply to the list of files you wrote.`,
-    },
-  ];
-}
 
 // ---------- MCP servers ----------
 
@@ -1742,25 +2138,44 @@ function parseMcpServers(
     const cfg = (raw ?? {}) as Record<string, unknown>;
     const url = cfg.url as string | undefined;
     const command = cfg.command as string | undefined;
-    const type: 'stdio' | 'http' =
-      cfg.type === 'http' || cfg.type === 'sse' || (!command && url) ? 'http' : 'stdio';
+    const type: McpServerMeta['type'] =
+      cfg.type === 'sse' ? 'sse' : cfg.type === 'http' || (!command && url) ? 'http' : 'stdio';
     out.push({ name, type, command, url, scope });
   }
   return out;
 }
 
+/**
+ * Every MCP server this workspace can reach, in precedence order.
+ *
+ * `~/.claude.json` holds servers in two places: a top-level `mcpServers`, and a
+ * per-project one under `projects[<path>].mcpServers`. Claude Code reads both,
+ * and a server added with `claude mcp add` inside a repo lands in the second —
+ * so reading only the top level meant Octo could not see servers the user had
+ * been using in that very directory all along.
+ *
+ * The project entry is scoped to this workspace, so it outranks the global one
+ * and sits with `.mcp.json` at the workspace tier.
+ */
 async function listMcpServers(root?: string | null): Promise<McpServerMeta[]> {
   const out: McpServerMeta[] = [];
   const seen = new Set<string>();
-  const sources: Array<{ file: string; scope: 'workspace' | 'global' }> = [];
-  if (root) sources.push({ file: path.join(root, '.mcp.json'), scope: 'workspace' });
-  sources.push({ file: path.join(app.getPath('home'), '.claude.json'), scope: 'global' });
-  sources.push({ file: path.join(app.getPath('home'), '.mcp.json'), scope: 'global' });
-  for (const { file, scope } of sources) {
+  const home = app.getPath('home');
+  const sources: Array<{ file: string; scope: 'workspace' | 'global'; project?: string }> = [];
+  if (root) {
+    sources.push({ file: path.join(root, '.mcp.json'), scope: 'workspace' });
+    sources.push({ file: path.join(home, '.claude.json'), scope: 'workspace', project: root });
+  }
+  sources.push({ file: path.join(home, '.claude.json'), scope: 'global' });
+  sources.push({ file: path.join(home, '.mcp.json'), scope: 'global' });
+  for (const { file, scope, project } of sources) {
     if (!existsSync(file)) continue;
     try {
       const parsed = JSON.parse(await fs.readFile(file, 'utf8'));
-      for (const s of parseMcpServers(parsed, scope)) {
+      const node = project
+        ? ((parsed as Record<string, unknown>)?.projects as Record<string, unknown>)?.[project]
+        : parsed;
+      for (const s of parseMcpServers(node, scope)) {
         if (seen.has(s.name)) continue;
         seen.add(s.name);
         out.push(s);
@@ -1770,6 +2185,233 @@ async function listMcpServers(root?: string | null): Promise<McpServerMeta[]> {
     }
   }
   return out.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+// ---------- Tickets: MCP-backed trackers ----------
+
+function ticketProviders(root: string): TicketProviderConfig[] {
+  return (store.get('ticketProviders') ?? {})[root] ?? [];
+}
+
+function saveTicketProviders(root: string, list: TicketProviderConfig[]) {
+  const all = store.get('ticketProviders') ?? {};
+  store.set('ticketProviders', { ...all, [root]: list });
+}
+
+function mcpToken(server: string): string | null {
+  return decryptSecret((store.get('mcpTokensEncrypted') ?? {})[server]);
+}
+
+function oauthRecord(server: string): OAuthRecord | null {
+  const raw = (store.get('mcpOAuthEncrypted') ?? {})[server];
+  if (!raw) return null;
+  const json = decryptSecret(raw);
+  // `decryptSecret` answers null both for "absent" and for "stored but no
+  // longer decryptable" (the keychain moved, or the app was renamed). Absent is
+  // handled above, so reaching here with null means the record is unreadable —
+  // say so rather than reporting a signed-in user as signed out.
+  if (!json) {
+    console.warn(`Stored OAuth record for "${server}" could not be decrypted; sign in again.`);
+    return null;
+  }
+  try {
+    return JSON.parse(json) as OAuthRecord;
+  } catch {
+    return null;
+  }
+}
+
+function setOAuthRecord(server: string, record: OAuthRecord | null) {
+  const all = { ...(store.get('mcpOAuthEncrypted') ?? {}) };
+  if (record) all[server] = encryptSecret(JSON.stringify(record));
+  else delete all[server];
+  store.set('mcpOAuthEncrypted', all);
+}
+
+/**
+ * The `Authorization` value to use for a server right now: a live OAuth token
+ * when there is one, else whatever was entered by hand.
+ *
+ * Refreshes only when the token is close to expiry — `ticketConnection` is
+ * called in a loop by `tickets:list-open`, and a refresh per provider per
+ * listing would be both slow and rude to the authorization server.
+ */
+async function mcpCredential(server: McpServerMeta): Promise<string | null> {
+  const rec = oauthRecord(server.name);
+  if (!rec) return mcpToken(server.name);
+  if (!needsRefresh(rec) || !rec.refreshToken) return rec.accessToken;
+  try {
+    const next = await refreshOAuth(server.url ?? '', rec);
+    setOAuthRecord(server.name, next);
+    return next.accessToken;
+  } catch {
+    // A failed refresh is not fatal here: the stale token may still work, and
+    // if it does not the 401 becomes an McpAuthRequired the UI can act on.
+    return rec.accessToken;
+  }
+}
+
+function setMcpToken(server: string, token: string | null) {
+  const all = { ...(store.get('mcpTokensEncrypted') ?? {}) };
+  if (token) all[server] = encryptSecret(token);
+  else delete all[server];
+  store.set('mcpTokensEncrypted', all);
+}
+
+/**
+ * Swap each scope's key for the site URL when the payload carries one — see the
+ * call site. Falls back to whatever the key already was.
+ */
+function preferUrlKeys(
+  scopes: { key: string; label: string }[],
+  structured: unknown
+): { key: string; label: string }[] {
+  const rows = Array.isArray(structured)
+    ? structured
+    : ((structured as Record<string, unknown>)?.resources as unknown[]) ?? [];
+  return scopes.map((sc, i) => {
+    const row = (rows[i] ?? {}) as Record<string, unknown>;
+    const url = typeof row.url === 'string' ? row.url : null;
+    return url ? { key: url, label: sc.label } : sc;
+  });
+}
+
+/**
+ * A failed call as the renderer needs it: the message, plus whether the answer
+ * is "sign in" rather than "something went wrong". Every ticket handler returns
+ * this shape so the UI never has to pattern-match on error text.
+ */
+function failure(err: unknown): {
+  error: string;
+  authRequired?: boolean;
+  detail?: Record<string, unknown>;
+} {
+  if (err instanceof McpAuthRequired) return { error: err.message, authRequired: true };
+  if (err instanceof McpError) return { error: err.message, detail: err.detail };
+  return { error: err instanceof Error ? err.message : String(err) };
+}
+
+/** Resolve a provider to a live connection, or explain why it can't be one. */
+async function ticketConnection(root: string, providerId: string) {
+  const cfg = ticketProviders(root).find((p) => p.id === providerId);
+  if (!cfg) throw new Error('That tracker is not configured in this workspace.');
+  const server = (await listMcpServers(root)).find((s) => s.name === cfg.server);
+  if (!server) {
+    throw new Error(
+      `No MCP server named "${cfg.server}" is configured. Add it to .mcp.json or ~/.claude.json.`
+    );
+  }
+  // A provider may point at a different URL than the one its MCP config
+  // declares — see `TicketProviderConfig.url`.
+  const resolved = cfg.url ? { ...server, url: cfg.url, type: 'http' as const } : server;
+  return { cfg, conn: { server: resolved, token: await mcpCredential(resolved) } };
+}
+
+/**
+ * Data an adapter needs but cannot fetch for itself.
+ *
+ * Only Jira needs any, and only to turn "move it to In Review" into the
+ * transition **id** that project's workflow uses. The lookup is read-only and
+ * happens while building the preview, so the panel shows the id that will
+ * actually be sent — resolving it at send time would break the one promise this
+ * whole design rests on.
+ */
+async function ticketHints(
+  root: string,
+  cfg: TicketProviderConfig,
+  meta: SpecMeta,
+  ev: TicketEvent
+): Promise<TicketHints | undefined> {
+  if (cfg.preset !== 'jira' || ev.kind !== 'spec-done' || !meta.ticket?.key) return undefined;
+  try {
+    const { conn } = await ticketConnection(root, cfg.id);
+    const res = await mcpCallTool(conn, JIRA_TRANSITIONS_TOOL, ticketRefArgs(cfg, meta.ticket.key));
+    if (!res.ok) return undefined;
+    return { transitions: normalizeTransitions(res.structured, res.text) };
+  } catch {
+    // A preview that cannot reach the tracker simply offers no transition; the
+    // panel says nothing rather than proposing a call with a made-up id.
+    return undefined;
+  }
+}
+
+/**
+ * Everything a spec's ticket should have applied for one event, as concrete
+ * tool calls. The renderer shows these for confirmation; nothing is sent here.
+ */
+async function planTicketSync(
+  root: string,
+  specId: string,
+  ev: TicketEvent
+): Promise<Array<{ provider: TicketProviderConfig; actions: TicketAction[] }>> {
+  const meta = readSpecMeta(root, specId);
+  if (!meta) return [];
+  const out: Array<{ provider: TicketProviderConfig; actions: TicketAction[] }> = [];
+  for (const cfg of ticketProviders(root)) {
+    if (!cfg.enabled) continue;
+    if (meta.ticket && meta.ticket.provider !== cfg.id && ev.kind !== 'spec-created') continue;
+    if (alreadyApplied(meta, ev)) continue;
+    const actions = planTicketActions(cfg, meta, ev, await ticketHints(root, cfg, meta, ev));
+    if (actions.length) out.push({ provider: cfg, actions });
+  }
+  return out;
+}
+
+/**
+ * Send one event's calls, in order, stopping at the first failure — a plan that
+ * was written but not approved is a state someone can finish by hand; one where
+ * approval ran against a stale plan is not.
+ */
+async function applyTicketSync(
+  root: string,
+  specId: string,
+  providerId: string,
+  actions: TicketAction[],
+  appliedId: string
+): Promise<{ ok: boolean; results: McpCallResult[]; error?: string; meta?: SpecMeta | null }> {
+  const { cfg, conn } = await ticketConnection(root, providerId);
+  const results: McpCallResult[] = [];
+  const meta = readSpecMeta(root, specId);
+
+  for (const action of actions) {
+    let res: McpCallResult;
+    try {
+      res = await mcpCallTool(conn, action.tool, action.args);
+    } catch (err) {
+      return { ok: false, results, ...failure(err), meta: readSpecMeta(root, specId) };
+    }
+    results.push(res);
+    if (!res.ok) {
+      return { ok: false, results, error: res.text || `${action.tool} failed.`, meta };
+    }
+    if (action.capability === 'create') {
+      const ref = parseTicketRef(res.structured, res.text);
+      if (ref.key) {
+        patchSpecMeta(root, specId, {
+          ticket: {
+            provider: cfg.id,
+            key: ref.key,
+            url: ref.url ?? undefined,
+            title: meta?.name,
+            linkedAt: new Date().toISOString(),
+            applied: [],
+          },
+        });
+      }
+    }
+  }
+
+  // Record the event only once every call in it landed.
+  const current = readSpecMeta(root, specId);
+  if (current?.ticket) {
+    patchSpecMeta(root, specId, {
+      ticket: {
+        ...current.ticket,
+        applied: [...new Set([...(current.ticket.applied ?? []), appliedId])],
+      },
+    });
+  }
+  return { ok: true, results, meta: readSpecMeta(root, specId) };
 }
 
 // ---------- Settings / API key ----------
@@ -1804,7 +2446,11 @@ function decryptSecret(stored: string | undefined): string | null {
   try {
     return safeStorage.decryptString(buf);
   } catch {
-    return buf.toString('utf8');
+    // On macOS the safeStorage key lives in the Keychain under the app name, so
+    // the Kraken → Octo rename made previously stored secrets undecryptable.
+    // Report "no secret" and let the user re-enter it — returning the raw bytes
+    // would hand the caller garbage and surface as a confusing 401.
+    return null;
   }
 }
 
@@ -2670,206 +3316,34 @@ function cancelClaude(requestId: string) {
 
 // ---------- Default content seeding (Claude Code compatible) ----------
 
-async function seedDefaultSkills(root: string) {
+async function seedDefaultSkills(root: string, opts?: SeedOpts): Promise<SeedReport> {
   const skillsDir = path.join(root, '.claude', 'skills');
   await ensureDir(skillsDir);
 
-  const skills: Record<string, string> = {
-    'sdd-feature': `---
-name: sdd-feature
-description: Walk through requirements → design → tasks for a new feature. Activate when the user wants to scope, design, or break down a feature.
----
+  const skills = defaultSkillsLibrary();
 
-# SDD Feature Skill
-
-When activated, drive a three-phase Spec-Driven Development conversation:
-
-1. **Requirements** — capture user stories and acceptance criteria using EARS notation.
-2. **Design** — propose architecture, components, sequences, and testing strategy.
-3. **Tasks** — break the design into independent waves with clear outcomes.
-
-Always ask for confirmation before advancing phases.
-`,
-    'sdd-bugfix': `---
-name: sdd-bugfix
-description: Reproduce → root cause → minimal fix workflow for bug specs. Activate when the user reports a bug or wants to scope a fix.
----
-
-# SDD Bugfix Skill
-
-Capture three sections:
-
-- **Current Behavior** — WHEN/THEN of the defect.
-- **Expected Behavior** — WHEN/THEN/SHALL of the correct behavior.
-- **Unchanged Behavior** — WHEN/THEN/SHALL CONTINUE TO statements that guard regressions.
-
-Prefer the smallest possible change that satisfies the bugfix and preserves Unchanged Behavior.
-`,
-  };
-
+  const report = emptyReport();
   for (const [name, body] of Object.entries(skills)) {
     const dir = path.join(skillsDir, name);
     await ensureDir(dir);
     const file = path.join(dir, 'SKILL.md');
-    if (!existsSync(file)) await fs.writeFile(file, body, 'utf8');
+    await seedDefaultFile(file, `skills/${name}/SKILL.md`, body, seedLedger, report, opts);
   }
+  seedLedger.flush();
+  return report;
 }
 
-async function seedDefaultAgents(root: string) {
+async function seedDefaultAgents(root: string, opts?: SeedOpts): Promise<SeedReport> {
   const agentsDir = path.join(root, '.claude', 'agents');
   await ensureDir(agentsDir);
 
   const agents = defaultAgentsLibrary();
+  const report = emptyReport();
   for (const [name, body] of Object.entries(agents)) {
     const file = path.join(agentsDir, `${name}.md`);
-    if (!existsSync(file)) await fs.writeFile(file, body, 'utf8');
+    await seedDefaultFile(file, `agents/${name}.md`, body, seedLedger, report, opts);
   }
+  seedLedger.flush();
+  return report;
 }
 
-function defaultAgentsLibrary(): Record<string, string> {
-  return {
-    'spec-requirements-writer': `---
-name: spec-requirements-writer
-description: Turn raw product intent into a requirements.md using EARS notation. Use this in the Requirements phase of a feature spec.
-tools: Read, Write, Grep, Glob
----
-
-You author **requirements.md** for feature specs.
-
-Output sections:
-- **Introduction** — one paragraph on the user-facing capability and why it matters.
-- **User Stories** — "As a <role>, I want <capability>, so that <outcome>."
-- **Acceptance Criteria** — strictly EARS:
-  - WHEN <event> THEN the system SHALL <behavior>.
-  - WHILE <state> THE system SHALL <behavior>.
-  - IF <precondition> THEN the system SHALL <behavior>.
-- **Out of Scope** — list excluded behaviors.
-- **Non-Functional Requirements** — performance, security, accessibility, observability.
-
-Never invent behaviors that aren't stated or strongly implied. Ask the user once for missing context, then commit to a draft.
-`,
-
-    'spec-design-architect': `---
-name: spec-design-architect
-description: Convert requirements.md into a design.md with components, sequences, data model, error handling, and test strategy. Use in the Design phase.
-tools: Read, Write, Grep, Glob
----
-
-You author **design.md** by reading requirements.md (or bugfix.md) and producing:
-
-- **Overview** — chosen approach and why over alternatives.
-- **Components** — each with responsibility, inputs, outputs.
-- **Data & State** — schemas and persistence.
-- **Sequence** — ascii or mermaid for the primary flow.
-- **Error Handling** — failure modes and user-visible recovery.
-- **Testing Strategy** — unit, integration, acceptance mapping back to ACs.
-- **Open Questions** — explicit, numbered.
-
-Bias to the simplest design that satisfies every acceptance criterion. Call out tradeoffs.
-`,
-
-    'spec-task-planner': `---
-name: spec-task-planner
-description: Break design.md into trackable tasks organized in dependency waves. Use in the Tasks phase.
-tools: Read, Write, Grep, Glob
----
-
-You author **tasks.md**. Each task must have:
-- A unique ID (T1, T2, …).
-- A single observable outcome.
-- A small enough scope to verify in one PR.
-
-Write each task line exactly as \`- [ ] T1: <description>\` — a plain checkbox, the bare id, then a colon. Never wrap the id or checkbox in markdown bold/emphasis (no \`**T1**\`, no \`__T1__\`); the runner parses these lines literally. To assign a specialized agent, use \`- [ ] T1 @agent-name: <description>\`.
-
-Group tasks into **waves**. Wave 1 contains all tasks with no dependencies and may run in parallel. Subsequent waves list their prerequisites explicitly ("(depends on T1, T3)").
-
-Close with a **Verification** checklist that maps every acceptance criterion to at least one task.
-`,
-
-    'spec-task-executor': `---
-name: spec-task-executor
-description: Execute a single task from tasks.md — read the spec, make the change, update the task list. Use during implementation.
-tools: Read, Edit, Write, Bash, Grep, Glob
----
-
-You execute exactly one task at a time. Before editing:
-1. Re-read requirements.md / bugfix.md and design.md.
-2. Locate the target files; confirm the change matches the design.
-
-After editing:
-- Run or describe the test(s) that validate the task.
-- Tick the task box in tasks.md.
-- Stop. Do not start the next task unless explicitly told to.
-`,
-
-    'bug-analyzer': `---
-name: bug-analyzer
-description: Drive the bugfix Analysis phase — capture reproduction, current behavior, expected behavior, and unchanged behavior. Use when starting a bugfix spec.
-tools: Read, Write, Grep, Glob
----
-
-You author **bugfix.md**. Required sections:
-
-- **Reproduction** — minimal numbered steps.
-- **Current Behavior** — WHEN/THEN of the defect.
-- **Expected Behavior** — WHEN/THEN/SHALL of correct behavior.
-- **Unchanged Behavior** — WHEN/THEN/SHALL CONTINUE TO statements protecting against regressions.
-- **Environment** — versions, OS, config that matter.
-
-If reproduction steps are missing, ask once. Otherwise commit to a draft.
-`,
-
-    'codebase-explorer': `---
-name: codebase-explorer
-description: Read-only exploration of the workspace to answer "where is X" or "how does Y work". Use before planning to gather grounding.
-tools: Read, Grep, Glob
----
-
-You are read-only. Locate symbols, trace call paths, summarize how a feature works today, and surface invariants the design must respect. Always report file paths with line numbers.
-`,
-
-    'code-reviewer': `---
-name: code-reviewer
-description: Review a proposed change for correctness, regressions, and reuse opportunities before commit. Use after each task is executed.
-tools: Read, Grep, Glob, Bash
----
-
-You review staged or proposed changes. Output:
-- **Correctness** — bugs, races, off-by-ones, missing edge cases.
-- **Regressions** — interactions with Unchanged Behavior.
-- **Reuse** — existing helpers that should be used instead of new code.
-- **Simplification** — code that can be deleted without losing behavior.
-
-Be specific: cite file:line. No nits unless asked.
-`,
-
-    'test-generator': `---
-name: test-generator
-description: Generate tests that map each acceptance criterion (EARS statement) to at least one executable test. Use after Design, before/during implementation.
-tools: Read, Write, Grep, Glob, Bash
----
-
-You generate tests grounded in the spec's acceptance criteria. For each EARS statement, emit at least one test with:
-- A name that quotes the WHEN/THEN.
-- Arrange/Act/Assert structure.
-- For bugfix specs, also generate at least one **regression** test per Unchanged Behavior statement.
-
-Match the project's existing test framework and style.
-`,
-
-    'spec-doctor': `---
-name: spec-doctor
-description: Audit a spec for inconsistencies between requirements, design, and tasks. Use before moving to implementation, or when a spec feels off.
-tools: Read, Grep, Glob
----
-
-You audit the spec end-to-end. Surface:
-- Acceptance criteria with no corresponding task.
-- Tasks with no acceptance criterion (scope creep).
-- Components in design that no task touches.
-- Unchanged Behavior statements with no regression test.
-
-Report blockers vs. nits separately.
-`,
-  };
-}

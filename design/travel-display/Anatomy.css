@@ -1,0 +1,31 @@
+/* Anatomy sheet — the tile spec for Direction A, at 1:1. */
+.root { width: 1200px; }
+.sheet { flex: 1 1 auto; min-height: 0; padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 16px; overflow: hidden; }
+.h2 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #848484; font-weight: 600; display: flex; align-items: center; gap: 9px; }
+.h2 i { flex: 1 1 auto; height: 1px; background: #333333; display: block; }
+.stage { display: flex; gap: 22px; align-items: flex-start; }
+.t { width: 625px; height: 210px; flex: none; display: flex; flex-direction: column; border: 1px solid rgba(118, 185, 0, 0.45); background: #282C21; overflow: hidden; }
+.t-head { display: flex; align-items: center; gap: 7px; padding: 8px 10px 0; min-width: 0; }
+.t-title { padding: 6px 10px 0; font-size: 13.5px; color: #ECECEC; line-height: 1.25; }
+.t-agent { padding: 3px 10px 7px; font-size: 11px; color: #848484; }
+.wavebar { height: 2px; background: #333333; flex: none; }
+.wavebar i { display: block; height: 2px; background: #76B900; }
+.t-log { flex: 1 1 auto; min-height: 0; background: #1A1A1A; border-top: 1px solid #2F2F2F; padding: 7px 10px; overflow: hidden; }
+.callouts { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.co { display: flex; gap: 9px; align-items: baseline; }
+.co b { width: 17px; height: 17px; flex: none; display: grid; place-items: center; background: #76B900; color: #0F1400; font-size: 10px; font-weight: 700; }
+.co span { font-size: 12px; color: #C8C8C8; line-height: 1.35; }
+.co span em { font-style: normal; color: #848484; }
+.marker { width: 17px; height: 17px; display: grid; place-items: center; background: #76B900; color: #0F1400; font-size: 10px; font-weight: 700; position: absolute; }
+.cols { display: flex; gap: 22px; flex: 1 1 auto; min-height: 0; }
+.col { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 9px; }
+.spec { display: flex; flex-direction: column; gap: 5px; }
+.sr { display: flex; align-items: baseline; gap: 10px; font-size: 12px; }
+.sr b { flex: none; width: 118px; color: #848484; font-weight: 500; }
+.sr span { color: #ECECEC; }
+.sw { display: flex; flex-wrap: wrap; gap: 7px; }
+.swatch { display: flex; align-items: center; gap: 7px; font-size: 11px; color: #A8A8A8; border: 1px solid #333333; padding: 4px 8px 4px 5px; }
+.swatch i { width: 14px; height: 14px; display: block; flex: none; }
+.legend { display: flex; flex-direction: column; gap: 6px; }
+.lg { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #C8C8C8; }
+.ico { flex: none; display: block; }
