@@ -21,7 +21,10 @@ yarn-error.log*
 .env.*
 !.env.example
 
-# Local Kraken workspace data (per-workspace specs/hooks/steering belong with the user's project, not this repo)
+# Local Octo workspace data (per-workspace specs/hooks/steering belong with the user's
+# project, not this repo). `.kraken/` is the pre-rename name, kept so a workspace opened
+# before f54c4cb doesn't show up as untracked.
+.octo/
 .kraken/
 
 # Editor / OS
