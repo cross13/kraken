@@ -45,7 +45,10 @@ argument and return shapes). Grouped by namespace:
 
 ### `workspace`
 `pick()`, `getLast()`, `getRecents()`, `open(path)`, `listTree(path)` — choosing and reading the
-workspace root and its file tree.
+workspace root and its file tree. `seedUpgrade(root)` → `SeedReport` runs the four seeders in
+**upgrade-only** mode (rewrites a default nobody edited, creates nothing) and is called from
+`useWorkspace.openWorkspace` right after `open`; a per-root `seededLibraryVersion` makes it a
+no-op once the workspace is current.
 
 ### `specs`
 `list(root)`, `create(root, name, kind, brief?)`, `read(root, id)`, `writeFile(root, id, file, content)`,
@@ -59,7 +62,12 @@ the top of the seeded first document — creating a spec never starts a Claude r
 
 ### `skills` / `agents`
 `list(root)`, `read(path)`, `seedDefaults(root)` each. Read from `.claude/skills` and
-`.claude/agents` (workspace + `~/.claude/`). `seedDefaults` writes the bundled SDD library.
+`.claude/agents` (workspace + `~/.claude/`). `seedDefaults` writes the bundled SDD library and
+resolves with a **`SeedReport`** (`created` / `upgraded` / `kept`): it installs what's missing and
+**rewrites a default the user never edited** with the current version, while any file carrying
+edits is reported as `kept` and left alone. Same return shape for `steering.seedDefaults` and
+`hooks.seedDefaults`. See [`subsystems.md`](./subsystems.md) → Agents & Skills for how "never
+edited" is decided.
 
 ### `steering`
 `list(root)`, `seedDefaults(root)` — project-context markdown in `.octo/steering/`.
@@ -79,7 +87,31 @@ every run), persisted per workspace in `electron-store`.
 **not** write through `fs:write`, to avoid retriggering file-save hooks.)
 
 ### `mcp`
-`list(root?)` — discovered MCP servers.
+`list(root?)` — discovered MCP servers (read from `.mcp.json` / `~/.claude.json`).
+`listTools({root, server})` — actually **connects**: `initialize` → `tools/list`, returning the
+tools plus a suggested capability map. Backed by `electron/mcpClient.ts`.
+
+### `tickets`
+`listProviders(root)`, `saveProvider`, `deleteProvider` — per-workspace tracker configs
+(`ticketProviders` in electron-store). `hasToken(server)` / `setToken` — bearer tokens for remote
+MCP servers, encrypted with `safeStorage` like the API key. `plan({root, specId, event})` resolves
+an event into the exact `TicketAction[]` it would send, **without sending anything**;
+`apply({…, actions, eventId})` sends them in order, stops at the first failure, records the ticket
+key on `SpecMeta.ticket` after a create, and marks the event applied only when every call landed.
+`call({root, providerId, tool, args})` is the escape hatch for one-off tool calls.
+`listOpen({root, limit})` calls each enabled tracker's mapped `search` tool and returns the
+not-done tickets **per provider**, so one unreachable tracker never hides the others.
+`link({root, specId, ticket})` attaches an existing ticket to a spec and marks `spec-created`
+already applied — the ticket is what the spec came from, so proposing to create another would be
+backwards. `listScopes({root, providerId})` reads the clients / projects a tracker scopes tickets
+by, so the picker offers them instead of asking for an identifier typed from memory.
+`authStatus(server)` → `{mode: 'none'|'manual'|'oauth', account?, expiresAt?}`.
+`signIn({root, server, scope?})` runs the whole OAuth flow and **resolves only when the browser
+redirect lands** — the pending promise is the completion signal, so there is nothing to subscribe
+to. `signOut(server)` drops the stored record.
+`seed({root, providerId, ticket, kind})` fetches the ticket through the `get` capability and
+returns `{brief, requirements, plan}` — the markdown a spec starts from, with `plan` null unless
+the ticket carries one.
 
 ### `settings`
 `getModel`/`setModel`, `hasApiKey`/`setApiKey`/`clearApiKey`, `getBackend`/`setBackend`
@@ -97,6 +129,11 @@ entry carries a `source` (`'api' | 'cli-config' | 'catalog'`) so the UI states h
 See [`backends.md`](./backends.md) → Model discovery.
 
 ### `git`
+`branchSummary({cwd, base?})` → `BranchSummary` reports what the current branch adds on top of its
+base: the commits (`git log base..HEAD`) and the per-file line counts (`git diff --numstat
+base...HEAD`, three dots — the changes *this branch introduced*, not what happened on the base
+meanwhile). The base is `origin/HEAD` when the remote sets it, else a guess flagged as
+`baseGuessed`. Backs the PR composer.
 `status`, `listChanges`, `stage`, `unstage`, `stageAll`, `unstageAll`, `fetch`, `pull`, `push`,
 `listBranches`, `checkout`, `createBranch`, `commitPush`. Backed by `electron/git.ts`. All return
 `{ ok, error?, output, … }` result objects.
@@ -156,10 +193,14 @@ travel window opens/closes so the toggle stays in sync. `focusMain()` (`send` on
 travel window's zoom control). See [`subsystems.md`](./subsystems.md) → Travel Display.
 
 ### `fleet` — live-run mirror to the Travel Display
-`push(runs)` (`send` on `fleet:push`) is called by the **main** window with a serialized
-`FleetSnapshot` (`ActiveRun[]`, its orchestrator registry); the main process forwards it to the
-travel window via `fleet:sync`. `onSync(handler)` (subscribes to `fleet:sync`) is used by
-`WideApp` to mirror the registry. The travel window is read-only and issues cancellation through
+`push(snapshot)` (`send` on `fleet:push`) is called by the **main** window with a serialized
+`FleetSnapshot` — `{ runs: ActiveRun[]; maxConcurrency }`, its orchestrator registry plus the wave
+concurrency cap (the travel window draws a task-slot meter and cannot otherwise know the ceiling);
+the main process caches it as `lastFleet` and forwards it to the travel window via `fleet:sync`. `onSync(handler)` (subscribes to
+`fleet:sync`) is used by `WideApp` to mirror the registry, and `request()` (`send` on
+`fleet:request`) asks the main process to echo `lastFleet` back to that sender — the travel window
+calls it on mount so a display opened *between* registry changes still sees what is already
+running. The travel window is read-only and issues cancellation through
 the existing `claude:cancel` — there is no separate cancel channel. Separately, `emit()` mirrors
 each `claude:event` to the travel window (when open) so its run detail can stream the live agent
 log; the main window still receives the same events unchanged.

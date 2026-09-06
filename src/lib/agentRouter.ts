@@ -10,8 +10,11 @@ import type { AgentMeta, SkillMeta, SpecKind } from '../../electron/shared/types
  * frontend task picks your frontend agent instead of the generic executor.
  */
 
+/** The four documents a spec can carry, and the four things routing writes. */
+export type SpecDocFile = 'requirements' | 'bugfix' | 'plan' | 'tasks';
+
 export type Action =
-  | { kind: 'spec-file'; file: 'requirements' | 'bugfix' | 'plan' | 'tasks'; specKind: SpecKind }
+  | { kind: 'spec-file'; file: SpecDocFile; specKind: SpecKind }
   | { kind: 'task-execute'; taskAgent?: string; taskText?: string }
   | { kind: 'task-refine'; taskAgent?: string; taskText?: string }
   | { kind: 'polish' }
@@ -160,9 +163,12 @@ export function actionProfile(action: Action): ActionProfile {
       // Capability signals from the task text PLUS broad implementation signals,
       // so a general engineering/build agent (e.g. electron-pro) still matches
       // tasks that don't name a specific domain.
+      // De-duplicated because the two lists overlap (`component`, `build`): a
+      // repeated keyword would score twice against the same agent, and the
+      // specialist threshold is only 2.
       return {
         preferred: ['spec-task-executor'],
-        keywords: [...keywordsFromText(action.taskText ?? ''), ...IMPLEMENTER_SIGNALS],
+        keywords: [...new Set([...keywordsFromText(action.taskText ?? ''), ...IMPLEMENTER_SIGNALS])],
       };
     case 'polish':
       return { preferred: ['code-reviewer'], keywords: ['review', 'reviewer', 'quality', 'refactor', 'lint', 'polish'] };
@@ -298,6 +304,32 @@ export function routeSkill(
   return skills.find((s) => s.name === name) ?? null;
 }
 
+/**
+ * The skill that defines the *format* of one spec document.
+ *
+ * Where `routeSkill` injects the stage-and-gate framing for the whole spec, this
+ * one carries the literal shape Octo's parsers expect from the document being
+ * written — the headings, the `AC-n` / `US-n` ids, the task-line grammar. It
+ * lives here rather than at the call site so that the skill-injection toggle and
+ * the per-skill disable list apply to it exactly as they do to everything else.
+ *
+ * `tasks` maps to the same skill as a plan's task section, because they are the
+ * same lines: approving a plan copies them across verbatim.
+ */
+const FORMAT_SKILLS: Record<SpecDocFile, string> = {
+  requirements: 'spec-requirements-format',
+  bugfix: 'spec-bugfix-format',
+  plan: 'spec-plan-format',
+  tasks: 'spec-tasks-format',
+};
+
+export function routeFormatSkill(file: SpecDocFile, skills: SkillMeta[]): SkillMeta | null {
+  if (!activeConfig.skillInjection) return null;
+  const name = FORMAT_SKILLS[file];
+  if (activeConfig.disabledSkills.includes(name)) return null;
+  return skills.find((s) => s.name === name) ?? null;
+}
+
 /** Find an installed skill by exact name. */
 export function findSkill(name: string | null | undefined, skills: SkillMeta[]): SkillMeta | null {
   if (!name) return null;
@@ -321,6 +353,44 @@ export function bestSkillByText(text: string, skills: SkillMeta[]): SkillMeta | 
     if (score > 0 && (!best || score > best.score)) best = { skill: s, score };
   }
   return best && best.score >= activeConfig.domainSkillThreshold ? best.skill : null;
+}
+
+/** Every skill Octo governs a spec with, by name — never "detected", always injected. */
+const BASE_SKILL_NAMES = new Set<string>([
+  'sdd-feature',
+  'sdd-bugfix',
+  ...Object.values(FORMAT_SKILLS),
+]);
+
+/**
+ * Every domain skill a body of text matches, ranked, not just the best one.
+ *
+ * `bestSkillByText` answers "which one skill fits this task", which is the right
+ * question for a single task run. Drafting a plan is a different question: a
+ * feature can be a frontend *and* a database change at once, and the plan has to
+ * be right about both. Same scoring and the same threshold, so a skill that
+ * would win a task is exactly a skill that shows up here.
+ *
+ * The bundled SDD and format skills are excluded: they are injected on every
+ * run regardless, and listing them as a "detected match" would misrepresent why
+ * they are there.
+ */
+export function matchingSkills(text: string, skills: SkillMeta[], max = 3): SkillMeta[] {
+  if (!activeConfig.domainSkillInjection) return [];
+  const keywords = keywordsFromText(text);
+  if (!keywords.length) return [];
+  const scored: { skill: SkillMeta; score: number }[] = [];
+  for (const s of skills) {
+    if (activeConfig.disabledSkills.includes(s.name) || BASE_SKILL_NAMES.has(s.name)) continue;
+    const hay = `${s.name} ${s.description}`.toLowerCase();
+    let score = 0;
+    for (const kw of keywords) if (hay.includes(kw)) score += 1;
+    if (score >= activeConfig.domainSkillThreshold) scored.push({ skill: s, score });
+  }
+  return scored
+    .sort((a, b) => b.score - a.score)
+    .slice(0, max)
+    .map((x) => x.skill);
 }
 
 /** Build a system-prompt block that actually injects a skill's instructions. */
@@ -356,6 +426,8 @@ export interface RouteExplanation {
   governingSkill: SkillMeta | null;
   /** confident domain skill match, if any */
   domainSkill: SkillMeta | null;
+  /** document-format skill for this step, if the action writes a spec document */
+  formatSkill: SkillMeta | null;
   keywords: string[];
   preferred: string[];
   candidates: ScoredAgent[];
@@ -377,6 +449,14 @@ export function explainRoute(
     agent: routeAgent(action, agents, userOverride),
     governingSkill: routeSkill(specKind, skills),
     domainSkill: bestSkillByText(text, skills),
+    // Task runs write tasks.md (ticking boxes) and plan.md (Critical Decisions),
+    // so they carry the task-line grammar just as the tasks step does.
+    formatSkill:
+      action.kind === 'spec-file'
+        ? routeFormatSkill(action.file, skills)
+        : action.kind === 'task-execute' || action.kind === 'task-refine'
+          ? routeFormatSkill('tasks', skills)
+          : null,
     keywords: profile.keywords,
     preferred: profile.preferred,
     candidates: scoreAgents(agents, profile.keywords),

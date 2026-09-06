@@ -81,10 +81,13 @@ module.exports = {
         '3xl': 'var(--radius-3xl)',
         full: 'var(--radius-full)',
       },
+      // One source of truth for the three families: the stacks live in
+      // styles.css as `--font-*` (bundled @fontsource-variable packages first),
+      // so CSS rules and Tailwind classes can never drift apart.
       fontFamily: {
-        sans: ['Hanken Grotesk', 'Geist', 'Inter', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
-        display: ['Space Grotesk', 'Hanken Grotesk', 'Geist', 'system-ui', 'sans-serif'],
-        mono: ['JetBrains Mono', 'Geist Mono', 'SF Mono', 'Menlo', 'monospace'],
+        sans: ['var(--font-sans)'],
+        display: ['var(--font-display)'],
+        mono: ['var(--font-mono)'],
       },
       // Themed elevation — Signal switches shadows off entirely and turns the
       // glow into the accent hairline its palette allows.

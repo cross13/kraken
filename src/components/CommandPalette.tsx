@@ -21,6 +21,8 @@ import {
   CornerDownLeft,
   MessageSquare,
   MonitorSmartphone,
+  GraduationCap,
+  Maximize2,
 } from 'lucide-react';
 import { useWorkspace } from '../stores/workspace';
 import { useUi, stageForPhase, type LibrarySection, type ActivityTab } from '../stores/ui';
@@ -62,6 +64,8 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
   const toggleAssistant = useUi((s) => s.toggleAssistant);
   const toggleExplorer = useUi((s) => s.toggleExplorer);
   const addTerminal = useUi((s) => s.addTerminal);
+  const setZen = useUi((s) => s.setZen);
+  const activeSpecId = useUi((s) => s.activeSpecId);
   const [q, setQ] = useState('');
   const [sel, setSel] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -90,6 +94,17 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
       group: 'Commands',
       run: () => focusComposer(),
     });
+    // Zen reads the document on screen, so it is only offered with a spec open.
+    if (activeSpecId) {
+      out.push({
+        id: 'cmd:zen',
+        label: 'Read in Zen',
+        hint: '⌘⇧Z · full screen, one column',
+        icon: <Maximize2 size={15} />,
+        group: 'Commands',
+        run: () => setZen(true),
+      });
+    }
     out.push({
       id: 'cmd:assistant',
       label: 'Toggle Assistant',
@@ -113,6 +128,14 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
       icon: <MonitorSmartphone size={15} />,
       group: 'Commands',
       run: () => window.octo.win.toggleWide(),
+    });
+    out.push({
+      id: 'cmd:quick-start',
+      label: 'Quick start guide',
+      hint: 'set up · how the loop works · tips',
+      icon: <GraduationCap size={15} />,
+      group: 'Commands',
+      run: () => useUi.getState().setQuickStart(true),
     });
     out.push({
       id: 'cmd:new-terminal',

@@ -10,7 +10,7 @@ import {
   ChevronRight,
   ChevronDown,
 } from 'lucide-react';
-import { OctoLogo } from './OctoLogo';
+import { OctoMark } from './OctoMark';
 import { useChat } from '../stores/chat';
 import { useWorkspace } from '../stores/workspace';
 import { useOrchestrator } from '../stores/orchestrator';
@@ -210,7 +210,7 @@ export function ChatPanel() {
         {/* Working bar — the session's live status, with cancel */}
         {busy && (
           <div className="flex items-center gap-2.5 rounded-xl bg-card ring-1 ring-ink-50/[0.06] px-3.5 py-2.5">
-            <OctoLogo animated className="w-[18px] h-[22px] shrink-0" />
+            <OctoMark animated className="w-5" />
             <span className="text-[13px] text-ink-200">Working…</span>
             <button
               onClick={stop}
@@ -319,7 +319,7 @@ function Message({
     <div className="px-0.5">
       <div className="flex items-center gap-2.5 mb-2">
         <span className="w-7 h-7 grid place-items-center rounded-full bg-elev shrink-0">
-          <OctoLogo animated={streaming} className="w-[15px] h-[19px]" />
+          <OctoMark animated={streaming} className="w-[17px]" />
         </span>
         <span className="text-[13px] font-semibold text-ink-50">{agent ?? 'Octo'}</span>
         {streaming && (

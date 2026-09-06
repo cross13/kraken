@@ -12,6 +12,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { useWorkspace } from '../../stores/workspace';
+import { seedSummary } from '../../lib/library';
 import { useUi } from '../../stores/ui';
 import { cn } from '../../lib/cn';
 import type { HookConfig, HookTrigger } from '../../../electron/shared/types';
@@ -56,8 +57,15 @@ export function HooksStudio() {
   const seedDefaults = useWorkspace((s) => s.seedDefaults);
   const openOverlay = useUi((s) => s.openOverlay);
   const [genOpen, setGenOpen] = useState(false);
+  // Seeding upgrades untouched defaults, so say what the run actually did.
+  const [seedNote, setSeedNote] = useState<string | null>(null);
 
   const newHook = () => openOverlay({ kind: 'hook' });
+
+  const seed = async () => {
+    setSeedNote(seedSummary(await seedDefaults()));
+    window.setTimeout(() => setSeedNote(null), 8000);
+  };
 
   return (
     <div className="h-full flex flex-col bg-ink-950">
@@ -79,8 +87,10 @@ export function HooksStudio() {
             >
               <Plus size={13} /> New hook
             </button>
+            {seedNote && <span className="text-[11.5px] text-faint">{seedNote}</span>}
             <button
-              onClick={seedDefaults}
+              onClick={seed}
+              title="Install the bundled library, and update any default you haven't edited"
               className="flex items-center gap-1.5 text-[12px] px-3 h-8 rounded-lg bg-elev text-dim hover:text-ink-50"
             >
               <Wand2 size={13} /> Seed defaults

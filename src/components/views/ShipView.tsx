@@ -14,6 +14,8 @@ import {
 import { useWorkspace } from '../../stores/workspace';
 import { useUi } from '../../stores/ui';
 import { CompletionSummary } from './CompletionSummary';
+import { PrComposer } from './PrComposer';
+import { TicketPanel } from './TicketPanel';
 import { polishSpec } from '../../lib/specActions';
 import { cn } from '../../lib/cn';
 import type { SpecMeta } from '../../../electron/shared/types';
@@ -40,10 +42,11 @@ export function ShipView({ meta, onReopen }: { meta: SpecMeta; onReopen: () => v
   const specRel = meta.path.replace(root + '/', '');
   const [git, setGit] = useState<GitState | null>(null);
   const [summaryText, setSummaryText] = useState('');
-  const [busy, setBusy] = useState<null | 'branch' | 'commit' | 'pr' | 'polish'>(null);
+  const [busy, setBusy] = useState<null | 'branch' | 'commit' | 'polish'>(null);
   const [notice, setNotice] = useState<{ tone: 'ok' | 'bad'; text: string } | null>(null);
   const [prUrl, setPrUrl] = useState<string | null>(meta.prUrl ?? null);
   const [hasGithub, setHasGithub] = useState(false);
+  const [requirementsMd, setRequirementsMd] = useState<string | undefined>(undefined);
 
   const readGit = () =>
     window.octo.git
@@ -52,6 +55,13 @@ export function ShipView({ meta, onReopen }: { meta: SpecMeta; onReopen: () => v
         setGit({ isRepo: s.isRepo, branch: s.branch, hasChanges: s.hasChanges, hasOrigin: s.hasOrigin })
       )
       .catch(() => setGit(null));
+
+  useEffect(() => {
+    window.octo.specs
+      .read(root, meta.id)
+      .then((res) => setRequirementsMd(res.files.requirements ?? res.files.bugfix))
+      .catch(() => setRequirementsMd(undefined));
+  }, [root, meta.id]);
 
   useEffect(() => {
     readGit();
@@ -124,29 +134,6 @@ export function ShipView({ meta, onReopen }: { meta: SpecMeta; onReopen: () => v
     }
   };
 
-  const createPr = async () => {
-    setBusy('pr');
-    setNotice(null);
-    try {
-      const res = await window.octo.github.createPr({
-        cwd: root,
-        specId: meta.id,
-        title: `${meta.kind === 'feature' ? 'feat' : 'fix'}: ${meta.name}`,
-        body: summaryText || `Completes the ${meta.kind} spec "${meta.name}".`,
-        push: true,
-      });
-      if (res.ok && res.data) {
-        setPrUrl(res.data.url);
-        setNotice({ tone: 'ok', text: `PR #${res.data.number} opened` });
-      } else {
-        setNotice({ tone: 'bad', text: res.error ?? 'Could not create the pull request' });
-      }
-      await refreshAll();
-    } finally {
-      setBusy(null);
-    }
-  };
-
   const polish = async () => {
     setBusy('polish');
     setAssistantOpen(true);
@@ -198,6 +185,26 @@ export function ShipView({ meta, onReopen }: { meta: SpecMeta; onReopen: () => v
 
         {/* summary + changed files (auto-generates on arrival) */}
         <CompletionSummary meta={meta} specRel={specRel} auto onSummary={setSummaryText} />
+
+        {/* The tracker ticket — linking it and keeping it in step is the other
+            half of "done", and it belongs beside the PR, not in a settings page. */}
+        <TicketPanel
+          meta={meta}
+          files={{ requirements: requirementsMd }}
+          summary={summaryText}
+        />
+
+        {/* The PR, composed from what the branch actually contains. Only once
+            there is a remote and a token — otherwise there is nothing to open. */}
+        {git?.isRepo && git.hasOrigin && hasGithub && (
+          <PrComposer
+            meta={meta}
+            specRel={specRel}
+            requirementsMd={requirementsMd}
+            fallbackOverview={summaryText}
+            onOpened={setPrUrl}
+          />
+        )}
 
         {/* ship actions */}
         <div className="rounded-xl bg-card p-4 space-y-3">
@@ -264,21 +271,7 @@ export function ShipView({ meta, onReopen }: { meta: SpecMeta; onReopen: () => v
                   >
                     <GitPullRequest size={12} /> View PR <ExternalLink size={11} />
                   </button>
-                ) : git.hasOrigin && hasGithub ? (
-                  <button
-                    onClick={createPr}
-                    disabled={!!busy}
-                    title="Open a pull request — title and body prefilled from the spec + summary"
-                    className="flex items-center gap-1.5 text-[12px] px-3.5 py-2 rounded-lg bg-elev text-ink-100 hover:bg-line transition disabled:opacity-50"
-                  >
-                    {busy === 'pr' ? (
-                      <Loader2 size={12} className="animate-spin" />
-                    ) : (
-                      <GitPullRequest size={12} />
-                    )}
-                    Create PR
-                  </button>
-                ) : (
+                ) : git.hasOrigin && hasGithub ? null : (
                   <span className="text-[11px] text-faint">
                     {git.hasOrigin
                       ? 'Add a GitHub token in Library › Settings to open PRs from here.'

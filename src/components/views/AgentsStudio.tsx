@@ -26,6 +26,7 @@ import {
   agentPath,
   slugify,
   actionsRoutingTo,
+  seedSummary,
 } from '../../lib/library';
 import { cn } from '../../lib/cn';
 import type { AgentMeta } from '../../../electron/shared/types';
@@ -63,6 +64,14 @@ export function AgentsStudio() {
   const [query, setQuery] = useState('');
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  // What the last "Seed defaults" run did — seeding upgrades untouched defaults,
+  // so the outcome is worth saying out loud. Clears itself.
+  const [seedNote, setSeedNote] = useState<string | null>(null);
+
+  const seed = async () => {
+    setSeedNote(seedSummary(await seedDefaults()));
+    window.setTimeout(() => setSeedNote(null), 8000);
+  };
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -93,8 +102,10 @@ export function AgentsStudio() {
             >
               <Plus size={13} /> New agent
             </button>
+            {seedNote && <span className="text-[11.5px] text-faint">{seedNote}</span>}
             <button
-              onClick={seedDefaults}
+              onClick={seed}
+              title="Install the bundled library, and update any default you haven't edited"
               className="flex items-center gap-1.5 text-[12px] px-3 h-8 rounded-lg bg-elev text-dim hover:text-ink-50"
             >
               <Wand2 size={13} /> Seed defaults

@@ -136,9 +136,12 @@ export function highlightEars(text: string): string {
     const re = new RegExp(`\\b${kw}\\b`, 'g');
     html = html.replace(re, `<span class="ears-kw">${kw}</span>`);
   }
-  // Light inline markdown: `code` and **bold**.
+  // Light inline markdown: `code`, **bold** and _italic_. The italic pass is
+  // deliberately conservative — a task line is `T1: … — _outcome: …_`, but it
+  // also carries `snake_case` identifiers that must not become emphasis.
   html = html
     .replace(/`([^`]+)`/g, '<code class="md-codespan">$1</code>')
-    .replace(/\*\*([^*]+)\*\*/g, '<b class="text-ink-50">$1</b>');
+    .replace(/\*\*([^*]+)\*\*/g, '<b class="text-ink-50">$1</b>')
+    .replace(/(^|[\s(—–-])_([^_\n]+)_(?=$|[\s.,;:)])/g, '$1<i>$2</i>');
   return html;
 }

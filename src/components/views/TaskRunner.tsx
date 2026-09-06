@@ -14,16 +14,22 @@ import {
 } from 'lucide-react';
 import { parseTasks, isTaskRunnable, summarize, type ParsedTask } from '../../lib/tasks';
 import { draftSpecDoc, firstStageFile } from '../../lib/specActions';
-import { routeAgent, routeSkill, bestSkillByText, skillSystemBlocks } from '../../lib/agentRouter';
+import {
+  routeAgent,
+  routeSkill,
+  routeFormatSkill,
+  bestSkillByText,
+  skillSystemBlocks,
+} from '../../lib/agentRouter';
 import { resolveAgent, resolveSkill } from '../../lib/verifyLibrary';
 import { useChat } from '../../stores/chat';
 import { useWorkspace } from '../../stores/workspace';
 import { useModels } from '../../stores/models';
 import { useOrchestrator, isOrchestrated } from '../../stores/orchestrator';
 import { cn } from '../../lib/cn';
-import { OctoLogo } from '../OctoLogo';
+import { OctoMark } from '../OctoMark';
 import { TaskInspector } from './TaskInspector';
-import type { SpecMeta } from '../../../electron/shared/types';
+import type { SkillMeta, SpecMeta } from '../../../electron/shared/types';
 
 interface Props {
   meta: SpecMeta;
@@ -53,6 +59,9 @@ export function TaskRunner({ meta, tasksMd, planMd, requirementsMd, onReload, on
   // The SDD skill governing this spec (sdd-feature / sdd-bugfix); a per-task
   // domain skill (e.g. a frontend skill) is matched at launch time.
   const specSkillMeta = routeSkill(meta.kind, skills);
+  // A task run edits two documents whose shape the app parses: it ticks its own
+  // line in tasks.md, and records deviations under plan.md's Critical Decisions.
+  const tasksFormatSkill = routeFormatSkill('tasks', skills);
 
   // Orchestration: multiple specialized agents can run in parallel within a wave.
   const runs = useOrchestrator((s) => s.runs);
@@ -227,6 +236,12 @@ export function TaskRunner({ meta, tasksMd, planMd, requirementsMd, onReload, on
     });
   };
 
+  /** Every skill a run injects, comma-joined — Activity would otherwise name one. */
+  const skillNames = (list: (SkillMeta | null | undefined)[]) => {
+    const names = [...new Set(list.filter(Boolean).map((s) => s!.name))];
+    return names.length ? names.join(', ') : null;
+  };
+
   const runTaskInternal = (task: ParsedTask, onSettled?: (ok: boolean) => void) => {
     const routed = routeAgent(
       { kind: 'task-execute', taskAgent: task.agent, taskText: task.description },
@@ -234,14 +249,14 @@ export function TaskRunner({ meta, tasksMd, planMd, requirementsMd, onReload, on
       selectedAgent
     );
     const domainSkill = bestSkillByText(task.description, skills);
-    const chosenSkill = domainSkill ?? specSkillMeta;
+    const injected = [specSkillMeta, tasksFormatSkill, domainSkill];
     launchRun({
       task,
       source: `task:${task.id}`,
       kind: 'task',
       title: `${task.id}: ${task.description}`,
-      skill: chosenSkill?.name ?? null,
-      skillBlock: skillSystemBlocks([specSkillMeta, domainSkill]),
+      skill: skillNames(injected),
+      skillBlock: skillSystemBlocks(injected),
       wave: task.waveLabel,
       agentName: routed.name,
       agentLabel: 'spec-task-executor',
@@ -253,7 +268,7 @@ export function TaskRunner({ meta, tasksMd, planMd, requirementsMd, onReload, on
       onSettled,
       routeReason: routed.reason,
       agentScope: resolveAgent(routed.name, agents).scope ?? null,
-      skillScope: resolveSkill(chosenSkill?.name, skills).scope ?? null,
+      skillScope: resolveSkill((domainSkill ?? specSkillMeta)?.name, skills).scope ?? null,
       dependsOn: task.dependencies,
     });
   };
@@ -314,14 +329,14 @@ export function TaskRunner({ meta, tasksMd, planMd, requirementsMd, onReload, on
       selectedAgent
     );
     const domainSkill = bestSkillByText(task.description, skills);
-    const chosenSkill = domainSkill ?? specSkillMeta;
+    const injected = [specSkillMeta, tasksFormatSkill, domainSkill];
     launchRun({
       task,
       source: `refine:${task.id}`,
       kind: 'refine',
       title: `Refine ${task.id}: ${task.description}`,
-      skill: chosenSkill?.name ?? null,
-      skillBlock: skillSystemBlocks([specSkillMeta, domainSkill]),
+      skill: skillNames(injected),
+      skillBlock: skillSystemBlocks(injected),
       wave: task.waveLabel,
       agentName: routed.name,
       agentLabel: 'spec-task-executor',
@@ -331,7 +346,7 @@ export function TaskRunner({ meta, tasksMd, planMd, requirementsMd, onReload, on
       model: useModels.getState().modelFor('refine'),
       routeReason: routed.reason,
       agentScope: resolveAgent(routed.name, agents).scope ?? null,
-      skillScope: resolveSkill(chosenSkill?.name, skills).scope ?? null,
+      skillScope: resolveSkill((domainSkill ?? specSkillMeta)?.name, skills).scope ?? null,
       dependsOn: task.dependencies,
     });
   };
@@ -830,7 +845,7 @@ function TaskCard({
       <div className="flex items-center gap-2 mb-1 text-[12px]">
         {state === 'running' ? (
           <span className="flex items-center gap-1.5 text-accent">
-            <OctoLogo animated className="w-3.5 h-[17px]" /> Task in progress
+            <OctoMark animated className="w-4" /> Task in progress
           </span>
         ) : state === 'ready' && !refining ? (
           <button
@@ -988,6 +1003,18 @@ function buildExecutorSystem(
   - Change \`- [ ] ${task.id}\` to \`- [x] ${task.id}\`.
 - In your chat reply, briefly list the files you changed and the outcome.
 
+## Keep the plan alive
+If the implementation **deviated from \`${specRel}/plan.md\`**, or you had to make a non-obvious
+call the plan doesn't cover (a different data shape, an extra file, a rejected approach, a
+dependency), record it in the plan so it never drifts from the code:
+
+- Append to \`${specRel}/plan.md\` under \`## Critical Decisions\` — create that section at the
+  **end** of the file if it isn't there.
+- Format: \`### Critical Decision — ${task.id}: <short title>\`, then one line each for **what**
+  you decided, **why**, and **what it affects** (files or later tasks).
+- Never rewrite the plan's \`## Tasks\` section, and never edit the plan for a decision the plan
+  already made. A task that matched the plan appends nothing.
+
 ## Hard rules
 - Do not start any other task — only ${task.id}.
 - Do not invent behaviors that aren't in the spec.
@@ -1028,7 +1055,8 @@ function buildRefineSystem(
 2. Make **targeted** adjustments that address the feedback — do not redo unrelated work, do not touch other tasks.
 3. If the change requires touching tests or docs, do that too. Bias to the smallest correct delta.
 4. Keep \`${specRel}/tasks.md\` in sync: the checkbox for ${task.id} should remain \`[x]\` if the task is still complete after your refinement.
-5. In your chat reply, briefly state what you changed and why, and whether the feedback is now fully addressed.
+5. If the refinement moved the implementation away from \`${specRel}/plan.md\`, append the decision to that file under \`## Critical Decisions\` (create the section at the end if missing) as \`### Critical Decision — ${task.id}: <short title>\` with what / why / what it affects. Never touch the plan's \`## Tasks\` section.
+6. In your chat reply, briefly state what you changed and why, and whether the feedback is now fully addressed.
 
 ## Hard rules
 - Only refine ${task.id}. Do not start or modify other tasks.

@@ -95,7 +95,10 @@ function mermaidTheme(): Record<string, string> {
     clusterBorder: line,
     edgeLabelBackground: bg,
     titleColor: accent,
-    fontFamily: '"Space Grotesk", "Hanken Grotesk", system-ui, sans-serif',
+    // Diagram labels are UI text, not display type — same family as the rest
+    // of the document, and bundled (mermaid renders into SVG, which resolves
+    // the family itself, so the stack has to be literal here).
+    fontFamily: '"Hanken Grotesk Variable", "Hanken Grotesk", system-ui, sans-serif',
     fontSize: '13px',
   };
 }

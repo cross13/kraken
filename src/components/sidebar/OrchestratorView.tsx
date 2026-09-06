@@ -18,7 +18,7 @@ import {
   Wand2,
   Trash2,
 } from 'lucide-react';
-import { OctoLogo } from '../OctoLogo';
+import { OctoMark } from '../OctoMark';
 import { cn } from '../../lib/cn';
 import { useOrchestrator } from '../../stores/orchestrator';
 import type { ActiveRun, FinishedRun, RunKind } from '../../../electron/shared/types';
@@ -102,7 +102,7 @@ export function OrchestratorView() {
             )}
           >
             {active.length > 0 ? (
-              <OctoLogo animated className="w-4 h-5" />
+              <OctoMark animated className="w-[18px]" />
             ) : (
               <Network size={16} />
             )}

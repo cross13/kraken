@@ -32,6 +32,92 @@ export interface SpecMeta {
   prNumber?: number;
   prUrl?: string;
   prState?: 'open' | 'closed' | 'merged';
+  /** The tracker ticket this spec is linked to, if any. */
+  ticket?: SpecTicketLink;
+}
+
+/** What a spec knows about its ticket. The tracker stays the source of truth. */
+export interface SpecTicketLink {
+  /** `TicketProviderConfig.id` — which tracker this key belongs to. */
+  provider: string;
+  /** The tracker's own identifier, e.g. `APS-14`. */
+  key: string;
+  url?: string;
+  title?: string;
+  /** Last status Octo saw. Refreshed on read, never authoritative. */
+  status?: string;
+  linkedAt?: string;
+  /** Sync events already applied, so an advance never fires twice. */
+  applied?: string[];
+}
+
+// ---------- Ticket providers (electron/tickets.ts) ----------
+
+/** The operations Octo needs from a tracker, whatever it calls them. */
+export type TicketCapability =
+  | 'create'
+  | 'search'
+  /** List the client / project / team a ticket has to belong to. */
+  | 'scopes'
+  | 'get'
+  | 'comment'
+  | 'transition'
+  | 'set-plan'
+  | 'approve-plan'
+  | 'check-criteria'
+  | 'link-branch'
+  | 'link-pr';
+
+/**
+ * A tracker Octo can write to: an MCP server plus the mapping from Octo's
+ * capabilities onto that server's tool names. `preset` picks the adapter that
+ * knows how to shape each tool's arguments.
+ */
+export interface TicketProviderConfig {
+  id: string;
+  label: string;
+  /** `McpServerMeta.name` — which discovered server to talk to. */
+  server: string;
+  /**
+   * Overrides the discovered server's URL for this provider only.
+   *
+   * Exists because the URL in a user's MCP config is frequently the vendor's
+   * older published one — Atlassian still documents `/v1/sse`, the legacy
+   * transport, whose POST endpoint is a different path carrying a session id in
+   * the query string. Octo speaks Streamable HTTP, so pointing at `/sse` fails
+   * with a complaint about a missing session that says nothing about the cause.
+   * Fixing that in Octo's own config beats asking someone to edit a file that
+   * another tool owns.
+   */
+  url?: string;
+  preset: 'tracker' | 'generic' | 'jira';
+  enabled: boolean;
+  /** Provider-wide defaults, e.g. the tracker's `client` key. */
+  defaults?: Record<string, string>;
+  /** capability → tool name. Discovered on connect, overridable. */
+  tools?: Partial<Record<TicketCapability, string>>;
+}
+
+/** A ticket as Octo lists it — the least any tracker can be relied on to give. */
+export interface TicketSummary {
+  key: string;
+  title: string;
+  status?: string;
+  url?: string;
+  /** Longer text, used to seed a spec's brief. */
+  description?: string;
+  /** Which provider it came from. */
+  provider: string;
+  providerLabel: string;
+}
+
+/** One tool call Octo intends to make, shown for confirmation before it is sent. */
+export interface TicketAction {
+  capability: TicketCapability;
+  tool: string;
+  args: Record<string, unknown>;
+  /** One line describing the effect, for the confirmation prompt. */
+  summary: string;
 }
 
 export interface SpecFiles {
@@ -348,6 +434,58 @@ export interface DataResetReport {
   history: HistoryCounts | null;
 }
 
+// ---------- Seeding the bundled library ----------
+
+/**
+ * What one `*:create-default` run did, per file (keys are relative, e.g.
+ * `agents/spec-planner.md`). Seeding rewrites a default the user never edited
+ * so a shipped improvement reaches existing workspaces; a file that carries
+ * edits is reported as `kept` and left exactly as it is.
+ */
+// ---------- What a branch contains (electron/git.ts → `git:branch-summary`) ----------
+
+export interface BranchCommit {
+  hash: string;
+  /** first line of the message */
+  subject: string;
+  author: string;
+  /** ISO-8601, author date */
+  date: string;
+}
+
+export interface BranchFile {
+  path: string;
+  /** `A` added, `M` modified, `D` deleted, `R` renamed… — first char of git's status */
+  status: string;
+  added: number;
+  deleted: number;
+  /** true for a binary file, where git reports `-` instead of counts */
+  binary: boolean;
+}
+
+export interface BranchSummary {
+  ok: boolean;
+  /** the branch being described (HEAD) */
+  branch: string | null;
+  /** what it is being compared against */
+  base: string | null;
+  /** true when base was guessed rather than read from the remote's HEAD */
+  baseGuessed: boolean;
+  commits: BranchCommit[];
+  files: BranchFile[];
+  added: number;
+  deleted: number;
+  /** committed changes exist, but the working tree also has uncommitted ones */
+  dirty: boolean;
+  error?: string;
+}
+
+export interface SeedReport {
+  created: string[];
+  upgraded: string[];
+  kept: string[];
+}
+
 // ---------- Steering files ----------
 
 export type SteeringInclusion = 'always' | 'fileMatch' | 'manual' | 'auto';
@@ -443,9 +581,31 @@ export interface FinishedRun {
 
 // ---------- MCP ----------
 
+/** One tool a server advertises through `tools/list`. */
+export interface McpToolMeta {
+  name: string;
+  description: string;
+  /** JSON Schema for the arguments; shown in the mapping UI, not validated here. */
+  inputSchema: { type?: string; properties?: Record<string, unknown>; required?: string[] } | null;
+}
+
+/** What a `tools/call` came back with, flattened to text. */
+export interface McpCallResult {
+  ok: boolean;
+  text: string;
+  structured: unknown;
+}
+
 export interface McpServerMeta {
   name: string;
-  type: 'stdio' | 'http';
+  /**
+   * `sse` is the legacy HTTP+SSE transport. Octo speaks Streamable HTTP to it
+   * anyway — most servers that declare `sse` also answer on the modern
+   * transport, and several have simply not updated their published config — but
+   * the declaration is kept rather than collapsed into `http` so the UI can say
+   * "this endpoint is the deprecated one" instead of surfacing a bare 404.
+   */
+  type: 'stdio' | 'http' | 'sse';
   command?: string;
   url?: string;
   scope: 'workspace' | 'global';
@@ -535,11 +695,17 @@ export interface TerminalExitEvent {
 // ---------- Travel Display (the wide second window) ----------
 
 /**
- * The serialized run snapshot the main window pushes to the travel window.
- * It is `ActiveRun[]` verbatim — the travel monitor is a read-only mirror of the
- * main window's orchestrator registry, so no separate shape is needed.
+ * The serialized run snapshot the main window pushes to the travel window. The
+ * travel monitor is a read-only mirror of the main window's orchestrator
+ * registry, so `runs` is `ActiveRun[]` verbatim; `maxConcurrency` rides along
+ * because the wide window shows a task-slot meter and cannot otherwise know the
+ * ceiling (the control lives in the main window's store).
  */
-export type FleetSnapshot = ActiveRun[];
+export interface FleetSnapshot {
+  runs: ActiveRun[];
+  /** the orchestrator's wave concurrency cap, for the slot meter */
+  maxConcurrency: number;
+}
 
 /** Open/closed state of the travel window, broadcast to the main window. */
 export interface WideState {

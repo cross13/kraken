@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Sparkles,
+  GraduationCap,
   ArrowUpRight,
   Zap,
   Bug,
@@ -18,8 +19,10 @@ import { useChat } from '../../stores/chat';
 import { useOrchestrator } from '../../stores/orchestrator';
 import { planSpec, quickPlanSpec, specKindFromText } from '../../lib/specActions';
 import { SpecsStudio } from './SpecsStudio';
-import { OctoLogo } from '../OctoLogo';
+import { TicketInbox } from './TicketInbox';
+import { OctoMark } from '../OctoMark';
 import { cn } from '../../lib/cn';
+import { seedSummary } from '../../lib/library';
 import type { SpecMeta, SpecKind } from '../../../electron/shared/types';
 
 function ago(iso?: string) {
@@ -56,7 +59,11 @@ export function HomeView() {
   const specs = useWorkspace((s) => s.specs);
   const agents = useWorkspace((s) => s.agents);
   const skills = useWorkspace((s) => s.skills);
+  const libraryUpgrade = useWorkspace((s) => s.libraryUpgrade);
+  const dismissLibraryUpgrade = useWorkspace((s) => s.dismissLibraryUpgrade);
   const openSpec = useUi((s) => s.openSpec);
+  const openLibrary = useUi((s) => s.openLibrary);
+  const setQuickStart = useUi((s) => s.setQuickStart);
   const composerNonce = useUi((s) => s.composerNonce);
   const setAssistantOpen = useUi((s) => s.setAssistantOpen);
   const setPendingPrompt = useChat((s) => s.setPendingPrompt);
@@ -160,7 +167,7 @@ export function HomeView() {
       <div className="h-full overflow-y-auto bg-ink-950 grid place-items-center px-6">
         <div className="max-w-md w-full text-center">
           <div className="w-16 h-16 mx-auto grid place-items-center rounded-2xl octo-tile">
-            <OctoLogo animated glow className="w-9 h-11" />
+            <OctoMark animated glow detail="simple" className="w-11" />
           </div>
           <h1 className="mt-5 text-2xl font-semibold tracking-tight text-ink-50">
             Welcome to Octo
@@ -345,6 +352,40 @@ export function HomeView() {
           )}
         </div>
 
+        {/* Work that already exists somewhere else. Above the upgrade notice and
+            the first-run card because it is the answer to the question the page
+            just asked, not a piece of housekeeping. */}
+        <TicketInbox />
+
+        {/* Library upgraded on open — said once, then dismissed. Only appears
+            when a default the user never edited was actually rewritten. */}
+        {libraryUpgrade && (
+          <div className="flex items-center gap-4 border border-ink-700 rounded-[14px] bg-card px-5 py-3.5 mb-8">
+            <Sparkles size={15} className="text-accent shrink-0" />
+            <div className="flex-1 min-w-0">
+              <div className="text-[12.5px] text-ink-100">
+                Octo's bundled library was updated in this workspace
+              </div>
+              <div className="text-[11.5px] text-faint truncate">
+                {seedSummary(libraryUpgrade)} — anything you had edited was left alone.
+              </div>
+            </div>
+            <button
+              onClick={() => openLibrary('agents')}
+              className="shrink-0 text-xs px-3 py-1.5 rounded-lg bg-elev text-ink-100 hover:bg-line transition"
+            >
+              Review
+            </button>
+            <button
+              onClick={dismissLibraryUpgrade}
+              title="Dismiss"
+              className="shrink-0 w-7 h-7 grid place-items-center rounded-md text-faint hover:text-ink-50 hover:bg-elev"
+            >
+              <X size={13} />
+            </button>
+          </div>
+        )}
+
         {/* first-run setup */}
         {agents.length === 0 && !firstRunDismissed && (
           <div className="flex items-center gap-4 border border-accent/30 rounded-[14px] bg-accent/[0.06] px-5 py-4 mb-8">
@@ -358,6 +399,12 @@ export function HomeView() {
                 the Library.
               </div>
             </div>
+            <button
+              onClick={() => setQuickStart(true)}
+              className="shrink-0 flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg bg-elev text-ink-100 hover:bg-line transition"
+            >
+              <GraduationCap size={13} /> Quick start
+            </button>
             <button
               onClick={seed}
               disabled={seeding}

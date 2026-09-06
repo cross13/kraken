@@ -1,10 +1,11 @@
-import { Bot, Sparkles, Zap, Compass, Route, Palette, Settings } from 'lucide-react';
+import { Bot, Sparkles, Zap, Compass, Route, Ticket, Palette, Settings } from 'lucide-react';
 import { useUi, type LibrarySection } from '../../stores/ui';
 import { AgentsStudio } from './AgentsStudio';
 import { SkillsStudio } from './SkillsStudio';
 import { HooksStudio } from './HooksStudio';
 import { SteeringStudio } from './SteeringStudio';
 import { RouterStudio } from './RouterStudio';
+import { TicketsStudio } from './TicketsStudio';
 import { SyntaxStudio } from './SyntaxStudio';
 import { SettingsView } from '../sidebar/SettingsView';
 import { cn } from '../../lib/cn';
@@ -15,6 +16,7 @@ const SECTIONS: { section: LibrarySection; label: string; hint: string; icon: Re
   { section: 'hooks', label: 'Hooks', hint: 'event automation', icon: <Zap size={15} /> },
   { section: 'steering', label: 'Steering', hint: 'project context', icon: <Compass size={15} /> },
   { section: 'routing', label: 'Routing', hint: 'why agents get picked', icon: <Route size={15} /> },
+  { section: 'tickets', label: 'Tickets', hint: 'tracker sync', icon: <Ticket size={15} /> },
   { section: 'appearance', label: 'Appearance', hint: 'themes & syntax', icon: <Palette size={15} /> },
   { section: 'settings', label: 'Settings', hint: 'backend & repo', icon: <Settings size={15} /> },
 ];
@@ -66,6 +68,7 @@ export function LibrarySurface() {
         {section === 'hooks' && <HooksStudio />}
         {section === 'steering' && <SteeringStudio />}
         {section === 'routing' && <RouterStudio />}
+        {section === 'tickets' && <TicketsStudio />}
         {section === 'appearance' && <SyntaxStudio />}
         {section === 'settings' && <SettingsView variant="page" />}
       </div>
