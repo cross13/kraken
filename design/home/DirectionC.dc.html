@@ -1,0 +1,110 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+  <style>
+    body { margin: 0; background: #1E1E1E; font-family: 'Hanken Grotesk', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: #A6E62E; text-decoration: none; } a:hover { color: #C4F06A; }
+    * { box-sizing: border-box; }
+    .c-row { display: flex; align-items: center; gap: 12px; padding: 9px 10px; border-bottom: 1px solid #262626; }
+    .c-key { font-family: 'JetBrains Mono', monospace; font-size: 11px; width: 80px; flex: none; }
+    .c-src { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.08em; width: 62px; flex: none; text-align: center; padding: 3px 0; border: 1px solid #393939; color: #A8A8A8; }
+    .c-title { flex: 1; min-width: 0; font-size: 12.5px; color: #ECECEC; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .c-cell { flex: none; font-size: 11px; color: #A8A8A8; }
+    .c-box { width: 15px; height: 15px; flex: none; border: 1px solid #4A4A4A; }
+    .c-fgroup { font-size: 10px; text-transform: uppercase; letter-spacing: 0.09em; color: #848484; font-weight: 600; margin: 0 0 8px 0; }
+    .c-f { display: flex; align-items: center; gap: 9px; padding: 5px 6px; font-size: 12.5px; color: #C8C8C8; }
+  </style>
+</helmet>
+
+<div style="width:100%; height:100%; background:#1E1E1E; color:#F2F2F2; display:flex; flex-direction:column; padding:28px 32px; overflow:hidden;">
+
+  <div style="flex:none; display:flex; align-items:center; gap:12px; padding:10px 10px 10px 14px; border-radius:15px; background:#2A2A2A; border:1px solid #333333; margin-bottom:20px;">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8AD000" stroke-width="1.8" stroke-linejoin="round" style="flex:none;"><path d="M12 3l1.9 5.6L19.5 10.5 13.9 12.4 12 18 10.1 12.4 4.5 10.5 10.1 8.6z"/></svg>
+    <span style="flex:1; font-size:14px; color:#A8A8A8;">¿Qué construimos?</span>
+    <span style="padding:7px 11px; background:#333333; color:#C8C8C8; font-size:12.5px; font-weight:600;">Plan rápido</span>
+    <span style="padding:7px 13px; background:linear-gradient(135deg,#76B900,#8AD000); color:#0F1400; font-size:12.5px; font-weight:700;">Plan</span>
+  </div>
+
+  <div style="flex:1; min-height:0; display:flex; gap:22px;">
+
+    <!-- ============ filter rail ============ -->
+    <div style="width:206px; flex:none; display:flex; flex-direction:column; gap:22px; border-right:1px solid #262626; padding-right:16px;">
+      <div>
+        <p class="c-fgroup">Estado</p>
+        <div class="c-f"><span class="c-box" style="border-color:#76B900; background:#76B900; display:flex; align-items:center; justify-content:center;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#0F1400" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span style="flex:1; color:#FAFAFA;">Sin spec</span><span style="font-family:'JetBrains Mono', monospace; font-size:10.5px; color:#848484;">11</span></div>
+        <div class="c-f"><span class="c-box" style="border-color:#76B900; background:#76B900; display:flex; align-items:center; justify-content:center;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#0F1400" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span style="flex:1; color:#FAFAFA;">En vuelo</span><span style="font-family:'JetBrains Mono', monospace; font-size:10.5px; color:#848484;">4</span></div>
+        <div class="c-f"><span class="c-box"></span><span style="flex:1;">Entregado</span><span style="font-family:'JetBrains Mono', monospace; font-size:10.5px; color:#848484;">12</span></div>
+      </div>
+      <div>
+        <p class="c-fgroup">Origen</p>
+        <div class="c-f"><span class="c-box"></span><span style="flex:1;">Jira</span><span style="font-family:'JetBrains Mono', monospace; font-size:10.5px; color:#848484;">4</span></div>
+        <div class="c-f"><span class="c-box"></span><span style="flex:1;">Tracker</span><span style="font-family:'JetBrains Mono', monospace; font-size:10.5px; color:#848484;">7</span></div>
+        <div class="c-f"><span class="c-box"></span><span style="flex:1;">Escrito acá</span><span style="font-family:'JetBrains Mono', monospace; font-size:10.5px; color:#848484;">1</span></div>
+      </div>
+      <div>
+        <p class="c-fgroup">Fase</p>
+        <div class="c-f"><span class="c-box"></span><span style="flex:1;">Requirements</span><span style="font-family:'JetBrains Mono', monospace; font-size:10.5px; color:#848484;">1</span></div>
+        <div class="c-f"><span class="c-box"></span><span style="flex:1;">Plan</span><span style="font-family:'JetBrains Mono', monospace; font-size:10.5px; color:#848484;">1</span></div>
+        <div class="c-f"><span class="c-box"></span><span style="flex:1;">Build</span><span style="font-family:'JetBrains Mono', monospace; font-size:10.5px; color:#848484;">2</span></div>
+      </div>
+      <div style="flex:1;"></div>
+      <div style="font-size:11.5px; color:#848484; line-height:1.5;">Sin modo «gestionar»: toda fila se puede seleccionar siempre.</div>
+    </div>
+
+    <!-- ============ one table for everything ============ -->
+    <div style="flex:1; min-width:0; display:flex; flex-direction:column; min-height:0;">
+
+      <div style="flex:none; display:flex; align-items:center; gap:12px; height:38px; padding:0 10px; background:#2A2A2A; margin-bottom:2px;">
+        <span style="font-size:12.5px; color:#FAFAFA; font-weight:600;">3 seleccionados</span>
+        <span style="font-size:12px; color:#A8A8A8;">auth-refresh, csv-export, webhook-retries</span>
+        <span style="flex:1;"></span>
+        <span style="height:26px; padding:0 10px; border:1px solid #393939; color:#C8C8C8; font-size:12px; display:flex; align-items:center;">Deseleccionar</span>
+        <span style="display:flex; align-items:center; gap:6px; height:26px; padding:0 10px; background:rgba(224,83,60,0.12); border:1px solid rgba(224,83,60,0.45); color:#FF8A72; font-size:12px; font-weight:600;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>
+          Borrar 3
+        </span>
+      </div>
+
+      <div style="flex:none; display:flex; align-items:center; gap:12px; padding:7px 10px; border-bottom:1px solid #393939; font-size:10px; text-transform:uppercase; letter-spacing:0.09em; color:#848484; font-weight:600;">
+        <span class="c-box" style="border:none;"></span>
+        <span style="width:62px; flex:none; text-align:center;">Origen</span>
+        <span style="width:80px; flex:none;">Clave</span>
+        <span style="flex:1;">Título</span>
+        <span style="width:104px; flex:none;">Estado</span>
+        <span style="width:96px; flex:none;">Fase</span>
+        <span style="width:46px; flex:none; text-align:right;">Edad</span>
+      </div>
+
+      <div style="flex:1; min-height:0; overflow:hidden;">
+        <div class="c-row" style="background:rgba(118,185,0,0.07);"><span class="c-box" style="border-color:#76B900; background:#76B900; display:flex; align-items:center; justify-content:center;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#0F1400" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="c-src">JIRA</span><span class="c-key" style="color:#F2F2F2;">auth-refresh</span><span class="c-title">Rotación de refresh tokens y reintento transparente</span><span class="c-cell" style="width:104px; color:#C9A9FF;">esperando</span><span class="c-cell" style="width:96px;">Plan</span><span class="c-cell" style="width:46px; text-align:right; font-family:'JetBrains Mono', monospace; font-size:10px;">12m</span></div>
+        <div class="c-row"><span class="c-box"></span><span class="c-src">TRACKER</span><span class="c-key" style="color:#F2F2F2;">hours-panel</span><span class="c-title">Panel de horas por misión con desglose por cliente</span><span class="c-cell" style="width:104px; color:#C4F06A;">2 agentes</span><span class="c-cell" style="width:96px;">Build</span><span class="c-cell" style="width:46px; text-align:right; font-family:'JetBrains Mono', monospace; font-size:10px;">3m</span></div>
+        <div class="c-row" style="background:rgba(118,185,0,0.07);"><span class="c-box" style="border-color:#76B900; background:#76B900; display:flex; align-items:center; justify-content:center;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#0F1400" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="c-src">JIRA</span><span class="c-key" style="color:#F2F2F2;">csv-export</span><span class="c-title">Escapado de comas y corte a 10k filas en el export</span><span class="c-cell" style="width:104px; color:#C9A9FF;">esperando</span><span class="c-cell" style="width:96px;">Requirements</span><span class="c-cell" style="width:46px; text-align:right; font-family:'JetBrains Mono', monospace; font-size:10px;">1h</span></div>
+        <div class="c-row" style="background:rgba(118,185,0,0.07);"><span class="c-box" style="border-color:#76B900; background:#76B900; display:flex; align-items:center; justify-content:center;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#0F1400" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="c-src" style="color:#5C5C5C;">—</span><span class="c-key" style="color:#F2F2F2;">webhook-retries</span><span class="c-title">Backoff exponencial en los reintentos de Stripe</span><span class="c-cell" style="width:104px;">listo</span><span class="c-cell" style="width:96px;">Build</span><span class="c-cell" style="width:46px; text-align:right; font-family:'JetBrains Mono', monospace; font-size:10px;">5h</span></div>
+        <div class="c-row"><span class="c-box"></span><span class="c-src">JIRA</span><span class="c-key" style="color:#A6E62E;">PROJ-218</span><span class="c-title">Rotar el refresh token cuando la API devuelve 401</span><span class="c-cell" style="width:104px;">In Progress</span><span class="c-cell" style="width:96px; color:#5C5C5C;">sin spec</span><span class="c-cell" style="width:46px; text-align:right; font-family:'JetBrains Mono', monospace; font-size:10px;">2h</span></div>
+        <div class="c-row"><span class="c-box"></span><span class="c-src">JIRA</span><span class="c-key" style="color:#A6E62E;">PROJ-231</span><span class="c-title">El export CSV se corta a las 10.000 filas</span><span class="c-cell" style="width:104px;">To Do</span><span class="c-cell" style="width:96px; color:#5C5C5C;">sin spec</span><span class="c-cell" style="width:46px; text-align:right; font-family:'JetBrains Mono', monospace; font-size:10px;">5h</span></div>
+        <div class="c-row"><span class="c-box"></span><span class="c-src">JIRA</span><span class="c-key" style="color:#A6E62E;">PROJ-240</span><span class="c-title">Onboarding: falta el paso de invitar al equipo</span><span class="c-cell" style="width:104px;">To Do</span><span class="c-cell" style="width:96px; color:#5C5C5C;">sin spec</span><span class="c-cell" style="width:46px; text-align:right; font-family:'JetBrains Mono', monospace; font-size:10px;">1d</span></div>
+        <div class="c-row"><span class="c-box"></span><span class="c-src">JIRA</span><span class="c-key" style="color:#A6E62E;">PROJ-244</span><span class="c-title">Timeout al subir adjuntos de más de 25 MB</span><span class="c-cell" style="width:104px;">Backlog</span><span class="c-cell" style="width:96px; color:#5C5C5C;">sin spec</span><span class="c-cell" style="width:46px; text-align:right; font-family:'JetBrains Mono', monospace; font-size:10px;">2d</span></div>
+        <div class="c-row"><span class="c-box"></span><span class="c-src">TRACKER</span><span class="c-key" style="color:#A6E62E;">APS-14</span><span class="c-title">Panel de horas por misión</span><span class="c-cell" style="width:104px;">todo</span><span class="c-cell" style="width:96px; color:#5C5C5C;">sin spec</span><span class="c-cell" style="width:46px; text-align:right; font-family:'JetBrains Mono', monospace; font-size:10px;">3h</span></div>
+        <div class="c-row"><span class="c-box"></span><span class="c-src">TRACKER</span><span class="c-key" style="color:#A6E62E;">APS-19</span><span class="c-title">Reintentos del webhook de Stripe con backoff</span><span class="c-cell" style="width:104px;">backlog</span><span class="c-cell" style="width:96px; color:#5C5C5C;">sin spec</span><span class="c-cell" style="width:46px; text-align:right; font-family:'JetBrains Mono', monospace; font-size:10px;">6h</span></div>
+        <div class="c-row"><span class="c-box"></span><span class="c-src">TRACKER</span><span class="c-key" style="color:#A6E62E;">APS-22</span><span class="c-title">Migrar la tabla de sesiones a Postgres</span><span class="c-cell" style="width:104px;">todo</span><span class="c-cell" style="width:96px; color:#5C5C5C;">sin spec</span><span class="c-cell" style="width:46px; text-align:right; font-family:'JetBrains Mono', monospace; font-size:10px;">1d</span></div>
+        <div class="c-row"><span class="c-box"></span><span class="c-src">TRACKER</span><span class="c-key" style="color:#A6E62E;">APS-26</span><span class="c-title">Reporte de misión en PDF</span><span class="c-cell" style="width:104px;">backlog</span><span class="c-cell" style="width:96px; color:#5C5C5C;">sin spec</span><span class="c-cell" style="width:46px; text-align:right; font-family:'JetBrains Mono', monospace; font-size:10px;">2d</span></div>
+        <div class="c-row"><span class="c-box"></span><span class="c-src">TRACKER</span><span class="c-key" style="color:#A6E62E;">APS-31</span><span class="c-title">Búsqueda difusa en el listado de clientes</span><span class="c-cell" style="width:104px;">todo</span><span class="c-cell" style="width:96px; color:#5C5C5C;">sin spec</span><span class="c-cell" style="width:46px; text-align:right; font-family:'JetBrains Mono', monospace; font-size:10px;">3d</span></div>
+        <div class="c-row"><span class="c-box"></span><span class="c-src">TRACKER</span><span class="c-key" style="color:#A6E62E;">APS-33</span><span class="c-title">Cerrar sesión en todos los dispositivos</span><span class="c-cell" style="width:104px;">backlog</span><span class="c-cell" style="width:96px; color:#5C5C5C;">sin spec</span><span class="c-cell" style="width:46px; text-align:right; font-family:'JetBrains Mono', monospace; font-size:10px;">4d</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1300,"height":900}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

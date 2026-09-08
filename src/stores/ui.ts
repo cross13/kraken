@@ -1,12 +1,16 @@
 import { create } from 'zustand';
-import type { SpecMeta } from '../../electron/shared/types';
+import type {
+  SpecMeta,
+  TicketProviderConfig,
+  TicketSummary,
+} from '../../electron/shared/types';
 
 // The app is four singleton surfaces — no tab bar, no focus mode. Everything
 // else renders as a drawer (assistant, explorer) or a slide-over overlay.
 export type Surface = 'home' | 'spec' | 'activity' | 'library';
 
 /** Tabs inside the Activity surface (the single "what's running" center). */
-export type ActivityTab = 'runs' | 'history' | 'terminals' | 'graph';
+export type ActivityTab = 'runs' | 'history' | 'specs' | 'terminals' | 'graph';
 
 /** Sections inside the consolidated Library surface. */
 export type LibrarySection =
@@ -34,6 +38,10 @@ export type Overlay =
   | { kind: 'run'; runId: string }
   | { kind: 'questions'; specId: string }
   | { kind: 'hook'; hookId?: string }
+  // The ticket itself, carried rather than looked up: the row the user clicked
+  // already holds everything the header needs, so the panel opens filled in and
+  // fills the rest as the read lands.
+  | { kind: 'ticket'; ticket: TicketSummary; provider?: TicketProviderConfig }
   | { kind: 'repo' };
 
 /** A live PTY session, hosted app-wide so the process survives navigation. */

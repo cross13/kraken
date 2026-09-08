@@ -6,6 +6,7 @@ import { SkillViewer } from './views/SkillViewer';
 import { RunViewer } from './views/RunViewer';
 import { QuestionsView } from './views/QuestionsView';
 import { HookEditor } from './views/HookEditor';
+import { TicketDetailView } from './views/TicketDetailView';
 import { SourceControlView } from './sidebar/SourceControlView';
 
 const TITLES: Record<string, string> = {
@@ -15,6 +16,7 @@ const TITLES: Record<string, string> = {
   run: 'Run',
   questions: 'Open Questions',
   hook: 'Hook',
+  ticket: 'Ticket',
   repo: 'Repository',
 };
 
@@ -56,6 +58,9 @@ export function OverlayPanel() {
           {overlay.kind === 'run' && <RunViewer runId={overlay.runId} />}
           {overlay.kind === 'questions' && <QuestionsView specId={overlay.specId} />}
           {overlay.kind === 'hook' && <HookEditor hookId={overlay.hookId} />}
+          {overlay.kind === 'ticket' && (
+            <TicketDetailView ticket={overlay.ticket} provider={overlay.provider} />
+          )}
           {overlay.kind === 'repo' && <SourceControlView variant="page" />}
         </div>
         </div>

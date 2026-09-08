@@ -1,0 +1,140 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #FFFFFF; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', sans-serif; -webkit-font-smoothing: antialiased; color: #0D1B2A; }
+    a { color: #0077FF; text-decoration: none; } a:hover { color: #003973; }
+    * { box-sizing: border-box; }
+    .num { font-variant-numeric: tabular-nums; }
+  </style>
+</helmet>
+
+<div style="width:794px; height:1123px; background:#FFFFFF; display:flex; flex-direction:column; padding:40px 44px 0 44px;">
+
+  <div style="display:flex; align-items:flex-start; gap:12px; padding-bottom:14px; border-bottom:2px solid #003973;">
+    <div style="width:34px; height:34px; background:#003973; display:grid; place-items:center; flex:none;">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 7-8"/><path d="M17 7h4v4"/></svg>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:2px;">
+      <div style="font-size:14px; font-weight:700; letter-spacing:-0.01em;">Gravity Quant</div>
+      <div style="font-size:11px; color:#8494A7;">Marcela Rossi · Cuenta 41000</div>
+    </div>
+    <div style="flex:1;"></div>
+    <div style="text-align:right; display:flex; flex-direction:column; gap:2px;">
+      <div style="font-size:11px; color:#8494A7; text-transform:uppercase; letter-spacing:0.08em; font-weight:600;">Movimientos y flujo de fondos</div>
+      <div class="num" style="font-size:12px; color:#3D5068;">1 jul — 30 sep 2026</div>
+    </div>
+  </div>
+
+  <!-- ===== la reconciliación: de dónde a dónde ===== -->
+  <div style="margin-top:22px;">
+    <h2 style="margin:0 0 11px 0; font-size:13px; font-weight:600; letter-spacing:0.02em;">De cuánto a cuánto, y por qué</h2>
+    <div style="display:flex; align-items:stretch; border:1px solid #D5DCE5;">
+      <div style="padding:14px 17px; display:flex; flex-direction:column; gap:4px; min-width:150px;">
+        <div style="font-size:10.5px; color:#8494A7; text-transform:uppercase; letter-spacing:0.06em; font-weight:600;">Saldo inicial</div>
+        <div class="num" style="font-size:19px; font-weight:700; letter-spacing:-0.02em;">$ 104.180.400</div>
+        <div class="num" style="font-size:11px; color:#8494A7;">30 jun 2026</div>
+      </div>
+      <div style="flex:1; display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); border-left:1px solid #E8EDF2;">
+        <div style="padding:14px 13px; display:flex; flex-direction:column; gap:4px; border-right:1px solid #E8EDF2;">
+          <div style="font-size:10.5px; color:#8494A7; font-weight:600;">Aportes</div>
+          <div class="num" style="font-size:15px; font-weight:600; color:#00875C;">+ 0</div>
+        </div>
+        <div style="padding:14px 13px; display:flex; flex-direction:column; gap:4px; border-right:1px solid #E8EDF2;">
+          <div style="font-size:10.5px; color:#8494A7; font-weight:600;">Retiros</div>
+          <div class="num" style="font-size:15px; font-weight:600; color:#3D5068;">− 0</div>
+        </div>
+        <div style="padding:14px 13px; display:flex; flex-direction:column; gap:4px; border-right:1px solid #E8EDF2;">
+          <div style="font-size:10.5px; color:#8494A7; font-weight:600;">Rentas y dividendos</div>
+          <div class="num" style="font-size:15px; font-weight:600; color:#00875C;">+ 1.842.300</div>
+        </div>
+        <div style="padding:14px 13px; display:flex; flex-direction:column; gap:4px;">
+          <div style="font-size:10.5px; color:#8494A7; font-weight:600;">Comisiones</div>
+          <div class="num" style="font-size:15px; font-weight:600; color:#E62626;">− 312.640</div>
+        </div>
+      </div>
+      <div style="padding:14px 17px; display:flex; flex-direction:column; gap:4px; min-width:150px; background:#F5F8FB; border-left:1px solid #E8EDF2;">
+        <div style="font-size:10.5px; color:#8494A7; text-transform:uppercase; letter-spacing:0.06em; font-weight:600;">Saldo final</div>
+        <div class="num" style="font-size:19px; font-weight:700; letter-spacing:-0.02em;">$ 118.472.900</div>
+        <div class="num" style="font-size:11px; color:#00875C; font-weight:600;">+13,7% en el trimestre</div>
+      </div>
+    </div>
+    <p style="margin:10px 0 0 0; font-size:13px; line-height:1.5; color:#3D5068; max-width:76ch; text-wrap:pretty;">
+      No hubo aportes ni retiros en el trimestre, así que los <strong style="color:#0D1B2A; font-weight:600;">$14,3 M</strong> de diferencia son resultado de mercado más rentas, netos de comisiones.
+    </p>
+  </div>
+
+  <!-- ===== detalle ===== -->
+  <div style="margin-top:24px; flex:1;">
+    <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:9px;">
+      <h2 style="margin:0; font-size:13px; font-weight:600; letter-spacing:0.02em;">Detalle de movimientos</h2>
+      <span style="font-size:11px; color:#8494A7;">14 operaciones · ordenadas por fecha</span>
+    </div>
+
+    <table class="num" style="width:100%; border-collapse:collapse; font-size:12px;">
+      <thead>
+        <tr style="border-bottom:1px solid #D5DCE5;">
+          <th style="text-align:left; font-size:10.5px; font-weight:600; color:#8494A7; text-transform:uppercase; letter-spacing:0.06em; padding:0 0 7px 0;">Fecha</th>
+          <th style="text-align:left; font-size:10.5px; font-weight:600; color:#8494A7; text-transform:uppercase; letter-spacing:0.06em; padding:0 0 7px 0;">Movimiento</th>
+          <th style="text-align:left; font-size:10.5px; font-weight:600; color:#8494A7; text-transform:uppercase; letter-spacing:0.06em; padding:0 0 7px 0;">Especie</th>
+          <th style="text-align:right; font-size:10.5px; font-weight:600; color:#8494A7; text-transform:uppercase; letter-spacing:0.06em; padding:0 0 7px 0;">Cantidad</th>
+          <th style="text-align:right; font-size:10.5px; font-weight:600; color:#8494A7; text-transform:uppercase; letter-spacing:0.06em; padding:0 0 7px 0;">Importe ARS</th>
+          <th style="text-align:right; font-size:10.5px; font-weight:600; color:#8494A7; text-transform:uppercase; letter-spacing:0.06em; padding:0 0 7px 0;">Importe USD</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid #F0F3F7;"><td style="padding:6.5px 0; color:#3D5068;">09/07</td><td><span style="font-size:10.5px; font-weight:600; color:#00875C; background:#F3FBF8; padding:2px 6px;">Renta</span></td><td style="font-weight:600;">AL30</td><td style="text-align:right; color:#3D5068;">—</td><td style="text-align:right; color:#00875C; font-weight:600;">+ 684.200</td><td style="text-align:right; color:#3D5068;">+ 530</td></tr>
+        <tr style="border-bottom:1px solid #F0F3F7;"><td style="padding:6.5px 0; color:#3D5068;">09/07</td><td><span style="font-size:10.5px; font-weight:600; color:#3D5068; background:#F0F3F7; padding:2px 6px;">Compra</span></td><td style="font-weight:600;">MEGAQ</td><td style="text-align:right; color:#3D5068;">—</td><td style="text-align:right;">− 684.200</td><td style="text-align:right; color:#3D5068;">− 530</td></tr>
+        <tr style="border-bottom:1px solid #F0F3F7;"><td style="padding:6.5px 0; color:#3D5068;">31/07</td><td><span style="font-size:10.5px; font-weight:600; color:#E62626; background:#FDF0F0; padding:2px 6px;">Comisión</span></td><td style="color:#3D5068;">Administración</td><td style="text-align:right; color:#3D5068;">—</td><td style="text-align:right; color:#E62626;">− 104.180</td><td style="text-align:right; color:#3D5068;">− 79</td></tr>
+        <tr style="border-bottom:1px solid #F0F3F7;"><td style="padding:6.5px 0; color:#3D5068;">12/08</td><td><span style="font-size:10.5px; font-weight:600; color:#3D5068; background:#F0F3F7; padding:2px 6px;">Venta</span></td><td style="font-weight:600;">YPFD</td><td style="text-align:right;">380</td><td style="text-align:right; color:#00875C; font-weight:600;">+ 3.912.400</td><td style="text-align:right; color:#3D5068;">+ 2.930</td></tr>
+        <tr style="border-bottom:1px solid #F0F3F7;"><td style="padding:6.5px 0; color:#3D5068;">12/08</td><td><span style="font-size:10.5px; font-weight:600; color:#0077FF; background:#EBF4FE; padding:2px 6px;">Rebalanceo</span></td><td style="font-weight:600;">TX26</td><td style="text-align:right;">1.940</td><td style="text-align:right;">− 3.421.700</td><td style="text-align:right; color:#3D5068;">− 2.562</td></tr>
+        <tr style="border-bottom:1px solid #F0F3F7;"><td style="padding:6.5px 0; color:#3D5068;">12/08</td><td><span style="font-size:10.5px; font-weight:600; color:#0077FF; background:#EBF4FE; padding:2px 6px;">Rebalanceo</span></td><td style="font-weight:600;">SPY</td><td style="text-align:right;">42</td><td style="text-align:right;">− 490.700</td><td style="text-align:right; color:#3D5068;">− 368</td></tr>
+        <tr style="border-bottom:1px solid #F0F3F7;"><td style="padding:6.5px 0; color:#3D5068;">09/09</td><td><span style="font-size:10.5px; font-weight:600; color:#00875C; background:#F3FBF8; padding:2px 6px;">Renta</span></td><td style="font-weight:600;">GD30</td><td style="text-align:right; color:#3D5068;">—</td><td style="text-align:right; color:#00875C; font-weight:600;">+ 1.158.100</td><td style="text-align:right; color:#3D5068;">+ 827</td></tr>
+        <tr style="border-bottom:1px solid #F0F3F7;"><td style="padding:6.5px 0; color:#3D5068;">30/09</td><td><span style="font-size:10.5px; font-weight:600; color:#E62626; background:#FDF0F0; padding:2px 6px;">Comisión</span></td><td style="color:#3D5068;">Administración</td><td style="text-align:right; color:#3D5068;">—</td><td style="text-align:right; color:#E62626;">− 108.460</td><td style="text-align:right; color:#3D5068;">− 77</td></tr>
+        <tr style="border-bottom:1px solid #E8EDF2;"><td colspan="6" style="padding:8px 0 6px 0; font-size:11px; color:#8494A7; font-style:italic;">6 movimientos más de rebalanceo del 12/08, agrupados en el anexo</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ===== lo que le interesa al contador ===== -->
+  <div style="margin-top:20px;">
+    <h2 style="margin:0 0 10px 0; font-size:13px; font-weight:600; letter-spacing:0.02em;">Acumulado del año fiscal</h2>
+    <div style="display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:1px; background:#D5DCE5; border:1px solid #D5DCE5;">
+      <div style="background:#FFFFFF; padding:13px 14px; display:flex; flex-direction:column; gap:3px;">
+        <div style="font-size:11px; color:#8494A7; font-weight:600;">Rentas cobradas</div>
+        <div class="num" style="font-size:17px; font-weight:700; letter-spacing:-0.02em;">$ 5.284.900</div>
+      </div>
+      <div style="background:#FFFFFF; padding:13px 14px; display:flex; flex-direction:column; gap:3px;">
+        <div style="font-size:11px; color:#8494A7; font-weight:600;">Resultado realizado</div>
+        <div class="num" style="font-size:17px; font-weight:700; letter-spacing:-0.02em; color:#00875C;">$ 2.108.300</div>
+      </div>
+      <div style="background:#FFFFFF; padding:13px 14px; display:flex; flex-direction:column; gap:3px;">
+        <div style="font-size:11px; color:#8494A7; font-weight:600;">Resultado no realizado</div>
+        <div class="num" style="font-size:17px; font-weight:700; letter-spacing:-0.02em; color:#00875C;">$ 20.364.600</div>
+      </div>
+      <div style="background:#FFFFFF; padding:13px 14px; display:flex; flex-direction:column; gap:3px;">
+        <div style="font-size:11px; color:#8494A7; font-weight:600;">Comisiones del año</div>
+        <div class="num" style="font-size:17px; font-weight:700; letter-spacing:-0.02em;">$ 1.208.540</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex; align-items:flex-end; gap:16px; padding:12px 0 16px 0; border-top:1px solid #E8EDF2; margin-top:16px;">
+    <p style="margin:0; font-size:10px; line-height:1.45; color:#8494A7; max-width:74ch;">
+      Los importes en dólares usan el MEP del día de cada operación. El resultado no realizado es la diferencia entre valuación y costo de las tenencias al cierre. Este resumen es informativo y no reemplaza la liquidación del agente ni constituye asesoramiento impositivo.
+    </p>
+    <div style="flex:1;"></div>
+    <span class="num" style="font-size:10px; color:#8494A7; white-space:nowrap;">4 / 4</span>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

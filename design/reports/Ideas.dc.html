@@ -1,0 +1,159 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #F0F3F7; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', sans-serif; -webkit-font-smoothing: antialiased; color: #0D1B2A; }
+    a { color: #0077FF; text-decoration: none; } a:hover { color: #003973; }
+    * { box-sizing: border-box; }
+    .num { font-variant-numeric: tabular-nums; }
+  </style>
+</helmet>
+
+<div style="width:1240px; height:1060px; background:#F0F3F7; display:flex; flex-direction:column; padding:36px 40px;">
+
+  <!-- ===== el argumento ===== -->
+  <div style="display:flex; gap:36px; align-items:flex-start;">
+    <div style="max-width:52ch;">
+      <h1 style="margin:0; font-size:25px; font-weight:700; letter-spacing:-0.022em; line-height:1.2;">Qué reporte le interesa a quién</h1>
+      <p style="margin:11px 0 0 0; font-size:16px; line-height:1.55; color:#3D5068; text-wrap:pretty;">
+        Las cinco fuentes que hoy tiene el constructor —<span class="num" style="font-weight:600; color:#0D1B2A;">Cartera, Cuentas, Tendencias, Top clientes, Clientes por asesor</span>— devuelven nombres, mails, comerciales y AUM. Son <strong style="color:#0D1B2A; font-weight:600;">preguntas de administración</strong>: cuántos hay, quién los atiende, cuánto suman.
+      </p>
+      <p style="margin:11px 0 0 0; font-size:16px; line-height:1.55; color:#3D5068; text-wrap:pretty;">
+        Ninguna contesta lo que un inversor pregunta cuando abre el sobre: <strong style="color:#0D1B2A; font-weight:600;">¿cuánto puse, cuánto tengo, y de la diferencia cuánto es mérito de la cartera?</strong> Las ideas de abajo salen de esa pregunta y de sus variantes, y cada una dice si el dato ya está.
+      </p>
+    </div>
+    <div style="flex:1;"></div>
+    <div style="display:flex; flex-direction:column; gap:8px; padding:15px 17px; background:#FFFFFF; border:1px solid #D5DCE5; min-width:250px;">
+      <div style="font-size:10.5px; color:#8494A7; text-transform:uppercase; letter-spacing:0.07em; font-weight:600;">Cuánto cuesta el dato</div>
+      <div style="display:flex; align-items:center; gap:8px; font-size:12.5px; color:#3D5068;"><span style="width:9px; height:9px; background:#00B67A; display:block; flex:none;"></span>Ya está en la base, se consulta</div>
+      <div style="display:flex; align-items:center; gap:8px; font-size:12.5px; color:#3D5068;"><span style="width:9px; height:9px; background:#F5A623; display:block; flex:none;"></span>Está, pero hay que calcularlo</div>
+      <div style="display:flex; align-items:center; gap:8px; font-size:12.5px; color:#3D5068;"><span style="width:9px; height:9px; background:#E62626; display:block; flex:none;"></span>Falta el dato de origen</div>
+    </div>
+  </div>
+
+  <!-- ===== las tres columnas ===== -->
+  <div style="display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:20px; margin-top:28px; flex:1;">
+
+    <!-- ---------- cliente ---------- -->
+    <div style="display:flex; flex-direction:column; gap:11px;">
+      <div style="display:flex; align-items:center; gap:9px; padding-bottom:9px; border-bottom:2px solid #003973;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#003973" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <h2 style="margin:0; font-size:14px; font-weight:700; letter-spacing:-0.01em;">Lo que pregunta el cliente</h2>
+      </div>
+
+      <div style="background:#FFFFFF; border:1px solid #D5DCE5; border-top:3px solid #00B67A; padding:13px 15px;">
+        <div style="font-size:14px; font-weight:600; line-height:1.3;">Aporte contra resultado</div>
+        <div style="font-size:13px; line-height:1.5; color:#3D5068; margin-top:5px;">«¿Cuánto de lo que tengo lo puse yo?» Separar los flujos del rendimiento es lo único que convierte un número grande en una respuesta.</div>
+        <div class="num" style="font-size:11px; color:#8494A7; margin-top:8px;">transactions + account_results</div>
+      </div>
+
+      <div style="background:#FFFFFF; border:1px solid #D5DCE5; border-top:3px solid #00B67A; padding:13px 15px;">
+        <div style="font-size:14px; font-weight:600; line-height:1.3;">La misma plata en tres monedas</div>
+        <div style="font-size:13px; line-height:1.5; color:#3D5068; margin-top:5px;">Pesos, MEP y CCL lado a lado. En Argentina un rendimiento sin moneda no significa nada, y la base ya guarda las tres todos los días.</div>
+        <div class="num" style="font-size:11px; color:#8494A7; margin-top:8px;">account_results.pesos · dollar_mep · dollar_ccl</div>
+      </div>
+
+      <div style="background:#FFFFFF; border:1px solid #D5DCE5; border-top:3px solid #F5A623; padding:13px 15px;">
+        <div style="font-size:14px; font-weight:600; line-height:1.3;">Estoy donde acordamos</div>
+        <div style="font-size:13px; line-height:1.5; color:#3D5068; margin-top:5px;">Objetivo contra real, especie por especie. Convierte «confiá» en algo verificable, y es el reporte que justifica el fee.</div>
+        <div class="num" style="font-size:11px; color:#8494A7; margin-top:8px;">items.weight vs tenencias por cuenta</div>
+      </div>
+
+      <div style="background:#FFFFFF; border:1px solid #D5DCE5; border-top:3px solid #00B67A; padding:13px 15px;">
+        <div style="font-size:14px; font-weight:600; line-height:1.3;">Qué pasó con mi plata este trimestre</div>
+        <div style="font-size:13px; line-height:1.5; color:#3D5068; margin-top:5px;">Saldo inicial, rentas, comisiones, saldo final. Una reconciliación que cierra sola es lo que evita el mail de «no entiendo este número».</div>
+        <div class="num" style="font-size:11px; color:#8494A7; margin-top:8px;">transactions.transaction_type</div>
+      </div>
+
+      <div style="background:#FFFFFF; border:1px solid #D5DCE5; border-top:3px solid #F5A623; padding:13px 15px;">
+        <div style="font-size:14px; font-weight:600; line-height:1.3;">Cuánto me costó tenerlo</div>
+        <div style="font-size:13px; line-height:1.5; color:#3D5068; margin-top:5px;">Comisiones del año contra resultado del año, en la misma página. Pocos lo publican; el que lo publica gana la conversación.</div>
+        <div class="num" style="font-size:11px; color:#8494A7; margin-top:8px;">transactions filtradas por concepto</div>
+      </div>
+    </div>
+
+    <!-- ---------- asesor ---------- -->
+    <div style="display:flex; flex-direction:column; gap:11px;">
+      <div style="display:flex; align-items:center; gap:9px; padding-bottom:9px; border-bottom:2px solid #003973;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#003973" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <h2 style="margin:0; font-size:14px; font-weight:700; letter-spacing:-0.01em;">Lo que pregunta el asesor</h2>
+      </div>
+
+      <div style="background:#FFFFFF; border:1px solid #D5DCE5; border-top:3px solid #00B67A; padding:13px 15px;">
+        <div style="font-size:14px; font-weight:600; line-height:1.3;">A quién tengo que llamar hoy</div>
+        <div style="font-size:13px; line-height:1.5; color:#3D5068; margin-top:5px;">Excepciones, no un listado: desvío sobre el umbral, efectivo parado, sin rebalancear hace meses. Un reporte que se lee en treinta segundos.</div>
+        <div class="num" style="font-size:11px; color:#8494A7; margin-top:8px;">deviation_after_rebalance + orders</div>
+      </div>
+
+      <div style="background:#FFFFFF; border:1px solid #D5DCE5; border-top:3px solid #00B67A; padding:13px 15px;">
+        <div style="font-size:14px; font-weight:600; line-height:1.3;">Mi libro, en dólares</div>
+        <div style="font-size:13px; line-height:1.5; color:#3D5068; margin-top:5px;">El AUM en pesos siempre sube. Medido en MEP se ve si el libro creció de verdad o si lo movió el tipo de cambio.</div>
+        <div class="num" style="font-size:11px; color:#8494A7; margin-top:8px;">account_results agregado por advisor</div>
+      </div>
+
+      <div style="background:#FFFFFF; border:1px solid #D5DCE5; border-top:3px solid #F5A623; padding:13px 15px;">
+        <div style="font-size:14px; font-weight:600; line-height:1.3;">Entró y salió</div>
+        <div style="font-size:13px; line-height:1.5; color:#3D5068; margin-top:5px;">Altas, bajas y flujo neto del mes, separado del efecto mercado. Es la única medida honesta de si el negocio crece.</div>
+        <div class="num" style="font-size:11px; color:#8494A7; margin-top:8px;">transactions de aporte y retiro</div>
+      </div>
+
+      <div style="background:#FFFFFF; border:1px solid #D5DCE5; border-top:3px solid #F5A623; padding:13px 15px;">
+        <div style="font-size:14px; font-weight:600; line-height:1.3;">Cómo rindió cada cartera modelo</div>
+        <div style="font-size:13px; line-height:1.5; color:#3D5068; margin-top:5px;">No por cliente: por modelo. Contesta «¿la Moderada está haciendo lo que promete?», que es una decisión de producto, no de cuenta.</div>
+        <div class="num" style="font-size:11px; color:#8494A7; margin-top:8px;">wallets.tracking_id → cuenta espejo</div>
+      </div>
+
+      <div style="background:#FFFFFF; border:1px solid #D5DCE5; border-top:3px solid #F5A623; padding:13px 15px;">
+        <div style="font-size:14px; font-weight:600; line-height:1.3;">Qué tanto se despega el promedio</div>
+        <div style="font-size:13px; line-height:1.5; color:#3D5068; margin-top:5px;">Dispersión de rendimiento entre cuentas del mismo modelo. Si es alta, el rebalanceo está llegando tarde a alguien.</div>
+        <div class="num" style="font-size:11px; color:#8494A7; margin-top:8px;">account_results por wallet_id</div>
+      </div>
+    </div>
+
+    <!-- ---------- lo que falta ---------- -->
+    <div style="display:flex; flex-direction:column; gap:11px;">
+      <div style="display:flex; align-items:center; gap:9px; padding-bottom:9px; border-bottom:2px solid #003973;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#003973" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+        <h2 style="margin:0; font-size:14px; font-weight:700; letter-spacing:-0.01em;">Lo que hay que resolver antes</h2>
+      </div>
+
+      <div style="background:#FFFFFF; border:1px solid #D5DCE5; border-top:3px solid #F5A623; padding:13px 15px;">
+        <div style="font-size:14px; font-weight:600; line-height:1.3;">Costo de adquisición</div>
+        <div style="font-size:13px; line-height:1.5; color:#3D5068; margin-top:5px;">Sin costo por lote no hay resultado por tenencia ni realizado contra no realizado. No está guardado, pero se reconstruye por FIFO desde <span class="num">transactions</span> — <strong style="color:#0D1B2A; font-weight:600;">siempre que la historia esté completa desde la apertura de la cuenta</strong>. Eso es lo primero que hay que verificar.</div>
+      </div>
+
+      <div style="background:#FFFFFF; border:1px solid #D5DCE5; border-top:3px solid #E62626; padding:13px 15px;">
+        <div style="font-size:14px; font-weight:600; line-height:1.3;">Un benchmark contra el cual medir</div>
+        <div style="font-size:13px; line-height:1.5; color:#3D5068; margin-top:5px;">Hoy <span class="num">wallets.benchmark_currency</span> dice en qué moneda medir, pero no hay serie de índice. Sin eso «rindió bien» no tiene contra qué.</div>
+      </div>
+
+      <div style="background:#FFFFFF; border:1px solid #D5DCE5; border-top:3px solid #E62626; padding:13px 15px;">
+        <div style="font-size:14px; font-weight:600; line-height:1.3;">Tenencias por especie, históricas</div>
+        <div style="font-size:13px; line-height:1.5; color:#3D5068; margin-top:5px;">El desvío de hoy se puede calcular; el de hace seis meses no, si sólo se guarda la foto actual. Confirmar qué persiste <span class="num">account_result_raw_data</span>.</div>
+      </div>
+
+      <div style="background:#FFFFFF; border:1px solid #D5DCE5; border-top:3px solid #F5A623; padding:13px 15px;">
+        <div style="font-size:14px; font-weight:600; line-height:1.3;">TWR calculado y guardado</div>
+        <div style="font-size:13px; line-height:1.5; color:#3D5068; margin-top:5px;">Se puede derivar de valuaciones y flujos, pero recalcularlo en cada reporte lo vuelve lento e inconsistente entre pantallas. Va como columna diaria.</div>
+      </div>
+
+      <div style="background:#003973; padding:14px 16px; margin-top:3px;">
+        <div style="font-size:13px; font-weight:600; color:#FFFFFF; line-height:1.35;">El orden que propondría</div>
+        <div style="font-size:12.5px; line-height:1.55; color:#B8D4EE; margin-top:6px;">
+          Aporte-contra-resultado y las tres monedas primero: son los dos que ya se pueden hacer con lo que hay y los dos que más cambian la conversación con el cliente. Después el costo de adquisición, que es lo que abre todo lo demás.
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

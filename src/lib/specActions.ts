@@ -504,18 +504,49 @@ export async function quickPlanSpec(text: string, kind?: SpecKind): Promise<Spec
   const resolvedKind = kind ?? specKindFromText(text);
   const spec = await ws.createSpec(specNameFromText(text), resolvedKind, text);
   useUi.getState().openSpec(spec.id, 'define');
+  await runQuickPlan(spec, root, text, resolvedKind);
+  return spec;
+}
 
-  const read = () => window.octo.specs.read(root, spec.id);
-  // Two documents now, not three: the plan carries its own task waves, and
-  // advancing past it derives tasks.md.
-  const order: SpecDocFile[] = [firstStageFile(resolvedKind), 'plan'];
+/**
+ * The hands-off drafting chain, shared by both Quick Plan entry points.
+ *
+ * Two documents, not three: the plan carries its own task waves, and advancing
+ * past it derives tasks.md.
+ */
+async function runQuickPlan(
+  spec: SpecMeta,
+  root: string,
+  brief: string,
+  kind: SpecKind
+): Promise<void> {
+  const ws = useWorkspace.getState();
+  const order: SpecDocFile[] = [firstStageFile(kind), 'plan'];
   for (const file of order) {
-    const { meta, files } = await read();
-    const ok = await draftSpecDoc({ meta, files, file, brief: text, noStops: true });
+    const { meta, files } = await window.octo.specs.read(root, spec.id);
+    const ok = await draftSpecDoc({ meta, files, file, brief, noStops: true });
     if (!ok) break;
     const updated = await window.octo.specs.advance(root, spec.id);
     useUi.getState().openSpec(spec.id, stageForPhase(updated.phase));
     await ws.refreshAll();
   }
+}
+
+/**
+ * "Plan rápido" straight from a ticket — Home's board offers this as the Build
+ * column's drop target.
+ *
+ * Same two moves as the composer's Quick Plan, except the brief is the ticket's
+ * own content: `planSpecFromTicket` seeds and links the spec, then the drafting
+ * chain runs with no approval stops.
+ */
+export async function quickPlanSpecFromTicket(
+  ticket: TicketSummary,
+  kind?: SpecKind
+): Promise<SpecMeta | null> {
+  const spec = await planSpecFromTicket(ticket, kind);
+  const root = useWorkspace.getState().root;
+  if (!spec || !root) return spec;
+  await runQuickPlan(spec, root, spec.brief ?? `${ticket.key}: ${ticket.title}`, spec.kind);
   return spec;
 }

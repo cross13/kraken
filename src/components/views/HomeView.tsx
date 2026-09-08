@@ -6,24 +6,42 @@ import {
   Zap,
   Bug,
   FileCode2,
-  Play,
   FolderOpen,
   CheckCircle2,
-  LayoutDashboard,
+  Check,
+  BarChart3,
+  ListChecks,
   Loader2,
+  Link2,
+  MoreHorizontal,
+  Trash2,
+  AlertTriangle,
+  ChevronRight,
   X,
 } from 'lucide-react';
 import { useWorkspace } from '../../stores/workspace';
 import { useUi, stageForPhase } from '../../stores/ui';
 import { useChat } from '../../stores/chat';
 import { useOrchestrator } from '../../stores/orchestrator';
-import { planSpec, quickPlanSpec, specKindFromText } from '../../lib/specActions';
-import { SpecsStudio } from './SpecsStudio';
-import { TicketInbox } from './TicketInbox';
+import {
+  planSpec,
+  planSpecFromTicket,
+  quickPlanSpec,
+  quickPlanSpecFromTicket,
+  specKindFromText,
+} from '../../lib/specActions';
+import { TicketInbox, useTicketGroups } from './TicketInbox';
 import { OctoMark } from '../OctoMark';
+import { TrackerMark } from '../../lib/trackerBrand';
 import { cn } from '../../lib/cn';
 import { seedSummary } from '../../lib/library';
-import type { SpecMeta, SpecKind } from '../../../electron/shared/types';
+import type {
+  SpecMeta,
+  SpecKind,
+  SpecPhase,
+  TicketProviderConfig,
+  TicketSummary,
+} from '../../../electron/shared/types';
 
 function ago(iso?: string) {
   if (!iso) return '';
@@ -38,24 +56,59 @@ function ago(iso?: string) {
   return `${Math.floor(h / 24)}d`;
 }
 
-const PHASE_INDEX: Record<SpecMeta['phase'], number> = {
-  requirements: 0,
-  plan: 1,
-  build: 2,
-  done: 3,
+/**
+ * The board's columns are the three phases work actually moves through. `done`
+ * is deliberately not one: finished specs are reference, and they live on the
+ * shelf under the board instead of taking a quarter of its width.
+ */
+const COLUMNS: { phase: Exclude<SpecPhase, 'done'>; label: string; empty: string }[] = [
+  { phase: 'requirements', label: 'REQUIREMENTS', empty: 'Nada por definir' },
+  { phase: 'plan', label: 'PLAN', empty: 'Nada por planificar' },
+  { phase: 'build', label: 'BUILD', empty: 'Nada por construir' },
+];
+
+/**
+ * Where a ticket may enter the board — and only there. A spec cannot start in
+ * the middle, so `plan` is not a drop target: the board refuses it by not
+ * lighting up, rather than by explaining it afterwards.
+ */
+const ENTRY_POINTS: Record<string, { label: string; sub: string }> = {
+  requirements: { label: 'Plan', sub: 'crea el spec y para en cada aprobación' },
+  build: { label: 'Plan rápido', sub: 'redacta los dos documentos sin paradas' },
 };
+
+/** What a card needs from you — the one thing its footer says. */
+type Tone = 'run' | 'ready' | 'wait';
+
+function toneOf(spec: SpecMeta, running: number): { tone: Tone; label: string; cta: string } {
+  if (running > 0)
+    return {
+      tone: 'run',
+      label: `${running} agente${running === 1 ? '' : 's'} trabajando`,
+      cta: 'Ver',
+    };
+  if (spec.phase === 'build')
+    return { tone: 'ready', label: 'listo para correr', cta: 'Correr' };
+  return { tone: 'wait', label: 'esperando tu aprobación', cta: 'Revisar' };
+}
 
 const FIRST_RUN_KEY = 'octo.firstRunDismissed';
 
 /**
- * Home — the launchpad. The composer creates specs (Plan = gated flow, no run
- * until you ask for one; Quick Plan = draft both docs with no stops); below it,
- * in-flight specs with live status, shipped recents, and the Manage mode.
+ * Home — the board.
+ *
+ * Everything that starts work is on one screen, in the order it happens: the
+ * composer writes a brief, **Entrada** holds the tickets somebody already
+ * wrote (one lane per tracker, plus the ones a spec already covers), and the
+ * three phase columns hold what is in flight. Shipped work sits on a shelf
+ * below, and *Gestionar* turns the board itself into the selection surface —
+ * deleting a spec never means going to another screen.
  */
 export function HomeView() {
   const root = useWorkspace((s) => s.root);
   const pickWorkspace = useWorkspace((s) => s.pickWorkspace);
   const seedDefaults = useWorkspace((s) => s.seedDefaults);
+  const deleteSpec = useWorkspace((s) => s.deleteSpec);
   const specs = useWorkspace((s) => s.specs);
   const agents = useWorkspace((s) => s.agents);
   const skills = useWorkspace((s) => s.skills);
@@ -63,6 +116,9 @@ export function HomeView() {
   const dismissLibraryUpgrade = useWorkspace((s) => s.dismissLibraryUpgrade);
   const openSpec = useUi((s) => s.openSpec);
   const openLibrary = useUi((s) => s.openLibrary);
+  const openActivity = useUi((s) => s.openActivity);
+  const activeSpecId = useUi((s) => s.activeSpecId);
+  const closeSpec = useUi((s) => s.closeSpec);
   const setQuickStart = useUi((s) => s.setQuickStart);
   const composerNonce = useUi((s) => s.composerNonce);
   const setAssistantOpen = useUi((s) => s.setAssistantOpen);
@@ -74,22 +130,52 @@ export function HomeView() {
 
   const [command, setCommand] = useState('');
   const [menu, setMenu] = useState<'slash' | 'at' | null>(null);
-  const [creating, setCreating] = useState<null | 'plan' | 'quick'>(null);
+  const [creating, setCreating] = useState<null | 'plan' | 'quick' | 'ticket'>(null);
+  const [armed, setArmed] = useState<TicketSummary | null>(null);
   const [manage, setManage] = useState(false);
+  const [sel, setSel] = useState<Record<string, boolean>>({});
+  const [confirming, setConfirming] = useState(false);
+  const [cardMenu, setCardMenu] = useState<string | null>(null);
+  const [shelf, setShelf] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [firstRunDismissed, setFirstRunDismissed] = useState(
     () => localStorage.getItem(FIRST_RUN_KEY) === '1'
   );
   const [seeding, setSeeding] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const tickets = useTicketGroups(root);
+  const hasInbox = tickets.hasProviders || tickets.stale;
+  // Which tracker each linked ticket came from, so a board card can wear its
+  // mark. `groups` carries the provider even when its fetch failed, so the mark
+  // survives a tracker being unreachable — the link is still true.
+  const trackerById = useMemo(
+    () => new Map(tickets.groups.map((g) => [g.provider.id, g.provider])),
+    [tickets.groups]
+  );
+
   // ⌘K "New spec…" lands here and focuses the composer.
   useEffect(() => {
     if (composerNonce > 0) inputRef.current?.focus();
   }, [composerNonce]);
 
+  // Esc backs out of whatever the board is holding, innermost first.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (cardMenu) setCardMenu(null);
+      else if (confirming) setConfirming(false);
+      else if (armed) setArmed(null);
+      else if (manage) setManage(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [cardMenu, confirming, armed, manage]);
+
   const greeting = useMemo(() => {
     const h = new Date().getHours();
-    return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+    return h < 12 ? 'Buenos días' : h < 18 ? 'Buenas tardes' : 'Buenas noches';
   }, []);
 
   const runningBySpec = useMemo(() => {
@@ -112,10 +198,30 @@ export function HomeView() {
     () =>
       specs
         .filter((s) => s.phase === 'done')
-        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-        .slice(0, 6),
+        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()),
     [specs]
   );
+
+  const selIds = useMemo(() => Object.keys(sel).filter((k) => sel[k]), [sel]);
+  const selNames = useMemo(
+    () =>
+      selIds
+        .map((id) => specs.find((s) => s.id === id)?.name ?? id)
+        .join(', '),
+    [selIds, specs]
+  );
+
+  // The header counts say what is true, not just how many rows there are.
+  const boardSummary = useMemo(() => {
+    const waiting = inFlight.filter(
+      (s) => (runningBySpec.get(s.id) ?? 0) === 0 && s.phase !== 'build'
+    ).length;
+    const running = inFlight.filter((s) => (runningBySpec.get(s.id) ?? 0) > 0).length;
+    const parts = [`${inFlight.length} spec${inFlight.length === 1 ? '' : 's'}`];
+    if (waiting) parts.push(`${waiting} espera${waiting === 1 ? '' : 'n'} tu ok`);
+    if (running) parts.push(`${running} corriendo`);
+    return parts.join(' · ');
+  }, [inFlight, runningBySpec]);
 
   const kindGuess: SpecKind = specKindFromText(command);
 
@@ -136,6 +242,44 @@ export function HomeView() {
       setCommand('');
     } finally {
       setCreating(null);
+    }
+  };
+
+  /** A ticket dropped on a column: the entry point decides which action runs. */
+  const dropArmed = async (phase: Exclude<SpecPhase, 'done'>) => {
+    if (!armed || creating) return;
+    const ticket = armed;
+    setCreating('ticket');
+    setArmed(null);
+    try {
+      if (phase === 'requirements') await planSpecFromTicket(ticket);
+      else void quickPlanSpecFromTicket(ticket);
+      void tickets.reload();
+    } finally {
+      setCreating(null);
+    }
+  };
+
+  const toggleSel = (id: string) => {
+    setConfirming(false);
+    setSel((s) => ({ ...s, [id]: !s[id] }));
+  };
+
+  const removeSelected = async () => {
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      for (const id of selIds) await deleteSpec(id);
+      // The Spec surface mounts on `activeSpecId`; deleting the spec it is
+      // holding would leave it reading a folder that no longer exists.
+      if (activeSpecId && selIds.includes(activeSpecId)) closeSpec();
+      setSel({});
+      setConfirming(false);
+      setManage(false);
+    } catch (e) {
+      setDeleteError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -194,56 +338,34 @@ export function HomeView() {
     );
   }
 
-  if (manage) {
-    return (
-      <div className="h-full flex flex-col bg-ink-950">
-        <div className="flex items-center gap-2 px-6 h-[44px] shrink-0">
-          <LayoutDashboard size={14} className="text-accent" />
-          <span className="text-[13px] font-semibold text-ink-50">Manage specs</span>
-          <button
-            onClick={() => setManage(false)}
-            className="ml-auto text-[12px] flex items-center gap-1 px-2.5 py-1 rounded-md text-dim hover:text-ink-50 hover:bg-elev transition"
-          >
-            <X size={12} /> Back to Home
-          </button>
-        </div>
-        <div className="flex-1 min-h-0">
-          <SpecsStudio />
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="h-full overflow-y-auto bg-ink-950">
-      <div className="k-wide pt-9 pb-16">
+    <div className="h-full flex flex-col bg-ink-950 overflow-hidden">
+      <div className="k-wide flex-1 min-h-0 flex flex-col pt-7 pb-5">
         {/* greeting */}
-        <div className="flex items-end justify-between gap-5 mb-[18px]">
+        <div className="flex items-end justify-between gap-5 mb-3.5 shrink-0">
           <div>
-            <div className="text-[12.5px] text-faint font-medium tracking-[0.02em] mb-1.5">
-              {greeting} · {inFlight.length} spec{inFlight.length === 1 ? '' : 's'} in flight
+            <div className="text-[12px] text-faint font-medium tracking-[0.02em] mb-1">
+              {greeting} · {inFlight.length} spec{inFlight.length === 1 ? '' : 's'} en vuelo
             </div>
-            <h1 className="m-0 text-[29px] font-semibold tracking-[-0.02em] text-ink-50">
-              What should we build?
+            <h1 className="m-0 font-display text-[26px] font-semibold tracking-[-0.02em] text-ink-50">
+              ¿Qué construimos?
             </h1>
           </div>
-          <div className="flex items-center gap-2 shrink-0 px-3 py-[7px] rounded-full bg-card border border-ink-800">
+          <div className="flex items-center gap-2 shrink-0 px-3 py-[7px] bg-card border border-ink-800">
             <span className="relative w-2 h-2">
-              <span className="absolute inset-0 rounded-full bg-good" />
-              {runningCount > 0 && (
-                <span className="absolute inset-0 rounded-full bg-good animate-ping2" />
-              )}
+              <span className="absolute inset-0 bg-good" />
+              {runningCount > 0 && <span className="absolute inset-0 bg-good animate-ping2" />}
             </span>
             <span className="text-xs text-dim">
-              <b className="text-ink-50 font-semibold">{runningCount}</b> agents running
+              <b className="text-ink-50 font-semibold">{runningCount}</b> agentes trabajando
             </span>
           </div>
         </div>
 
         {/* composer — creates specs */}
-        <div className="relative mb-3.5">
-          <div className="flex items-center gap-3 pl-4 pr-3 py-3 rounded-[15px] bg-card border border-ink-800 focus-within:border-accent/50 focus-within:shadow-glow transition">
-            <Sparkles size={19} className="text-accent-2 shrink-0" />
+        <div className="relative mb-4 shrink-0">
+          <div className="flex items-center gap-3 pl-4 pr-2.5 py-2.5 rounded-[15px] bg-card border border-ink-800 focus-within:border-accent/50 focus-within:shadow-glow transition">
+            <Sparkles size={18} className="text-accent-2 shrink-0" />
             <input
               ref={inputRef}
               value={command}
@@ -252,11 +374,11 @@ export function HomeView() {
                 if (e.key === 'Enter' && !e.shiftKey) start(e.metaKey || e.ctrlKey ? 'quick' : 'plan');
                 if (e.key === 'Escape') setMenu(null);
               }}
-              placeholder="Describe a feature or paste a bug… end with ? to just ask"
-              className="flex-1 bg-transparent border-none outline-none text-ink-50 text-[15px] placeholder:text-faint"
+              placeholder="Describí una feature o pegá un bug… terminá con ? para solo preguntar"
+              className="flex-1 min-w-0 bg-transparent border-none outline-none text-ink-50 text-[14.5px] placeholder:text-faint"
             />
             {selectedAgent && (
-              <span className="flex items-center gap-1 text-[11px] font-medium text-accent-2 bg-accent/15 pl-2 pr-1 py-1 rounded-md">
+              <span className="flex items-center gap-1 text-[11px] font-medium text-accent-2 bg-accent/15 pl-2 pr-1 py-1 shrink-0">
                 @{selectedAgent}
                 <button onClick={() => setSelectedAgent(null)} className="hover:text-ink-50">
                   <X size={11} />
@@ -266,10 +388,10 @@ export function HomeView() {
             {command.trim() && (
               <span
                 className={cn(
-                  'flex items-center gap-1 text-[10.5px] font-semibold px-2 py-1 rounded-md',
+                  'flex items-center gap-1 text-[10.5px] font-semibold px-2 py-1 shrink-0',
                   kindGuess === 'feature' ? 'text-accent-2 bg-accent/15' : 'text-warn bg-warn/15'
                 )}
-                title="Detected spec kind"
+                title="Tipo de spec detectado"
               >
                 {kindGuess === 'feature' ? <FileCode2 size={11} /> : <Bug size={11} />}
                 {kindGuess}
@@ -278,17 +400,17 @@ export function HomeView() {
             <button
               onClick={() => start('quick')}
               disabled={!command.trim() || !!creating}
-              title="Quick Plan — draft requirements and the plan with no approval stops"
-              className="flex items-center gap-1.5 rounded-[10px] px-3 py-2 bg-elev text-dim text-[13px] font-semibold hover:text-ink-50 transition disabled:opacity-40"
+              title="Plan rápido — redacta requirements y el plan sin paradas de aprobación"
+              className="flex items-center gap-1.5 h-[34px] px-3 bg-elev text-dim text-[12.5px] font-semibold hover:text-ink-50 transition disabled:opacity-40 shrink-0"
             >
               {creating === 'quick' ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
-              Quick Plan
+              Plan rápido
             </button>
             <button
               onClick={() => start('plan')}
               disabled={!command.trim() || !!creating}
-              title="Plan — create the spec and open Requirements. Nothing runs until you press Draft"
-              className="flex items-center gap-1.5 rounded-[10px] px-3.5 py-2 bg-gradient-to-br from-accent to-accent-2 text-white text-[13px] font-semibold shadow-glow hover:opacity-95 transition disabled:opacity-40"
+              title="Plan — crea el spec y abre Requirements. No corre nada hasta que pidas Draft"
+              className="flex items-center gap-1.5 h-[34px] px-3.5 bg-gradient-to-br from-accent to-accent-2 text-accent-fg text-[12.5px] font-bold shadow-glow hover:opacity-95 transition disabled:opacity-40 shrink-0"
             >
               {creating === 'plan' ? (
                 <Loader2 size={14} className="animate-spin" />
@@ -297,14 +419,6 @@ export function HomeView() {
               )}
               Plan
             </button>
-          </div>
-          <div className="flex items-center gap-2.5 mt-2.5 px-1">
-            <span className="text-[11.5px] text-faint">
-              <b className="text-dim font-medium">Plan</b> walks Requirements → Plan → Build with
-              approval gates, drafting only when you ask ·{' '}
-              <b className="text-dim font-medium">Quick Plan</b> drafts both docs with no stops and
-              lands on Build ready to run
-            </span>
           </div>
 
           {/* / and @ popovers */}
@@ -318,7 +432,7 @@ export function HomeView() {
                     setMenu(null);
                     inputRef.current?.focus();
                   }}
-                  className="w-full flex items-center gap-3 px-2.5 py-2 rounded-[9px] hover:bg-accent/15 text-left"
+                  className="w-full flex items-center gap-3 px-2.5 py-2 hover:bg-accent/15 text-left"
                 >
                   <Sparkles size={15} className="text-accent-2 w-4 text-center shrink-0" />
                   <div className="flex-1 min-w-0">
@@ -340,7 +454,7 @@ export function HomeView() {
                     setMenu(null);
                     inputRef.current?.focus();
                   }}
-                  className="w-full flex items-center gap-3 px-2.5 py-2 rounded-[9px] hover:bg-accent/15 text-left"
+                  className="w-full flex items-center gap-3 px-2.5 py-2 hover:bg-accent/15 text-left"
                 >
                   <div className="flex-1 min-w-0">
                     <div className="text-[13px] text-ink-50 font-medium truncate">{a.name}</div>
@@ -352,141 +466,354 @@ export function HomeView() {
           )}
         </div>
 
-        {/* Work that already exists somewhere else. Above the upgrade notice and
-            the first-run card because it is the answer to the question the page
-            just asked, not a piece of housekeeping. */}
-        <TicketInbox />
-
-        {/* Library upgraded on open — said once, then dismissed. Only appears
-            when a default the user never edited was actually rewritten. */}
+        {/* Notices are one line each: they announce, they don't occupy. */}
         {libraryUpgrade && (
-          <div className="flex items-center gap-4 border border-ink-700 rounded-[14px] bg-card px-5 py-3.5 mb-8">
-            <Sparkles size={15} className="text-accent shrink-0" />
-            <div className="flex-1 min-w-0">
-              <div className="text-[12.5px] text-ink-100">
-                Octo's bundled library was updated in this workspace
-              </div>
-              <div className="text-[11.5px] text-faint truncate">
-                {seedSummary(libraryUpgrade)} — anything you had edited was left alone.
-              </div>
-            </div>
-            <button
-              onClick={() => openLibrary('agents')}
-              className="shrink-0 text-xs px-3 py-1.5 rounded-lg bg-elev text-ink-100 hover:bg-line transition"
-            >
-              Review
-            </button>
-            <button
-              onClick={dismissLibraryUpgrade}
-              title="Dismiss"
-              className="shrink-0 w-7 h-7 grid place-items-center rounded-md text-faint hover:text-ink-50 hover:bg-elev"
-            >
-              <X size={13} />
-            </button>
-          </div>
+          <NoticeStrip
+            tone="agent"
+            icon={<Sparkles size={13} />}
+            text={`Se actualizó la librería incluida en este workspace. ${seedSummary(libraryUpgrade)} — lo que habías editado quedó intacto.`}
+            action={{ label: 'Revisar', onClick: () => openLibrary('agents') }}
+            onDismiss={dismissLibraryUpgrade}
+          />
         )}
-
-        {/* first-run setup */}
         {agents.length === 0 && !firstRunDismissed && (
-          <div className="flex items-center gap-4 border border-accent/30 rounded-[14px] bg-accent/[0.06] px-5 py-4 mb-8">
-            <span className="text-xl">🐙</span>
-            <div className="flex-1 min-w-0">
-              <div className="text-[13px] font-semibold text-ink-50">Set up Octo defaults</div>
-              <div className="text-[11.5px] text-faint">
-                Installs the bundled SDD agents, skills, steering docs, and hooks into this
-                workspace's <code className="font-mono">.claude/</code> and{' '}
-                <code className="font-mono">.octo/</code> — one click, fully editable later in
-                the Library.
-              </div>
-            </div>
-            <button
-              onClick={() => setQuickStart(true)}
-              className="shrink-0 flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg bg-elev text-ink-100 hover:bg-line transition"
-            >
-              <GraduationCap size={13} /> Quick start
-            </button>
-            <button
-              onClick={seed}
-              disabled={seeding}
-              className="shrink-0 flex items-center gap-1.5 text-xs px-3.5 py-2 rounded-lg bg-accent text-accent-fg font-semibold hover:opacity-90 shadow-glow transition disabled:opacity-50"
-            >
-              {seeding ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
-              Set up defaults
-            </button>
-            <button
-              onClick={dismissFirstRun}
-              title="Dismiss"
-              className="shrink-0 w-7 h-7 grid place-items-center rounded-md text-faint hover:text-ink-50 hover:bg-elev"
-            >
-              <X size={13} />
-            </button>
-          </div>
+          <NoticeStrip
+            tone="accent"
+            icon={<Sparkles size={13} />}
+            text="Instalá los agentes, skills, steering y hooks que Octo trae — editables después en la Library."
+            action={{
+              label: seeding ? 'Instalando…' : 'Instalar defaults',
+              onClick: seed,
+              primary: true,
+            }}
+            secondary={{ label: 'Quick start', icon: <GraduationCap size={13} />, onClick: () => setQuickStart(true) }}
+            onDismiss={dismissFirstRun}
+          />
         )}
 
-        {/* In flight */}
-        {inFlight.length > 0 && (
-          <>
-            <SectionHeader
-              title="In flight"
-              badge={`${inFlight.length} active`}
-              action={
-                <button
-                  onClick={() => setManage(true)}
-                  className="flex items-center gap-1.5 text-[12.5px] text-dim hover:text-ink-50 transition"
-                >
-                  <LayoutDashboard size={13} /> Manage
-                </button>
-              }
-            />
-            {/* auto-fitting: 1 column on a narrow window, 4+ on an ultrawide,
-                instead of two cards stretched across the whole display */}
-            <div className="k-cards mb-[38px]" style={{ ['--k-card' as string]: '340px' }}>
-              {inFlight.slice(0, 8).map((s) => (
-                <SpecCard
-                  key={s.id}
-                  spec={s}
-                  runningCount={runningBySpec.get(s.id) ?? 0}
-                  onOpen={() => openSpec(s.id, stageForPhase(s.phase))}
+        {/* ============================ the board ============================ */}
+        <div className="flex-1 min-h-0 flex">
+          {hasInbox && (
+            <div className="w-[366px] max-[1180px]:w-[292px] shrink-0 pr-[22px] border-r border-ink-850">
+              <TicketInbox
+                groups={tickets.groups}
+                loading={tickets.loading}
+                stale={tickets.stale}
+                reload={() => void tickets.reload()}
+                armedKey={armed?.key ?? null}
+                onArm={setArmed}
+                busy={creating === 'ticket'}
+              />
+            </div>
+          )}
+
+          <div className={cn('flex-1 min-w-0 flex flex-col min-h-0', hasInbox && 'pl-[22px]')}>
+            {/* board header — or, while a ticket is armed, what it is waiting for */}
+            <div className="flex items-center gap-2.5 h-[26px] mb-3 shrink-0">
+              {armed ? (
+                <div className="flex items-center gap-2.5 w-full h-full px-2.5 bg-accent/10 ring-1 ring-inset ring-accent/45">
+                  <span className="font-mono text-[11px] text-accent-text shrink-0">
+                    {armed.key}
+                  </span>
+                  {/* the title, not just the key: this bar is the last thing
+                      you read before a spec gets created from the ticket */}
+                  <span className="text-[12px] text-ink-200 truncate">
+                    {armed.title || '¿cómo entra al board?'}
+                  </span>
+                  {armed.title && (
+                    <span className="text-[12px] text-faint shrink-0">¿cómo entra?</span>
+                  )}
+                  <div className="flex-1" />
+                  <button
+                    onClick={() => setArmed(null)}
+                    className="text-[11.5px] text-faint hover:text-ink-100 transition"
+                  >
+                    Cancelar (Esc)
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <h2 className="m-0 font-display text-[13px] font-semibold text-ink-50 tracking-[0.01em]">
+                    En vuelo
+                  </h2>
+                  <span className="text-[11.5px] text-ink-600 truncate">{boardSummary}</span>
+                  <div className="flex-1" />
+                  <button
+                    onClick={() => openActivity('specs')}
+                    title="Historial de runs y tiempo por spec — Activity › Specs"
+                    className="flex items-center gap-1.5 h-[26px] px-2.5 text-[12px] text-dim hover:text-ink-50 transition"
+                  >
+                    <BarChart3 size={13} /> Analíticas
+                  </button>
+                  <button
+                    onClick={() => {
+                      setManage((m) => !m);
+                      setSel({});
+                      setConfirming(false);
+                      setArmed(null);
+                    }}
+                    className={cn(
+                      'flex items-center gap-1.5 h-[26px] px-2.5 border text-[12px] font-semibold transition',
+                      manage
+                        ? 'bg-accent/[0.12] border-accent/45 text-accent-text'
+                        : 'bg-transparent border-ink-800 text-dim hover:border-accent/50 hover:text-accent-text'
+                    )}
+                  >
+                    <ListChecks size={13} /> Gestionar
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* columns */}
+            <div className="flex-1 min-h-0 grid grid-cols-3 gap-3">
+              {COLUMNS.map((col) => {
+                const cards = inFlight.filter((s) => s.phase === col.phase);
+                const entry = armed ? ENTRY_POINTS[col.phase] : undefined;
+                return (
+                  <BoardColumn
+                    key={col.phase}
+                    label={col.label}
+                    emptyText={col.empty}
+                    cards={cards}
+                    runningBySpec={runningBySpec}
+                    entry={entry}
+                    onDrop={() => void dropArmed(col.phase)}
+                    dropping={creating === 'ticket'}
+                    manage={manage}
+                    sel={sel}
+                    onToggleSel={toggleSel}
+                    cardMenu={cardMenu}
+                    onCardMenu={setCardMenu}
+                    onOpen={(s) => openSpec(s.id, stageForPhase(s.phase))}
+                    onRuns={() => openActivity('runs')}
+                    trackerById={trackerById}
+                    onDeleteOne={(id) => {
+                      setCardMenu(null);
+                      setManage(true);
+                      setSel({ [id]: true });
+                      setConfirming(true);
+                    }}
+                  />
+                );
+              })}
+            </div>
+
+            {/* shelf — shipped work is reference, not workspace */}
+            <div className="shrink-0 mt-3">
+              <button
+                onClick={() => setShelf((v) => !v)}
+                className="w-full flex items-center gap-2.5 h-9 px-3 bg-raised border-t border-ink-800 text-dim hover:text-ink-50 transition text-left"
+              >
+                <ChevronRight
+                  size={12}
+                  strokeWidth={2.2}
+                  className={cn('shrink-0 transition-transform', shelf && 'rotate-90')}
                 />
-              ))}
+                <span className="font-display text-[11px] font-semibold tracking-[0.06em]">
+                  ENTREGADO
+                </span>
+                <span className="font-mono text-[11px] text-ink-600">{shipped.length}</span>
+                <div className="flex-1" />
+                {!shelf && (
+                  <span className="text-[11px] text-ink-600 truncate max-[1180px]:hidden">
+                    el trabajo entregado vive acá, fuera del board
+                  </span>
+                )}
+              </button>
+              {shelf && (
+                <div className="flex flex-wrap gap-1.5 pt-2.5 max-h-[124px] overflow-y-auto">
+                  {shipped.length === 0 && (
+                    <span className="text-[11.5px] text-ink-600 px-1 py-1.5">
+                      Todavía no entregaste nada.
+                    </span>
+                  )}
+                  {shipped.map((s) => (
+                    <button
+                      key={s.id}
+                      onClick={() => openSpec(s.id, 'build')}
+                      className="flex items-center gap-2 h-7 px-2.5 bg-raised border border-ink-800 hover:border-accent/45 transition"
+                    >
+                      <CheckCircle2 size={12} className="text-good shrink-0" />
+                      <span className="text-[12px] text-dim">{s.name}</span>
+                      <span className="font-mono text-[10px] text-ink-600">{ago(s.updatedAt)}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-          </>
+
+            {/* the delete lives where the selection is */}
+            {selIds.length > 0 && (
+              <div
+                className={cn(
+                  'shrink-0 mt-2.5 flex items-center gap-3 h-12 px-3.5 bg-card ring-1 ring-inset',
+                  confirming ? 'ring-bad/45' : 'ring-ink-50/10'
+                )}
+              >
+                {confirming ? (
+                  <>
+                    <AlertTriangle size={16} className="text-danger-text shrink-0" />
+                    <span className="text-[12px] text-ink-200 flex-1 min-w-0">
+                      Se borran <b className="text-ink-50">{selNames}</b> de{' '}
+                      <code className="font-mono text-[11px] text-danger-text">.octo/specs/</code> y
+                      todo su historial de runs. No se puede deshacer.
+                    </span>
+                    <button
+                      onClick={() => setConfirming(false)}
+                      disabled={deleting}
+                      className="h-7 px-3 border border-ink-800 text-dim text-[12px] hover:text-ink-50 transition disabled:opacity-40"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={() => void removeSelected()}
+                      disabled={deleting}
+                      className="flex items-center gap-1.5 h-7 px-3.5 bg-bad text-white text-[12px] font-bold hover:opacity-90 transition disabled:opacity-50"
+                    >
+                      {deleting && <Loader2 size={12} className="animate-spin" />}
+                      Sí, borrar {selIds.length}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-[12.5px] text-ink-50 font-semibold shrink-0">
+                      {selIds.length} seleccionado{selIds.length === 1 ? '' : 's'}
+                    </span>
+                    <span className="text-[11.5px] text-faint flex-1 min-w-0 truncate">
+                      {selNames}
+                    </span>
+                    <button
+                      onClick={() => setSel({})}
+                      className="h-7 px-3 border border-ink-800 text-dim text-[12px] hover:text-ink-50 transition"
+                    >
+                      Deseleccionar
+                    </button>
+                    <button
+                      onClick={() => setConfirming(true)}
+                      className="flex items-center gap-1.5 h-7 px-3 bg-bad/[0.12] border border-bad/45 text-danger-text text-[12px] font-semibold hover:bg-bad/20 transition"
+                    >
+                      <Trash2 size={13} /> Borrar
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+            {deleteError && (
+              <p className="shrink-0 mt-2 text-[12px] text-danger-text">{deleteError}</p>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+
+/**
+ * One phase column. Its rule takes its colour from what is *in* it — violet
+ * when something there is waiting on you, green when something is running —
+ * so the board says where you are needed before you read a single card.
+ */
+function BoardColumn({
+  label,
+  emptyText,
+  cards,
+  runningBySpec,
+  entry,
+  onDrop,
+  dropping,
+  manage,
+  sel,
+  onToggleSel,
+  cardMenu,
+  onCardMenu,
+  onOpen,
+  onRuns,
+  onDeleteOne,
+  trackerById,
+}: {
+  label: string;
+  emptyText: string;
+  cards: SpecMeta[];
+  runningBySpec: Map<string, number>;
+  /** provider id → its config, so a card can wear its tracker's mark */
+  trackerById: Map<string, TicketProviderConfig>;
+  entry?: { label: string; sub: string };
+  onDrop: () => void;
+  dropping: boolean;
+  manage: boolean;
+  sel: Record<string, boolean>;
+  onToggleSel: (id: string) => void;
+  cardMenu: string | null;
+  onCardMenu: (id: string | null) => void;
+  onOpen: (spec: SpecMeta) => void;
+  onRuns: () => void;
+  onDeleteOne: (id: string) => void;
+}) {
+  const tones = cards.map((s) => toneOf(s, runningBySpec.get(s.id) ?? 0).tone);
+  const running = tones.filter((t) => t === 'run').length;
+  const waiting = tones.filter((t) => t === 'wait').length;
+  const ready = tones.filter((t) => t === 'ready').length;
+
+  const head = running
+    ? { rule: 'bg-accent', name: 'text-accent-text', note: `${running} corriendo`, noteCls: 'text-accent-num' }
+    : waiting
+      ? { rule: 'bg-agent', name: 'text-agent-text', note: `${waiting} te espera`, noteCls: 'text-agent-text' }
+      : ready
+        ? { rule: 'bg-accent/40', name: 'text-dim', note: `${ready} listo`, noteCls: 'text-faint' }
+        : { rule: 'bg-ink-800', name: 'text-ink-600', note: '', noteCls: 'text-ink-600' };
+
+  return (
+    <div className="flex flex-col min-w-0 min-h-0">
+      <div className="shrink-0 flex items-center gap-2 pb-2">
+        <span className={cn('font-display text-[11px] font-semibold tracking-[0.06em]', head.name)}>
+          {label}
+        </span>
+        <div className="flex-1" />
+        {head.note && <span className={cn('text-[10.5px]', head.noteCls)}>{head.note}</span>}
+        <span className="font-mono text-[11px] text-ink-600 min-w-[14px] text-right">
+          {cards.length}
+        </span>
+      </div>
+      <div className={cn('h-0.5 shrink-0', head.rule)} />
+
+      <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-2 pt-2 -mr-2 pr-2">
+        {entry && (
+          <button
+            onClick={onDrop}
+            disabled={dropping}
+            className="shrink-0 flex flex-col items-start gap-1 px-3 py-3.5 bg-accent/[0.06] border border-dashed border-accent/55 hover:bg-accent/[0.12] hover:border-accent transition text-left disabled:opacity-50"
+          >
+            <span className="flex items-center gap-1.5 text-[12.5px] font-semibold text-accent-text">
+              {dropping && <Loader2 size={12} className="animate-spin" />}
+              {entry.label}
+            </span>
+            <span className="text-[11px] text-faint">{entry.sub}</span>
+          </button>
         )}
 
-        {/* Shipped */}
-        {shipped.length > 0 && (
-          <>
-            <SectionHeader title="Shipped" badge={`${shipped.length}`} />
-            <div
-              className="k-cards mb-[38px]"
-              style={{ ['--k-card' as string]: '300px', gap: '6px' }}
-            >
-              {shipped.map((s) => (
-                <button
-                  key={s.id}
-                  onClick={() => openSpec(s.id, 'build')}
-                  className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-[11px] bg-card border border-ink-800 hover:border-accent/40 transition text-left"
-                >
-                  <CheckCircle2 size={15} className="text-good shrink-0" />
-                  <span className="flex-1 min-w-0 truncate text-[13.5px] text-ink-100">
-                    {s.name}
-                  </span>
-                  <span className="font-mono text-[10.5px] text-faint shrink-0">
-                    {s.kind} · {ago(s.updatedAt)} ago
-                  </span>
-                </button>
-              ))}
-            </div>
-          </>
-        )}
+        {cards.map((spec) => (
+          <SpecCard
+            key={spec.id}
+            spec={spec}
+            running={runningBySpec.get(spec.id) ?? 0}
+            manage={manage}
+            checked={!!sel[spec.id]}
+            onToggle={() => onToggleSel(spec.id)}
+            menuOpen={cardMenu === spec.id}
+            onMenu={() => onCardMenu(cardMenu === spec.id ? null : spec.id)}
+            onOpen={() => onOpen(spec)}
+            onRuns={onRuns}
+            onDelete={() => onDeleteOne(spec.id)}
+            tracker={spec.ticket ? trackerById.get(spec.ticket.provider) : undefined}
+          />
+        ))}
 
-        {specs.length === 0 && (
-          <div className="border border-ink-800 rounded-[14px] bg-card px-6 py-8 text-center">
-            <div className="text-[14px] font-semibold text-ink-50 mb-1">No specs yet</div>
-            <p className="text-[12px] text-faint">
-              Describe what you want to build in the box above — <b>Plan</b> creates the spec and
-              opens Requirements, seeded with your description and ready to draft.
-            </p>
+        {cards.length === 0 && !entry && (
+          <div className="shrink-0 px-3 py-4 border border-dashed border-ink-800 text-[11.5px] text-ink-600 text-center">
+            {emptyText}
           </div>
         )}
       </div>
@@ -494,146 +821,253 @@ export function HomeView() {
   );
 }
 
-function SectionHeader({
-  title,
-  badge,
-  action,
-}: {
-  title: string;
-  badge?: string;
-  action?: React.ReactNode;
-}) {
-  return (
-    <div className="flex items-center gap-3 mb-4">
-      <h2 className="m-0 text-[15px] font-semibold tracking-[-0.01em] text-ink-50">{title}</h2>
-      {badge && (
-        <span className="text-[11px] text-faint bg-ink-50/[0.045] px-2 py-0.5 rounded-full font-mono">
-          {badge}
-        </span>
-      )}
-      <div className="flex-1" />
-      {action}
-    </div>
-  );
-}
-
-const STAGE_LABELS = {
-  feature: ['Requirements', 'Design', 'Tasks'],
-  bugfix: ['Bug analysis', 'Design', 'Tasks'],
-};
-
+/**
+ * One spec on the board. Four lines, always the same four, always in the same
+ * order — state + kind + ticket + age, the name, what it is, and what it needs
+ * from you. There is nothing to re-learn between one card and the next.
+ */
 function SpecCard({
   spec,
-  runningCount,
+  running,
+  manage,
+  checked,
+  onToggle,
+  menuOpen,
+  onMenu,
   onOpen,
+  onRuns,
+  onDelete,
+  tracker,
 }: {
   spec: SpecMeta;
-  runningCount: number;
+  running: number;
+  /** the tracker the linked ticket lives in, when it is still configured */
+  tracker?: TicketProviderConfig;
+  manage: boolean;
+  checked: boolean;
+  onToggle: () => void;
+  menuOpen: boolean;
+  onMenu: () => void;
   onOpen: () => void;
+  onRuns: () => void;
+  onDelete: () => void;
 }) {
-  const isFeature = spec.kind === 'feature';
-  const stepNames = STAGE_LABELS[spec.kind];
-  const phaseIdx = PHASE_INDEX[spec.phase];
-  const running = runningCount > 0;
-  const status = running
-    ? { label: `${runningCount} running`, cls: 'text-good', dot: 'bg-good', pulse: true }
-    : spec.phase === 'build'
-      ? // green is "press me / in progress"…
-        { label: 'Ready to run', cls: 'text-accent-text', dot: 'bg-accent', pulse: false }
-      : // …violet is "this one is waiting on you".
-        { label: 'Awaiting approval', cls: 'text-agent-text', dot: 'bg-agent', pulse: false };
+  const { tone, label, cta } = toneOf(spec, running);
+  const isRunning = tone === 'run';
 
   return (
     <div
-      onClick={onOpen}
-      className="relative border border-ink-800 rounded-[14px] bg-card px-[18px] py-[17px] cursor-pointer overflow-hidden transition hover:-translate-y-[3px] hover:border-accent/45 hover:shadow-card"
+      onClick={manage ? onToggle : onOpen}
+      className={cn(
+        'group relative shrink-0 flex flex-col px-3 pt-2.5 pb-2.5 cursor-pointer ring-1 ring-inset transition',
+        checked
+          ? 'bg-accent/[0.10] ring-accent/65'
+          : isRunning
+            ? 'bg-raised ring-accent/45 hover:bg-elev'
+            : 'bg-card ring-ink-800 hover:bg-elev'
+      )}
     >
-      <span
-        className="absolute left-0 top-0 bottom-0 w-[3px]"
-        style={{ background: isFeature ? 'rgb(var(--accent))' : 'rgb(var(--warn))' }}
-      />
-      <div className="flex items-center gap-2 mb-3">
-        <span
-          className={cn(
-            'flex items-center gap-1.5 text-[10.5px] font-semibold tracking-[0.03em] px-2 py-[3px] rounded-md',
-            isFeature ? 'text-accent-2 bg-accent/15' : 'text-warn bg-warn/15'
-          )}
-        >
-          {isFeature ? <FileCode2 size={12} /> : <Bug size={12} />}
-          {isFeature ? 'FEATURE' : 'BUGFIX'}
-        </span>
-        <span className={cn('flex items-center gap-1.5 text-[11px] font-medium', status.cls)}>
+      {/* 1 — state, kind, ticket, age */}
+      <div className="flex items-center gap-2 mb-1.5">
+        {manage ? (
           <span
-            className={cn('w-1.5 h-1.5 rounded-full', status.dot, status.pulse && 'animate-pulse-slow')}
+            className={cn(
+              'w-4 h-4 shrink-0 border grid place-items-center',
+              checked ? 'bg-accent border-accent' : 'border-ink-600'
+            )}
+          >
+            {checked && <Check size={11} className="text-accent-fg" strokeWidth={3.5} />}
+          </span>
+        ) : (
+          <span
+            className={cn(
+              'w-2 h-2 shrink-0',
+              isRunning
+                ? 'bg-accent animate-pulse-slow'
+                : tone === 'ready'
+                  ? 'bg-accent'
+                  : 'bg-agent'
+            )}
           />
-          {status.label}
+        )}
+        <span className="text-[9.5px] text-ink-600 tracking-[0.08em] font-semibold shrink-0">
+          {spec.kind === 'bugfix' ? 'BUGFIX' : 'FEATURE'}
         </span>
         <div className="flex-1" />
-        <span className="text-[10.5px] text-faint font-mono">{ago(spec.updatedAt)} ago</span>
+        {spec.ticket?.key && (
+          <span
+            className="flex items-center gap-1 font-mono text-[10px] text-ink-600 shrink-0"
+            title={`Ticket ${spec.ticket.key}`}
+          >
+            {/* the tracker's own mark replaces the generic link glyph — same
+                width, and it says *where* the ticket lives, not just that
+                there is one */}
+            {tracker ? <TrackerMark provider={tracker} size={10} /> : <Link2 size={10} />}
+            {spec.ticket.key}
+          </span>
+        )}
+        <span className="font-mono text-[10px] text-ink-600 shrink-0">{ago(spec.updatedAt)}</span>
       </div>
 
-      <div className="text-[16.5px] font-semibold tracking-[-0.01em] text-ink-50 mb-4 truncate">
+      {/* 2 — the name */}
+      <div className="text-[14px] font-semibold text-ink-50 tracking-[-0.005em] truncate mb-1">
         {spec.name}
       </div>
 
-      <div className="flex gap-2.5 mb-[15px]">
-        {stepNames.map((name, i) => {
-          const state =
-            phaseIdx > i || spec.phase === 'done' ? 'done' : phaseIdx === i ? 'active' : 'todo';
-          return (
-            <div key={name} className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <span
-                  className={cn(
-                    'w-[5px] h-[5px] rounded-full',
-                    state === 'done' ? 'bg-good' : state === 'active' ? 'bg-accent' : 'bg-ink-700'
-                  )}
-                />
-                <span
-                  className={cn(
-                    'text-[10px] font-medium',
-                    state === 'done' ? 'text-dim' : state === 'active' ? 'text-accent-2' : 'text-faint'
-                  )}
-                >
-                  {name}
-                </span>
-              </div>
-              <div className="h-[3px] rounded-full bg-ink-800 overflow-hidden">
-                <div
-                  className={cn(
-                    'h-full rounded-full origin-left',
-                    state === 'done' ? 'bg-good' : state === 'active' ? 'bg-accent' : 'bg-ink-700'
-                  )}
-                  style={{ width: state === 'done' ? '100%' : state === 'active' ? '55%' : '10%' }}
-                />
-              </div>
-            </div>
-          );
-        })}
+      {/* 3 — what it is */}
+      <div className="text-[11.5px] text-faint leading-[1.45] h-[33px] line-clamp-2 mb-2">
+        {spec.brief || spec.ticket?.title || '—'}
       </div>
 
-      <div className="flex items-center gap-2.5">
-        <span className={cn('text-[11px]', running ? 'text-good' : 'text-faint')}>
-          {running ? `${runningCount} agent${runningCount === 1 ? '' : 's'} working` : 'idle'}
-        </span>
-        <div className="flex-1" />
+      {/* 4 — what it needs from you */}
+      <div
+        className={cn(
+          'flex items-center gap-2 pt-2 border-t',
+          isRunning ? 'border-accent/25' : 'border-ink-800'
+        )}
+      >
+        {isRunning ? (
+          <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+            <span className="text-[11px] text-accent-num truncate">{label}</span>
+            <span className="h-[3px] bg-elev block overflow-hidden">
+              <span className="block h-[3px] w-1/3 bg-accent animate-bar origin-left" />
+            </span>
+          </div>
+        ) : (
+          <span
+            className={cn(
+              'flex-1 min-w-0 text-[11px] truncate',
+              tone === 'wait' ? 'text-agent-text' : 'text-faint'
+            )}
+          >
+            {label}
+          </span>
+        )}
+        {!manage && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpen();
+            }}
+            className="shrink-0 h-6 px-2.5 border border-ink-800 text-dim text-[11px] font-semibold hover:border-accent/45 hover:text-accent-text transition"
+          >
+            {cta}
+          </button>
+        )}
         <button
           onClick={(e) => {
             e.stopPropagation();
-            onOpen();
+            onMenu();
           }}
-          className="flex items-center gap-1.5 border border-ink-700 bg-ink-50/[0.045] text-dim px-2.5 py-1.5 rounded-lg text-[11.5px] font-medium hover:border-accent/45 hover:text-accent-2 transition"
+          title="Más acciones"
+          className={cn(
+            'shrink-0 w-[22px] h-[22px] grid place-items-center text-ink-600 hover:text-ink-100 transition',
+            menuOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+          )}
         >
-          <Play size={13} /> Resume
+          <MoreHorizontal size={14} />
         </button>
       </div>
+
+      {menuOpen && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="absolute right-2 bottom-9 w-[196px] bg-elev ring-1 ring-line p-1 z-30 animate-rise"
+        >
+          <MenuItem label="Abrir el spec" onClick={onOpen} />
+          <MenuItem label="Ver runs en Activity" onClick={onRuns} />
+          <MenuItem label="Borrar spec e historial" danger onClick={onDelete} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MenuItem({
+  label,
+  onClick,
+  danger,
+}: {
+  label: string;
+  onClick: () => void;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        'w-full text-left px-2.5 py-[7px] text-[12px] hover:bg-line transition',
+        danger ? 'text-danger-text' : 'text-ink-100'
+      )}
+    >
+      {label}
+    </button>
+  );
+}
+
+/** A notice that announces without occupying: one line, one action, dismissible. */
+function NoticeStrip({
+  tone,
+  icon,
+  text,
+  action,
+  secondary,
+  onDismiss,
+}: {
+  tone: 'accent' | 'agent';
+  icon: React.ReactNode;
+  text: string;
+  action: { label: string; onClick: () => void; primary?: boolean };
+  secondary?: { label: string; icon: React.ReactNode; onClick: () => void };
+  onDismiss: () => void;
+}) {
+  return (
+    <div
+      className={cn(
+        'shrink-0 flex items-center gap-2.5 h-[34px] px-3 mb-3.5 border-l-2',
+        tone === 'accent' ? 'bg-accent/[0.08] border-l-accent' : 'bg-agent/[0.08] border-l-agent'
+      )}
+    >
+      <span className={cn('shrink-0', tone === 'accent' ? 'text-accent' : 'text-agent-text')}>
+        {icon}
+      </span>
+      <span className="flex-1 min-w-0 text-[12px] text-ink-200 truncate">{text}</span>
+      {secondary && (
+        <button
+          onClick={secondary.onClick}
+          className="shrink-0 flex items-center gap-1.5 text-[11.5px] text-dim hover:text-ink-50 transition"
+        >
+          {secondary.icon}
+          {secondary.label}
+        </button>
+      )}
+      <button
+        onClick={action.onClick}
+        className={cn(
+          'shrink-0 h-[24px] px-2.5 text-[11.5px] font-semibold transition',
+          action.primary
+            ? 'bg-accent text-accent-fg hover:opacity-90'
+            : tone === 'accent'
+              ? 'text-accent-text hover:text-ink-50'
+              : 'text-agent-text hover:text-ink-50'
+        )}
+      >
+        {action.label}
+      </button>
+      <button
+        onClick={onDismiss}
+        title="Descartar"
+        className="shrink-0 w-6 h-6 grid place-items-center text-ink-600 hover:text-ink-50 transition"
+      >
+        <X size={13} />
+      </button>
     </div>
   );
 }
 
 function Popover({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="absolute top-[60px] left-3.5 w-[330px] bg-elev border border-ink-700 rounded-[13px] shadow-[0_18px_50px_rgba(0,0,0,0.5)] p-1.5 z-30 animate-rise">
+    <div className="absolute top-[58px] left-3.5 w-[330px] bg-elev border border-ink-700 shadow-card p-1.5 z-30 animate-rise">
       <div className="text-[10px] font-semibold tracking-[0.12em] text-faint px-2.5 pt-1.5 pb-1.5">
         {label.toUpperCase()}
       </div>

@@ -1,0 +1,140 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #FFFFFF; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', sans-serif; -webkit-font-smoothing: antialiased; color: #0D1B2A; }
+    a { color: #0077FF; text-decoration: none; } a:hover { color: #003973; }
+    * { box-sizing: border-box; }
+    .num { font-variant-numeric: tabular-nums; }
+  </style>
+</helmet>
+
+<div style="width:794px; height:1123px; background:#FFFFFF; display:flex; flex-direction:column; padding:40px 44px 0 44px;">
+
+  <div style="display:flex; align-items:flex-start; gap:12px; padding-bottom:14px; border-bottom:2px solid #003973;">
+    <div style="width:34px; height:34px; background:#003973; display:grid; place-items:center; flex:none;">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 7-8"/><path d="M17 7h4v4"/></svg>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:2px;">
+      <div style="font-size:14px; font-weight:700; letter-spacing:-0.01em;">Gravity Quant</div>
+      <div style="font-size:11px; color:#8494A7;">Marcela Rossi · Cuenta 41000</div>
+    </div>
+    <div style="flex:1;"></div>
+    <div style="text-align:right; display:flex; flex-direction:column; gap:2px;">
+      <div style="font-size:11px; color:#8494A7; text-transform:uppercase; letter-spacing:0.08em; font-weight:600;">Rendimiento por moneda</div>
+      <div class="num" style="font-size:12px; color:#3D5068;">oct 2025 — sep 2026</div>
+    </div>
+  </div>
+
+  <h1 style="margin:22px 0 0 0; font-size:20px; font-weight:700; letter-spacing:-0.02em; line-height:1.3; max-width:52ch; text-wrap:pretty;">
+    La misma cartera, contada en las tres monedas en las que se puede contar
+  </h1>
+  <p style="margin:9px 0 0 0; font-size:16px; line-height:1.5; color:#3D5068; max-width:64ch; text-wrap:pretty;">
+    Un rendimiento en pesos no dice si ganaste poder de compra. Este reporte muestra el mismo patrimonio valuado en pesos, en dólar MEP y en dólar CCL, día por día, para que la diferencia entre las tres cifras quede explícita en vez de tener que deducirse.
+  </p>
+
+  <!-- ===== las tres cifras ===== -->
+  <div style="display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:1px; background:#D5DCE5; margin-top:24px; border:1px solid #D5DCE5;">
+    <div style="background:#FFFFFF; padding:17px 18px; display:flex; flex-direction:column; gap:6px;">
+      <div style="display:flex; align-items:center; gap:6px;">
+        <span style="width:14px; height:3px; background:#003973; display:block;"></span>
+        <span style="font-size:11px; color:#3D5068; text-transform:uppercase; letter-spacing:0.07em; font-weight:600;">En pesos</span>
+      </div>
+      <div class="num" style="font-size:26px; font-weight:700; letter-spacing:-0.025em; line-height:1; color:#00875C;">+62,4%</div>
+      <div class="num" style="font-size:12.5px; color:#3D5068;">$ 72,9 M → $ 118,5 M</div>
+    </div>
+    <div style="background:#FFFFFF; padding:17px 18px; display:flex; flex-direction:column; gap:6px;">
+      <div style="display:flex; align-items:center; gap:6px;">
+        <span style="width:14px; height:3px; background:#00BBDD; display:block;"></span>
+        <span style="font-size:11px; color:#3D5068; text-transform:uppercase; letter-spacing:0.07em; font-weight:600;">En dólar MEP</span>
+      </div>
+      <div class="num" style="font-size:26px; font-weight:700; letter-spacing:-0.025em; line-height:1; color:#00875C;">+4,1%</div>
+      <div class="num" style="font-size:12.5px; color:#3D5068;">US$ 81.290 → US$ 84.623</div>
+    </div>
+    <div style="background:#FFFFFF; padding:17px 18px; display:flex; flex-direction:column; gap:6px;">
+      <div style="display:flex; align-items:center; gap:6px;">
+        <span style="width:14px; height:3px; background:#8494A7; display:block;"></span>
+        <span style="font-size:11px; color:#3D5068; text-transform:uppercase; letter-spacing:0.07em; font-weight:600;">En dólar CCL</span>
+      </div>
+      <div class="num" style="font-size:26px; font-weight:700; letter-spacing:-0.025em; line-height:1; color:#E62626;">−1,8%</div>
+      <div class="num" style="font-size:12.5px; color:#3D5068;">US$ 79.104 → US$ 77.680</div>
+    </div>
+  </div>
+
+  <!-- ===== índice base 100 ===== -->
+  <div style="margin-top:26px;">
+    <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:10px;">
+      <h2 style="margin:0; font-size:13px; font-weight:600; letter-spacing:0.02em;">Índice base 100 · octubre 2025</h2>
+      <span style="font-size:11px; color:#8494A7;">cada línea parte del mismo punto, así se comparan entre sí</span>
+    </div>
+
+    <div style="border:1px solid #E8EDF2; background:#FAFBFC; padding:14px 16px 8px 16px;">
+      <svg width="662" height="222" viewBox="0 0 662 222" fill="none">
+        <line x1="0" y1="14" x2="662" y2="14" stroke="#E8EDF2" stroke-width="1"/>
+        <line x1="0" y1="62" x2="662" y2="62" stroke="#E8EDF2" stroke-width="1"/>
+        <line x1="0" y1="110" x2="662" y2="110" stroke="#E8EDF2" stroke-width="1"/>
+        <line x1="0" y1="158" x2="662" y2="158" stroke="#CBD5E1" stroke-width="1" stroke-dasharray="3 3"/>
+        <line x1="0" y1="196" x2="662" y2="196" stroke="#E8EDF2" stroke-width="1"/>
+        <text x="4" y="155" font-family="Inter, sans-serif" font-size="9.5" fill="#8494A7">100</text>
+        <path d="M6 158 L66 152 L126 143 L186 139 L246 126 L306 118 L366 101 L426 92 L486 74 L546 62 L606 44 L656 32" stroke="#003973" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M6 158 L66 161 L126 154 L186 163 L246 156 L306 159 L366 149 L426 156 L486 145 L546 151 L606 141 L656 143" stroke="#00BBDD" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M6 158 L66 163 L126 159 L186 168 L246 162 L306 166 L366 157 L426 165 L486 156 L546 162 L606 156 L656 162" stroke="#8494A7" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="5 3"/>
+        <circle cx="656" cy="32" r="3.5" fill="#003973"/>
+        <circle cx="656" cy="143" r="3.5" fill="#00BBDD"/>
+        <circle cx="656" cy="162" r="3.5" fill="#8494A7"/>
+      </svg>
+      <div class="num" style="display:grid; grid-template-columns:repeat(12, minmax(0,1fr)); font-size:10px; color:#8494A7; padding-top:4px;">
+        <span>Oct</span><span>Nov</span><span>Dic</span><span>Ene</span><span>Feb</span><span>Mar</span><span>Abr</span><span>May</span><span>Jun</span><span>Jul</span><span>Ago</span><span style="font-weight:600; color:#3D5068;">Sep</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== tabla trimestral ===== -->
+  <div style="margin-top:24px; flex:1;">
+    <h2 style="margin:0 0 9px 0; font-size:13px; font-weight:600; letter-spacing:0.02em;">Trimestre a trimestre</h2>
+    <table class="num" style="width:100%; border-collapse:collapse; font-size:12.5px;">
+      <thead>
+        <tr style="border-bottom:1px solid #D5DCE5;">
+          <th style="text-align:left; font-size:10.5px; font-weight:600; color:#8494A7; text-transform:uppercase; letter-spacing:0.06em; padding:0 0 7px 0;">Trimestre</th>
+          <th style="text-align:right; font-size:10.5px; font-weight:600; color:#8494A7; text-transform:uppercase; letter-spacing:0.06em; padding:0 0 7px 0;">Pesos</th>
+          <th style="text-align:right; font-size:10.5px; font-weight:600; color:#8494A7; text-transform:uppercase; letter-spacing:0.06em; padding:0 0 7px 0;">Dólar MEP</th>
+          <th style="text-align:right; font-size:10.5px; font-weight:600; color:#8494A7; text-transform:uppercase; letter-spacing:0.06em; padding:0 0 7px 0;">Dólar CCL</th>
+          <th style="text-align:right; font-size:10.5px; font-weight:600; color:#8494A7; text-transform:uppercase; letter-spacing:0.06em; padding:0 0 7px 0;">MEP de cierre</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid #F0F3F7;"><td style="padding:8px 0; font-weight:600;">4T 2025</td><td style="text-align:right; color:#00875C; font-weight:600;">+11,2%</td><td style="text-align:right; color:#E62626;">−1,4%</td><td style="text-align:right; color:#E62626;">−2,1%</td><td style="text-align:right; color:#3D5068;">1.062,5</td></tr>
+        <tr style="border-bottom:1px solid #F0F3F7;"><td style="padding:8px 0; font-weight:600;">1T 2026</td><td style="text-align:right; color:#00875C; font-weight:600;">+13,8%</td><td style="text-align:right; color:#00875C;">+2,6%</td><td style="text-align:right; color:#00875C;">+0,4%</td><td style="text-align:right; color:#3D5068;">1.181,0</td></tr>
+        <tr style="border-bottom:1px solid #F0F3F7;"><td style="padding:8px 0; font-weight:600;">2T 2026</td><td style="text-align:right; color:#00875C; font-weight:600;">+15,1%</td><td style="text-align:right; color:#00875C;">+1,9%</td><td style="text-align:right; color:#E62626;">−0,6%</td><td style="text-align:right; color:#3D5068;">1.290,8</td></tr>
+        <tr style="border-bottom:1px solid #F0F3F7;"><td style="padding:8px 0; font-weight:600;">3T 2026</td><td style="text-align:right; color:#00875C; font-weight:600;">+13,4%</td><td style="text-align:right; color:#00875C;">+1,0%</td><td style="text-align:right; color:#00875C;">+0,5%</td><td style="text-align:right; color:#3D5068;">1.400,0</td></tr>
+        <tr><td style="padding:9px 0 0 0; font-weight:700;">Acumulado</td><td style="text-align:right; padding-top:9px; font-weight:700; color:#00875C;">+62,4%</td><td style="text-align:right; padding-top:9px; font-weight:700; color:#00875C;">+4,1%</td><td style="text-align:right; padding-top:9px; font-weight:700; color:#E62626;">−1,8%</td><td style="text-align:right; padding-top:9px; color:#8494A7;">+66,8%</td></tr>
+      </tbody>
+    </table>
+
+    <div style="display:flex; gap:11px; margin-top:18px; padding:13px 15px; background:#F5F8FB; border-left:3px solid #00BBDD;">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0077FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none; margin-top:1px;"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+      <p style="margin:0; font-size:13px; line-height:1.5; color:#3D5068;">
+        Los tres números son ciertos al mismo tiempo. La cartera rindió por encima de la inflación en pesos y quedó prácticamente plana medida en dólares: eso es lo que se esperaba de una cartera moderada con 36% de exposición al dólar en un año de devaluación del 66,8%.
+      </p>
+    </div>
+  </div>
+
+  <div style="display:flex; align-items:flex-end; gap:16px; padding:12px 0 16px 0; border-top:1px solid #E8EDF2; margin-top:14px;">
+    <p style="margin:0; font-size:10px; line-height:1.45; color:#8494A7; max-width:74ch;">
+      Series construidas sobre la valuación diaria de la cuenta en cada moneda. Los tipos de cambio MEP y CCL son los de cierre publicados para cada día. Rendimientos netos de comisiones y expresados como TWR. Este documento no constituye una recomendación de inversión.
+    </p>
+    <div style="flex:1;"></div>
+    <span class="num" style="font-size:10px; color:#8494A7; white-space:nowrap;">3 / 4</span>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

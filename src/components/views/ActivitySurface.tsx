@@ -1,23 +1,37 @@
-import { Plus, Sparkles, SquareTerminal, X, Network, History, Workflow } from 'lucide-react';
+import {
+  Plus,
+  Sparkles,
+  SquareTerminal,
+  X,
+  Network,
+  History,
+  Workflow,
+  BarChart3,
+} from 'lucide-react';
 import { useUi, type ActivityTab } from '../../stores/ui';
 import { OrchestratorView } from '../sidebar/OrchestratorView';
 import { HistoryView } from '../sidebar/HistoryView';
 import { AgentGraphView } from './AgentGraphView';
+import { SpecsStudio } from './SpecsStudio';
 import { TerminalView } from './TerminalView';
 import { cn } from '../../lib/cn';
 
 const TABS: { tab: ActivityTab; label: string; icon: React.ReactNode }[] = [
   { tab: 'runs', label: 'Runs', icon: <Network size={13} /> },
   { tab: 'history', label: 'History', icon: <History size={13} /> },
+  { tab: 'specs', label: 'Specs', icon: <BarChart3 size={13} /> },
   { tab: 'terminals', label: 'Terminals', icon: <SquareTerminal size={13} /> },
   { tab: 'graph', label: 'Graph', icon: <Workflow size={13} /> },
 ];
 
 /**
  * Activity — the single command center for "what's running": live runs with
- * cancel + the one concurrency control, run history, terminals (PTYs stay
- * mounted app-wide), and the agent graph. Everything else in the app shows
- * only indicators that deep-link here.
+ * cancel + the one concurrency control, run history, **Specs** (per-spec run
+ * analytics), terminals (PTYs stay mounted app-wide), and the agent graph.
+ * Everything else in the app shows only indicators that deep-link here.
+ *
+ * Specs lives here rather than on Home because it answers a question about
+ * *runs* — where the effort went — and Home is the board you start work from.
  */
 export function ActivitySurface() {
   const tab = useUi((s) => s.activityTab);
@@ -58,6 +72,13 @@ export function ActivitySurface() {
         >
           <HistoryView />
         </div>
+        {/* Mounted only while open: it queries the history DB on mount, and
+            Activity is a surface that stays mounted for the whole session. */}
+        {tab === 'specs' && (
+          <div className="absolute inset-0">
+            <SpecsStudio />
+          </div>
+        )}
         <div
           className="absolute inset-0"
           style={{ display: tab === 'terminals' ? 'block' : 'none' }}

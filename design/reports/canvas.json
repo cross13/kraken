@@ -1,0 +1,49 @@
+{
+  "pages": [
+    { "id": "page-1", "name": "Reportes" },
+    { "id": "page-2", "name": "Ideas" }
+  ],
+  "artboards": [
+    { "file": "Main.dc.html", "page": "page-1", "x": 0, "y": 0, "w": 794, "h": 1123, "title": "1 · Estado de cuenta" },
+    { "file": "Composicion.dc.html", "page": "page-1", "x": 894, "y": 0, "w": 794, "h": 1123, "title": "2 · Composición y desvío" },
+    { "file": "Monedas.dc.html", "page": "page-1", "x": 1788, "y": 0, "w": 794, "h": 1123, "title": "3 · Rendimiento por moneda" },
+    { "file": "Movimientos.dc.html", "page": "page-1", "x": 2682, "y": 0, "w": 794, "h": 1123, "title": "4 · Movimientos y flujo" },
+    { "file": "Asesor.dc.html", "page": "page-1", "x": 3576, "y": 0, "w": 794, "h": 1123, "title": "5 · Reporte del asesor" },
+    { "file": "Ideas.dc.html", "page": "page-2", "x": 0, "y": 0, "w": 1240, "h": 1060, "title": "Ideas de reporte" }
+  ],
+  "annotations": [
+    {
+      "id": "note-premisa",
+      "page": "page-1",
+      "x": 0,
+      "y": -420,
+      "w": 500,
+      "text": "CINCO TIPOS DE REPORTE, NO CINCO PÁGINAS DEL MISMO\n\nCada artboard contesta una pregunta distinta, y por eso tiene una anatomía distinta. Puestos en fila se ve qué elige mostrar cada uno:\n\n1 · ESTADO DE CUENTA — la pregunta del cliente. Arriba de todo, tres números: lo que tenés, lo que pusiste, lo que ganaste. Esa resta es el reporte; todo lo demás la sustenta.\n\n2 · COMPOSICIÓN Y DESVÍO — el reporte que justifica el fee. Empieza con el veredicto («te corriste 6,2 pp»), no con la tabla.\n\n3 · POR MONEDA — el único que es específicamente argentino. +62,4% en pesos, +4,1% en MEP, −1,8% en CCL: los tres son ciertos y el reporte lo dice en vez de dejar que el lector elija el que más le gusta.\n\n4 · MOVIMIENTOS — una reconciliación que cierra: saldo inicial, qué entró, qué salió, saldo final.\n\n5 · DEL ASESOR — el único que no es para el cliente. Arranca con las cinco cuentas que necesitan algo, no con el AUM.\n\nTodos en A4 (794×1123 a 96 px/pulgada), que es como se imprimen y como los exporta el constructor."
+    },
+    {
+      "id": "note-datos",
+      "page": "page-1",
+      "x": 894,
+      "y": -420,
+      "w": 460,
+      "text": "DE DÓNDE SALDRÍA CADA NÚMERO\n\nLos datos son de muestra, pero los campos son los que existen: account_results (pesos, dollar_mep, dollar_ccl, deviation_before/after_rebalance), transactions (transaction_type, transaction_ars, transaction_usd, concepto), wallets + items (weight), instruments (security_type), orders.\n\nDos cosas del reporte 1 y del 4 NO salen de la base tal como está: el TWR hay que calcularlo, y el resultado realizado contra el no realizado necesita costo de adquisición por lote, que no encontré. Están puestos en los mockups a propósito, para que se vea qué se gana si ese dato existe.\n\nLa página «Ideas» marca cada propuesta con lo que cuesta el dato."
+    },
+    {
+      "id": "note-marca",
+      "page": "page-1",
+      "x": 1788,
+      "y": -420,
+      "w": 420,
+      "text": "MARCA BLANCA\n\nEl encabezado usa el logo, el nombre y el color primario de la organización, que ya están en el modelo (organizations.logo_primary, primary_color, company). Acá está puesto Gravity Quant en el navy #003973 del sistema.\n\nLa matrícula del pie quedó como [MATRÍCULA] — no la inventé.\n\nTipografía, paleta y densidad son las de report-builder.styles.ts, así que estos reportes y el constructor se ven de la misma familia."
+    },
+    {
+      "id": "note-ideas",
+      "page": "page-2",
+      "x": 0,
+      "y": -300,
+      "w": 520,
+      "text": "EL BRAINSTORM\n\nCatorce ideas ordenadas por quién pregunta, cada una con el costo del dato: verde ya está, ámbar hay que calcularlo, rojo falta el origen.\n\nEl argumento está arriba del board: las cinco fuentes que hoy tiene el constructor (Cartera, Cuentas, Tendencias, Top clientes, Clientes por asesor) contestan preguntas de administración — cuántos hay, quién los atiende, cuánto suman. Ninguna contesta la del inversor.\n\nSi hay que elegir dos para empezar: aporte-contra-resultado y las tres monedas. Los dos salen con lo que ya hay en la base."
+    }
+  ],
+  "launch": { "view": "canvas", "page": "page-1" }
+}

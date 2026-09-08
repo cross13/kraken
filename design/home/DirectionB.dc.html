@@ -1,0 +1,228 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+  <style>
+    body { margin: 0; background: #1E1E1E; font-family: 'Hanken Grotesk', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: #A6E62E; text-decoration: none; } a:hover { color: #C4F06A; }
+    * { box-sizing: border-box; }
+  </style>
+</helmet>
+
+<div style="width:100%; height:100%; background:#1E1E1E; color:#F2F2F2; display:flex; flex-direction:column; padding:28px 32px; overflow:hidden;">
+
+  <!-- composer, compressed to one line -->
+  <div style="flex:none; display:flex; align-items:center; gap:12px; padding:10px 10px 10px 14px; border-radius:15px; background:#2A2A2A; border:1px solid #333333; margin-bottom:20px;">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8AD000" stroke-width="1.8" stroke-linejoin="round" style="flex:none;"><path d="M12 3l1.9 5.6L19.5 10.5 13.9 12.4 12 18 10.1 12.4 4.5 10.5 10.1 8.6z"/></svg>
+    <span style="flex:1; font-size:14px; color:#A8A8A8;">¿Qué construimos?</span>
+    <span style="padding:7px 11px; background:#333333; color:#C8C8C8; font-size:12.5px; font-weight:600;">Plan rápido</span>
+    <span style="padding:7px 13px; background:linear-gradient(135deg,#76B900,#8AD000); color:#0F1400; font-size:12.5px; font-weight:700;">Plan</span>
+  </div>
+
+  <div style="flex:1; min-height:0; display:flex; gap:24px;">
+
+    <!-- ============ ENTRADA: three lanes, one per source ============ -->
+    <div style="width:378px; flex:none; display:flex; flex-direction:column; min-height:0;">
+      <div style="flex:none; display:flex; align-items:baseline; gap:8px; margin-bottom:12px;">
+        <h2 style="margin:0; font-size:14px; font-weight:600; color:#FAFAFA;">Entrada</h2>
+        <span style="font-size:11.5px; color:#848484;">14 tickets abiertos</span>
+      </div>
+
+      <div style="flex:1; min-height:0; display:flex; flex-direction:column; gap:16px;">
+
+        <!-- lane: Jira -->
+        <div style="display:flex; flex-direction:column; gap:1px;">
+          <div style="display:flex; align-items:center; gap:8px; padding:7px 10px; background:#262626;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#A8A8A8" stroke-width="2" stroke-linecap="round"><path d="m9 6 6 6-6 6"/></svg>
+            <span style="font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:0.09em; color:#C8C8C8;">JIRA</span>
+            <span style="flex:1;"></span>
+            <span style="font-family:'JetBrains Mono', monospace; font-size:10.5px; color:#848484;">4</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px; padding:9px 10px; border-bottom:1px solid #262626;">
+            <span style="font-family:'JetBrains Mono', monospace; font-size:11px; color:#A6E62E; width:74px; flex:none;">PROJ-218</span>
+            <span style="flex:1; min-width:0; font-size:12.5px; color:#ECECEC; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Rotar el refresh token en el 401</span>
+            <span style="font-family:'JetBrains Mono', monospace; font-size:10px; color:#848484; flex:none;">2h</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px; padding:9px 10px; border-bottom:1px solid #262626;">
+            <span style="font-family:'JetBrains Mono', monospace; font-size:11px; color:#A6E62E; width:74px; flex:none;">PROJ-231</span>
+            <span style="flex:1; min-width:0; font-size:12.5px; color:#ECECEC; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">El export CSV corta a 10.000 filas</span>
+            <span style="font-family:'JetBrains Mono', monospace; font-size:10px; color:#848484; flex:none;">5h</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px; padding:9px 10px; border-bottom:1px solid #262626;">
+            <span style="font-family:'JetBrains Mono', monospace; font-size:11px; color:#A6E62E; width:74px; flex:none;">PROJ-240</span>
+            <span style="flex:1; min-width:0; font-size:12.5px; color:#ECECEC; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Falta el paso de invitar al equipo</span>
+            <span style="font-family:'JetBrains Mono', monospace; font-size:10px; color:#848484; flex:none;">1d</span>
+          </div>
+          <div style="padding:7px 10px; font-size:11.5px; color:#848484;">1 más</div>
+        </div>
+
+        <!-- lane: Tracker -->
+        <div style="display:flex; flex-direction:column; gap:1px;">
+          <div style="display:flex; align-items:center; gap:8px; padding:7px 10px; background:#262626;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#A8A8A8" stroke-width="2" stroke-linecap="round"><path d="m9 6 6 6-6 6"/></svg>
+            <span style="font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:0.09em; color:#C8C8C8;">TRACKER</span>
+            <span style="flex:1;"></span>
+            <span style="font-family:'JetBrains Mono', monospace; font-size:10.5px; color:#848484;">7</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px; padding:9px 10px; border-bottom:1px solid #262626;">
+            <span style="font-family:'JetBrains Mono', monospace; font-size:11px; color:#A6E62E; width:74px; flex:none;">APS-14</span>
+            <span style="flex:1; min-width:0; font-size:12.5px; color:#ECECEC; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Panel de horas por misión</span>
+            <span style="font-family:'JetBrains Mono', monospace; font-size:10px; color:#848484; flex:none;">3h</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px; padding:9px 10px; border-bottom:1px solid #262626;">
+            <span style="font-family:'JetBrains Mono', monospace; font-size:11px; color:#A6E62E; width:74px; flex:none;">APS-19</span>
+            <span style="flex:1; min-width:0; font-size:12.5px; color:#ECECEC; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Reintentos del webhook de Stripe</span>
+            <span style="font-family:'JetBrains Mono', monospace; font-size:10px; color:#848484; flex:none;">6h</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px; padding:9px 10px; border-bottom:1px solid #262626;">
+            <span style="font-family:'JetBrains Mono', monospace; font-size:11px; color:#A6E62E; width:74px; flex:none;">APS-22</span>
+            <span style="flex:1; min-width:0; font-size:12.5px; color:#ECECEC; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Migrar sesiones a Postgres</span>
+            <span style="font-family:'JetBrains Mono', monospace; font-size:10px; color:#848484; flex:none;">1d</span>
+          </div>
+          <div style="padding:7px 10px; font-size:11.5px; color:#848484;">4 más</div>
+        </div>
+
+        <!-- lane: already has a spec -->
+        <div style="display:flex; flex-direction:column; gap:1px;">
+          <div style="display:flex; align-items:center; gap:8px; padding:7px 10px; background:rgba(118,185,0,0.10);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#A6E62E" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.5-1.5"/></svg>
+            <span style="font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:0.09em; color:#A6E62E;">YA CON SPEC</span>
+            <span style="flex:1;"></span>
+            <span style="font-family:'JetBrains Mono', monospace; font-size:10.5px; color:#A6E62E;">3</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px; padding:9px 10px; border-bottom:1px solid #262626;">
+            <span style="font-family:'JetBrains Mono', monospace; font-size:11px; color:#848484; width:74px; flex:none;">PROJ-205</span>
+            <span style="flex:1; min-width:0; font-size:12.5px; color:#B4B4B4; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">→ auth-refresh · Plan</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px; padding:9px 10px; border-bottom:1px solid #262626;">
+            <span style="font-family:'JetBrains Mono', monospace; font-size:11px; color:#848484; width:74px; flex:none;">APS-09</span>
+            <span style="flex:1; min-width:0; font-size:12.5px; color:#B4B4B4; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">→ hours-panel · Build</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px; padding:9px 10px; border-bottom:1px solid #262626;">
+            <span style="font-family:'JetBrains Mono', monospace; font-size:11px; color:#848484; width:74px; flex:none;">PROJ-198</span>
+            <span style="flex:1; min-width:0; font-size:12.5px; color:#B4B4B4; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">→ csv-export · Requirements</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ SPECS: one column per phase ============ -->
+    <div style="flex:1; min-width:0; display:flex; flex-direction:column; min-height:0;">
+      <div style="flex:none; display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+        <h2 style="margin:0; font-size:14px; font-weight:600; color:#FAFAFA;">Specs</h2>
+        <span style="font-size:11.5px; color:#848484;">4 en vuelo · 12 entregados</span>
+        <span style="flex:1;"></span>
+        <span style="display:flex; align-items:center; gap:7px; height:28px; padding:0 11px; border:1px solid #333333; color:#C8C8C8; font-size:12px; font-weight:600;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h6M3 12h6M3 18h6"/><path d="m14 7 2 2 4-4M14 17l2 2 4-4"/></svg>
+          Gestionar
+        </span>
+      </div>
+
+      <div style="flex:1; min-height:0; display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:12px;">
+
+        <div style="display:flex; flex-direction:column; gap:8px; min-width:0;">
+          <div style="display:flex; align-items:center; gap:6px; padding-bottom:8px; border-bottom:2px solid #9B6BFF;">
+            <span style="font-size:11px; font-weight:600; color:#C9A9FF; letter-spacing:0.02em;">REQUIREMENTS</span>
+            <span style="flex:1;"></span>
+            <span style="font-family:'JetBrains Mono', monospace; font-size:10.5px; color:#848484;">1</span>
+          </div>
+          <div style="background:#2A2A2A; border:1px solid #333333; padding:11px;">
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom:7px;">
+              <span style="width:7px;height:7px;background:#9B6BFF;display:block;"></span>
+              <span style="font-size:10px; color:#848484; text-transform:uppercase; letter-spacing:0.06em;">bug</span>
+              <span style="flex:1;"></span>
+              <span style="font-family:'JetBrains Mono', monospace; font-size:10px; color:#848484;">1h</span>
+            </div>
+            <div style="font-size:13px; font-weight:600; color:#FAFAFA; margin-bottom:5px;">csv-export</div>
+            <div style="font-size:11.5px; color:#C9A9FF;">esperando aprobación</div>
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:8px; min-width:0;">
+          <div style="display:flex; align-items:center; gap:6px; padding-bottom:8px; border-bottom:2px solid #9B6BFF;">
+            <span style="font-size:11px; font-weight:600; color:#C9A9FF; letter-spacing:0.02em;">PLAN</span>
+            <span style="flex:1;"></span>
+            <span style="font-family:'JetBrains Mono', monospace; font-size:10.5px; color:#848484;">1</span>
+          </div>
+          <div style="background:#2A2A2A; border:1px solid #333333; padding:11px;">
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom:7px;">
+              <span style="width:7px;height:7px;background:#9B6BFF;display:block;"></span>
+              <span style="font-size:10px; color:#848484; text-transform:uppercase; letter-spacing:0.06em;">feat</span>
+              <span style="flex:1;"></span>
+              <span style="font-family:'JetBrains Mono', monospace; font-size:10px; color:#848484;">12m</span>
+            </div>
+            <div style="font-size:13px; font-weight:600; color:#FAFAFA; margin-bottom:5px;">auth-refresh</div>
+            <div style="font-size:11.5px; color:#C9A9FF; margin-bottom:7px;">esperando aprobación</div>
+            <div style="font-family:'JetBrains Mono', monospace; font-size:10px; color:#848484;">PROJ-205</div>
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:8px; min-width:0;">
+          <div style="display:flex; align-items:center; gap:6px; padding-bottom:8px; border-bottom:2px solid #76B900;">
+            <span style="font-size:11px; font-weight:600; color:#A6E62E; letter-spacing:0.02em;">BUILD</span>
+            <span style="flex:1;"></span>
+            <span style="font-family:'JetBrains Mono', monospace; font-size:10.5px; color:#848484;">2</span>
+          </div>
+          <div style="background:#262626; border:1px solid rgba(118,185,0,0.45); padding:11px;">
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom:7px;">
+              <span style="width:7px;height:7px;background:#76B900;display:block;"></span>
+              <span style="font-size:10px; color:#848484; text-transform:uppercase; letter-spacing:0.06em;">feat</span>
+              <span style="flex:1;"></span>
+              <span style="font-family:'JetBrains Mono', monospace; font-size:10px; color:#848484;">3m</span>
+            </div>
+            <div style="font-size:13px; font-weight:600; color:#FAFAFA; margin-bottom:5px;">hours-panel</div>
+            <div style="font-size:11.5px; color:#C4F06A; margin-bottom:8px;">2 agentes trabajando</div>
+            <div style="height:3px; background:#333333;"><div style="height:3px; width:62%; background:#76B900;"></div></div>
+          </div>
+          <div style="background:#2A2A2A; border:1px solid #333333; padding:11px;">
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom:7px;">
+              <span style="width:7px;height:7px;background:#A6E62E;display:block;"></span>
+              <span style="font-size:10px; color:#848484; text-transform:uppercase; letter-spacing:0.06em;">bug</span>
+              <span style="flex:1;"></span>
+              <span style="font-family:'JetBrains Mono', monospace; font-size:10px; color:#848484;">5h</span>
+            </div>
+            <div style="font-size:13px; font-weight:600; color:#FAFAFA; margin-bottom:5px;">webhook-retries</div>
+            <div style="font-size:11.5px; color:#A8A8A8;">listo para correr</div>
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:8px; min-width:0;">
+          <div style="display:flex; align-items:center; gap:6px; padding-bottom:8px; border-bottom:2px solid #333333;">
+            <span style="font-size:11px; font-weight:600; color:#A8A8A8; letter-spacing:0.02em;">ENTREGADO</span>
+            <span style="flex:1;"></span>
+            <span style="font-family:'JetBrains Mono', monospace; font-size:10.5px; color:#848484;">12</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; padding:9px 10px; background:#232323;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#76B900" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M20 6 9 17l-5-5"/></svg>
+            <span style="flex:1; min-width:0; font-size:12.5px; color:#C8C8C8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">pdf-report</span>
+            <span style="font-family:'JetBrains Mono', monospace; font-size:10px; color:#848484;">2d</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; padding:9px 10px; background:#232323;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#76B900" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M20 6 9 17l-5-5"/></svg>
+            <span style="flex:1; min-width:0; font-size:12.5px; color:#C8C8C8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">session-store</span>
+            <span style="font-family:'JetBrains Mono', monospace; font-size:10px; color:#848484;">4d</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; padding:9px 10px; background:#232323;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#76B900" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M20 6 9 17l-5-5"/></svg>
+            <span style="flex:1; min-width:0; font-size:12.5px; color:#C8C8C8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">fuzzy-search</span>
+            <span style="font-family:'JetBrains Mono', monospace; font-size:10px; color:#848484;">6d</span>
+          </div>
+          <div style="padding:6px 10px; font-size:11.5px; color:#848484;">9 más</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1300,"height":900}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

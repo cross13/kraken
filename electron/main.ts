@@ -118,6 +118,8 @@ import {
   planTicketActions,
   parseTicketRef,
   searchArgs,
+  ticketDetail,
+  ticketReadArgs,
   ticketRefArgs,
   ticketSeed,
   normalizeTransitions,
@@ -604,7 +606,13 @@ function registerIpc() {
           out.push({ provider: cfg, tickets: [], error: res.text || `${tool} failed.` });
           continue;
         }
-        const all = normalizeTicketList(res.structured, res.text, { id: cfg.id, label: cfg.label });
+        // `cloudId` is often the site URL itself, which is the only thing on
+        // hand that can turn a Jira key into a link — the server sends none.
+        const all = normalizeTicketList(res.structured, res.text, {
+          id: cfg.id,
+          label: cfg.label,
+          site: cfg.defaults?.cloudId,
+        });
         out.push({ provider: cfg, tickets: all.filter((t) => !isDoneStatus(t.status)) });
       } catch (err) {
         out.push({ provider: cfg, tickets: [], ...failure(err) });
@@ -655,11 +663,40 @@ function registerIpc() {
         const { cfg, conn } = await ticketConnection(args.root, args.providerId);
         const tool = cfg.tools?.get;
         if (!tool) return { ok: false, seed: fallback, error: 'No "get" tool is mapped.' };
-        const res = await mcpCallTool(conn, tool, ticketRefArgs(cfg, args.ticket.key));
+        const res = await mcpCallTool(conn, tool, ticketReadArgs(cfg, args.ticket.key));
         if (!res.ok) return { ok: false, seed: fallback, error: res.text || `${tool} failed.` };
         return { ok: true, seed: ticketSeed(args.ticket, res, args.kind) };
       } catch (err) {
         return { ok: false, seed: fallback, ...failure(err) };
+      }
+    }
+  );
+
+  // One ticket, read in full — for **looking at it without starting anything**.
+  // Deliberately separate from `tickets:seed`: that one exists to write
+  // documents, this one exists so the answer to "is this the work I think it
+  // is?" does not require creating a spec to find out.
+  ipcMain.handle(
+    'tickets:detail',
+    async (_e, args: { root: string; providerId: string; ticket: TicketSummary }) => {
+      try {
+        const { cfg, conn } = await ticketConnection(args.root, args.providerId);
+        const site = cfg.defaults?.cloudId;
+        const tool = cfg.tools?.get ?? (cfg.preset === 'jira' ? JIRA_TOOLS.get : undefined);
+        // No `get` tool is not an error: the row already holds a title, a status
+        // and often a summary, and showing that beats showing a failure.
+        if (!tool) return { ok: true, detail: ticketDetail(args.ticket, null, site) };
+        const res = await mcpCallTool(conn, tool, ticketReadArgs(cfg, args.ticket.key));
+        if (!res.ok) {
+          return {
+            ok: false,
+            detail: ticketDetail(args.ticket, null, site),
+            error: res.text || `${tool} failed.`,
+          };
+        }
+        return { ok: true, detail: ticketDetail(args.ticket, res, site) };
+      } catch (err) {
+        return { ok: false, detail: ticketDetail(args.ticket, null), ...failure(err) };
       }
     }
   );

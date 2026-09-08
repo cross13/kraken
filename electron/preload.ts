@@ -7,6 +7,7 @@ import type {
   TicketAction,
   TicketCapability,
   TicketProviderConfig,
+  TicketDetail,
   TicketSummary,
   DataResetOptions,
   DataResetReport,
@@ -207,6 +208,17 @@ const api = {
       ipcRenderer.invoke('tickets:seed', args) as Promise<{
         ok: boolean;
         seed: { brief: string; requirements: string; plan: string | null };
+        error?: string;
+      }>,
+    /**
+     * One ticket, read in full — for looking at it before deciding to work on
+     * it. Creates nothing; `detail` is filled from the row alone when the
+     * tracker has no `get` tool or the call fails.
+     */
+    detail: (args: { root: string; providerId: string; ticket: TicketSummary }) =>
+      ipcRenderer.invoke('tickets:detail', args) as Promise<{
+        ok: boolean;
+        detail: TicketDetail;
         error?: string;
       }>,
     /** Attach an existing ticket to a spec, without creating anything. */

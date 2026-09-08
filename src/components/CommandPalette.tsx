@@ -12,6 +12,7 @@ import {
   SquareTerminal,
   Network,
   History,
+  BarChart3,
   Settings,
   Plus,
   Palette,
@@ -50,6 +51,7 @@ const LIBRARY_DESTS: { section: LibrarySection; label: string; icon: React.React
 const ACTIVITY_DESTS: { tab: ActivityTab; label: string; icon: React.ReactNode }[] = [
   { tab: 'runs', label: 'Activity — live runs', icon: <Network size={15} /> },
   { tab: 'history', label: 'Activity — history', icon: <History size={15} /> },
+  { tab: 'specs', label: 'Activity — spec analytics', icon: <BarChart3 size={15} /> },
   { tab: 'terminals', label: 'Activity — terminals', icon: <SquareTerminal size={15} /> },
 ];
 
