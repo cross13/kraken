@@ -1,35 +1,81 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-  <!-- App icon: the Octopus Brand Kit mark on a Signal tile. Inverted on purpose
-       versus the in-app mark: at 32px in a dock a dark tile with a thin rim
-       disappears, so the icon uses the palette's primary-button treatment —
-       brand green as fill, #0F1400 as the only ink allowed on it.
+  <!-- 0ct0 app icon: the colony's octopus samurai on a Signal tile.
+       Inverted on purpose versus the in-app mark: at 32px in a dock a dark tile
+       with a thin rim disappears, so the icon uses the palette's primary-button
+       treatment — brand green as fill, #0F1400 as the only ink allowed on it.
+
+       Drawn at OctoMascot's `simple` level, NOT `mark`. `mark` is a 14–26px
+       silhouette: there the kabuto's brim cuts the eyes into slits and the
+       kuwagata read as antennae, which at icon size makes the creature look
+       like a beetle. `simple` keeps the mouth, the chin guard and the katana —
+       the three things that make it read as a face with a sword.
+
+       The head is #2A2A2A and the armour #141414 for the same reason: on the
+       in-app mark they separate because the head takes `--card` and the lacquer
+       `--rail`. Painting both near-black here merged them into one blob.
+
+       The rounded corner is the one exception to Signal's radius 0 — it is the
+       silhouette macOS imposes, not a brand decision.
        Rasterize with `npm run icon` (scripts/render-icon.mjs) after editing. -->
   <defs>
     <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#8AD000"/>
       <stop offset="1" stop-color="#76B900"/>
     </linearGradient>
-    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#0F1400"/>
-      <stop offset="1" stop-color="#0F1400"/>
-    </linearGradient>
-    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#1E1E1E"/>
-      <stop offset="1" stop-color="#0F1400"/>
-    </linearGradient>
   </defs>
 
   <rect x="100" y="100" width="824" height="824" rx="222" fill="url(#tile)"/>
   <rect x="103" y="103" width="818" height="818" rx="219" fill="none" stroke="rgba(15,20,0,0.28)" stroke-width="6"/>
 
-  <svg x="232" y="162" width="560" height="700" viewBox="40 24 120 150" overflow="visible">
-    <path d="M 62,106 C 54,124 50,138 58,150" fill="none" stroke="url(#rim)" stroke-width="8" stroke-linecap="round"/>
-    <path d="M 80,112 C 76,132 74,148 80,162" fill="none" stroke="url(#rim)" stroke-width="8" stroke-linecap="round"/>
-    <path d="M 100,114 C 100,134 98,152 102,166" fill="none" stroke="url(#rim)" stroke-width="8" stroke-linecap="round"/>
-    <path d="M 120,112 C 124,132 126,148 120,162" fill="none" stroke="url(#rim)" stroke-width="8" stroke-linecap="round"/>
-    <path d="M 138,106 C 146,124 150,138 142,150" fill="none" stroke="url(#rim)" stroke-width="8" stroke-linecap="round"/>
-    <path d="M 55,112 C 46,68 62,36 100,32 C 138,36 154,68 145,112 L 134,120 L 125,108 L 112,122 L 100,112 L 88,122 L 75,108 L 66,120 Z" fill="url(#body)" stroke="url(#rim)" stroke-width="3" stroke-linejoin="round"/>
-    <path d="M 72,68 L 92,76 L 92,84 L 72,76 Z" fill="#C4F06A"/>
-    <path d="M 128,68 L 108,76 L 108,84 L 128,76 Z" fill="#C4F06A"/>
+  <!-- OctoMascot's viewBox is 0 0 120 122. The katana reaches x≈119 / y≈17, so
+       the frame is inset to keep the whole creature inside the tile. -->
+  <svg x="252" y="250" width="520" height="529" viewBox="0 0 120 122">
+    <!-- arms; the sixth is the sword hand -->
+    <g fill="none" stroke="#0F1400" stroke-linecap="round">
+      <path d="M 31,88 C 26,99 24,108 29,112 C 32,114 35,111 34,107" stroke-width="8"/>
+      <path d="M 43,92 C 40,102 39,111 43,115" stroke-width="7"/>
+      <path d="M 55,94 C 54,104 53,112 56,116" stroke-width="6.4"/>
+      <path d="M 67,94 C 68,104 69,112 66,116" stroke-width="6.4"/>
+      <path d="M 79,92 C 82,102 83,111 79,115" stroke-width="7"/>
+      <path d="M 91,88 C 99,86 105,82 101,75" stroke-width="7.6"/>
+    </g>
+
+    <!-- head -->
+    <path d="M 24,80 C 24,38 40,18 60,18 C 80,18 96,38 96,80 C 96,89 84,94 60,94 C 36,94 24,89 24,80 Z" fill="#2A2A2A" stroke="#0F1400" stroke-width="3.5" stroke-linejoin="round"/>
+
+    <!-- eyes: the brim covers their top, so the glint sits low enough to survive -->
+    <ellipse cx="43" cy="56" rx="11.5" ry="13.5" fill="#8AD000"/>
+    <circle cx="39.4" cy="62" r="3.4" fill="#E4FFB0"/>
+    <ellipse cx="77" cy="56" rx="11.5" ry="13.5" fill="#8AD000"/>
+    <circle cx="73.4" cy="62" r="3.4" fill="#E4FFB0"/>
+
+    <!-- mouth + chin guard: what turns the silhouette back into a face -->
+    <path d="M 54,78 C 56.5,83 63.5,83 66,78" fill="none" stroke="#8AD000" stroke-width="3" stroke-linecap="round"/>
+    <path d="M 47,84 L 73,84 L 71,93 L 49,93 Z" fill="#141414" stroke="#0F1400" stroke-width="1.8" stroke-linejoin="round"/>
+
+    <!-- shikoro, one layer -->
+    <g fill="#141414" stroke="#0F1400" stroke-width="1.6" stroke-linejoin="round">
+      <path d="M 23,59 L 9,62 L 7,72 L 23,70 Z"/>
+      <path d="M 97,59 L 111,62 L 113,72 L 97,70 Z"/>
+    </g>
+
+    <!-- kabuto -->
+    <g fill="#141414" stroke="#0F1400" stroke-linejoin="round">
+      <path d="M 25,45 L 11,41 L 9,59 L 24,59 Z" stroke-width="1.8"/>
+      <path d="M 95,45 L 109,41 L 111,59 L 96,59 Z" stroke-width="1.8"/>
+      <path d="M 25,50 C 25,29 40,15 60,15 C 80,15 95,29 95,50 Z" stroke-width="2"/>
+      <path d="M 19,49 L 101,49 L 96,59 L 24,59 Z" stroke-width="1.8"/>
+    </g>
+    <circle cx="60" cy="20" r="3.2" fill="#8AD000"/>
+    <path d="M 51,49 C 43,37 35,25 33,10 C 39,19 50,31 56,43 Z" fill="#8AD000"/>
+    <path d="M 69,49 C 77,37 85,25 87,10 C 81,19 70,31 64,43 Z" fill="#8AD000"/>
+    <circle cx="60" cy="44" r="5" fill="#141414" stroke="#8AD000" stroke-width="1.6"/>
+
+    <!-- katana, drawn -->
+    <g transform="rotate(-6 100 76)">
+      <path d="M 97,79 L 103,74 L 119,20 L 113,17 Z" fill="#F2F2F2" stroke="#0F1400" stroke-width="1.6" stroke-linejoin="round"/>
+      <path d="M 94,80 L 104,72 L 109,78 L 99,86 Z" fill="#8AD000" stroke="#0F1400" stroke-width="1.2"/>
+      <path d="M 89,88 L 97,81 L 102,87 L 94,94 Z" fill="#141414" stroke="#0F1400" stroke-width="1.2"/>
+    </g>
   </svg>
 </svg>

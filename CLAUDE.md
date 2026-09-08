@@ -140,8 +140,14 @@ results arrive through `claude.onEvent(handler)`.
   hero, `OctoLoader`, the boot splash); it defaults to the colony's `work` face and takes
   `state` where it stands for a **run** rather than for the app, `animated={false}` (→ `.k-still`)
   where it should hold completely still. There is no separate logo component — the old `OctoLogo`
-  was removed. Size it with a **width class only**. The app icon (`resources/icon.svg`) is the one
-  hold-out and still carries the older visored mark. See `docs/renderer.md` → Brand.
+  was removed. Size it with a **width class only**. The app icon (`resources/icon.svg`, rasterised
+  by `npm run icon`) is now the **same creature**, inverted onto a green Signal tile — at 32px in a
+  dock a dark tile with a thin rim disappears, so the icon is the palette's primary-button
+  treatment. Its rounded corner is the one exception to Signal's radius 0: that silhouette is
+  imposed by macOS, not chosen. **`0ct0` is the wordmark** (the two zeros bracket the creature;
+  the trailing zero's green bar is the kabuto's brim) while `octo` stays the identifier everywhere
+  in code and on disk — `.octo/`, `window.octo`, `dev.octo.app` — so the relaunch moves no files.
+  The sheet is in `design/brand/`. See `docs/renderer.md` → Brand.
 - **Layout** is the **four-surface shell** (`App.tsx`): `CommandBar` (brand + ⌘K
   `CommandPalette` + the one live-runs pill + project/model status) → `SurfaceNav` (4 icons) →
   one of **Home · Spec · Activity · Library**, plus the **Assistant** chat drawer (⌘J,
@@ -152,12 +158,23 @@ results arrive through `claude.onEvent(handler)`.
   full-window mode like Zen: a setup checklist verified against real state, the loop explained, tips
   specific to how the app behaves, and a *Sharpen your own skills* section that points Claude at the
   user's installed skills and rewrites them in place. **Home** (`HomeView`) is
-  the launchpad: its composer **creates specs** (`lib/specActions.ts` — **Plan** creates the spec
+  **a board**: its composer **creates specs** (`lib/specActions.ts` — **Plan** creates the spec
   and opens it with **no run started**, keeping the composer text as `SpecMeta.brief` for the
   explicit *Draft … with Claude* action; **Quick Plan** drafts both docs with no stops;
-  `?`-suffixed input goes to the Assistant), plus in-flight spec cards, Shipped recents, a
-  Manage mode embedding `SpecsStudio` (analytics + `specs:delete`), and a one-time
-  "Set up Octo defaults" seeding card. **Spec** (`SpecFlow`) is one continuous guided flow
+  `?`-suffixed input goes to the Assistant), over **Entrada** (`TicketInbox` — the open tickets,
+  **one lane per tracker** plus a *Ya con spec* lane pairing each covered ticket with its spec)
+  beside **three phase columns** (Requirements · Plan · Build), with shipped work on a collapsed
+  **Entregado shelf** — `done` is not a column. A column's rule is coloured by its *contents*
+  (green = corriendo, violet = te espera), so the board says where you are needed before a card is
+  read. Clicking a ticket **arms** it and only the two legitimate entry points light up:
+  Requirements (`planSpecFromTicket`, gated) and Build (`quickPlanSpecFromTicket`, hands-off);
+  `plan` is never a drop target because a spec cannot start in the middle. **Gestionar** is a
+  switch over the board, not a screen — checkboxes on the cards and a bulk bar that **confirms the
+  delete in place** (naming `.octo/specs/<id>` + the mirrored run history) instead of
+  `window.confirm`, while each card's `⋯` deletes one without entering the mode. *Analíticas*
+  deep-links to **Activity › Specs** — the board starts and deletes work, the run history is a
+  question about *runs* and lives with them. The library-upgrade and one-time "Set up Octo
+  defaults" notices are one-line strips. **Spec** (`SpecFlow`) is one continuous guided flow
   framed like an editor: file tabs (`requirements.md`/`plan.md`/`tasks.md`) +
   breadcrumb + the spec strip (numbered phase chips: Requirements → Plan → **Build**),
   doc stages as line-numbered **Source** (default) / section **Cards** / **Review** (the default on both
@@ -196,7 +213,7 @@ results arrive through `claude.onEvent(handler)`.
   the spec auto-advances to `done` when the last task completes, `CompletionSummary`
   auto-generates into `summary.md`, and branch/Commit all/Create PR sit right there. **Activity**
   (`ActivitySurface`) is the single "what's running" center (Runs = `OrchestratorView`, History,
-  Terminals, Graph). **Library** (`LibrarySurface`) consolidates config: Agents · Skills · Hooks ·
+  **Specs** = `SpecsStudio`, the per-spec run analytics, Terminals, Graph). **Library** (`LibrarySurface`) consolidates config: Agents · Skills · Hooks ·
   Steering · Routing (`RouterStudio`, now a read-only routing explainer + Advanced pins) ·
   Appearance (`SyntaxStudio`) · Settings (regrouped: Connection / Models incl. the **planning
   model** / Repository / Advanced / **Danger zone** — the `data:reset` wipe of specs on disk +
@@ -236,6 +253,13 @@ results arrive through `claude.onEvent(handler)`.
   the minimum contract (injection can be switched off) and the bundled agents carry judgement, not
   format. The Running-Tasks **Library verification** panel resolves the chosen agent/skill back to
   the installed file (root `.claude/` vs global) so you can confirm what's actually in use.
+- **Markdown is a trust boundary, not just a formatter.** `lib/markdown.ts` feeds
+  `dangerouslySetInnerHTML`, and its sources include text the app did not author — a tracker
+  ticket's description and comments, run transcripts, agent/skill bodies from an opened workspace.
+  marked passes raw HTML through and does not reject `javascript:` hrefs, so the renderer overrides
+  `html` (escape), `link` and `image` (scheme allowlist + escaped attributes). Don't remove those
+  overrides, and don't build HTML from document text anywhere else. See `docs/renderer.md` → The
+  renderer is a trust boundary, and `docs/security-review.md`.
 - **`lib/formatCheck.ts`** turns those same parsers into a deterministic check, rendered as a strip
   above the gate bar, splitting findings into mechanical (one correct answer → *Fix with Claude*)
   and needing judgement. It is not a hook on purpose: `file-save-in-app` fires on the 400 ms editor
@@ -267,8 +291,17 @@ phase + `meta.branch` + `meta.prUrl` + `meta.ticket.applied[]`), so nothing is l
 app and no write happens twice. **Home's composer is not the only way in**: `TicketInbox` lists what is open across the
 trackers under *What should we build?*, and picking one runs `planSpecFromTicket` — the ticket
 becomes the spec's `brief` and the link is written at creation, so nothing has to be reconciled
-later. `normalizeTicketList` is deliberately forgiving about response shape; "not done" is filtered
-client-side because no two trackers agree on the status enum. UI: `TicketsStudio`
+later. `normalizeTicketList` is deliberately forgiving about response shape — it unwraps Jira's
+`fields` envelope and flattens **ADF** rich text (`adfText`), without which a Jira row matches
+nothing but `key` and its description never reaches the spec's brief — and fills `TicketSummary`'s
+optional `status`/`statusLabel`/`priority`/`type`/`assignee`/`group`/`labels`/`updated`/`url` so a
+card shows what the tracker actually sent and nothing more; "not done" is filtered
+client-side because no two trackers agree on the status enum. Each tracker wears its own mark and
+hue (`lib/trackerBrand.tsx`, **the one place colour escapes the theme** — a brand hue cannot be
+themed without ceasing to identify the thing it names). **Reading a ticket costs nothing**: `tickets:detail` reads one through the `get` capability into a
+`TicketDetail` (description, the plan it already carries + approval state, criteria, comments,
+history) and `TicketDetailView` shows it in the right slide-over, so deciding whether a ticket is
+the work you think it is no longer requires creating a spec to find out. UI: `TicketsStudio`
 (Library › Tickets) + `TicketInbox` (Home) + `TicketPanel` (compact in the spec briefing aside,
 full in Ship). See `docs/subsystems.md` → Tickets.
 

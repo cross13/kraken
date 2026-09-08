@@ -36,13 +36,15 @@ App                      (the dark FRAME: title bar + icon rail + canvas; panels
 │                        model·backend (→ Library › Settings), theme + Assistant toggles.
 ├─ SurfaceNav          brand tile + 4 icons: Home · Spec · Activity · Library (running badge).
 ├─ main
-│   ├─ HomeView        launchpad: composer that CREATES specs (Plan / Quick Plan), in-flight
-│   │                  spec cards, Shipped list, Manage mode (embeds SpecsStudio), first-run
-│   │                  "Set up defaults" card.
+│   ├─ HomeView        the board: composer that CREATES specs (Plan / Quick Plan), the
+│   │                  Entrada pane (TicketInbox, one lane per tracker), three phase
+│   │                  columns, the Entregado shelf, Gestionar (select + delete); the
+│   │                  Analíticas button deep-links to Activity › Specs.
 │   ├─ SpecFlow        one continuous guided flow per spec (stepper → gate bars → inline tasks
 │   │                  → Build). See "The spec flow" below.
 │   ├─ ActivitySurface the single "what's running" center: Runs (OrchestratorView) · History
-│   │                  (HistoryView) · Terminals (panes stay mounted) · Graph (AgentGraphView).
+│   │                  (HistoryView) · Specs (SpecsStudio — per-spec run analytics) ·
+│   │                  Terminals (panes stay mounted) · Graph (AgentGraphView).
 │   └─ LibrarySurface  left sub-nav → Agents / Skills / Hooks / Steering / Routing / Appearance
 │                      (SyntaxStudio) / Settings — the consolidated config shell.
 ├─ AssistantDrawer     (⌘J, resizable via ResizeHandle; width persisted)
@@ -361,11 +363,101 @@ The launchpad. Its **composer creates specs** (the old Welcome bar only forwarde
 - Input ending in `?` routes to the Assistant instead (`chat.pendingPrompt`); `/` and `@`
   popovers still pick skills/agents.
 
-Below: **In flight** spec cards (kind stripe, live run count from the orchestrator, phase
-progress, Resume → `openSpec(id, stageForPhase(phase))`), **Shipped** recents (open the Build
-stage), a **Manage** toggle that embeds `SpecsStudio` (analytics + per-spec runs/timeline +
-delete), and a one-time **"Set up Octo defaults"** card that calls `workspace.seedDefaults()`
-(replaces the per-module Seed buttons; dismissal persisted in `localStorage`).
+### The board
+
+Below the composer, Home is **one board**, laid out in the order work actually happens.
+
+**Entrada** (`views/TicketInbox.tsx`, the left pane) is the open work already sitting in the
+trackers, **one lane per provider** plus a separate **"Ya con spec"** lane pairing each covered
+ticket with its spec. That third lane is the point: the pane used to *filter* linked tickets out,
+which answers "did we already start PROJ-205?" by making the evidence vanish. Lanes collapse;
+the covered one starts closed, because it is evidence rather than work.
+
+Ticket loading lives in the exported **`useTicketGroups(root)`** hook, not in the component,
+because Home decides the *layout* from the answer. It does two reads on purpose:
+`tickets.listProviders` is a local config read and settles **whether there is an Entrada pane at
+all** (no tracker → the board takes the full width); `tickets.listOpen` talks to every tracker
+over MCP and only fills it. Deciding the layout from the slow one makes the board jump sideways
+seconds after paint.
+
+**Every tracker wears its own mark** (`lib/trackerBrand.tsx`). Octo lists work from several
+trackers side by side, and a label alone makes them a uniform grey list you have to *read* to tell
+apart. `trackerBrand(provider)` returns an icon plus the service's hue, keyed on the MCP server's
+name first (Linear and GitHub both arrive as `generic`, which is exactly where a label tells you
+least) and on the preset second. `TrackerMark` renders it, in **Library › Tickets** tabs (with the
+active tab's underline taking the same hue) and on the unconfigured-server rows, on **Entrada**'s
+lane headers and on every row of the *Ya con spec* lane — the one place two trackers interleave —
+and in place of the generic link glyph on a board card's ticket chip and in `TicketPanel`.
+
+These brand hues are **the one place colour escapes the theme.** Every other colour in the app is
+`rgb(var(--x))` so the four palettes can swap it; a brand hue cannot be themed without ceasing to
+identify the thing it names, for the same reason a favicon does not follow dark mode. They are
+mid-tone so they hold on Signal's near-black and on Daylight's white, and only ever appear at icon
+size beside a label that already says the name — so they carry recognition, never meaning. The
+in-house `tracker` preset takes `color: null` (inherit, i.e. the theme accent): it belongs to this
+app's world and should re-skin with it.
+
+**A ticket card carries what the tracker actually sent.** Three lines: `key` · type · status,
+then the title clamped to two, then one meta line of priority (dotted, coloured by
+`priorityTone` — every tracker names urgency differently and an unrecognised word gets no colour
+rather than a wrong one) · mission or epic · assignee · `age(updated)` · up to two labels. Each
+part disappears when the tracker sent nothing for it, so the row never pads an empty field into
+something that looks like an answer. This is downstream of `normalizeTicketList` learning to read
+Jira's `fields` envelope — see `subsystems.md` → Tickets; before that a Jira card was its own
+ticket number twice over.
+
+**A row carries two actions, and they are not the same click.** The row arms the ticket; an
+**`InspectRail`** on its right edge — a 36px column with a rule, a faint ground and a 14px eye,
+*legible at rest* — opens **`TicketDetailView`** in the right slide-over (`Overlay` kind `ticket`, which
+carries the row so the panel opens filled in and completes as the read lands). They cannot nest —
+a button inside a button is invalid — and they must not be one gesture, because one of them
+eventually writes a spec to disk and the other never touches anything. The panel is read-first:
+description, the plan the ticket already carries with its approval state, the criteria you will be
+validated against, comments, history — and *then*, in a footer, the same two entry points the board
+offers. When a spec already covers the ticket those are replaced by a link to it, because a second
+spec is never the offer. Opening it leaves whatever was armed exactly as it was, so looking
+something up never costs you the selection you had made.
+
+The rail started as a 12px icon that faded in on hover, in the corner, and it was effectively
+invisible — **a discovery affordance you have to already know about has failed at the one job it
+has.** It is a persistent target now, sized and separated like a control, which costs 36px of a
+pane that has room for it and buys "can I look at this without starting it?" being visible rather
+than remembered. The rule and the ground are load-bearing: without them it reads as decoration
+inside the row rather than as the different action it is.
+
+**Clicking a ticket arms it** (`armed: TicketSummary`), and the board answers by lighting up the
+only two columns a spec can legitimately start in — Requirements → `planSpecFromTicket` (gated)
+and Build → `quickPlanSpecFromTicket` (hands-off). `plan` is deliberately **not** a drop target:
+a spec cannot start in the middle, and the board refuses by not lighting up rather than by
+explaining afterwards. The armed bar names the ticket's **title**, not just its key — it is the
+last thing read before a spec is created from it. Esc disarms.
+
+**Three phase columns** (`requirements` / `plan` / `build`) hold what is in flight. A column's
+rule takes its colour **from its contents, not from the column** — green when something there is
+running, violet when something waits on you, grey when empty — so the board says where you are
+needed before a single card is read. `done` is not a column: shipped specs live on the
+**Entregado shelf** below, collapsed, because finished work is reference and was otherwise taking
+a quarter of the board's width.
+
+Every card is the same four lines in the same order — state dot + kind + linked ticket + age ·
+the name · what it is (`brief`, clamped) · **what it needs from you** (`toneOf`: *N agentes
+trabajando* / *listo para correr* / *esperando tu aprobación*, with the matching CTA). Nothing is
+re-learned between one card and the next.
+
+**Gestionar** is a switch over the board, not a screen: cards grow checkboxes, selection tints
+them, and a bulk bar rises at the bottom naming what is selected. **The delete confirms in that
+same bar** — not in `window.confirm` — and says what it takes with it (`.octo/specs/<id>` plus the
+mirrored run history). Each card's `⋯` also carries *Borrar spec e historial*, which opens the
+mode with that one card selected and confirming, so deleting one never means entering a mode
+first. Deleting the spec the Spec surface is holding calls `ui.closeSpec()`.
+
+**Analíticas** is a deep link to **Activity › Specs**, not a mode: `SpecsStudio` moved there
+because it answers a question about *runs* — where the effort went — and Home is the board you
+start work from. The board owns starting and deleting; Activity owns the history.
+
+The library-upgrade notice and the one-time **"Set up Octo defaults"** card
+(`workspace.seedDefaults()`, dismissal in `localStorage`) are both **one-line strips**
+(`NoticeStrip`) above the board: they announce, they do not occupy.
 
 ## The spec flow (`views/SpecFlow.tsx`)
 
@@ -454,9 +546,18 @@ The single command center for "what's running". Tabs: **Runs** (`OrchestratorVie
 status strip with Stop all + the concurrency control, live runs as a `.k-cards` grid, and the
 recent-activity log in a `.k-split` side rail), **History** (`HistoryView`: stat tiles plus a
 **table** of runs — prompt / agent / backend / duration / when — scrolling inside its own
-container; rows open the run viewer in the overlay), **Terminals** (session chips + panes;
-`TerminalView` instances stay mounted app-wide via the `ui.terminals` store so PTYs survive
-navigation), and **Graph** (`AgentGraphView`).
+container; rows open the run viewer in the overlay), **Specs** (`SpecsStudio`: where the effort
+went — counts by phase and kind, run totals, error rate and time spent from the `runs` table,
+plus a per-spec detail with recent runs, the phase-advance timeline and a delete. Mounted only
+while the tab is open, because it queries the history DB on mount and Activity stays mounted for
+the whole session), **Terminals** (session chips + panes; `TerminalView` instances stay mounted
+app-wide via the `ui.terminals` store so PTYs survive navigation), and **Graph**
+(`AgentGraphView`).
+
+`SpecsStudio` used to be a mode inside Home. It moved here because it answers a question about
+*runs*, and Home is the board you start work from — Home's *Analíticas* button is now a deep link
+to this tab (`openActivity('specs')`, also in ⌘K). Deleting still exists in both places; both
+clear `ui.activeSpecId` when the deleted spec is the one the Spec surface is holding.
 
 ## Library (`views/LibrarySurface.tsx`)
 
@@ -680,6 +781,30 @@ the mermaid pass.
 
 This is what makes the Cursor-style `plan.md` (a flowchart of the approach above the affected-files
 table) readable inside the app rather than showing as coloured code.
+
+### The renderer is a trust boundary
+
+The output goes into `dangerouslySetInnerHTML`, and **not every markdown source in this app was
+written by the user**: a ticket's description and comments come off a remote Jira / Linear / MCP
+server, run transcripts are model output, and agent/skill/steering bodies are files that arrived
+with a workspace. Since marked v5 there is no `sanitize` option and raw HTML in a document is
+passed through verbatim, so `lib/markdown.ts` closes that itself:
+
+- **`renderer.html` escapes its token.** marked routes *both* the block-level and the inline `html`
+  token through that one method, so raw markup renders as the text it is.
+- **`renderer.link` / `renderer.image` allowlist the scheme** — `https:`, `http:`, `mailto:`,
+  `tel:`, fragments and relative paths, plus `data:image/<png|jpe?g|gif|webp|avif>;base64,` for
+  images. marked's own `cleanUrl` only `encodeURI`s an href and does **not** reject `javascript:`.
+  The href is tested with whitespace and control characters stripped (`java\nscript:` is the
+  classic bypass), href and title are escaped, and links get `rel="noopener noreferrer"`. A
+  rejected link still renders its text rather than disappearing.
+- **`codespan` is left alone on purpose** — marked's tokenizer escapes that token's text before the
+  renderer sees it, so re-escaping would double it.
+
+Don't remove these overrides to "simplify the renderer", and don't add a call site that builds HTML
+from document text some other way. The one remaining path from text to live markup is the mermaid
+pass, which is why it runs with `securityLevel: 'strict'`. See
+[`security-review.md`](./security-review.md) → H-1.
 
 ## Other `src/lib` helpers
 

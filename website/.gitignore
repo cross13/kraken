@@ -9,4 +9,4 @@ preview/
 demo/workspace/.git/
 demo/workspace/README.md
 demo/workspace/src.txt
-demo/workspace/.kraken/specs/*/spec.json
+demo/workspace/.octo/specs/*/spec.json
