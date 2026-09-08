@@ -1,0 +1,655 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+  <style>
+    body { margin: 0; background: #1A1A1A; font-family: 'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: #A6E62E; text-decoration: none; } a:hover { color: #C4F06A; }
+    * { box-sizing: border-box; }
+    .t-item:hover { background: #262626 !important; }
+    .t-item:hover .t-go { opacity: 1 !important; }
+    .k-card:hover { background: #303030 !important; }
+    .k-card:hover .k-dots { opacity: 1 !important; }
+    .k-btn:hover { border-color: rgba(118,185,0,0.5) !important; color: #A6E62E !important; }
+    .k-lane:hover { color: #FAFAFA !important; }
+    .k-mi:hover { background: #3C3C3C !important; }
+    .k-drop:hover { background: rgba(118,185,0,0.12) !important; border-color: #76B900 !important; }
+    .clamp2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .col-scroll { overflow: hidden; }
+    /* narrow window: the inbox becomes a single lane strip and the board keeps 3 columns */
+    .board-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .inbox-pane { width: 366px; }
+    @media (max-width: 1180px) {
+      .inbox-pane { width: 292px; }
+      .hide-narrow { display: none !important; }
+    }
+  </style>
+</helmet>
+
+<div style="width:100%; height:100%; display:flex; flex-direction:column; background:#1A1A1A; color:#F2F2F2; overflow:hidden;">
+
+  <!-- ============ command bar (chrome) ============ -->
+  <div style="height:52px; flex:none; display:flex; align-items:center; gap:12px; padding:0 16px;">
+    <div style="width:80px; flex:none; display:flex; align-items:center; gap:8px;">
+      <div style="width:12px;height:12px;border-radius:50%;background:#3A3A3A;"></div>
+      <div style="width:12px;height:12px;border-radius:50%;background:#3A3A3A;"></div>
+      <div style="width:12px;height:12px;border-radius:50%;background:#3A3A3A;"></div>
+    </div>
+    <div style="flex:1; display:flex; justify-content:center;">
+      <div style="width:380px; height:34px; border-radius:10px; background:rgba(250,250,250,0.05); box-shadow:inset 0 0 0 1px rgba(250,250,250,0.05); display:flex; align-items:center; justify-content:center; gap:8px; font-size:13px; color:#C8C8C8;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#A8A8A8" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <span>kraken</span>
+      </div>
+    </div>
+    <div style="display:flex; align-items:center; gap:6px; flex:none;">
+      <div style="display:flex; align-items:center; gap:6px; padding:6px 10px; background:rgba(118,185,0,0.10); color:#76B900; font-family:'JetBrains Mono', ui-monospace, monospace; font-size:11.5px;">
+        <span style="width:7px;height:7px;background:#76B900;display:block;"></span>2
+      </div>
+      <div style="display:flex; align-items:center; gap:6px; padding:6px 10px; color:#A8A8A8; font-size:11.5px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+        main
+      </div>
+      <div style="display:flex; align-items:center; gap:6px; padding:6px 10px; color:#A8A8A8; font-size:11.5px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/></svg>
+        opus 5
+      </div>
+      <div style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;color:#A8A8A8;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" stroke="none"/></svg>
+      </div>
+      <div style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;color:#A8A8A8;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <div style="flex:1; min-height:0; display:flex; padding:0 8px 8px 0;">
+
+    <!-- nav rail -->
+    <div style="width:60px; flex:none; display:flex; flex-direction:column; align-items:center; padding-top:4px; gap:6px;">
+      <div style="width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;background:linear-gradient(180deg,#2A2A2A,#1A1A1A);box-shadow:0 0 0 1px rgba(118,185,0,0.5);">
+        <svg viewBox="0 0 120 122" width="26" height="26.4" style="overflow:visible;display:block;">
+          <path d="M 31,88 C 26,99 24,108 29,112 C 32,114 35,111 34,107" fill="none" stroke="#8AD000" stroke-width="8" stroke-linecap="round"/>
+          <path d="M 43,92 C 40,102 39,111 43,115" fill="none" stroke="#8AD000" stroke-width="7" stroke-linecap="round"/>
+          <path d="M 55,94 C 54,104 53,112 56,116" fill="none" stroke="#8AD000" stroke-width="6.4" stroke-linecap="round"/>
+          <path d="M 67,94 C 68,104 69,112 66,116" fill="none" stroke="#8AD000" stroke-width="6.4" stroke-linecap="round"/>
+          <path d="M 79,92 C 82,102 83,111 79,115" fill="none" stroke="#8AD000" stroke-width="7" stroke-linecap="round"/>
+          <path d="M 89,88 C 94,99 96,108 91,112 C 88,114 85,111 86,107" fill="none" stroke="#8AD000" stroke-width="8" stroke-linecap="round"/>
+          <path d="M 24,80 C 24,38 40,18 60,18 C 80,18 96,38 96,80 C 96,89 84,94 60,94 C 36,94 24,89 24,80 Z" fill="#2A2A2A" stroke="#8AD000" stroke-width="4.6" stroke-linejoin="round"/>
+          <ellipse cx="43" cy="56" rx="11.5" ry="13.5" fill="#C4F06A"/>
+          <ellipse cx="77" cy="56" rx="11.5" ry="13.5" fill="#C4F06A"/>
+          <path d="M 25,45 L 11,41 L 9,59 L 24,59 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="2.4" stroke-linejoin="round"/>
+          <path d="M 95,45 L 109,41 L 111,59 L 96,59 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="2.4" stroke-linejoin="round"/>
+          <path d="M 25,50 C 25,29 40,15 60,15 C 80,15 95,29 95,50 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="2.8" stroke-linejoin="round"/>
+          <path d="M 19,49 L 101,49 L 96,59 L 24,59 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="2.4" stroke-linejoin="round"/>
+          <path d="M 51,49 C 43,37 35,25 33,10 C 39,19 50,31 56,43 Z" fill="#C4F06A"/>
+          <path d="M 69,49 C 77,37 85,25 87,10 C 81,19 70,31 64,43 Z" fill="#C4F06A"/>
+        </svg>
+      </div>
+      <div style="width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:rgba(118,185,0,0.15);color:#76B900;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 2l9 7.5V21a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M9 22V12h6v10"/></svg>
+      </div>
+      <div style="width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#A8A8A8;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m10 13-2 2 2 2M14 13l2 2-2 2"/></svg>
+      </div>
+      <div style="width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#A8A8A8;position:relative;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        <span style="position:absolute;top:-2px;right:-2px;min-width:15px;height:15px;padding:0 4px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:#76B900;color:#0F1400;font-size:9px;font-weight:700;box-shadow:0 0 0 2px #1A1A1A;">2</span>
+      </div>
+      <div style="width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#A8A8A8;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4v16M10 4v16"/><path d="m14.5 5 4.7 14.2"/><path d="M3 4h7M3 20h7"/></svg>
+      </div>
+    </div>
+
+    <!-- ============ main panel ============ -->
+    <div style="flex:1; min-width:0; background:#1E1E1E; box-shadow:inset 0 0 0 1px rgba(250,250,250,0.07); overflow:hidden; display:flex; flex-direction:column;">
+      <div style="flex:1; min-height:0; display:flex; flex-direction:column; padding:26px 30px 22px 30px; max-width:1680px; width:100%; margin:0 auto;">
+
+        <!-- ---- greeting + composer ---- -->
+        <div style="flex:none; display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin-bottom:14px;">
+          <div>
+            <div style="font-size:12px; color:#A8A8A8; font-weight:500; letter-spacing:0.02em; margin-bottom:5px;">Buenas tardes · {{flightCount}} specs en vuelo · {{inboxCount}} tickets sin empezar</div>
+            <h1 style="margin:0; font-family:'Space Grotesk', sans-serif; font-size:26px; font-weight:600; letter-spacing:-0.02em; color:#FAFAFA;">¿Qué construimos?</h1>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; flex:none; padding:7px 12px; background:#2A2A2A; border:1px solid #333333;">
+            <span style="width:8px;height:8px;background:#76B900;display:block;"></span>
+            <span style="font-size:12px; color:#C8C8C8;"><b style="color:#FAFAFA;font-weight:600;">2</b> agentes trabajando</span>
+          </div>
+        </div>
+
+        <div style="flex:none; margin-bottom:16px;">
+          <div style="display:flex; align-items:center; gap:11px; padding:9px 9px 9px 15px; border-radius:15px; background:#2A2A2A; border:1px solid {{composerBorder}};">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8AD000" stroke-width="1.8" stroke-linejoin="round" style="flex:none;"><path d="M12 3l1.9 5.6L19.5 10.5 13.9 12.4 12 18 10.1 12.4 4.5 10.5 10.1 8.6z"/><path d="M19 3v4M17 5h4M5 17v3M3.5 18.5h3"/></svg>
+            <input value="{{q}}" onChange="{{onQ}}" placeholder="Describí una feature o pegá un bug… terminá con ? para solo preguntar" style="flex:1; min-width:0; background:transparent; border:none; outline:none; color:#FAFAFA; font-size:14.5px; font-family:inherit;">
+            <sc-if value="{{hasQ}}" hint-placeholder-val="{{true}}">
+              <span style="font-size:10.5px; font-weight:600; padding:4px 8px; color:{{kindFg}}; background:{{kindBg}}; flex:none;">{{kindLabel}}</span>
+            </sc-if>
+            <button onClick="{{noop}}" style="display:flex; align-items:center; gap:6px; height:34px; padding:0 12px; background:#333333; color:#C8C8C8; font-size:12.5px; font-weight:600; border:none; cursor:pointer; font-family:inherit; flex:none;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg>
+              Plan rápido
+            </button>
+            <button onClick="{{noop}}" style="display:flex; align-items:center; gap:6px; height:34px; padding:0 14px; background:linear-gradient(135deg,#76B900,#8AD000); color:#0F1400; font-size:12.5px; font-weight:700; border:none; cursor:pointer; font-family:inherit; flex:none;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M7 7h10v10"/></svg>
+              Plan
+            </button>
+          </div>
+        </div>
+
+        <!-- ============ the board ============ -->
+        <div style="flex:1; min-height:0; display:flex; gap:0;">
+
+          <!-- ---------- inbox: one lane per source ---------- -->
+          <div class="inbox-pane" style="flex:none; display:flex; flex-direction:column; min-height:0; padding-right:22px; border-right:1px solid #2A2A2A;">
+            <div style="flex:none; display:flex; align-items:center; gap:9px; height:26px; margin-bottom:12px;">
+              <h2 style="margin:0; font-family:'Space Grotesk', sans-serif; font-size:13px; font-weight:600; color:#FAFAFA; letter-spacing:0.01em;">Entrada</h2>
+              <span style="font-size:11.5px; color:#848484;">{{inboxCount}} sin empezar</span>
+              <span style="flex:1;"></span>
+              <button onClick="{{noop}}" title="Sincronizar con los trackers" style="width:24px; height:24px; display:flex; align-items:center; justify-content:center; background:transparent; border:none; color:#848484; cursor:pointer;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+              </button>
+            </div>
+
+            <div style="flex:1; min-height:0; overflow:hidden; display:flex; flex-direction:column; gap:14px;">
+              <sc-for list="{{lanes}}" as="lane" hint-placeholder-count="3">
+                <div style="display:flex; flex-direction:column; min-height:0;">
+                  <button class="k-lane" onClick="{{lane.toggle}}" style="flex:none; display:flex; align-items:center; gap:9px; height:40px; padding:0 10px; background:{{lane.headBg}}; border:none; border-left:2px solid {{lane.rule}}; color:{{lane.fg}}; cursor:pointer; font-family:inherit; text-align:left; width:100%;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex:none; transform:{{lane.caret}};"><path d="m9 6 6 6-6 6"/></svg>
+                    <span style="font-family:'JetBrains Mono', ui-monospace, monospace; font-size:10px; letter-spacing:0.1em; font-weight:500;">{{lane.label}}</span>
+                    <span style="flex:1;"></span>
+                    <span style="font-family:'JetBrains Mono', ui-monospace, monospace; font-size:11px; color:{{lane.countFg}};">{{lane.count}}</span>
+                  </button>
+
+                  <sc-if value="{{lane.open}}" hint-placeholder-val="{{true}}">
+                    <div style="display:flex; flex-direction:column;">
+                      <sc-for list="{{lane.items}}" as="t" hint-placeholder-count="4">
+                        <div class="t-item" onClick="{{t.arm}}" style="display:flex; flex-direction:column; gap:3px; padding:8px 10px; min-height:52px; justify-content:center; border-bottom:1px solid #262626; background:{{t.bg}}; box-shadow:{{t.ring}}; cursor:pointer;">
+                          <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="font-family:'JetBrains Mono', ui-monospace, monospace; font-size:11px; color:{{t.keyFg}}; flex:none;">{{t.key}}</span>
+                            <span style="font-size:10.5px; color:#848484; padding:1px 6px; background:#262626; flex:none;">{{t.status}}</span>
+                            <span style="flex:1;"></span>
+                            <span class="t-go" style="display:flex; align-items:center; gap:4px; font-size:10.5px; color:#A6E62E; opacity:{{t.goOpacity}};">
+                              {{t.goLabel}}
+                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+                            </span>
+                            <span style="font-family:'JetBrains Mono', ui-monospace, monospace; font-size:10px; color:#848484; flex:none;">{{t.age}}</span>
+                          </div>
+                          <div style="font-size:12.5px; color:{{t.titleFg}}; line-height:1.35; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{t.title}}</div>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <!-- ---------- board: three phase columns + shelf ---------- -->
+          <div style="flex:1; min-width:0; display:flex; flex-direction:column; min-height:0; padding-left:22px;">
+
+            <!-- board header / armed banner / manage bar -->
+            <div style="flex:none; display:flex; align-items:center; gap:10px; height:26px; margin-bottom:12px;">
+              <sc-if value="{{idle}}" hint-placeholder-val="{{true}}">
+                <span style="display:flex; align-items:center; gap:10px; width:100%;">
+                  <h2 style="margin:0; font-family:'Space Grotesk', sans-serif; font-size:13px; font-weight:600; color:#FAFAFA; letter-spacing:0.01em;">En vuelo</h2>
+                  <span style="font-size:11.5px; color:#848484;">{{boardSummary}}</span>
+                  <span style="flex:1;"></span>
+                  <button class="k-btn" onClick="{{toggleManage}}" style="display:flex; align-items:center; gap:7px; height:26px; padding:0 11px; background:{{manageBg}}; border:1px solid {{manageBorder}}; color:{{manageFg}}; font-size:12px; font-weight:600; cursor:pointer; font-family:inherit;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h6M3 12h6M3 18h6"/><path d="m14 7 2 2 4-4M14 17l2 2 4-4"/></svg>
+                    Gestionar
+                  </button>
+                </span>
+              </sc-if>
+              <sc-if value="{{armed}}" hint-placeholder-val="{{true}}">
+                <span style="display:flex; align-items:center; gap:10px; width:100%; padding:0 10px; height:26px; background:rgba(118,185,0,0.10); box-shadow:inset 0 0 0 1px rgba(118,185,0,0.45);">
+                  <span style="font-family:'JetBrains Mono', ui-monospace, monospace; font-size:11px; color:#A6E62E;">{{armedKey}}</span>
+                  <span style="font-size:12px; color:#ECECEC;">¿cómo entra al board?</span>
+                  <span style="flex:1;"></span>
+                  <button onClick="{{disarm}}" style="background:none; border:none; color:#A8A8A8; font-size:11.5px; cursor:pointer; font-family:inherit;">Cancelar (Esc)</button>
+                </span>
+              </sc-if>
+            </div>
+
+            <!-- columns -->
+            <div class="board-3" style="flex:1; min-height:0;">
+              <sc-for list="{{cols}}" as="col" hint-placeholder-count="3">
+                <div style="display:flex; flex-direction:column; min-width:0; min-height:0;">
+
+                  <div style="flex:none; display:flex; align-items:center; gap:7px; padding-bottom:8px; border-bottom:2px solid {{col.rule}};">
+                    <span style="font-family:'Space Grotesk', sans-serif; font-size:11px; font-weight:600; color:{{col.nameFg}}; letter-spacing:0.06em;">{{col.name}}</span>
+                    <span style="flex:1;"></span>
+                    <span style="font-size:10.5px; color:{{col.noteFg}};">{{col.note}}</span>
+                    <span style="font-family:'JetBrains Mono', ui-monospace, monospace; font-size:11px; color:#848484; min-width:14px; text-align:right;">{{col.count}}</span>
+                  </div>
+
+                  <div class="col-scroll" style="flex:1; min-height:0; display:flex; flex-direction:column; gap:8px; padding-top:8px;">
+
+                    <sc-if value="{{col.showDrop}}" hint-placeholder-val="{{true}}">
+                      <button class="k-drop" onClick="{{col.drop}}" style="flex:none; display:flex; flex-direction:column; align-items:flex-start; gap:3px; padding:13px 12px; background:rgba(118,185,0,0.06); border:1px dashed rgba(118,185,0,0.55); cursor:pointer; font-family:inherit; text-align:left; width:100%;">
+                        <span style="font-size:12.5px; font-weight:600; color:#A6E62E;">{{col.dropLabel}}</span>
+                        <span style="font-size:11px; color:#A8A8A8;">{{col.dropSub}}</span>
+                      </button>
+                    </sc-if>
+
+                    <sc-for list="{{col.cards}}" as="c" hint-placeholder-count="2">
+                      <div class="k-card" onClick="{{c.click}}" style="flex:none; position:relative; display:flex; flex-direction:column; padding:11px 12px 10px 12px; background:{{c.bg}}; box-shadow:{{c.ring}}; cursor:pointer;">
+
+                        <!-- line 1: state + kind + ticket + age -->
+                        <div style="display:flex; align-items:center; gap:7px; margin-bottom:7px;">
+                          <sc-if value="{{manage}}" hint-placeholder-val="{{true}}">
+                            <span onClick="{{c.toggle}}" style="width:16px; height:16px; flex:none; border:1px solid {{c.boxBorder}}; background:{{c.boxBg}}; display:flex; align-items:center; justify-content:center;">
+                              <sc-if value="{{c.checked}}" hint-placeholder-val="{{true}}">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#0F1400" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                              </sc-if>
+                            </span>
+                          </sc-if>
+                          <sc-if value="{{notManage}}" hint-placeholder-val="{{true}}">
+                            <span style="width:8px; height:8px; flex:none; background:{{c.dot}};"></span>
+                          </sc-if>
+                          <span style="font-size:9.5px; color:#848484; letter-spacing:0.08em; font-weight:600; flex:none;">{{c.kind}}</span>
+                          <span style="flex:1;"></span>
+                          <sc-if value="{{c.hasTicket}}" hint-placeholder-val="{{true}}">
+                            <span style="display:flex; align-items:center; gap:4px; font-family:'JetBrains Mono', ui-monospace, monospace; font-size:10px; color:#848484; flex:none;">
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.5-1.5"/></svg>
+                              {{c.ticket}}
+                            </span>
+                          </sc-if>
+                          <span style="font-family:'JetBrains Mono', ui-monospace, monospace; font-size:10px; color:#848484; flex:none;">{{c.age}}</span>
+                        </div>
+
+                        <!-- line 2: the name -->
+                        <div style="font-size:14px; font-weight:600; color:#FAFAFA; letter-spacing:-0.005em; margin-bottom:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{c.key}}</div>
+
+                        <!-- line 3: what it is -->
+                        <div class="clamp2" style="font-size:11.5px; color:#A8A8A8; line-height:1.45; height:33px; margin-bottom:9px;">{{c.title}}</div>
+
+                        <!-- line 4: what it needs from you -->
+                        <div style="display:flex; align-items:center; gap:8px; padding-top:9px; border-top:1px solid {{c.divider}};">
+                          <sc-if value="{{c.running}}" hint-placeholder-val="{{true}}">
+                            <span style="flex:1; min-width:0; display:flex; flex-direction:column; gap:5px;">
+                              <span style="font-size:11px; color:#C4F06A;">{{c.state}}</span>
+                              <span style="height:3px; background:#3A3A3A; display:block;"><span style="display:block; height:3px; width:{{c.progress}}; background:#76B900;"></span></span>
+                            </span>
+                          </sc-if>
+                          <sc-if value="{{c.notRunning}}" hint-placeholder-val="{{true}}">
+                            <span style="flex:1; min-width:0; font-size:11px; color:{{c.stateFg}}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{c.state}}</span>
+                          </sc-if>
+                          <sc-if value="{{notManage}}" hint-placeholder-val="{{true}}">
+                            <button class="k-btn" onClick="{{c.click}}" style="flex:none; height:24px; padding:0 9px; background:transparent; border:1px solid #3A3A3A; color:#C8C8C8; font-size:11px; font-weight:600; cursor:pointer; font-family:inherit;">{{c.cta}}</button>
+                          </sc-if>
+                          <button class="k-dots" onClick="{{c.openMenu}}" style="flex:none; width:22px; height:22px; display:flex; align-items:center; justify-content:center; background:transparent; border:none; color:#848484; cursor:pointer; opacity:{{c.dotsOpacity}};">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+                          </button>
+                        </div>
+
+                        <sc-if value="{{c.menuOpen}}" hint-placeholder-val="{{true}}">
+                          <div style="position:absolute; right:8px; bottom:38px; width:186px; background:#333333; box-shadow:0 0 0 1px #4A4A4A; z-index:30; padding:4px;">
+                            <sc-for list="{{c.menu}}" as="mi" hint-placeholder-count="3">
+                              <button class="k-mi" onClick="{{mi.act}}" style="width:100%; display:flex; align-items:center; padding:7px 9px; background:transparent; border:none; color:{{mi.fg}}; font-size:12px; text-align:left; cursor:pointer; font-family:inherit;">{{mi.label}}</button>
+                            </sc-for>
+                          </div>
+                        </sc-if>
+                      </div>
+                    </sc-for>
+
+                    <sc-if value="{{col.empty}}" hint-placeholder-val="{{true}}">
+                      <div style="flex:none; padding:18px 12px; border:1px dashed #333333; font-size:11.5px; color:#5C5C5C; text-align:center;">{{col.emptyText}}</div>
+                    </sc-if>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+
+            <!-- shelf: shipped work is reference, not workspace -->
+            <div style="flex:none; margin-top:12px;">
+              <button onClick="{{toggleShelf}}" style="width:100%; display:flex; align-items:center; gap:9px; height:36px; padding:0 12px; background:#232323; border:none; border-top:1px solid #2F2F2F; color:#C8C8C8; cursor:pointer; font-family:inherit; text-align:left;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex:none; transform:{{shelfCaret}};"><path d="m9 6 6 6-6 6"/></svg>
+                <span style="font-family:'Space Grotesk', sans-serif; font-size:11px; font-weight:600; letter-spacing:0.06em;">ENTREGADO</span>
+                <span style="font-family:'JetBrains Mono', ui-monospace, monospace; font-size:11px; color:#848484;">{{shippedCount}}</span>
+                <span style="flex:1;"></span>
+                <span class="hide-narrow" style="font-size:11px; color:#848484;">{{shelfHint}}</span>
+              </button>
+              <sc-if value="{{shelf}}" hint-placeholder-val="{{true}}">
+                <div style="display:flex; flex-wrap:wrap; gap:6px; padding:10px 0 2px 0;">
+                  <sc-for list="{{shipped}}" as="d" hint-placeholder-count="6">
+                    <span style="display:flex; align-items:center; gap:7px; height:28px; padding:0 10px; background:#232323; border:1px solid #2F2F2F;">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#76B900" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M20 6 9 17l-5-5"/></svg>
+                      <span style="font-size:12px; color:#C8C8C8;">{{d.key}}</span>
+                      <span style="font-family:'JetBrains Mono', ui-monospace, monospace; font-size:10px; color:#848484;">{{d.age}}</span>
+                    </span>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+
+            <!-- bulk bar: the delete lives where the selection is -->
+            <sc-if value="{{hasSel}}" hint-placeholder-val="{{true}}">
+              <div style="flex:none; display:flex; align-items:center; gap:11px; height:48px; margin-top:10px; padding:0 13px; background:#2A2A2A; box-shadow:inset 0 0 0 1px {{barRing}};">
+                <sc-if value="{{notConfirming}}" hint-placeholder-val="{{true}}">
+                  <span style="font-size:12.5px; color:#FAFAFA; font-weight:600; flex:none;">{{selCount}} seleccionados</span>
+                  <span style="font-size:11.5px; color:#A8A8A8; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{selNames}}</span>
+                  <button onClick="{{clearSel}}" style="height:28px; padding:0 11px; background:transparent; border:1px solid #3A3A3A; color:#C8C8C8; font-size:12px; cursor:pointer; font-family:inherit;">Deseleccionar</button>
+                  <button onClick="{{askDelete}}" style="display:flex; align-items:center; gap:6px; height:28px; padding:0 11px; background:rgba(224,83,60,0.12); border:1px solid rgba(224,83,60,0.45); color:#FF8A72; font-size:12px; font-weight:600; cursor:pointer; font-family:inherit;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>
+                    Borrar
+                  </button>
+                </sc-if>
+                <sc-if value="{{confirming}}" hint-placeholder-val="{{true}}">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF8A72" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M12 3 21.5 20h-19z"/><path d="M12 10v4M12 17.5v.01"/></svg>
+                  <span style="font-size:12px; color:#ECECEC; flex:1; min-width:0;">Se borran <b style="color:#FAFAFA;">{{selNames}}</b> de <code style="font-family:'JetBrains Mono', monospace; font-size:11px; color:#FF8A72;">.octo/specs/</code> y todo su historial de runs. No se puede deshacer.</span>
+                  <button onClick="{{cancelDelete}}" style="height:28px; padding:0 11px; background:transparent; border:1px solid #3A3A3A; color:#C8C8C8; font-size:12px; cursor:pointer; font-family:inherit;">Cancelar</button>
+                  <button onClick="{{doDelete}}" style="height:28px; padding:0 13px; background:#E0533C; border:none; color:#FFFFFF; font-size:12px; font-weight:700; cursor:pointer; font-family:inherit;">Sí, borrar {{selCount}}</button>
+                </sc-if>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"density":{"editor":"enum","options":["cómoda","compacta"],"default":"cómoda","tsType":"string"},"startManage":{"editor":null,"default":false},"startSel":{"editor":null,"default":[]},"startConfirm":{"editor":null,"default":false},"startArmed":{"editor":null,"default":null},"startShelf":{"editor":null,"default":false},"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    var sel = {};
+    var ids = (props && props.startSel) || [];
+    for (var i = 0; i < ids.length; i++) sel[ids[i]] = true;
+    this.state = {
+      lanes: { jira: true, tracker: true, linked: false },
+      armed: (props && props.startArmed) || null,
+      manage: !!(props && props.startManage),
+      confirm: !!(props && props.startConfirm),
+      shelf: !!(props && props.startShelf),
+      sel: sel,
+      menu: null,
+      q: '',
+      gone: {},
+      extra: []
+    };
+  }
+
+  tickets() {
+    return [
+      { id: 'j1', lane: 'jira', key: 'PROJ-218', title: 'Rotar el refresh token cuando la API devuelve 401', status: 'In Progress', age: '2h' },
+      { id: 'j2', lane: 'jira', key: 'PROJ-231', title: 'El export CSV se corta a las 10.000 filas', status: 'To Do', age: '5h' },
+      { id: 'j3', lane: 'jira', key: 'PROJ-240', title: 'Falta el paso de invitar al equipo en el onboarding', status: 'To Do', age: '1d' },
+      { id: 'j4', lane: 'jira', key: 'PROJ-244', title: 'Timeout al subir adjuntos de más de 25 MB', status: 'Backlog', age: '2d' },
+      { id: 't1', lane: 'tracker', key: 'APS-14', title: 'Panel de horas por misión', status: 'todo', age: '3h' },
+      { id: 't2', lane: 'tracker', key: 'APS-19', title: 'Reintentos del webhook de Stripe con backoff', status: 'backlog', age: '6h' },
+      { id: 't3', lane: 'tracker', key: 'APS-22', title: 'Migrar la tabla de sesiones a Postgres', status: 'todo', age: '1d' },
+      { id: 't4', lane: 'tracker', key: 'APS-26', title: 'Reporte de misión en PDF', status: 'backlog', age: '2d' },
+      { id: 't5', lane: 'tracker', key: 'APS-31', title: 'Búsqueda difusa en el listado de clientes', status: 'todo', age: '3d' },
+      { id: 't6', lane: 'tracker', key: 'APS-33', title: 'Cerrar sesión en todos los dispositivos', status: 'backlog', age: '4d' },
+      { id: 't7', lane: 'tracker', key: 'APS-35', title: 'Alertas de misión por vencer', status: 'backlog', age: '6d' },
+      { id: 'l1', lane: 'linked', key: 'PROJ-205', title: 'auth-refresh · Plan', status: 'con spec', age: '12m' },
+      { id: 'l2', lane: 'linked', key: 'APS-09', title: 'hours-panel · Build', status: 'con spec', age: '3m' },
+      { id: 'l3', lane: 'linked', key: 'PROJ-198', title: 'csv-export · Requirements', status: 'con spec', age: '1h' }
+    ];
+  }
+
+  specs() {
+    return [
+      { id: 's3', kind: 'BUGFIX', key: 'csv-export', title: 'Escapado de comas y corte a 10k filas al exportar el listado', phase: 0, tone: 'wait', state: 'esperando tu aprobación', cta: 'Revisar', age: '1h', ticket: 'PROJ-198' },
+      { id: 's1', kind: 'FEATURE', key: 'auth-refresh', title: 'Rotación de refresh tokens y reintento transparente del 401', phase: 1, tone: 'wait', state: '3 decisiones sin resolver', cta: 'Resolver', age: '12m', ticket: 'PROJ-205' },
+      { id: 's2', kind: 'FEATURE', key: 'hours-panel', title: 'Panel de horas por misión con desglose por cliente y export', phase: 2, tone: 'run', state: 'T3 de 7 · 2 agentes', progress: '43%', cta: 'Ver', age: '3m', ticket: 'APS-09' },
+      { id: 's4', kind: 'BUGFIX', key: 'webhook-retries', title: 'Backoff exponencial en los reintentos del webhook de Stripe', phase: 2, tone: 'ready', state: '7 tareas listas para correr', cta: 'Correr', age: '5h', ticket: '' }
+    ];
+  }
+
+  shipped() {
+    return [
+      { key: 'pdf-report', age: '2d' }, { key: 'session-store', age: '4d' },
+      { key: 'fuzzy-search', age: '6d' }, { key: 'attachment-timeout', age: '8d' },
+      { key: 'invite-step', age: '11d' }, { key: 'stale-badge', age: '13d' },
+      { key: 'mission-alerts', age: '15d' }, { key: 'client-search', age: '18d' }
+    ];
+  }
+
+  renderVals() {
+    var self = this;
+    var s = this.state;
+
+    var tickets = this.tickets().filter(function (t) { return !s.gone[t.id]; });
+    var specs = this.specs().concat(s.extra).filter(function (x) { return !s.gone[x.id]; });
+    var shipped = this.shipped();
+
+    var inboxCount = tickets.filter(function (t) { return t.lane !== 'linked'; }).length;
+    var armedT = null;
+    for (var i = 0; i < tickets.length; i++) if (tickets[i].id === s.armed) armedT = tickets[i];
+
+    // ---- inbox lanes: one per source, the linked one closed by default ----
+    var laneDefs = [
+      { id: 'jira', label: 'JIRA', rule: '#4A4A4A' },
+      { id: 'tracker', label: 'TRACKER', rule: '#4A4A4A' },
+      { id: 'linked', label: 'YA CON SPEC', rule: '#76B900' }
+    ];
+    var lanes = laneDefs.map(function (L) {
+      var items = tickets.filter(function (t) { return t.lane === L.id; });
+      var open = !!s.lanes[L.id];
+      var isLinked = L.id === 'linked';
+      return {
+        label: L.label,
+        count: items.length,
+        open: open,
+        caret: open ? 'rotate(90deg)' : 'none',
+        rule: L.rule,
+        headBg: isLinked ? 'rgba(118,185,0,0.08)' : '#232323',
+        fg: isLinked ? '#A6E62E' : '#C8C8C8',
+        countFg: isLinked ? '#A6E62E' : '#848484',
+        toggle: function () {
+          var next = {};
+          for (var k in s.lanes) next[k] = s.lanes[k];
+          next[L.id] = !next[L.id];
+          self.setState({ lanes: next });
+        },
+        items: items.map(function (t) {
+          var on = s.armed === t.id;
+          return {
+            key: t.key,
+            title: t.title,
+            status: t.status,
+            age: t.age,
+            keyFg: isLinked ? '#848484' : '#A6E62E',
+            titleFg: isLinked ? '#B4B4B4' : '#ECECEC',
+            bg: on ? 'rgba(118,185,0,0.10)' : 'transparent',
+            ring: on ? 'inset 0 0 0 1px rgba(118,185,0,0.55)' : 'none',
+            goOpacity: on ? 1 : 0,
+            goLabel: isLinked ? 'ir al spec' : 'al board',
+            arm: function () {
+              if (isLinked) return;
+              self.setState({ armed: on ? null : t.id, menu: null });
+            }
+          };
+        })
+      };
+    });
+
+    // ---- board columns: the rule colour comes from the work, not the column ----
+    var colDefs = [
+      { id: 0, name: 'REQUIREMENTS', empty: 'Nada por definir' },
+      { id: 1, name: 'PLAN', empty: 'Nada por planificar' },
+      { id: 2, name: 'BUILD', empty: 'Nada por construir' }
+    ];
+
+    var cols = colDefs.map(function (C) {
+      var mine = specs.filter(function (x) { return x.phase === C.id; });
+      var waiting = mine.filter(function (x) { return x.tone === 'wait'; }).length;
+      var running = mine.filter(function (x) { return x.tone === 'run'; }).length;
+      var ready = mine.filter(function (x) { return x.tone === 'ready'; }).length;
+
+      var rule = '#2F2F2F', nameFg = '#848484', note = '', noteFg = '#848484';
+      if (running > 0) { rule = '#76B900'; nameFg = '#A6E62E'; note = running + ' corriendo'; noteFg = '#C4F06A'; }
+      else if (waiting > 0) { rule = '#9B6BFF'; nameFg = '#C9A9FF'; note = waiting + ' te espera'; noteFg = '#C9A9FF'; }
+      else if (ready > 0) { rule = '#5C7A2E'; nameFg = '#C8C8C8'; note = ready + ' listo'; noteFg = '#A8A8A8'; }
+
+      var canDrop = !!armedT && (C.id === 0 || C.id === 2);
+
+      return {
+        name: C.name,
+        nameFg: nameFg,
+        rule: rule,
+        note: note,
+        noteFg: noteFg,
+        count: mine.length,
+        empty: mine.length === 0 && !canDrop,
+        emptyText: C.empty,
+        showDrop: canDrop,
+        dropLabel: C.id === 0 ? 'Plan' : 'Plan rápido',
+        dropSub: C.id === 0 ? 'crea el spec y para en cada aprobación' : 'redacta los dos documentos sin paradas',
+        drop: function () {
+          if (!armedT) return;
+          var gone = {};
+          for (var g in s.gone) if (s.gone[g]) gone[g] = true;
+          gone[armedT.id] = true;
+          var card = {
+            id: 'n' + armedT.id,
+            kind: /bug|error|falla|corta|timeout|no anda/i.test(armedT.title) ? 'BUGFIX' : 'FEATURE',
+            key: armedT.key.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+            title: armedT.title,
+            phase: C.id,
+            tone: C.id === 0 ? 'wait' : 'ready',
+            state: C.id === 0 ? 'listo para redactar' : 'redactando los dos documentos',
+            cta: C.id === 0 ? 'Redactar' : 'Ver',
+            age: 'ahora',
+            ticket: armedT.key
+          };
+          self.setState({ gone: gone, extra: s.extra.concat([card]), armed: null });
+        },
+        cards: mine.map(function (x) {
+          var checked = !!s.sel[x.id];
+          var menuOpen = s.menu === x.id;
+          var running = x.tone === 'run';
+          return {
+            kind: x.kind,
+            key: x.key,
+            title: x.title,
+            age: x.age,
+            ticket: x.ticket,
+            hasTicket: !!x.ticket,
+            state: x.state,
+            stateFg: x.tone === 'wait' ? '#C9A9FF' : '#A8A8A8',
+            cta: x.cta,
+            running: running,
+            notRunning: !running,
+            progress: x.progress || '0%',
+            dot: running ? '#76B900' : x.tone === 'ready' ? '#A6E62E' : '#9B6BFF',
+            bg: checked ? '#2F3326' : running ? '#262626' : '#2A2A2A',
+            ring: checked
+              ? 'inset 0 0 0 1px rgba(118,185,0,0.65)'
+              : running
+                ? 'inset 0 0 0 1px rgba(118,185,0,0.45)'
+                : 'inset 0 0 0 1px #333333',
+            divider: running ? 'rgba(118,185,0,0.25)' : '#333333',
+            checked: checked,
+            boxBorder: checked ? '#76B900' : '#5C5C5C',
+            boxBg: checked ? '#76B900' : 'transparent',
+            dotsOpacity: menuOpen ? 1 : 0,
+            menuOpen: menuOpen,
+            menu: [
+              { label: 'Abrir el spec', fg: '#F2F2F2', act: function () { self.setState({ menu: null }); } },
+              { label: 'Ver runs en Activity', fg: '#F2F2F2', act: function () { self.setState({ menu: null }); } },
+              { label: 'Borrar spec e historial', fg: '#FF8A72', act: function () {
+                  var one = {}; one[x.id] = true;
+                  self.setState({ menu: null, manage: true, sel: one, confirm: true });
+                } }
+            ],
+            click: function () {
+              if (s.manage) {
+                var next = {};
+                for (var k in s.sel) if (s.sel[k]) next[k] = true;
+                if (next[x.id]) delete next[x.id]; else next[x.id] = true;
+                self.setState({ sel: next, confirm: false });
+              }
+            },
+            toggle: function () {
+              var next = {};
+              for (var k in s.sel) if (s.sel[k]) next[k] = true;
+              if (next[x.id]) delete next[x.id]; else next[x.id] = true;
+              self.setState({ sel: next, confirm: false });
+            },
+            openMenu: function () { self.setState({ menu: menuOpen ? null : x.id }); }
+          };
+        })
+      };
+    });
+
+    // ---- selection ----
+    var selIds = [];
+    for (var k in s.sel) if (s.sel[k]) selIds.push(k);
+    var byId = {};
+    specs.forEach(function (x) { byId[x.id] = x; });
+    var selNames = selIds.map(function (id) { return byId[id] ? byId[id].key : id; }).join(', ');
+
+    var waitingAll = specs.filter(function (x) { return x.tone === 'wait'; }).length;
+    var runningAll = specs.filter(function (x) { return x.tone === 'run'; }).length;
+    var summary = specs.length + ' specs';
+    if (waitingAll) summary += ' · ' + waitingAll + ' esperan tu ok';
+    if (runningAll) summary += ' · ' + runningAll + ' corriendo';
+
+    var q = s.q.trim();
+    var bug = /bug|error|falla|roto|crash|no anda|timeout|se corta/i.test(q);
+
+    return {
+      composerBorder: q ? 'rgba(118,185,0,0.5)' : '#333333',
+      q: s.q,
+      hasQ: !!q,
+      kindLabel: bug ? 'bugfix' : 'feature',
+      kindFg: bug ? '#C9A9FF' : '#A6E62E',
+      kindBg: bug ? 'rgba(155,107,255,0.15)' : 'rgba(118,185,0,0.15)',
+      onQ: function (e) { self.setState({ q: e.target.value }); },
+
+      inboxCount: inboxCount,
+      flightCount: specs.length,
+      lanes: lanes,
+      cols: cols,
+
+      armed: !!armedT,
+      idle: !armedT,
+      armedKey: armedT ? armedT.key : '',
+      disarm: function () { self.setState({ armed: null }); },
+
+      boardSummary: summary,
+      manage: s.manage,
+      notManage: !s.manage,
+      manageBg: s.manage ? 'rgba(118,185,0,0.12)' : 'transparent',
+      manageBorder: s.manage ? 'rgba(118,185,0,0.45)' : '#333333',
+      manageFg: s.manage ? '#A6E62E' : '#C8C8C8',
+      toggleManage: function () { self.setState({ manage: !s.manage, sel: {}, confirm: false, menu: null, armed: null }); },
+
+      shipped: shipped,
+      shippedCount: shipped.length,
+      shelf: s.shelf,
+      shelfCaret: s.shelf ? 'rotate(90deg)' : 'none',
+      shelfHint: s.shelf ? '' : 'el trabajo entregado vive acá, fuera del board',
+      toggleShelf: function () { self.setState({ shelf: !s.shelf }); },
+
+      hasSel: selIds.length > 0,
+      selCount: selIds.length,
+      selNames: selNames,
+      confirming: s.confirm,
+      notConfirming: !s.confirm,
+      barRing: s.confirm ? 'rgba(224,83,60,0.45)' : 'rgba(250,250,250,0.10)',
+      clearSel: function () { self.setState({ sel: {}, confirm: false }); },
+      askDelete: function () { self.setState({ confirm: true }); },
+      cancelDelete: function () { self.setState({ confirm: false }); },
+      doDelete: function () {
+        var gone = {};
+        for (var g in s.gone) if (s.gone[g]) gone[g] = true;
+        selIds.forEach(function (id) { gone[id] = true; });
+        self.setState({ gone: gone, sel: {}, confirm: false });
+      },
+
+      noop: function () {}
+    };
+  }
+}
+</script>
+</body>
+</html>

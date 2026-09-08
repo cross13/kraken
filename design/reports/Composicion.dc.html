@@ -1,0 +1,178 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #FFFFFF; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', sans-serif; -webkit-font-smoothing: antialiased; color: #0D1B2A; }
+    a { color: #0077FF; text-decoration: none; } a:hover { color: #003973; }
+    * { box-sizing: border-box; }
+    .num { font-variant-numeric: tabular-nums; }
+  </style>
+</helmet>
+
+<div style="width:794px; height:1123px; background:#FFFFFF; display:flex; flex-direction:column; padding:40px 44px 0 44px;">
+
+  <div style="display:flex; align-items:flex-start; gap:12px; padding-bottom:14px; border-bottom:2px solid #003973;">
+    <div style="width:34px; height:34px; background:#003973; display:grid; place-items:center; flex:none;">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 7-8"/><path d="M17 7h4v4"/></svg>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:2px;">
+      <div style="font-size:14px; font-weight:700; letter-spacing:-0.01em;">Gravity Quant</div>
+      <div style="font-size:11px; color:#8494A7;">Marcela Rossi · Cuenta 41000</div>
+    </div>
+    <div style="flex:1;"></div>
+    <div style="text-align:right; display:flex; flex-direction:column; gap:2px;">
+      <div style="font-size:11px; color:#8494A7; text-transform:uppercase; letter-spacing:0.08em; font-weight:600;">Composición y desvío</div>
+      <div class="num" style="font-size:12px; color:#3D5068;">al 30 sep 2026</div>
+    </div>
+  </div>
+
+  <!-- ===== el veredicto, arriba de todo ===== -->
+  <div style="display:flex; align-items:center; gap:14px; margin-top:20px; padding:14px 16px; background:#FEF6E9; border-left:3px solid #D97706;">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+    <div>
+      <div style="font-size:15px; font-weight:600; line-height:1.35;">Tu cartera se corrió 6,2 puntos del objetivo</div>
+      <div style="font-size:13px; color:#3D5068; line-height:1.4; margin-top:2px;">Las acciones subieron más que el resto y hoy pesan de más. El umbral de rebalanceo de esta cartera es 5 pp.</div>
+    </div>
+  </div>
+
+  <!-- ===== objetivo vs real, por instrumento ===== -->
+  <div style="margin-top:22px;">
+    <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:11px;">
+      <h2 style="margin:0; font-size:13px; font-weight:600; letter-spacing:0.02em;">Dónde estás contra dónde deberías estar</h2>
+      <div style="flex:1;"></div>
+      <span style="display:flex; align-items:center; gap:5px; font-size:11px; color:#3D5068;"><span style="width:10px; height:10px; background:#CBD5E1; display:block;"></span>Objetivo</span>
+      <span style="display:flex; align-items:center; gap:5px; font-size:11px; color:#3D5068;"><span style="width:10px; height:10px; background:#003973; display:block;"></span>Real</span>
+    </div>
+
+    <table class="num" style="width:100%; border-collapse:collapse; font-size:12.5px;">
+      <thead>
+        <tr style="border-bottom:1px solid #D5DCE5;">
+          <th style="text-align:left; font-size:10.5px; font-weight:600; color:#8494A7; text-transform:uppercase; letter-spacing:0.06em; padding:0 0 7px 0;">Especie</th>
+          <th style="text-align:left; font-size:10.5px; font-weight:600; color:#8494A7; text-transform:uppercase; letter-spacing:0.06em; padding:0 0 7px 0; width:250px;">Peso</th>
+          <th style="text-align:right; font-size:10.5px; font-weight:600; color:#8494A7; text-transform:uppercase; letter-spacing:0.06em; padding:0 0 7px 0;">Objetivo</th>
+          <th style="text-align:right; font-size:10.5px; font-weight:600; color:#8494A7; text-transform:uppercase; letter-spacing:0.06em; padding:0 0 7px 0;">Real</th>
+          <th style="text-align:right; font-size:10.5px; font-weight:600; color:#8494A7; text-transform:uppercase; letter-spacing:0.06em; padding:0 0 7px 0;">Desvío</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid #F0F3F7;">
+          <td style="padding:8px 0; font-weight:600;">AL30</td>
+          <td><div style="position:relative; height:16px; width:230px;"><div style="position:absolute; left:0; top:0; height:7px; width:143px; background:#CBD5E1;"></div><div style="position:absolute; left:0; top:9px; height:7px; width:138px; background:#003973;"></div></div></td>
+          <td style="text-align:right; color:#3D5068;">25,0%</td><td style="text-align:right; font-weight:600;">24,0%</td>
+          <td style="text-align:right; color:#8494A7;">−1,0</td>
+        </tr>
+        <tr style="border-bottom:1px solid #F0F3F7;">
+          <td style="padding:8px 0; font-weight:600;">GD30</td>
+          <td><div style="position:relative; height:16px; width:230px;"><div style="position:absolute; left:0; top:0; height:7px; width:115px; background:#CBD5E1;"></div><div style="position:absolute; left:0; top:9px; height:7px; width:104px; background:#003973;"></div></div></td>
+          <td style="text-align:right; color:#3D5068;">20,0%</td><td style="text-align:right; font-weight:600;">18,0%</td>
+          <td style="text-align:right; color:#8494A7;">−2,0</td>
+        </tr>
+        <tr style="border-bottom:1px solid #F0F3F7;">
+          <td style="padding:8px 0; font-weight:600;">TX26</td>
+          <td><div style="position:relative; height:16px; width:230px;"><div style="position:absolute; left:0; top:0; height:7px; width:115px; background:#CBD5E1;"></div><div style="position:absolute; left:0; top:9px; height:7px; width:86px; background:#003973;"></div></div></td>
+          <td style="text-align:right; color:#3D5068;">20,0%</td><td style="text-align:right; font-weight:600;">15,0%</td>
+          <td style="text-align:right; font-weight:600; color:#E62626;">−5,0</td>
+        </tr>
+        <tr style="border-bottom:1px solid #F0F3F7;">
+          <td style="padding:8px 0; font-weight:600;">YPFD</td>
+          <td><div style="position:relative; height:16px; width:230px;"><div style="position:absolute; left:0; top:0; height:7px; width:43px; background:#CBD5E1;"></div><div style="position:absolute; left:0; top:9px; height:7px; width:69px; background:#003973;"></div></div></td>
+          <td style="text-align:right; color:#3D5068;">7,5%</td><td style="text-align:right; font-weight:600;">12,0%</td>
+          <td style="text-align:right; font-weight:600; color:#E62626;">+4,5</td>
+        </tr>
+        <tr style="border-bottom:1px solid #F0F3F7;">
+          <td style="padding:8px 0; font-weight:600;">AAPL</td>
+          <td><div style="position:relative; height:16px; width:230px;"><div style="position:absolute; left:0; top:0; height:7px; width:43px; background:#CBD5E1;"></div><div style="position:absolute; left:0; top:9px; height:7px; width:58px; background:#003973;"></div></div></td>
+          <td style="text-align:right; color:#3D5068;">7,5%</td><td style="text-align:right; font-weight:600;">10,0%</td>
+          <td style="text-align:right; color:#3D5068;">+2,5</td>
+        </tr>
+        <tr style="border-bottom:1px solid #F0F3F7;">
+          <td style="padding:8px 0; font-weight:600;">SPY</td>
+          <td><div style="position:relative; height:16px; width:230px;"><div style="position:absolute; left:0; top:0; height:7px; width:58px; background:#CBD5E1;"></div><div style="position:absolute; left:0; top:9px; height:7px; width:46px; background:#003973;"></div></div></td>
+          <td style="text-align:right; color:#3D5068;">10,0%</td><td style="text-align:right; font-weight:600;">8,0%</td>
+          <td style="text-align:right; color:#8494A7;">−2,0</td>
+        </tr>
+        <tr style="border-bottom:1px solid #F0F3F7;">
+          <td style="padding:8px 0; font-weight:600;">MEGAQ</td>
+          <td><div style="position:relative; height:16px; width:230px;"><div style="position:absolute; left:0; top:0; height:7px; width:58px; background:#CBD5E1;"></div><div style="position:absolute; left:0; top:9px; height:7px; width:46px; background:#003973;"></div></div></td>
+          <td style="text-align:right; color:#3D5068;">10,0%</td><td style="text-align:right; font-weight:600;">8,0%</td>
+          <td style="text-align:right; color:#8494A7;">−2,0</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0; font-weight:600; color:#3D5068;">Efectivo</td>
+          <td><div style="position:relative; height:16px; width:230px;"><div style="position:absolute; left:0; top:0; height:7px; width:0px; background:#CBD5E1;"></div><div style="position:absolute; left:0; top:9px; height:7px; width:29px; background:#003973;"></div></div></td>
+          <td style="text-align:right; color:#3D5068;">0,0%</td><td style="text-align:right; font-weight:600;">5,0%</td>
+          <td style="text-align:right; color:#3D5068;">+5,0</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ===== por tipo de activo ===== -->
+  <div style="margin-top:24px;">
+    <h2 style="margin:0 0 11px 0; font-size:13px; font-weight:600; letter-spacing:0.02em;">Por tipo de activo</h2>
+    <div style="display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:1px; background:#D5DCE5; border:1px solid #D5DCE5;">
+      <div style="background:#FFFFFF; padding:13px 14px; display:flex; flex-direction:column; gap:3px;">
+        <div style="font-size:11px; color:#8494A7; font-weight:600;">Renta fija</div>
+        <div class="num" style="font-size:19px; font-weight:700; letter-spacing:-0.02em;">57,0%</div>
+        <div class="num" style="font-size:11px; color:#8494A7;">objetivo 65,0% · −8,0</div>
+      </div>
+      <div style="background:#FFFFFF; padding:13px 14px; display:flex; flex-direction:column; gap:3px;">
+        <div style="font-size:11px; color:#8494A7; font-weight:600;">Renta variable</div>
+        <div class="num" style="font-size:19px; font-weight:700; letter-spacing:-0.02em;">30,0%</div>
+        <div class="num" style="font-size:11px; color:#E62626; font-weight:600;">objetivo 25,0% · +5,0</div>
+      </div>
+      <div style="background:#FFFFFF; padding:13px 14px; display:flex; flex-direction:column; gap:3px;">
+        <div style="font-size:11px; color:#8494A7; font-weight:600;">Liquidez</div>
+        <div class="num" style="font-size:19px; font-weight:700; letter-spacing:-0.02em;">13,0%</div>
+        <div class="num" style="font-size:11px; color:#8494A7;">objetivo 10,0% · +3,0</div>
+      </div>
+      <div style="background:#FFFFFF; padding:13px 14px; display:flex; flex-direction:column; gap:3px;">
+        <div style="font-size:11px; color:#8494A7; font-weight:600;">Exposición dólar</div>
+        <div class="num" style="font-size:19px; font-weight:700; letter-spacing:-0.02em;">36,0%</div>
+        <div class="num" style="font-size:11px; color:#8494A7;">objetivo 40,0% · −4,0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== qué pasó en el último rebalanceo ===== -->
+  <div style="margin-top:24px; flex:1;">
+    <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:10px;">
+      <h2 style="margin:0; font-size:13px; font-weight:600; letter-spacing:0.02em;">Último rebalanceo</h2>
+      <span class="num" style="font-size:11px; color:#8494A7;">12 ago 2026 · 6 órdenes</span>
+    </div>
+    <div style="display:flex; align-items:center; gap:20px; padding:15px 18px; background:#F5F8FB; border:1px solid #E8EDF2;">
+      <div style="display:flex; flex-direction:column; gap:3px;">
+        <div style="font-size:10.5px; color:#8494A7; text-transform:uppercase; letter-spacing:0.06em; font-weight:600;">Desvío antes</div>
+        <div class="num" style="font-size:22px; font-weight:700; letter-spacing:-0.02em; color:#E62626;">7,8 pp</div>
+      </div>
+      <svg width="26" height="14" viewBox="0 0 26 14" fill="none" stroke="#8494A7" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1 7h22"/><path d="M18 2l5 5-5 5"/></svg>
+      <div style="display:flex; flex-direction:column; gap:3px;">
+        <div style="font-size:10.5px; color:#8494A7; text-transform:uppercase; letter-spacing:0.06em; font-weight:600;">Desvío después</div>
+        <div class="num" style="font-size:22px; font-weight:700; letter-spacing:-0.02em; color:#00875C;">0,9 pp</div>
+      </div>
+      <div style="width:1px; height:38px; background:#D5DCE5;"></div>
+      <p style="margin:0; font-size:13px; line-height:1.45; color:#3D5068; max-width:44ch;">
+        Desde entonces la cartera volvió a correrse hasta 6,2 pp, empujada por YPFD. El próximo rebalanceo se dispara solo al superar el umbral.
+      </p>
+    </div>
+  </div>
+
+  <div style="display:flex; align-items:flex-end; gap:16px; padding:12px 0 16px 0; border-top:1px solid #E8EDF2; margin-top:14px;">
+    <p style="margin:0; font-size:10px; line-height:1.45; color:#8494A7; max-width:74ch;">
+      El objetivo es la cartera modelo «Moderada ARS 60» vigente al cierre del período. El desvío se expresa en puntos porcentuales sobre el peso objetivo de cada especie. Este documento no constituye una recomendación de inversión.
+    </p>
+    <div style="flex:1;"></div>
+    <span class="num" style="font-size:10px; color:#8494A7; white-space:nowrap;">2 / 4</span>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

@@ -24,6 +24,8 @@ import type {
   SpecMeta,
   TicketAction,
   TicketCapability,
+  TicketCriterion,
+  TicketDetail,
   TicketProviderConfig,
 } from './shared/types.js';
 
@@ -463,6 +465,57 @@ function firstArray(value: unknown, depth = 0): unknown[] | null {
   return null;
 }
 
+/**
+ * Atlassian Document Format → plain text.
+ *
+ * Jira stores every piece of rich text as a node tree — a description comes
+ * back as `{type: 'doc', content: [...]}`, never as a string — so every
+ * `typeof v === 'string'` test below skips straight past it. Flattening it here
+ * is what puts a Jira ticket's actual words on the card and into the spec's
+ * brief, instead of the blank line they landed on before.
+ */
+const ADF_BLOCKS = new Set([
+  'paragraph',
+  'heading',
+  'blockquote',
+  'codeBlock',
+  'listItem',
+  'rule',
+  'panel',
+  'tableRow',
+  'mediaSingle',
+  'mediaGroup',
+]);
+
+function adfText(node: unknown, depth = 0): string {
+  if (typeof node === 'string') return node;
+  if (Array.isArray(node)) return node.map((n) => adfText(n, depth)).join('');
+  if (!node || typeof node !== 'object' || depth > 12) return '';
+  const n = node as Record<string, unknown>;
+  const attrs = (n.attrs ?? {}) as Record<string, unknown>;
+  switch (n.type) {
+    case 'text':
+      return typeof n.text === 'string' ? n.text : '';
+    case 'hardBreak':
+      return '\n';
+    // A mention, an emoji and a link card carry their whole rendering in
+    // `attrs` and have no children, so recursing into them yields nothing —
+    // which is how "@someone" vanishes from the middle of a sentence.
+    case 'mention':
+    case 'emoji':
+      return typeof attrs.text === 'string' ? attrs.text : '';
+    case 'inlineCard':
+      return typeof attrs.url === 'string' ? attrs.url : '';
+  }
+  const inner = adfText(n.content, depth + 1);
+  return ADF_BLOCKS.has(String(n.type)) ? `${inner}\n` : inner;
+}
+
+/** An ADF document node, as opposed to any other object sitting in a field. */
+function isAdf(v: unknown): boolean {
+  return Boolean(v) && typeof v === 'object' && (v as Record<string, unknown>).type === 'doc';
+}
+
 function str(row: Record<string, unknown>, ...names: string[]): string | undefined {
   for (const n of names) {
     const v = row[n];
@@ -470,11 +523,73 @@ function str(row: Record<string, unknown>, ...names: string[]): string | undefin
     if (typeof v === 'number') return String(v);
     // `status: { name: 'In progress' }` is common enough to be worth unwrapping.
     if (v && typeof v === 'object') {
-      const inner = (v as Record<string, unknown>).name ?? (v as Record<string, unknown>).value;
+      if (isAdf(v)) {
+        const flat = adfText(v).trim();
+        if (flat) return flat;
+        continue;
+      }
+      const o = v as Record<string, unknown>;
+      // `displayName` is how Jira names a person (v3 dropped `name` from the
+      // user object), and `fields.summary` is how it names a parent issue.
+      const sub = (o.fields ?? {}) as Record<string, unknown>;
+      const inner = o.name ?? o.value ?? o.displayName ?? o.label ?? sub.summary ?? sub.name;
       if (typeof inner === 'string' && inner.trim()) return inner.trim();
     }
   }
   return undefined;
+}
+
+/**
+ * Where to look for a field on one listing row.
+ *
+ * Jira is the odd one out: `searchJiraIssuesUsingJql` answers with
+ * `{id, key, self, fields: {summary, status, priority, issuetype, assignee, …}}`,
+ * so every name looked up here lives one level down. Reading a row and its
+ * `fields` as a single flat namespace is what gives a Jira card a title — the
+ * envelope on its own matches nothing but `key`, which is precisely the
+ * bare-number card this exists to fix.
+ */
+function rowScopes(row: Record<string, unknown>): Record<string, unknown>[] {
+  const f = row.fields;
+  return f && typeof f === 'object' && !Array.isArray(f)
+    ? [row, f as Record<string, unknown>]
+    : [row];
+}
+
+/** `str`, across every scope a row has. */
+function pick(scopes: Record<string, unknown>[], ...names: string[]): string | undefined {
+  for (const s of scopes) {
+    const hit = str(s, ...names);
+    if (hit) return hit;
+  }
+  return undefined;
+}
+
+/** The first non-empty array of nameable things — Jira labels, tracker tags. */
+function pickList(scopes: Record<string, unknown>[], ...names: string[]): string[] {
+  for (const s of scopes) {
+    for (const n of names) {
+      const v = s[n];
+      if (!Array.isArray(v)) continue;
+      const out = v.map((x) => str({ x }, 'x') ?? '').filter(Boolean);
+      if (out.length) return out;
+    }
+  }
+  return [];
+}
+
+/**
+ * A link to the ticket, when the tracker sent none.
+ *
+ * Jira rows carry `self` — an API endpoint, not a page a person can open — and
+ * the MCP server sends no browse URL at all, so the only place one can come
+ * from is the site the provider is configured against. Worth building: this is
+ * the `url` that ends up in the spec's *From TICKET-1* line, which until now
+ * was a literal `#`.
+ */
+function browseUrl(site: string | undefined, key: string): string | undefined {
+  if (!site || !/^https?:\/\//i.test(site)) return undefined;
+  return `${site.replace(/\/+$/, '')}/browse/${key}`;
 }
 
 /**
@@ -485,30 +600,53 @@ function str(row: Record<string, unknown>, ...names: string[]): string | undefin
  * content and then for the field names trackers agree on. When there is no
  * structured content at all it falls back to scanning the prose for
  * `KEY-123 — title` lines, which is what a text-only server tends to produce.
+ *
+ * Everything past `key` and `title` is read on the same terms: asked for under
+ * every name a tracker might use, and simply left off the card when nothing
+ * answers. Both servers Octo is written against volunteer far more than a key —
+ * Jira sends `fields.{summary,status,priority,issuetype,assignee,updated}` and
+ * the tracker sends `{title,status,status_label,priority,mission,plan}` — and a
+ * ticket you have to open elsewhere to identify is not one you can triage here.
+ *
+ * `site` is the provider's configured Atlassian host, used only to build a
+ * browse URL for a server that sends none.
  */
 export function normalizeTicketList(
   structured: unknown,
   text: string,
-  provider: { id: string; label: string }
+  provider: { id: string; label: string; site?: string }
 ): TicketSummary[] {
   const rows = firstArray(structured);
   if (rows?.length) {
     return rows
       .filter((r): r is Record<string, unknown> => Boolean(r) && typeof r === 'object')
       .map((r): TicketSummary | null => {
-        const key = str(r, 'key', 'identifier', 'id', 'task', 'issueKey', 'number');
-        const title = str(r, 'title', 'summary', 'name', 'subject') ?? '';
-        return key
-          ? {
-              key,
-              title,
-              status: str(r, 'status', 'state', 'workflowState'),
-              url: str(r, 'url', 'link', 'html_url', 'permalink'),
-              description: str(r, 'description', 'body', 'details'),
-              provider: provider.id,
-              providerLabel: provider.label,
-            }
-          : null;
+        const at = rowScopes(r);
+        const key = pick(at, 'key', 'identifier', 'id', 'task', 'issueKey', 'number');
+        if (!key) return null;
+        const status = pick(at, 'status', 'state', 'workflowState');
+        const label = pick(at, 'status_label', 'statusLabel', 'statusName');
+        // The tracker's `plan` is a sentence about the ticket rather than a
+        // label on it — but "plan sin aprobar" answers *can this start?*, which
+        // is the whole question the inbox is there to answer, so it gets a chip.
+        const plan = pick(at, 'plan', 'planState', 'plan_state');
+        const chips = [...pickList(at, 'labels', 'tags', 'components'), ...(plan ? [plan] : [])];
+        return {
+          key,
+          title: pick(at, 'title', 'summary', 'name', 'subject') ?? '',
+          status,
+          statusLabel: label && label !== status ? label : undefined,
+          priority: pick(at, 'priority', 'severity'),
+          type: pick(at, 'issuetype', 'issueType', 'type', 'kind'),
+          assignee: pick(at, 'assignee', 'owner', 'assigned_to', 'assignedTo'),
+          group: pick(at, 'mission', 'sprint', 'epic', 'parent', 'milestone', 'cycle'),
+          labels: chips.length ? chips : undefined,
+          updated: pick(at, 'updated', 'updatedAt', 'updated_at', 'lastModified', 'modified'),
+          url: pick(at, 'url', 'link', 'html_url', 'permalink') ?? browseUrl(provider.site, key),
+          description: pick(at, 'description', 'body', 'details'),
+          provider: provider.id,
+          providerLabel: provider.label,
+        };
       })
       .filter((t): t is TicketSummary => Boolean(t));
   }
@@ -522,6 +660,7 @@ export function normalizeTicketList(
     out.push({
       key: m[1],
       title: m[2].trim().slice(0, 160),
+      url: browseUrl(provider.site, m[1]),
       provider: provider.id,
       providerLabel: provider.label,
     });
@@ -592,6 +731,34 @@ export function normalizeTransitions(
   return out;
 }
 
+/**
+ * The Jira fields a card renders, named explicitly.
+ *
+ * `searchJiraIssuesUsingJql` declares an optional `fields` and, left out,
+ * defaults to a generous set — summary, description, status, issuetype,
+ * priority, labels, components, assignee, reporter, created, updated,
+ * resolution, project. Naming them anyway does two things that default cannot:
+ * it drops the five nobody here reads (reporter, created, resolution, project
+ * and the issue's own `expand` baggage), and it adds `parent`, which the
+ * default omits and which is the only thing that can tell you which epic a
+ * ticket belongs to. Deterministic, and smaller than doing nothing.
+ *
+ * `description` stays in: it is the card's hover text, and it costs the same
+ * here as it did in the default.
+ */
+export const JIRA_LIST_FIELDS = [
+  'summary',
+  'status',
+  'priority',
+  'issuetype',
+  'assignee',
+  'updated',
+  'labels',
+  'components',
+  'parent',
+  'description',
+];
+
 /** The arguments a search call gets, which is the one place presets differ much. */
 export function searchArgs(cfg: TicketProviderConfig, limit: number): Record<string, unknown> {
   if (cfg.preset === 'jira') {
@@ -607,7 +774,7 @@ export function searchArgs(cfg: TicketProviderConfig, limit: number): Record<str
       .filter(Boolean)
       .join(' AND ')
       .replace(' AND ORDER BY', ' ORDER BY');
-    return { cloudId: cfg.defaults?.cloudId, jql, maxResults: limit };
+    return { cloudId: cfg.defaults?.cloudId, jql, maxResults: limit, fields: JIRA_LIST_FIELDS };
   }
   if (cfg.preset === 'tracker') {
     // Only the client and a cap. An earlier version also sent `mission: "active"`,
@@ -630,6 +797,20 @@ export function ticketRefArgs(cfg: TicketProviderConfig, key: string): Record<st
 }
 
 /**
+ * Reading one ticket *in full* — for the detail view and for seeding a spec.
+ *
+ * Separate from `ticketRefArgs` on purpose: that one also addresses
+ * `getTransitionsForJiraIssue`, which declares none of these parameters and
+ * would reject the call outright. `getJiraIssue` does declare them, and asking
+ * for `comment` is the only way its comments come back at all.
+ */
+export function ticketReadArgs(cfg: TicketProviderConfig, key: string): Record<string, unknown> {
+  const ref = ticketRefArgs(cfg, key);
+  if (cfg.preset !== 'jira') return ref;
+  return { ...ref, fields: [...JIRA_LIST_FIELDS, 'reporter', 'created', 'comment'] };
+}
+
+/**
  * Fold a ticket's detail into the text a spec starts from.
  *
  * Preference order matters: a tracker that answers with structured fields gives
@@ -642,42 +823,37 @@ function stripRepeatedHead(text: string, key: string): string {
   return first.includes(key) && rest.length ? rest.join('\n').trim() : text;
 }
 
+/**
+ * Where a *detail* response keeps the ticket itself. Trackers wrap it
+ * (`{task: …}`), Jira splits it (`{key, fields: {…}}`), and some answer with the
+ * object flat. Wrappers come first so a wrapped field beats an envelope one.
+ */
+function detailScopes(structured: unknown): Record<string, unknown>[] {
+  const s = (structured ?? {}) as Record<string, unknown>;
+  const out: Record<string, unknown>[] = [];
+  for (const candidate of [s.task, s.issue, s.data, s]) {
+    if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) continue;
+    const w = candidate as Record<string, unknown>;
+    out.push(w);
+    if (w.fields && typeof w.fields === 'object' && !Array.isArray(w.fields)) {
+      out.push(w.fields as Record<string, unknown>);
+    }
+  }
+  return out;
+}
+
 export function ticketBrief(
   ticket: { key: string; title: string; description?: string },
   detail?: { text?: string; structured?: unknown } | null
 ): string {
   const head = `${ticket.key}: ${ticket.title}`.trim();
-  const s = (detail?.structured ?? {}) as Record<string, unknown>;
-  const nested = (s.task ?? s.issue ?? s.data ?? {}) as Record<string, unknown>;
-  const pick = (...names: string[]) => {
-    for (const n of names) {
-      for (const src of [nested, s]) {
-        const v = src[n];
-        if (typeof v === 'string' && v.trim()) return v.trim();
-      }
-    }
-    return null;
-  };
-
+  const at = detailScopes(detail?.structured);
   const parts = [head];
-  const body = pick('description', 'body', 'details', 'summary_text', 'content');
-  const plan = pick('plan');
+  const body = pick(at, 'description', 'body', 'details', 'summary_text', 'content');
+  const plan = planOf(at);
   const criteria = (() => {
-    for (const src of [nested, s]) {
-      const v = src.criteria;
-      if (Array.isArray(v) && v.length) {
-        return v
-          .map((c) =>
-            typeof c === 'string'
-              ? c
-              : ((c as Record<string, unknown>)?.text ?? (c as Record<string, unknown>)?.title ?? '')
-          )
-          .filter((t) => typeof t === 'string' && t.trim())
-          .map((t) => `- ${t}`)
-          .join('\n');
-      }
-    }
-    return null;
+    const list = criteriaOf(...at);
+    return list.length ? list.map((c) => `- ${c.text}`).join('\n') : null;
   })();
 
   // Richest first. The row's `description` is the *listing's* summary — it is
@@ -692,6 +868,124 @@ export function ticketBrief(
   if (criteria) parts.push(`## Validation criteria on the ticket\n\n${criteria}`);
 
   return parts.join('\n\n');
+}
+
+/**
+ * Read one ticket in full, for the detail panel.
+ *
+ * Everything here is optional on purpose. Both servers Octo is written against
+ * answer with a different half of this shape — Jira sends comments and no plan,
+ * the tracker sends a plan, its criteria and its history and no comments — and
+ * a third tracker will send some other half. The panel renders what came back
+ * and says nothing about what did not, which is the same rule the card follows.
+ *
+ * `raw` is always kept: for a tracker whose shape nothing here recognises, the
+ * server's own prose is the difference between a panel that looks broken and
+ * one that shows you the ticket in the tracker's own words.
+ */
+export function ticketDetail(
+  ticket: TicketSummary,
+  detail: { text?: string; structured?: unknown } | null,
+  site?: string
+): TicketDetail {
+  const at = detailScopes(detail?.structured);
+  const raw = detail?.text?.trim() ?? '';
+
+  // The detail response is richer than the row it came from, so anything it
+  // states wins — a row read from a listing can be a page old.
+  const merged: TicketSummary = {
+    ...ticket,
+    title: pick(at, 'title', 'summary', 'name', 'subject') ?? ticket.title,
+    status: pick(at, 'status', 'state', 'workflowState') ?? ticket.status,
+    statusLabel: pick(at, 'status_label', 'statusLabel') ?? ticket.statusLabel,
+    priority: pick(at, 'priority', 'severity') ?? ticket.priority,
+    type: pick(at, 'issuetype', 'issueType', 'type', 'kind') ?? ticket.type,
+    assignee: pick(at, 'assignee', 'owner', 'assigned_to', 'assignedTo') ?? ticket.assignee,
+    group: pick(at, 'mission', 'sprint', 'epic', 'parent', 'milestone', 'cycle') ?? ticket.group,
+    updated: pick(at, 'updated', 'updatedAt', 'updated_at', 'lastModified') ?? ticket.updated,
+    url: ticket.url ?? pick(at, 'url', 'link', 'html_url', 'permalink') ?? browseUrl(site, ticket.key),
+  };
+
+  const body =
+    pick(at, 'description', 'body', 'details', 'content') ?? ticket.description?.trim() ?? '';
+
+  return {
+    ticket: merged,
+    body,
+    plan: planOf(at) ?? undefined,
+    planApproved: boolOf(at, 'plan_approved', 'planApproved', 'approved'),
+    planApprovedBy: pick(withPlanScopes(at), 'approved_by', 'approvedBy'),
+    criteria: criteriaOf(...at),
+    comments: commentsOf(at),
+    history: historyOf(at),
+    reporter: pick(at, 'reporter', 'creator', 'created_by', 'author'),
+    created: pick(at, 'created', 'createdAt', 'created_at'),
+    estimateMinutes: numOf(at, 'estimate_minutes', 'estimateMinutes'),
+    loggedMinutes: numOf(at, 'logged_minutes', 'loggedMinutes'),
+    raw,
+  };
+}
+
+function boolOf(scopes: Record<string, unknown>[], ...names: string[]): boolean | undefined {
+  for (const s of withPlanScopes(scopes)) {
+    for (const n of names) if (typeof s[n] === 'boolean') return s[n] as boolean;
+  }
+  return undefined;
+}
+
+function numOf(scopes: Record<string, unknown>[], ...names: string[]): number | undefined {
+  for (const s of scopes) {
+    for (const n of names) if (typeof s[n] === 'number') return s[n] as number;
+  }
+  return undefined;
+}
+
+/**
+ * Comments, wherever this tracker keeps them. Jira nests them twice —
+ * `fields.comment.comments` — and only when the read asked for the `comment`
+ * field in the first place; see `ticketReadArgs`.
+ */
+function commentsOf(scopes: Record<string, unknown>[]): TicketDetail['comments'] {
+  const arrays: unknown[] = [];
+  for (const s of scopes) {
+    for (const n of ['comments', 'comment']) {
+      const v = s[n];
+      if (Array.isArray(v)) arrays.push(v);
+      else if (v && typeof v === 'object' && Array.isArray((v as Record<string, unknown>).comments)) {
+        arrays.push((v as Record<string, unknown>).comments);
+      }
+    }
+  }
+  for (const rows of arrays) {
+    const out = (rows as unknown[])
+      .filter((r): r is Record<string, unknown> => Boolean(r) && typeof r === 'object')
+      .map((r) => ({
+        author: str(r, 'author', 'updateAuthor', 'actor', 'user', 'by'),
+        when: str(r, 'created', 'occurred_at', 'createdAt', 'when', 'updated'),
+        body: str(r, 'body', 'text', 'content', 'comment') ?? '',
+      }))
+      .filter((c) => c.body);
+    if (out.length) return out;
+  }
+  return [];
+}
+
+/** What has happened on the ticket. The tracker's `history`; nobody else's. */
+function historyOf(scopes: Record<string, unknown>[]): TicketDetail['history'] {
+  for (const s of scopes) {
+    const v = s.history ?? s.events ?? s.activity;
+    if (!Array.isArray(v) || !v.length) continue;
+    const out = v
+      .filter((r): r is Record<string, unknown> => Boolean(r) && typeof r === 'object')
+      .map((r) => ({
+        when: str(r, 'occurred_at', 'created', 'at', 'when', 'timestamp'),
+        actor: str(r, 'actor', 'author', 'user', 'by'),
+        what: str(r, 'summary', 'action', 'what', 'event', 'type') ?? '',
+      }))
+      .filter((h) => h.what);
+    if (out.length) return out;
+  }
+  return [];
 }
 
 /** What a ticket contributes to a spec's documents. */
@@ -723,20 +1017,10 @@ export function ticketSeed(
   kind: 'feature' | 'bugfix'
 ): TicketSeed {
   const brief = ticketBrief(ticket, detail);
-  const s = (detail?.structured ?? {}) as Record<string, unknown>;
-  const nested = (s.task ?? s.issue ?? s.data ?? {}) as Record<string, unknown>;
-  const pick = (...names: string[]) => {
-    for (const n of names) {
-      for (const src of [nested, s]) {
-        const v = src[n];
-        if (typeof v === 'string' && v.trim()) return v.trim();
-      }
-    }
-    return null;
-  };
-  const criteria = criteriaOf(nested, s);
+  const at = detailScopes(detail?.structured);
+  const criteria = criteriaOf(...at);
   const body =
-    pick('description', 'body', 'details', 'content') ??
+    pick(at, 'description', 'body', 'details', 'content') ??
     ticket.description?.trim() ??
     detail?.text?.trim() ??
     '';
@@ -749,19 +1033,19 @@ export function ticketSeed(
     doc.push('## Introduction', '', body || '_The ticket carried no description._', '');
     if (criteria.length) {
       doc.push('## Acceptance Criteria (EARS notation)', '');
-      criteria.forEach((c, i) => doc.push(`- AC-${i + 1}: ${c}`));
+      criteria.forEach((c, i) => doc.push(`- AC-${i + 1}: ${c.text}`));
       doc.push('');
     }
   } else {
     doc.push('## Reproduction', '', body || '_The ticket carried no description._', '');
     if (criteria.length) {
       doc.push('## Expected Behavior', '');
-      criteria.forEach((c, i) => doc.push(`- AC-${i + 1}: ${c}`));
+      criteria.forEach((c, i) => doc.push(`- AC-${i + 1}: ${c.text}`));
       doc.push('');
     }
   }
 
-  const planBody = pick('plan');
+  const planBody = planOf(at);
   const plan = planBody
     ? [`# Plan — ${ticket.title || ticket.key}`, '', origin, '', planBody, ''].join('\n')
     : null;
@@ -769,25 +1053,76 @@ export function ticketSeed(
   return { brief, requirements: doc.join('\n'), plan };
 }
 
-/** The ticket's own validation criteria, as plain strings. */
-function criteriaOf(...sources: Record<string, unknown>[]): string[] {
-  for (const src of sources) {
-    const v = src.criteria ?? src.acceptanceCriteria ?? src.acceptance_criteria;
-    if (Array.isArray(v) && v.length) {
-      return v
-        .map((c) =>
-          typeof c === 'string'
-            ? c
-            : String(
-                (c as Record<string, unknown>)?.text ??
-                  (c as Record<string, unknown>)?.title ??
-                  (c as Record<string, unknown>)?.description ??
-                  ''
-              )
-        )
-        .map((t) => t.trim())
-        .filter(Boolean);
+/**
+ * Sub-objects a detail response keeps a plan and its criteria in, rather than
+ * beside the ticket's own fields. `plan_document` is the tracker's.
+ */
+const PLAN_HOLDERS = ['plan_document', 'planDocument', 'plan'];
+
+/** Every scope, plus the plan sub-document hanging off any of them. */
+function withPlanScopes(scopes: Record<string, unknown>[]): Record<string, unknown>[] {
+  const out = [...scopes];
+  for (const s of scopes) {
+    for (const name of PLAN_HOLDERS) {
+      const v = s[name];
+      if (v && typeof v === 'object' && !Array.isArray(v)) out.push(v as Record<string, unknown>);
     }
+  }
+  return out;
+}
+
+/**
+ * The plan the ticket already carries, as a document — or nothing.
+ *
+ * The distinction is load-bearing and was got wrong: the tracker's `plan` field
+ * is a *state sentence* (`"plan aprobado"`, `"plan sin aprobar"`), and the plan
+ * itself lives at `plan_document.plan`. Reading the field by name wrote
+ * `plan.md` with the words "plan sin aprobar" in it. So the sub-document wins,
+ * and a bare `plan` string is only believed when it looks like a document at
+ * all — more than one line. A one-line plan is not a plan.
+ */
+export function planOf(scopes: Record<string, unknown>[]): string | null {
+  for (const s of scopes) {
+    for (const name of PLAN_HOLDERS) {
+      const holder = s[name];
+      if (holder && typeof holder === 'object' && !Array.isArray(holder)) {
+        const inner = (holder as Record<string, unknown>).plan ?? (holder as Record<string, unknown>).body;
+        if (typeof inner === 'string' && inner.trim()) return inner.trim();
+      }
+    }
+  }
+  for (const s of scopes) {
+    const v = s.plan;
+    if (typeof v === 'string' && v.includes('\n') && v.trim()) return v.trim();
+  }
+  return null;
+}
+
+/**
+ * The ticket's own validation criteria.
+ *
+ * Looked for in the plan sub-document as well as beside the ticket, because the
+ * tracker puts the list at `plan_document.criteria` and uses the top-level
+ * `criteria` for a *tally* (`"0 de 9 verificados"`). The array test is what
+ * keeps that tally out; before the sub-document was searched it also meant no
+ * criteria were ever imported at all.
+ */
+export function criteriaOf(...sources: Record<string, unknown>[]): TicketCriterion[] {
+  for (const src of withPlanScopes(sources)) {
+    const v = src.criteria ?? src.acceptanceCriteria ?? src.acceptance_criteria;
+    if (!Array.isArray(v) || !v.length) continue;
+    const out = v
+      .map((c): TicketCriterion => {
+        if (typeof c === 'string') return { text: c.trim() };
+        const o = (c ?? {}) as Record<string, unknown>;
+        return {
+          text: String(o.statement ?? o.text ?? o.title ?? o.description ?? '').trim(),
+          state: typeof o.state === 'string' ? o.state : undefined,
+          stateLabel: typeof o.state_label === 'string' ? o.state_label : undefined,
+        };
+      })
+      .filter((c) => c.text);
+    if (out.length) return out;
   }
   return [];
 }

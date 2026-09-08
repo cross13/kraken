@@ -20,6 +20,7 @@ deeper into *how to build*.
 | [`renderer.md`](./renderer.md) | Zustand stores, component tree, layout, agent routing, skill injection | You're building UI or changing client-side state |
 | [`subsystems.md`](./subsystems.md) | Hooks, steering, orchestration, agents/skills, git/GitHub, terminals, Travel Display | You're working on one of those features |
 | [`adding-a-feature.md`](./adding-a-feature.md) | A step-by-step recipe for shipping a new module end-to-end | You're creating a new module/view/feature from scratch |
+| [`security-review.md`](./security-review.md) | The last full audit: what was found, what was fixed, what is still open, and what was verified sound | You're touching secrets, IPC handlers, subprocess spawning, or anything that renders content the app didn't author |
 | [`refactor-metodologia-y-rebranding.md`](./refactor-metodologia-y-rebranding.md) | The move from four SDD phases to **Definir · Plan · Construir**, plus the Signal rebranding — phased plan with a master checklist | You want the *why* behind the current three-stage flow, or you're picking up a remaining phase |
 | [`ux-redesign-proposal.md`](./ux-redesign-proposal.md) | The "Spec Is the App" UX redesign (implemented) — design rationale for the 4-surface IA and the gated spec flow. **Its stage list is superseded** by the refactor above | You want the *why* behind the current shell |
 | [`../PRODUCTION-CHECKLIST.md`](../PRODUCTION-CHECKLIST.md) | Audited list of what must be true before a public release, prioritised P0/P1/P2 | You're planning a release or picking up hardening work |
@@ -38,10 +39,17 @@ file dependency-free. See [`ipc-contract.md`](./ipc-contract.md) for the full re
 
 ## Project gates
 
-There is **no test runner and no linter**. The only automated gate is:
+There is **no test runner and no linter**. The only automated gate on the code is:
 
 ```bash
 npm run typecheck   # runs typecheck:node (electron/**) AND typecheck:web (src/**)
 ```
 
-Run it after every change before declaring done. See `CLAUDE.md` → Commands for the rest.
+Two invariants it cannot see have their own scripts, and both should pass before declaring done:
+
+```bash
+npm run routes -- --check   # a stray word in an agent's `description` hijacks every task run
+npm run hashes -- --check   # an unlisted default body never reaches a cloned workspace
+```
+
+Run all three after every change. See `CLAUDE.md` → Commands for the rest.

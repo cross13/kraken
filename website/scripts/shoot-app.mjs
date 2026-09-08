@@ -1,4 +1,4 @@
-// Capture real screenshots of the Kraken Electron app for the website.
+// Capture real screenshots of the 0ct0 Electron app for the website.
 // Strategy: seed a demo workspace on disk, point the app's stored lastWorkspace
 // at it (two-phase launch), then drive the renderer and screenshot each view.
 import { _electron as electron } from 'playwright';
@@ -27,7 +27,7 @@ const specs = [
   { id: 'thumbnail-cache-miss', name: 'Thumbnail Cache Miss', kind: 'bugfix', phase: 'requirements', updatedAt: '2026-06-12T15:00:00.000Z' },
 ];
 for (const s of specs) {
-  const dir = path.join(demo, '.kraken', 'specs', s.id);
+  const dir = path.join(demo, '.octo', 'specs', s.id);
   fs.mkdirSync(dir, { recursive: true });
   const meta = { id: s.id, name: s.name, kind: s.kind, phase: s.phase, path: dir, createdAt: '2026-06-09T09:00:00.000Z', updatedAt: s.updatedAt };
   fs.writeFileSync(path.join(dir, 'spec.json'), JSON.stringify(meta, null, 2));
@@ -43,9 +43,9 @@ const git = (...args) => {
 };
 if (!fs.existsSync(path.join(demo, '.git'))) {
   git('init', '-q');
-  git('config', 'user.email', 'demo@kraken.dev');
-  git('config', 'user.name', 'Kraken Demo');
-  git('remote', 'add', 'origin', 'git@github.com:cross13/kraken.git');
+  git('config', 'user.email', 'demo@0ct0.dev');
+  git('config', 'user.name', '0ct0 Demo');
+  git('remote', 'add', 'origin', 'git@github.com:cross13/octo.git');
   fs.writeFileSync(path.join(demo, 'README.md'), '# Demo workspace\n');
   git('add', '-A');
   git('commit', '-q', '-m', 'chore: demo workspace');

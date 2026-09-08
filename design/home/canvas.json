@@ -1,0 +1,57 @@
+{
+  "pages": [
+    { "id": "page-1", "name": "Board" },
+    { "id": "page-2", "name": "Bocetos" }
+  ],
+  "artboards": [
+    { "file": "Main.dc.html", "page": "page-1", "x": 0, "y": 0, "w": 1440, "h": 1000, "title": "Home · board", "is_interactive": true },
+    { "file": "Drop.dc.html", "page": "page-1", "x": 1560, "y": 0, "w": 1440, "h": 1000, "title": "Entrada al board", "is_interactive": true },
+    { "file": "Manage.dc.html", "page": "page-1", "x": 3120, "y": 0, "w": 1440, "h": 1000, "title": "Gestionar + borrado", "is_interactive": true },
+    { "file": "Narrow.dc.html", "page": "page-1", "x": 0, "y": 1560, "w": 1040, "h": 900, "title": "Ventana angosta (1040px)", "is_interactive": true },
+    { "file": "DirectionB.dc.html", "page": "page-2", "x": 0, "y": 0, "w": 1300, "h": 900, "title": "Boceto B · el elegido" },
+    { "file": "DirectionC.dc.html", "page": "page-2", "x": 1420, "y": 0, "w": 1300, "h": 900, "title": "Boceto C · descartado" }
+  ],
+  "annotations": [
+    {
+      "id": "note-board",
+      "page": "page-1",
+      "x": 0,
+      "y": -560,
+      "w": 520,
+      "text": "EL BOARD, A FIDELIDAD COMPLETA\n\nSiete cambios sobre el boceto, todos por legibilidad o por uso:\n\n1 · UNA SOLA ANATOMÍA. En el boceto la izquierda eran filas y la derecha tarjetas: dos gramáticas conviviendo. Ahora toda tarjeta tiene las mismas cuatro líneas, siempre en el mismo orden — estado + tipo + ticket + edad · el nombre · qué es (2 líneas) · qué necesita de vos. Nunca hay que reaprender a leerla.\n\n2 · «ENTREGADO» YA NO ES UNA COLUMNA. Doce entregados apretados en el mismo ancho que una columna de uno era el peor desequilibrio del boceto. Bajó a un estante plegado al pie: el trabajo terminado es referencia, no espacio de trabajo. Las tres fases reales pasaron de 220px a ~300px cada una.\n\n3 · EL COLOR DE LA COLUMNA SALE DEL CONTENIDO. La regla superior no es fija por columna: es violeta si algo ahí espera tu decisión, verde si algo corre, gris si está vacía. De un vistazo sabés dónde te toca a vos — y respeta la regla de dos acentos de Signal.\n\n4 · EL CARRIL «YA CON SPEC» ARRANCA PLEGADO. Sigue separado y con su contador a la vista, pero no compite por altura con lo accionable. Un click lo abre.\n\n5 · LA FILA DE TICKET SUBIÓ A 52px y perdió una línea: clave + estado + edad arriba, título abajo. Antes eran 35px con tres líneas.\n\n6 · CONTADORES QUE DICEN ALGO. «4 specs · 2 esperan tu ok · 1 corriendo» en vez de «4 en vuelo».\n\n7 · LA TARJETA QUE CORRE SE DISTINGUE: fondo más oscuro, filete verde y barra de progreso con la tarea actual (T3 de 7)."
+    },
+    {
+      "id": "note-drop",
+      "page": "page-1",
+      "x": 1560,
+      "y": -560,
+      "w": 460,
+      "text": "CÓMO ENTRA UN TICKET AL BOARD\n\nLo que un board promete es mover cosas. Acá se hace en dos clicks y sin drag: click en el ticket → el board ofrece sus dos entradas legítimas.\n\nSolo dos columnas se prenden, y no es decoración: son las dos funciones que ya existen en lib/specActions.ts.\n\n  Requirements → planSpec — crea el spec y para en cada aprobación\n  Build → quickPlanSpec — redacta los dos documentos sin paradas\n\nPlan nunca es zona de entrada: no se puede empezar un spec por el medio. El board te lo impide en vez de explicártelo.\n\nProbalo en el artboard principal: click en cualquier ticket de Jira o Tracker, después en la zona punteada. La tarjeta aparece en la columna, con el ticket ya linkeado.\n\nAbajo, el estante de Entregado abierto."
+    },
+    {
+      "id": "note-manage",
+      "page": "page-1",
+      "x": 3120,
+      "y": -560,
+      "w": 460,
+      "text": "GESTIONAR Y BORRAR\n\nHoy «Manage» es un botón de texto en el header de «In flight» que solo existe si hay specs en vuelo, y te lleva a otra pantalla entera. Para borrar uno: encontrar el botón → cambiar de tab → buscar en la lista → seleccionar → bajar al detalle → Delete arriba a la derecha → window.confirm del sistema.\n\nAcá es un interruptor sobre el board que ya estás mirando. Aparecen las casillas en las tarjetas, la tarjeta seleccionada se tiñe, y la barra sube desde abajo con los nombres a la vista.\n\nLa confirmación pasa en la misma barra, no en un modal del sistema, y dice qué se lleva puesto: la carpeta en .octo/specs/ y el historial de runs.\n\nY cada tarjeta tiene su ⋯ con «Borrar spec e historial»: borrar uno solo nunca obliga a entrar en modo gestionar — abre el modo con esa sola tarjeta ya seleccionada y confirmando.\n\nLas analíticas de SpecsStudio (runs, error rate, tiempo) no vienen: su lugar es Activity."
+    },
+    {
+      "id": "note-narrow",
+      "page": "page-1",
+      "x": 1180,
+      "y": 1560,
+      "w": 420,
+      "text": "VENTANA ANGOSTA (1040px)\n\nEl mismo archivo. El board mantiene sus tres columnas — es lo que lo hace un board — y lo que cede es la entrada: 366px → 292px. La pista del estante se oculta.\n\nEs el límite honesto de esta dirección: por debajo de ~980px tres columnas de tarjeta dejan de ser legibles y habría que plegar la entrada a un ícono. Si Octo tiene que vivir en ventanas más chicas que eso, conviene saberlo ahora."
+    },
+    {
+      "id": "note-sketches",
+      "page": "page-2",
+      "x": 0,
+      "y": -300,
+      "w": 560,
+      "text": "LOS BOCETOS ORIGINALES\n\nB es el que elegiste; quedó acá como referencia de dónde salió. Lo construido en la página «Board» corrige sus siete problemas — la nota del artboard principal los lista.\n\nC (riel de facets sobre una tabla única) queda descartado. Vale guardar una idea suya por si alguna vez hace falta: los facets combinables permitían preguntas que el board no puede contestar, del tipo «bugs de Jira que ya tienen spec y están en Build». Si esa necesidad aparece, es un buscador, no el Home."
+    }
+  ],
+  "launch": { "view": "canvas", "page": "page-1" }
+}

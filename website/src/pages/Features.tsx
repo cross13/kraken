@@ -1,63 +1,66 @@
-import { ArrowRight } from 'lucide-react';
-import { Section, Reveal, SectionHeading } from '../components/ui';
+import { Section, SectionHeading, Reveal, Eyebrow } from '../components/ui';
 import { FeatureCard } from '../components/FeatureCard';
-import { AppShot } from '../components/AppShot';
 import { Button } from '../components/Button';
-import { FEATURES } from '../content/features';
+import { GROUPS } from '../content/features';
+import { ArrowRight } from 'lucide-react';
 
 export function Features() {
   return (
     <>
-      <Section className="pt-16 text-center sm:pt-24">
-        <div className="flex flex-col items-center">
-          <SectionHeading
-            eyebrow="Features"
-            title={<>Built for the way specs really get done.</>}
-            blurb="Kraken composes the whole Spec-Driven Development loop into one desktop app — and meets your existing Claude Code setup where it already lives."
-          />
-        </div>
-      </Section>
-
-      <Section className="mt-16">
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {FEATURES.map((f, i) => (
-            <Reveal key={f.title} delay={(i % 3) * 0.06}>
-              <FeatureCard feature={f} />
-            </Reveal>
-          ))}
-        </div>
-      </Section>
-
-      {/* Screenshot strip */}
-      <Section className="mt-28">
-        <div className="flex flex-col items-center">
-          <SectionHeading
-            eyebrow="In the app"
-            title={<>See it in motion.</>}
-            blurb="Real captures from the desktop app — the spec editor, the open-questions module, and source control."
-          />
-        </div>
-        <div className="mt-12 grid gap-8 lg:grid-cols-2">
-          <Reveal>
-            <AppShot src="/screens/spec-editor.png" alt="Spec editor — requirements" />
-          </Reveal>
-          <Reveal delay={0.08}>
-            <AppShot src="/screens/questions.png" alt="Open Questions module" />
-          </Reveal>
-          <Reveal delay={0.04}>
-            <AppShot src="/screens/source-control.png" alt="Source Control — pull request" />
-          </Reveal>
-          <Reveal delay={0.12}>
-            <AppShot src="/screens/tasks.png" alt="Wave-based task runner" />
-          </Reveal>
-        </div>
-      </Section>
-
-      <Section className="mt-24 text-center">
+      <Section className="pt-20 pb-12 sm:pt-24">
         <Reveal>
-          <Button to="/workflow">
-            Explore the SDD workflow <ArrowRight size={16} />
-          </Button>
+          <div className="flex max-w-3xl flex-col gap-5">
+            <Eyebrow>Capabilities</Eyebrow>
+            <h1 className="font-display text-4xl font-bold leading-[1.06] tracking-tight text-ink-50 sm:text-5xl">
+              Everything the workbench does.
+            </h1>
+            <p className="text-[17px] leading-relaxed text-ink-300">
+              Grouped the way the app is: the loop itself, the engine underneath it, the Claude Code
+              setup it reads, and what happens once more than one thing is running at a time.
+            </p>
+          </div>
+        </Reveal>
+      </Section>
+
+      {GROUPS.map((group, gi) => (
+        <Section key={group.id} id={group.id} className="py-14">
+          <div className="rule mb-10" />
+          <Reveal>
+            <SectionHeading
+              eyebrow={group.eyebrow}
+              title={group.title}
+              blurb={group.blurb}
+              tone={gi % 2 === 1 ? 'agent' : 'accent'}
+            />
+          </Reveal>
+          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {group.items.map((f, i) => (
+              <Reveal key={f.title} delay={0.04 * i} className="h-full">
+                <FeatureCard {...f} />
+              </Reveal>
+            ))}
+          </div>
+        </Section>
+      ))}
+
+      <Section className="py-16">
+        <Reveal>
+          <div className="border border-line bg-panel p-10">
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="max-w-xl">
+                <h2 className="font-display text-2xl font-bold tracking-tight text-ink-50">
+                  The full picture is in the repo.
+                </h2>
+                <p className="mt-2 text-sm leading-relaxed text-ink-400">
+                  Architecture, the IPC contract, the data model, the backends and every subsystem
+                  are documented alongside the code.
+                </p>
+              </div>
+              <Button to="/docs">
+                Docs <ArrowRight size={16} />
+              </Button>
+            </div>
+          </div>
         </Reveal>
       </Section>
     </>

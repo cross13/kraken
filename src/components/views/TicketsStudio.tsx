@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useWorkspace } from '../../stores/workspace';
 import { cn } from '../../lib/cn';
+import { TrackerMark, trackerBrand } from '../../lib/trackerBrand';
 import { JIRA_TOOLS } from '../../../electron/shared/jira';
 import { ModuleHeader } from '../ModuleShell';
 import type {
@@ -147,24 +148,40 @@ export function TicketsStudio() {
         </div>
       ) : (
         <>
-          {/* One tab per tracker. The dot is the answer to "does this work". */}
+          {/* One tab per tracker: its own mark says *which* service, the dot
+              says whether it works. Two questions, two marks — a single tinted
+              dot would have had to answer both and answered neither. */}
           <div className="k-chrome shrink-0 flex items-end gap-1 px-7 border-b border-ink-800/50 overflow-x-auto">
-            {providers.map((p) => (
-              <button
-                key={p.id}
-                onClick={() => setSelected(p.id)}
-                className={cn(
-                  'relative flex items-center gap-2 px-3.5 pb-2.5 pt-2 text-[12.5px] whitespace-nowrap transition',
-                  p.id === selected ? 'text-ink-50' : 'text-faint hover:text-ink-200'
-                )}
-              >
-                <StatusDot provider={p} />
-                {p.label}
-                {p.id === selected && (
-                  <span className="absolute left-2 right-2 -bottom-px h-[2px] rounded-full bg-accent" />
-                )}
-              </button>
-            ))}
+            {providers.map((p) => {
+              const active = p.id === selected;
+              // The underline takes the service's hue too, so the tab you are
+              // on is identifiable from the colour alone at a glance sideways.
+              const { color } = trackerBrand(p);
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => setSelected(p.id)}
+                  className={cn(
+                    'relative flex items-center gap-2 px-3.5 pb-2.5 pt-2 text-[12.5px] whitespace-nowrap transition',
+                    active ? 'text-ink-50' : 'text-faint hover:text-ink-200'
+                  )}
+                >
+                  <TrackerMark
+                    provider={p}
+                    size={13}
+                    className={cn('shrink-0', !active && 'opacity-70')}
+                  />
+                  {p.label}
+                  <StatusDot provider={p} />
+                  {active && (
+                    <span
+                      className="absolute left-2 right-2 -bottom-px h-[2px] rounded-full bg-accent"
+                      style={color ? { backgroundColor: color } : undefined}
+                    />
+                  )}
+                </button>
+              );
+            })}
             {unconfigured.map((s) => (
               <button
                 key={s.name}
@@ -172,7 +189,15 @@ export function TicketsStudio() {
                 title={`Add ${s.name} as a tracker`}
                 className="flex items-center gap-1.5 px-3 pb-2.5 pt-2 text-[12.5px] text-faint hover:text-accent transition whitespace-nowrap"
               >
-                <Plus size={12} /> {s.name}
+                <Plus size={12} />
+                {/* the same mark an added tracker will wear, so the row you are
+                    about to click already looks like what it becomes */}
+                <TrackerMark
+                  provider={{ preset: presetFor(s), server: s.name }}
+                  size={12}
+                  className="shrink-0 opacity-70"
+                />
+                {s.name}
               </button>
             ))}
           </div>

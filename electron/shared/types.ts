@@ -98,17 +98,88 @@ export interface TicketProviderConfig {
   tools?: Partial<Record<TicketCapability, string>>;
 }
 
-/** A ticket as Octo lists it — the least any tracker can be relied on to give. */
+/**
+ * A ticket as Octo lists it.
+ *
+ * `key` and `title` are the contract; everything after them is what a given
+ * tracker happened to volunteer. They are all optional because no two trackers
+ * return the same set, and a card that renders only what it actually got is the
+ * only honest way to show a list drawn from several at once.
+ */
 export interface TicketSummary {
   key: string;
   title: string;
+  /**
+   * The status as the tracker's API names it (`in_progress`, `In Review`).
+   * This — not `statusLabel` — is what `isDoneStatus` reads, so a tracker that
+   * localises its labels still gets filtered correctly.
+   */
   status?: string;
+  /** The status as the tracker's *own UI* writes it, when that differs. */
+  statusLabel?: string;
+  /** `Urgente` / `High` / `P1` — verbatim; the card colours it by rank. */
+  priority?: string;
+  /** Bug · Task · Story — the ticket's own type name. */
+  type?: string;
+  /** Whoever it is on, as a display name. */
+  assignee?: string;
+  /** The mission / sprint / epic it hangs off, as the tracker names it. */
+  group?: string;
+  /** Labels, plus anything else worth a chip (the tracker's plan state). */
+  labels?: string[];
+  /** ISO 8601 last-touched, when the tracker reports one — the card's age. */
+  updated?: string;
   url?: string;
   /** Longer text, used to seed a spec's brief. */
   description?: string;
   /** Which provider it came from. */
   provider: string;
   providerLabel: string;
+}
+
+/** One acceptance / validation criterion the ticket already carries. */
+export interface TicketCriterion {
+  text: string;
+  /** The tracker's own word for its state (`pending`, `verified`). */
+  state?: string;
+  /** What that state is called in its UI (`Sin verificar`). */
+  stateLabel?: string;
+}
+
+/**
+ * A ticket read in full, for **reading it before deciding to work on it**.
+ *
+ * The listing row answers "which ticket is this"; this answers "is this the
+ * work I think it is, and is it ready to start". Everything past `ticket` is
+ * absent when the tracker has no such thing — a Jira issue has comments and no
+ * plan, a tracker task has a plan, its criteria and its history and no comments.
+ */
+export interface TicketDetail {
+  /** The row, re-read from the detail response wherever it says more. */
+  ticket: TicketSummary;
+  /** The ticket's description, as markdown. */
+  body: string;
+  /** A plan the ticket already carries — the document, never a state word. */
+  plan?: string;
+  /** Whether that plan has been signed off, when the tracker models it. */
+  planApproved?: boolean;
+  planApprovedBy?: string;
+  criteria: TicketCriterion[];
+  comments: { author?: string; when?: string; body: string }[];
+  /** What has happened on the ticket, newest first. */
+  history: { when?: string; actor?: string; what: string }[];
+  /** Who filed it, when `assignee` is not the whole story. */
+  reporter?: string;
+  created?: string;
+  /** Minutes, when the tracker bills time. */
+  estimateMinutes?: number;
+  loggedMinutes?: number;
+  /**
+   * The server's own prose answer, kept whatever else was parsed. It is the
+   * fallback view for a tracker whose shape nothing here recognised — an empty
+   * panel would otherwise be indistinguishable from an empty ticket.
+   */
+  raw: string;
 }
 
 /** One tool call Octo intends to make, shown for confirmation before it is sent. */

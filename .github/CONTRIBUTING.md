@@ -1,11 +1,11 @@
-# Contributing to Kraken
+# Contributing to 0ct0
 
-Thanks for your interest in improving Kraken! This document explains how to get set up
+Thanks for your interest in improving 0ct0! This document explains how to get set up
 and what we expect in a contribution.
 
 ## Development setup
 
-Kraken is an Electron + React + TypeScript app.
+0ct0 is an Electron + React + TypeScript app.
 
 ```bash
 npm install          # install dependencies
@@ -15,8 +15,15 @@ npm run typecheck    # runs BOTH typecheck:node and typecheck:web
 ```
 
 There is **no test runner and no linter** configured — `npm run typecheck` is the only
-automated gate. **Always run it before opening a pull request.** CI runs the same check
-and PRs that fail it will not be merged.
+automated gate on the code. Two invariants it cannot see have their own scripts:
+
+```bash
+npm run routes -- --check   # a stray word in an agent's `description` hijacks every task run
+npm run hashes -- --check   # an unlisted default body never reaches a cloned workspace
+```
+
+**Always run all three before opening a pull request.** CI runs the same checks and PRs
+that fail them will not be merged.
 
 ## Project layout
 
@@ -34,7 +41,8 @@ See `CLAUDE.md` and `docs/` for the architecture, the IPC contract, and the data
 3. **Update the docs in the same change.** Any change to architecture, the IPC contract,
    the data model, or a subsystem must update the matching `docs/*.md` file — this is part
    of the definition of "done", exactly like `npm run typecheck`.
-4. Run `npm run typecheck` and make sure it passes.
+4. Run `npm run typecheck`, `npm run routes -- --check` and `npm run hashes -- --check`,
+   and make sure all three pass.
 5. Fill in the PR template and link any related issue.
 6. `main` is protected: changes land via reviewed pull requests, not direct pushes.
 

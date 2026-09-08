@@ -44,7 +44,7 @@ const EXPLAINER = [
   },
   {
     heading: 'Deleting',
-    body: 'Delete removes the on-disk spec folder AND its mirrored history (runs, events, file changes). This is permanent — the confirm prompt guards it.',
+    body: "Delete removes the on-disk spec folder AND its mirrored history (runs, events, file changes). This is permanent. Home's board is the usual place to delete — Gestionar, or a card's ⋯ — and confirms in place; this one is here for when you are already reading a spec's history.",
   },
 ];
 
@@ -125,7 +125,7 @@ export function SpecsStudio() {
             <Inbox size={30} className="text-faint mx-auto mb-3" />
             <p className="text-[13px] text-dim">No specs yet.</p>
             <p className="text-[12px] text-faint mt-1">
-              Create one from the Specs rail to start tracking runs here.
+              Create one from Home's board to start tracking runs here.
             </p>
           </div>
         </div>
@@ -430,6 +430,8 @@ function SpecDetail({
   const root = useWorkspace((s) => s.root)!;
   const deleteSpec = useWorkspace((s) => s.deleteSpec);
   const openOverlay = useUi((s) => s.openOverlay);
+  const activeSpecId = useUi((s) => s.activeSpecId);
+  const closeSpec = useUi((s) => s.closeSpec);
   const [runs, setRuns] = useState<RunRow[]>([]);
   const [events, setEvents] = useState<SpecEventRow[]>([]);
   const [deleting, setDeleting] = useState(false);
@@ -451,6 +453,9 @@ function SpecDetail({
     setErr(null);
     try {
       await deleteSpec(spec.id);
+      // The Spec surface mounts on `activeSpecId`; deleting the spec it holds
+      // would leave it reading a folder that no longer exists.
+      if (activeSpecId === spec.id) closeSpec();
       onDeleted();
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));

@@ -1,0 +1,97 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Hanken+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+  <style>
+    body { margin: 0; background: #1A1A1A; }
+    a { color: #A6E62E; } a:hover { color: #C4F06A; }
+    .lbl { font: 500 11px/1.2 "JetBrains Mono", ui-monospace, monospace; letter-spacing: .08em; text-transform: uppercase; color: #848484; }
+  </style>
+</helmet>
+
+<div style="width: 880px; height: 560px; background: #1A1A1A; display: flex; flex-direction: column; font-family: 'Hanken Grotesk', system-ui, sans-serif;">
+
+  <div style="display: flex; align-items: baseline; gap: 12px; padding: 22px 32px; border-bottom: 1px solid #393939;">
+    <div style="font: 700 15px/1 'Space Grotesk', system-ui, sans-serif; color: #F2F2F2; letter-spacing: .01em;">Dirección C</div>
+    <div style="font: 500 15px/1 'Space Grotesk', system-ui, sans-serif; color: #A6E62E;">Placa</div>
+    <div style="flex-grow: 1;"></div>
+    <div class="lbl">bloque sólido, todo calado</div>
+  </div>
+
+  <div style="flex-grow: 1; display: flex; align-items: center; gap: 26px; padding: 0 32px;">
+
+    <!-- the plate -->
+    <div style="width: 320px; height: 320px; background: #76B900; display: flex; flex-direction: column; justify-content: space-between; padding: 24px;">
+      <div style="width: 96px;">
+        <svg viewBox="0 0 120 122" style="display: block; width: 100%; height: auto; overflow: visible;" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <g fill="none" stroke="#0F1400" stroke-linecap="round">
+            <path d="M 31,88 C 26,99 24,108 29,112 C 32,114 35,111 34,107" stroke-width="8"></path>
+            <path d="M 43,92 C 40,102 39,111 43,115" stroke-width="7"></path>
+            <path d="M 55,94 C 54,104 53,112 56,116" stroke-width="6.4"></path>
+            <path d="M 67,94 C 68,104 69,112 66,116" stroke-width="6.4"></path>
+            <path d="M 79,92 C 82,102 83,111 79,115" stroke-width="7"></path>
+            <path d="M 89,88 C 94,99 96,108 91,112 C 88,114 85,111 86,107" stroke-width="8"></path>
+          </g>
+          <path d="M 24,80 C 24,38 40,18 60,18 C 80,18 96,38 96,80 C 96,89 84,94 60,94 C 36,94 24,89 24,80 Z" fill="#0F1400" stroke="#0F1400" stroke-width="4.6" stroke-linejoin="round"></path>
+          <ellipse cx="43" cy="56" rx="11.5" ry="13.5" fill="#76B900"></ellipse>
+          <ellipse cx="77" cy="56" rx="11.5" ry="13.5" fill="#76B900"></ellipse>
+          <g stroke="#0F1400" stroke-linejoin="round">
+            <path d="M 25,45 L 11,41 L 9,59 L 24,59 Z" fill="#0F1400" stroke-width="2.4"></path>
+            <path d="M 95,45 L 109,41 L 111,59 L 96,59 Z" fill="#0F1400" stroke-width="2.4"></path>
+            <path d="M 25,50 C 25,29 40,15 60,15 C 80,15 95,29 95,50 Z" fill="#0F1400" stroke-width="2.8"></path>
+            <path d="M 19,49 L 101,49 L 96,59 L 24,59 Z" fill="#0F1400" stroke-width="2.4"></path>
+          </g>
+          <path d="M 51,49 C 43,37 35,25 33,10 C 39,19 50,31 56,43 Z" fill="#76B900"></path>
+          <path d="M 69,49 C 77,37 85,25 87,10 C 81,19 70,31 64,43 Z" fill="#76B900"></path>
+        </svg>
+      </div>
+      <div style="font: 700 92px/0.8 'Space Grotesk', system-ui, sans-serif; letter-spacing: -0.05em; color: #0F1400;">0ct0</div>
+    </div>
+
+    <!-- the same plate, other grounds -->
+    <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 18px;">
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;">
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <div class="lbl">invertida</div>
+          <div style="aspect-ratio: 1; background: #1A1A1A; border: 1px solid #393939; display: flex; align-items: flex-end; padding: 14px;">
+            <div style="font: 700 40px/0.8 'Space Grotesk', system-ui, sans-serif; letter-spacing: -0.05em; color: #A6E62E;">0ct0</div>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <div class="lbl">badge</div>
+          <div style="aspect-ratio: 1; background: #76B900; display: flex; align-items: center; justify-content: center;">
+            <div style="font: 700 40px/0.8 'Space Grotesk', system-ui, sans-serif; letter-spacing: -0.05em; color: #0F1400;">0ct0</div>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <div class="lbl">grises</div>
+          <div style="aspect-ratio: 1; background: #ECECEC; display: flex; align-items: center; justify-content: center;">
+            <div style="font: 700 40px/0.8 'Space Grotesk', system-ui, sans-serif; letter-spacing: -0.05em; color: #1A1A1A;">0ct0</div>
+          </div>
+        </div>
+      </div>
+      <div style="border: 1px solid #393939; padding: 18px; display: flex; flex-direction: column; gap: 12px;">
+        <div class="lbl">franja · header de repo</div>
+        <div style="background: #76B900; padding: 12px 16px; display: flex; align-items: center; gap: 14px;">
+          <div style="font: 700 26px/1 'Space Grotesk', system-ui, sans-serif; letter-spacing: -0.04em; color: #0F1400;">0ct0</div>
+          <div style="width: 1px; height: 22px; background: rgba(15,20,0,0.32);"></div>
+          <div style="font: 500 12.5px/1 'JetBrains Mono', ui-monospace, monospace; color: #0F1400; letter-spacing: .02em;">spec → plan → build</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="padding: 16px 32px; border-top: 1px solid #393939; display: flex; gap: 32px;">
+    <div style="flex-grow: 1; font: 400 12.5px/1.5 'Hanken Grotesk', system-ui, sans-serif; color: #C8C8C8;"><b style="color:#ECECEC;">A favor.</b> Es la traducción literal de Signal: radio 0, sin sombras, el verde sólo como relleno y #0F1400 como única tinta encima. Imposible de confundir en un feed.</div>
+    <div style="flex-grow: 1; font: 400 12.5px/1.5 'Hanken Grotesk', system-ui, sans-serif; color: #C8C8C8;"><b style="color:#ECECEC;">En contra.</b> Un bloque verde de 320px es mucho verde: en la app, donde el verde significa «corriendo», compite con el estado. Funciona mejor como ícono y merch que como identidad en pantalla.</div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

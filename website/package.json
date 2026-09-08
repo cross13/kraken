@@ -1,5 +1,5 @@
 {
-  "name": "kraken-website",
+  "name": "octo-website",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -9,8 +9,8 @@
     "preview": "vite preview --port 5990 --strictPort",
     "start": "vite preview --port 80 --strictPort",
     "typecheck": "tsc --noEmit",
-    "docker:build": "docker build -t kraken-website .",
-    "docker:run": "docker run --rm -p 80:80 kraken-website"
+    "docker:build": "docker build -t octo-website .",
+    "docker:run": "docker run --rm -p 80:80 octo-website"
   },
   "dependencies": {
     "@xyflow/react": "^12.3.5",

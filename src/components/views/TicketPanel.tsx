@@ -3,9 +3,10 @@ import { Ticket, ExternalLink, Loader2, Check, AlertTriangle, ChevronRight } fro
 import { useWorkspace } from '../../stores/workspace';
 import { useUi } from '../../stores/ui';
 import { cn } from '../../lib/cn';
+import { TrackerMark } from '../../lib/trackerBrand';
 import { bridgeReady } from '../../lib/bridge';
 import { pendingEvents, syncEventId, eventLabel, type SyncEvent } from '../../lib/ticketSync';
-import type { SpecMeta, TicketAction } from '../../../electron/shared/types';
+import type { SpecMeta, TicketAction, TicketProviderConfig } from '../../../electron/shared/types';
 
 /**
  * The spec's tracker ticket, and what it is still owed.
@@ -29,8 +30,11 @@ export function TicketPanel({
   const root = useWorkspace((s) => s.root)!;
   const refreshAll = useWorkspace((s) => s.refreshAll);
   const openLibrary = useUi((s) => s.openLibrary);
+  const openOverlay = useUi((s) => s.openOverlay);
 
-  const [configured, setConfigured] = useState<boolean | null>(null);
+  // The whole list, not just "is any enabled": the spec's ticket names a
+  // provider *id*, and its preset is what says which mark and hue to wear.
+  const [providers, setProviders] = useState<TicketProviderConfig[] | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [plan, setPlan] = useState<{ provider: { id: string; label: string }; actions: TicketAction[] }[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
@@ -42,14 +46,17 @@ export function TicketPanel({
     // A preload older than this component has no `tickets` namespace at all;
     // reading through it would throw synchronously, before any `.catch`.
     if (!bridgeReady('tickets', 'listProviders')) {
-      setConfigured(false);
+      setProviders([]);
       return;
     }
     window.octo.tickets
       .listProviders(root)
-      .then((p) => setConfigured(p.some((x) => x.enabled)))
-      .catch(() => setConfigured(false));
+      .then(setProviders)
+      .catch(() => setProviders([]));
   }, [root]);
+
+  const configured = providers === null ? null : providers.some((p) => p.enabled);
+  const linkedProvider = providers?.find((p) => p.id === meta.ticket?.provider);
 
   const preview = useCallback(
     async (ev: SyncEvent) => {
@@ -101,8 +108,34 @@ export function TicketPanel({
     <>
       {meta.ticket ? (
         <div className="flex items-center gap-2 min-w-0">
-          <Ticket size={13} className="text-accent shrink-0" />
-          <span className="font-mono text-[12px] text-ink-50">{meta.ticket.key}</span>
+          {linkedProvider ? (
+            <TrackerMark provider={linkedProvider} size={13} className="shrink-0" />
+          ) : (
+            <Ticket size={13} className="text-accent shrink-0" />
+          )}
+          {/* The key opens the ticket itself. From inside a spec, "what did the
+              ticket actually say?" is asked constantly and used to mean leaving
+              the app for the tracker's own tab. */}
+          <button
+            onClick={() =>
+              openOverlay({
+                kind: 'ticket',
+                provider: linkedProvider,
+                ticket: {
+                  key: meta.ticket!.key,
+                  title: meta.ticket!.title ?? '',
+                  status: meta.ticket!.status,
+                  url: meta.ticket!.url,
+                  provider: meta.ticket!.provider,
+                  providerLabel: linkedProvider?.label ?? meta.ticket!.provider,
+                },
+              })
+            }
+            title="Ver el ticket"
+            className="font-mono text-[12px] text-ink-50 hover:text-accent-text transition"
+          >
+            {meta.ticket.key}
+          </button>
           {meta.ticket.url && (
             <button
               onClick={() => void window.octo.shell.openUrl(meta.ticket!.url!)}

@@ -1,4 +1,4 @@
-# DigitalOcean App Platform spec for the Kraken marketing website.
+# DigitalOcean App Platform spec for the 0ct0 marketing website.
 # Builds website/ from its Dockerfile (node build -> nginx) and serves it.
 #
 # Deploy:
@@ -6,7 +6,7 @@
 #   doctl apps update <app-id> --spec .do/app.yaml  # subsequent changes
 # Or in the DO control panel: Create App -> from this GitHub repo (it picks up
 # this spec automatically).
-name: kraken-website
+name: octo-website
 region: nyc
 services:
   - name: web

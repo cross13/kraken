@@ -150,25 +150,89 @@ it:
 a phase cannot double-post, and a spec linked halfway through catches up all at once.
 `SpecMeta.ticket` holds the link; `applied[]` is what makes every write idempotent.
 
-**Starting from a ticket instead of a blank prompt.** `TicketInbox` sits under Home's composer and
-lists what is open across the enabled trackers, minus anything a spec already covers. Picking one
-runs `planSpecFromTicket`, which reads the **ticket itself** through the `get` capability — not
-just the row that was clicked — and `ticketSeed` shapes it into the spec's documents:
+**Starting from a ticket instead of a blank prompt.** `TicketInbox` is Home's **Entrada** pane —
+the board's left column. It lists what is open across the enabled trackers as **one lane per
+provider**, plus a separate *Ya con spec* lane pairing each covered ticket with the spec that
+covers it (they used to be filtered out, which answered "did we already start this?" by hiding the
+answer). Clicking a ticket **arms** it and the board offers its two legitimate entry points:
+Requirements runs `planSpecFromTicket`, Build runs `quickPlanSpecFromTicket` — the same seeding
+followed by the hands-off drafting chain. Both read the **ticket itself** through the `get`
+capability — not just the row that was clicked — and `ticketSeed` shapes it into the documents:
 `requirements.md` (or `bugfix.md`) gets the description and the ticket's own validation criteria
 numbered `AC-n`, and `plan.md` is written too **when the ticket already carries a plan**. The text
 is *copied*, never paraphrased: whoever wrote the ticket wrote the requirement, and running it
 through a model would only lose detail. The link is written at creation and `spec-created` marked
 applied.
 
+**Reading a ticket costs nothing.** Until `tickets:detail` existed, the only thing you could do
+with a ticket was arm it and drop it on a column — so the only way to find out whether it was the
+work you thought it was, big enough to split, or already carrying a plan, was to create a spec and
+look at what came out. That leaves litter on disk for a question that should be free. The handler
+calls the `get` capability and returns a **`TicketDetail`**: the row re-read from the fuller
+response, the description, a plan the ticket already carries and whether it is signed off, the
+criteria, the comments, the history, reporter/created, and estimate/logged minutes. Every field is
+optional, because the two servers answer with different halves of it — Jira sends comments and no
+plan, the tracker sends a plan, its criteria and its history and no comments. `raw` is always kept:
+for a tracker whose shape nothing recognises, the server's own prose is the difference between a
+panel that looks broken and one that shows the ticket in the tracker's own words. Nothing here
+writes. `ticketReadArgs` is separate from `ticketRefArgs` because `getJiraIssue` declares `fields`
+and `getTransitionsForJiraIssue` does not — and `comment` has to be named in `fields` or Jira's
+comments never come back at all.
+
+**Two readers that were quietly wrong**, both found by probing the live servers:
+
+- **`plan` is a state sentence, not a plan.** The tracker's `plan` field says `"plan aprobado"` /
+  `"plan sin aprobar"`; the document lives at `plan_document.plan`. Reading it by name wrote a
+  `plan.md` whose entire body was the words *plan sin aprobar*. `planOf` takes the sub-document
+  first and believes a bare `plan` string only when it looks like a document at all — more than one
+  line. A one-line plan is not a plan.
+- **Criteria were never imported.** `criteriaOf` looked for an array called `criteria`; the tracker
+  uses that name for a *tally* (`"0 de 9 verificados"`) and keeps the list at
+  `plan_document.criteria` as `{position, statement, state, state_label}`. It now searches the plan
+  sub-document too and reads `statement`, so a spec seeded from a tracker ticket arrives with its
+  real `AC-n` list — ten of them on the ticket this was found with, previously all dropped in
+  silence.
+
 Imported criteria are almost never in EARS form, and are deliberately left as they were. The
 format check's `criteria-without-shall` finding is what closes that loop — a bullet under an
 acceptance-criteria heading that does not say `SHALL` is invisible to `extractCriteria`, so it
 never reaches Review and is never traced to a task. That was silent data loss for hand-written
-documents too; now *Fix with Claude* rewrites them. Because `tools/call` responses vary per tracker, `normalizeTicketList` is deliberately
-forgiving — it finds the first array anywhere in the structured content, then the field names
-trackers agree on (`key`/`identifier`/`id`, `title`/`summary`/`name`, `status` flat or nested),
-and falls back to scanning prose for `KEY-123 — title` lines. "Not done" is filtered client-side
-by `isDoneStatus`, because no two trackers agree on the status enum.
+documents too; now *Fix with Claude* rewrites them.
+
+**Reading a ticket takes reading the tracker's own envelope.** Because `tools/call` responses vary
+per tracker, `normalizeTicketList` is deliberately forgiving — it finds the first array anywhere in
+the structured content, then the field names trackers agree on, and falls back to scanning prose for
+`KEY-123 — title` lines. Three shapes have to be unwrapped before those names match anything:
+
+- **`fields`.** Jira answers `{id, key, self, fields: {summary, status, priority, issuetype,
+  assignee, updated, labels, parent}}`, so every name lives one level down. `rowScopes` reads a row
+  and its `fields` as one flat namespace. Without it a Jira row matched nothing but `key`, and the
+  Entrada card was a bare ticket number.
+- **ADF.** Jira never stores rich text as a string; a description is `{type: 'doc', content: […]}`,
+  which every `typeof v === 'string'` test skips. `adfText` flattens it, including the `mention`,
+  `emoji` and `inlineCard` nodes that keep their whole rendering in `attrs` and have no children.
+  This is why a Jira spec's brief and its seeded `requirements.md` now carry the ticket's words.
+- **`fields` as a *request*.** `searchJiraIssuesUsingJql` declares an optional `fields`, and left
+  out it defaults to a generous set (summary, description, status, issuetype, priority, labels,
+  components, assignee, reporter, created, updated, resolution, project). `searchArgs` names
+  `JIRA_LIST_FIELDS` anyway: it drops the five nobody reads and adds **`parent`**, which the
+  default omits and which is the only field that can name a ticket's epic. Verified against the
+  live server's `tools/list`, not assumed — an earlier version of this note claimed the endpoint
+  returns bare ids without it (true of the raw REST endpoint, not of this tool) and carried a
+  retry-without-`fields` fallback that the schema made unnecessary.
+
+Past `key` and `title`, `TicketSummary` carries `status` + `statusLabel`, `priority`, `type`,
+`assignee`, `group` (mission/sprint/epic/parent), `labels`, `updated` and `url`. Every one is
+optional and simply absent when the tracker sent nothing — the card renders what it actually got,
+because padding a line with `—` makes an empty field look like an answer. `status` stays the API's
+own word (`in_progress`, `done`) so `isDoneStatus` keeps working on a tracker that localises its
+labels; `statusLabel` is what that tracker's UI writes (`Hecha`). The tracker's `plan` field
+(`"plan sin aprobar"`) is folded in as a label — it is prose about the ticket, but it answers *can
+this start?*, which is the question Entrada exists to answer. `browseUrl` builds a `…/browse/KEY`
+link from the provider's configured site when the server sends none: Jira rows carry only `self`,
+an API endpoint, and that URL is what ends up in the seeded doc's *From TICKET-1* line — previously
+a literal `#`. "Not done" is filtered client-side by `isDoneStatus`, because no two trackers agree
+on the status enum.
 
 **A provider is checked before it is called.** `missingConfig` turns "this cannot work yet" into a
 sentence naming what to set — an unmapped `search` tool, or a `tracker` with no client. The
@@ -190,8 +254,10 @@ right there; it is derived, not stored, from auth mode, whether the tool list ha
 whether a scope is set. The rest is **three numbered steps in dependency order** (Connect → Scope →
 Sync), because you cannot pick a project before signing in and presenting those as equals is what
 made the previous flat panel unusable. The eleven-row tool mapping is real but advanced, so it
-collapses, `TicketInbox` on Home, and `TicketPanel`, which renders compact in the spec flow's briefing
-aside and full inside Ship. All three render nothing at all when no tracker is configured.
+collapses, `TicketInbox` as Home's Entrada pane, and `TicketPanel`, which renders compact in the spec flow's briefing
+aside and full inside Ship. All three render nothing at all when no tracker is configured. The
+fourth is **`TicketDetailView`**, the read-first slide-over (`Overlay` kind `ticket`) — reached
+from the eye on any Entrada row and from the ticket key in `TicketPanel`.
 
 ## Hooks — event-driven agent hooks
 

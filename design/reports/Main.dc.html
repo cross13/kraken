@@ -1,0 +1,145 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #FFFFFF; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', sans-serif; -webkit-font-smoothing: antialiased; color: #0D1B2A; }
+    a { color: #0077FF; text-decoration: none; } a:hover { color: #003973; }
+    * { box-sizing: border-box; }
+    .num { font-variant-numeric: tabular-nums; }
+  </style>
+</helmet>
+
+<div style="width:794px; height:1123px; background:#FFFFFF; display:flex; flex-direction:column; padding:40px 44px 0 44px;">
+
+  <!-- ===== marca de la organización ===== -->
+  <div style="display:flex; align-items:flex-start; gap:12px; padding-bottom:14px; border-bottom:2px solid #003973;">
+    <div style="width:34px; height:34px; background:#003973; display:grid; place-items:center; flex:none;">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 7-8"/><path d="M17 7h4v4"/></svg>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:2px;">
+      <div style="font-size:14px; font-weight:700; letter-spacing:-0.01em;">Gravity Quant</div>
+      <div style="font-size:11px; color:#8494A7;">Agente Asesor Global registrado · CNV Nº [MATRÍCULA]</div>
+    </div>
+    <div style="flex:1;"></div>
+    <div style="text-align:right; display:flex; flex-direction:column; gap:2px;">
+      <div style="font-size:11px; color:#8494A7; text-transform:uppercase; letter-spacing:0.08em; font-weight:600;">Estado de cuenta</div>
+      <div class="num" style="font-size:12px; color:#3D5068;">1 sep — 30 sep 2026</div>
+    </div>
+  </div>
+
+  <!-- ===== a quién pertenece ===== -->
+  <div style="display:flex; align-items:baseline; gap:10px; margin-top:20px;">
+    <h1 style="margin:0; font-size:23px; font-weight:700; letter-spacing:-0.02em;">Marcela Rossi</h1>
+    <span class="num" style="font-size:13px; color:#8494A7;">Cuenta 41000</span>
+  </div>
+  <div style="display:flex; gap:7px; margin-top:9px;">
+    <span style="font-size:11px; font-weight:600; color:#D97706; background:#FEF6E9; padding:3px 8px;">Perfil moderado</span>
+    <span style="font-size:11px; font-weight:500; color:#3D5068; background:#F0F3F7; padding:3px 8px;">Cartera Moderada ARS 60</span>
+    <span style="font-size:11px; font-weight:500; color:#3D5068; background:#F0F3F7; padding:3px 8px;">Asesor · Diego Fernández</span>
+  </div>
+
+  <!-- ===== la pregunta que el cliente hace de verdad ===== -->
+  <div style="display:grid; grid-template-columns:1.35fr 1fr 1fr; gap:1px; background:#D5DCE5; margin-top:22px; border:1px solid #D5DCE5;">
+    <div style="background:#FFFFFF; padding:16px 18px; display:flex; flex-direction:column; gap:5px;">
+      <div style="font-size:11px; color:#8494A7; text-transform:uppercase; letter-spacing:0.07em; font-weight:600;">Tenés hoy</div>
+      <div class="num" style="font-size:29px; font-weight:700; letter-spacing:-0.025em; line-height:1;">$ 118.472.900</div>
+      <div class="num" style="font-size:13px; color:#3D5068;">US$ 84.623 <span style="color:#8494A7;">al MEP de $1.400,0</span></div>
+    </div>
+    <div style="background:#FFFFFF; padding:16px 18px; display:flex; flex-direction:column; gap:5px;">
+      <div style="font-size:11px; color:#8494A7; text-transform:uppercase; letter-spacing:0.07em; font-weight:600;">Pusiste</div>
+      <div class="num" style="font-size:22px; font-weight:600; letter-spacing:-0.02em; line-height:1; padding-top:4px;">$ 96.000.000</div>
+      <div style="font-size:12px; color:#8494A7;">Aportes netos de retiros</div>
+    </div>
+    <div style="background:#F3FBF8; padding:16px 18px; display:flex; flex-direction:column; gap:5px;">
+      <div style="font-size:11px; color:#00875C; text-transform:uppercase; letter-spacing:0.07em; font-weight:600;">Ganaste</div>
+      <div class="num" style="font-size:22px; font-weight:700; letter-spacing:-0.02em; line-height:1; color:#00875C; padding-top:4px;">+ $ 22.472.900</div>
+      <div class="num" style="font-size:12px; color:#00875C; font-weight:600;">+23,4% TWR en el año</div>
+    </div>
+  </div>
+
+  <p style="margin:14px 0 0 0; font-size:16px; line-height:1.5; color:#3D5068; max-width:62ch; text-wrap:pretty;">
+    De los <strong style="color:#0D1B2A; font-weight:600;">$22,5 M</strong> que creció tu cartera este año, todo es resultado de las inversiones: no hubo aportes ni retiros desde marzo. En dólares MEP el resultado es <strong style="color:#0D1B2A; font-weight:600;">+4,1%</strong> — la diferencia entre las dos cifras es la devaluación del período, no una ganancia.
+  </p>
+
+  <!-- ===== evolución ===== -->
+  <div style="margin-top:22px;">
+    <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:10px;">
+      <h2 style="margin:0; font-size:13px; font-weight:600; letter-spacing:0.02em;">Evolución de tu cartera</h2>
+      <span style="font-size:11px; color:#8494A7;">valuación al cierre de cada mes</span>
+      <div style="flex:1;"></div>
+      <span style="display:flex; align-items:center; gap:5px; font-size:11px; color:#3D5068;"><span style="width:14px; height:2px; background:#003973; display:block;"></span>Pesos</span>
+      <span style="display:flex; align-items:center; gap:5px; font-size:11px; color:#3D5068;"><span style="width:14px; height:2px; background:#00BBDD; display:block;"></span>Dólar MEP</span>
+    </div>
+
+    <div style="border:1px solid #E8EDF2; background:#FAFBFC; padding:14px 16px 8px 16px;">
+      <svg width="662" height="176" viewBox="0 0 662 176" fill="none">
+        <!-- grid -->
+        <line x1="0" y1="8" x2="662" y2="8" stroke="#E8EDF2" stroke-width="1"/>
+        <line x1="0" y1="49" x2="662" y2="49" stroke="#E8EDF2" stroke-width="1"/>
+        <line x1="0" y1="90" x2="662" y2="90" stroke="#E8EDF2" stroke-width="1"/>
+        <line x1="0" y1="131" x2="662" y2="131" stroke="#E8EDF2" stroke-width="1"/>
+        <line x1="0" y1="150" x2="662" y2="150" stroke="#D5DCE5" stroke-width="1"/>
+        <!-- pesos: sube fuerte -->
+        <path d="M6 138 L66 130 L126 121 L186 118 L246 104 L306 95 L366 78 L426 70 L486 52 L546 41 L606 28 L656 20" stroke="#003973" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- mep: casi plano -->
+        <path d="M6 118 L66 121 L126 114 L186 122 L246 116 L306 119 L366 110 L426 116 L486 106 L546 111 L606 102 L656 104" stroke="#00BBDD" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="656" cy="20" r="3.5" fill="#003973"/>
+        <circle cx="656" cy="104" r="3.5" fill="#00BBDD"/>
+      </svg>
+      <div class="num" style="display:grid; grid-template-columns:repeat(12, minmax(0,1fr)); font-size:10px; color:#8494A7; padding-top:4px;">
+        <span>Oct</span><span>Nov</span><span>Dic</span><span>Ene</span><span>Feb</span><span>Mar</span><span>Abr</span><span>May</span><span>Jun</span><span>Jul</span><span>Ago</span><span style="font-weight:600; color:#3D5068;">Sep</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== tenencias ===== -->
+  <div style="margin-top:20px; flex:1;">
+    <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:9px;">
+      <h2 style="margin:0; font-size:13px; font-weight:600; letter-spacing:0.02em;">Qué tenés</h2>
+      <span style="font-size:11px; color:#8494A7;">8 especies · valuadas al cierre del 30 sep</span>
+    </div>
+
+    <table class="num" style="width:100%; border-collapse:collapse; font-size:12.5px;">
+      <thead>
+        <tr style="border-bottom:1px solid #D5DCE5;">
+          <th style="text-align:left; font-size:10.5px; font-weight:600; color:#8494A7; text-transform:uppercase; letter-spacing:0.06em; padding:0 0 7px 0; font-family:'Inter',sans-serif;">Especie</th>
+          <th style="text-align:left; font-size:10.5px; font-weight:600; color:#8494A7; text-transform:uppercase; letter-spacing:0.06em; padding:0 0 7px 0;">Tipo</th>
+          <th style="text-align:right; font-size:10.5px; font-weight:600; color:#8494A7; text-transform:uppercase; letter-spacing:0.06em; padding:0 0 7px 0;">Cantidad</th>
+          <th style="text-align:right; font-size:10.5px; font-weight:600; color:#8494A7; text-transform:uppercase; letter-spacing:0.06em; padding:0 0 7px 0;">Valuación ARS</th>
+          <th style="text-align:right; font-size:10.5px; font-weight:600; color:#8494A7; text-transform:uppercase; letter-spacing:0.06em; padding:0 0 7px 0;">% cartera</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid #F0F3F7;"><td style="padding:7px 0; font-weight:600;">AL30</td><td style="color:#3D5068;">Bono soberano</td><td style="text-align:right;">31.200</td><td style="text-align:right; font-weight:600;">28.431.500</td><td style="text-align:right; color:#3D5068;">24,0%</td></tr>
+        <tr style="border-bottom:1px solid #F0F3F7;"><td style="padding:7px 0; font-weight:600;">GD30</td><td style="color:#3D5068;">Bono soberano</td><td style="text-align:right;">18.400</td><td style="text-align:right; font-weight:600;">21.325.100</td><td style="text-align:right; color:#3D5068;">18,0%</td></tr>
+        <tr style="border-bottom:1px solid #F0F3F7;"><td style="padding:7px 0; font-weight:600;">TX26</td><td style="color:#3D5068;">Bono CER</td><td style="text-align:right;">9.850</td><td style="text-align:right; font-weight:600;">17.770.900</td><td style="text-align:right; color:#3D5068;">15,0%</td></tr>
+        <tr style="border-bottom:1px solid #F0F3F7;"><td style="padding:7px 0; font-weight:600;">YPFD</td><td style="color:#3D5068;">Acción local</td><td style="text-align:right;">1.240</td><td style="text-align:right; font-weight:600;">14.216.700</td><td style="text-align:right; color:#3D5068;">12,0%</td></tr>
+        <tr style="border-bottom:1px solid #F0F3F7;"><td style="padding:7px 0; font-weight:600;">AAPL</td><td style="color:#3D5068;">CEDEAR</td><td style="text-align:right;">860</td><td style="text-align:right; font-weight:600;">11.847.300</td><td style="text-align:right; color:#3D5068;">10,0%</td></tr>
+        <tr style="border-bottom:1px solid #F0F3F7;"><td style="padding:7px 0; font-weight:600;">SPY</td><td style="color:#3D5068;">CEDEAR</td><td style="text-align:right;">410</td><td style="text-align:right; font-weight:600;">9.477.800</td><td style="text-align:right; color:#3D5068;">8,0%</td></tr>
+        <tr style="border-bottom:1px solid #F0F3F7;"><td style="padding:7px 0; font-weight:600;">MEGAQ</td><td style="color:#3D5068;">FCI money market</td><td style="text-align:right;">—</td><td style="text-align:right; font-weight:600;">9.477.800</td><td style="text-align:right; color:#3D5068;">8,0%</td></tr>
+        <tr style="border-bottom:1px solid #F0F3F7;"><td style="padding:7px 0; font-weight:600; color:#3D5068;">Pesos disponibles</td><td style="color:#3D5068;">Efectivo</td><td style="text-align:right;">—</td><td style="text-align:right; font-weight:600;">5.925.800</td><td style="text-align:right; color:#3D5068;">5,0%</td></tr>
+        <tr><td style="padding:9px 0 0 0; font-weight:700;">Total</td><td></td><td></td><td style="text-align:right; font-weight:700; padding-top:9px;">118.472.900</td><td style="text-align:right; font-weight:700; padding-top:9px;">100%</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ===== pie ===== -->
+  <div style="display:flex; align-items:flex-end; gap:16px; padding:12px 0 16px 0; border-top:1px solid #E8EDF2; margin-top:14px;">
+    <p style="margin:0; font-size:10px; line-height:1.45; color:#8494A7; max-width:74ch;">
+      Valuaciones calculadas el 30/09/2026 a las 18:05 con precios de cierre de mercado. La conversión a dólares usa el MEP del día ($1.400,0). El rendimiento se informa como TWR, que aísla el efecto de tus aportes y retiros. Este documento no constituye una recomendación de inversión.
+    </p>
+    <div style="flex:1;"></div>
+    <span class="num" style="font-size:10px; color:#8494A7; white-space:nowrap;">1 / 4</span>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

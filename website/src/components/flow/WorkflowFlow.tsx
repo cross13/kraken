@@ -3,53 +3,69 @@ import type { Node, Edge } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { nodeTypes } from './nodes';
 
-// Full, interactive SDD workflow: the phase loop fed by agents/skills/hooks/steering.
+// The whole loop, including what feeds each run. Draggable and zoomable — the
+// point is to poke at it.
 const nodes: Node[] = [
-  // Phase loop (top row)
-  { id: 'req', type: 'phase', position: { x: 40, y: 220 }, data: { label: 'Requirements', icon: 'requirements', step: 'Phase 1', sub: 'EARS + open questions' } },
-  { id: 'design', type: 'phase', position: { x: 290, y: 220 }, data: { label: 'Design', icon: 'design', step: 'Phase 2', sub: 'Honors decisions' } },
-  { id: 'tasks', type: 'phase', position: { x: 540, y: 220 }, data: { label: 'Tasks', icon: 'tasks', step: 'Phase 3', sub: 'Dependency waves' } },
-  { id: 'exec', type: 'phase', position: { x: 790, y: 220 }, data: { label: 'Execution', icon: 'execution', step: 'Phase 4', sub: 'Parallel + autopilot' } },
-  { id: 'done', type: 'phase', position: { x: 1040, y: 220 }, data: { label: 'Done', icon: 'done', step: 'Shipped', sub: 'Audit · re-sync' } },
+  // Row 0 — what feeds a run, each sitting above the stage it reaches.
+  { id: 'ticket', type: 'side', position: { x: -40, y: 0 }, data: { label: 'Tickets', icon: 'tickets', sub: 'Jira · Linear · MCP' } },
+  { id: 'steering', type: 'side', position: { x: 180, y: 0 }, data: { label: 'Steering', icon: 'steering', sub: 'Project context' } },
+  { id: 'skills', type: 'side', position: { x: 430, y: 0 }, data: { label: 'Skills', icon: 'skills', sub: 'Injected, not labelled' } },
+  { id: 'agents', type: 'side', position: { x: 660, y: 0 }, data: { label: 'Agents', icon: 'agents', sub: 'Routed by content' } },
 
-  // Supporting inputs (bottom row), each feeding a phase
-  { id: 'agents', type: 'side', position: { x: 60, y: 30 }, data: { label: 'Agents', icon: 'agents', sub: 'content-routed' } },
-  { id: 'skills', type: 'side', position: { x: 300, y: 30 }, data: { label: 'Skills', icon: 'skills', sub: 'sdd-feature' } },
-  { id: 'hooks', type: 'side', position: { x: 800, y: 30 }, data: { label: 'Hooks', icon: 'hooks', sub: 'wave-complete' } },
-  { id: 'steering', type: 'side', position: { x: 540, y: 420 }, data: { label: 'Steering', icon: 'steering', sub: 'every run' } },
+  // Row 1 — the two authored documents and their gates.
+  { id: 'req', type: 'phase', position: { x: 0, y: 170 }, data: { label: 'Requirements', icon: 'requirements', step: 'Stage 1', sub: 'User stories + EARS acceptance criteria' } },
+  { id: 'g1', type: 'gate', position: { x: 230, y: 178 }, data: { label: 'Approve', sub: 'Or revise with feedback' } },
+  { id: 'clarify', type: 'phase', position: { x: 430, y: 170 }, data: { label: 'Clarify', icon: 'clarify', step: 'Stage 2a', sub: 'Open questions, answered with one click' } },
+  { id: 'plan', type: 'phase', position: { x: 660, y: 170 }, data: { label: 'Plan', icon: 'plan', step: 'Stage 2b', sub: 'Diagram, affected files, contracts, waves' } },
+  { id: 'g2', type: 'gate', position: { x: 890, y: 178 }, data: { label: 'Approve', sub: 'Derives tasks.md from ## Tasks' } },
+
+  // Row 2 — the line wraps: build, then ship.
+  { id: 'hooks', type: 'side', position: { x: 250, y: 290 }, data: { label: 'Hooks', icon: 'hooks', sub: 'Fire on events' } },
+  { id: 'build', type: 'phase', position: { x: 230, y: 400 }, data: { label: 'Build', icon: 'build', step: 'Stage 3', sub: 'Waves of parallel Claude subprocesses' } },
+  { id: 'ship', type: 'phase', position: { x: 470, y: 400 }, data: { label: 'Ship', icon: 'ship', step: 'Done', sub: 'Auto summary → branch → commit → PR' } },
 ];
 
-const flow = (id: string, source: string, target: string, color = '#7c5cff'): Edge => ({
+const flow = (
+  id: string,
+  source: string,
+  target: string,
+  gate = false,
+  wrap = false
+): Edge => ({
   id,
   source,
   target,
-  animated: true,
-  style: { stroke: `${color}99`, strokeWidth: 2 },
-  markerEnd: { type: MarkerType.ArrowClosed, color },
+  type: wrap ? 'smoothstep' : undefined,
+  animated: !gate,
+  style: { stroke: gate ? 'rgba(155,107,255,0.7)' : 'rgba(118,185,0,0.7)', strokeWidth: 1.5 },
+  markerEnd: { type: MarkerType.ArrowClosed, color: gate ? '#9B6BFF' : '#76B900', width: 14, height: 14 },
 });
 
 const feed = (id: string, source: string, target: string): Edge => ({
   id,
   source,
   target,
-  animated: true,
-  style: { stroke: 'rgba(57,224,230,0.5)', strokeWidth: 1.5, strokeDasharray: '4 4' },
+  style: { stroke: '#4a4a4a', strokeWidth: 1, strokeDasharray: '4 4' },
 });
 
 const edges: Edge[] = [
-  flow('p1', 'req', 'design'),
-  flow('p2', 'design', 'tasks'),
-  flow('p3', 'tasks', 'exec'),
-  flow('p4', 'exec', 'done'),
-  feed('f1', 'agents', 'req'),
-  feed('f2', 'skills', 'design'),
-  feed('f3', 'hooks', 'exec'),
-  feed('f4', 'steering', 'tasks'),
+  flow('f1', 'req', 'g1', true),
+  flow('f2', 'g1', 'clarify', true),
+  flow('f3', 'clarify', 'plan'),
+  flow('f4', 'plan', 'g2', true),
+  flow('f5', 'g2', 'build', true, true),
+  flow('f6', 'build', 'ship'),
+
+  feed('s1', 'ticket', 'req'),
+  feed('s2', 'steering', 'req'),
+  feed('s3', 'skills', 'clarify'),
+  feed('s4', 'agents', 'plan'),
+  feed('s5', 'hooks', 'build'),
 ];
 
 export function WorkflowFlow() {
   return (
-    <div className="h-[520px] w-full overflow-hidden rounded-2xl border border-white/10 bg-ink-950/60">
+    <div className="h-[520px] w-full overflow-hidden border border-line bg-panel">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -60,8 +76,8 @@ export function WorkflowFlow() {
         minZoom={0.4}
         maxZoom={1.6}
       >
-        <Background variant={BackgroundVariant.Dots} gap={26} size={1} color="#252b3a" />
-        <Controls showInteractive={false} position="bottom-right" />
+        <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#333333" />
+        <Controls showInteractive={false} />
       </ReactFlow>
     </div>
   );

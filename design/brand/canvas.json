@@ -1,0 +1,25 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 1440, "h": 1340, "title": "0ct0 — sistema de marca" },
+    { "file": "DirectionA.dc.html", "x": 0, "y": 1480, "w": 880, "h": 560 },
+    { "file": "DirectionB.dc.html", "x": 960, "y": 1480, "w": 880, "h": 560 },
+    { "file": "DirectionC.dc.html", "x": 1920, "y": 1480, "w": 880, "h": 560 }
+  ],
+  "annotations": [
+    {
+      "id": "candidata",
+      "x": 1540,
+      "y": 60,
+      "w": 300,
+      "text": "La hoja de arriba está construida sobre la Dirección B.\n\nSi preferís A o C, decímelo y la rehago: las tres comparten marca, paleta y tipografía, sólo cambia cómo se arma la palabra."
+    },
+    {
+      "id": "eje",
+      "x": 1540,
+      "y": 300,
+      "w": 300,
+      "text": "Los tres ejes:\n\nA — la palabra funciona sola, sin ilustración.\nB — el nombre y el dibujo son la misma idea.\nC — bloque sólido, la traducción literal de Signal."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

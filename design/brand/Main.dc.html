@@ -1,0 +1,453 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Hanken+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+  <style>
+    body { margin: 0; background: #1A1A1A; }
+    a { color: #A6E62E; } a:hover { color: #C4F06A; }
+    .lbl { font: 500 11px/1.2 "JetBrains Mono", ui-monospace, monospace; letter-spacing: .08em; text-transform: uppercase; color: #848484; }
+    .h { font: 700 13px/1.2 "Space Grotesk", system-ui, sans-serif; letter-spacing: .02em; color: #ECECEC; }
+    .p { font: 400 12.5px/1.55 "Hanken Grotesk", system-ui, sans-serif; color: #C8C8C8; }
+    .mono { font: 400 11.5px/1.4 "JetBrains Mono", ui-monospace, monospace; color: #A8A8A8; }
+    .sect { border-top: 1px solid #393939; padding: 26px 40px; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; background: #1A1A1A; font-family: 'Hanken Grotesk', system-ui, sans-serif;">
+
+  <!-- ── header ───────────────────────────────────────────────────── -->
+  <div style="display: flex; align-items: baseline; gap: 14px; padding: 26px 40px;">
+    <div style="font: 700 16px/1 'Space Grotesk', system-ui, sans-serif; color: #F2F2F2;">0ct0</div>
+    <div class="lbl">sistema de marca · v1</div>
+    <div style="flex-grow: 1;"></div>
+    <div class="mono">Signal · #76B900 sobre #1A1A1A · radio 0 · sin sombras</div>
+  </div>
+
+  <!-- ── hero lockup ──────────────────────────────────────────────── -->
+  <div class="sect" style="display: flex; align-items: center; gap: 64px;">
+    <div style="display: flex; align-items: flex-end; gap: 8px;">
+      <div style="width: 132px; margin-bottom: -16px;">
+          <svg viewBox="0 0 120 122" style="display: block; width: 100%; height: auto; overflow: visible;" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <g fill="none" stroke="#8AD000" stroke-linecap="round">
+              <path d="M 31,88 C 26,99 24,108 29,112 C 32,114 35,111 34,107" stroke-width="8"></path>
+              <path d="M 43,92 C 40,102 39,111 43,115" stroke-width="7"></path>
+              <path d="M 55,94 C 54,104 53,112 56,116" stroke-width="6.4"></path>
+              <path d="M 67,94 C 68,104 69,112 66,116" stroke-width="6.4"></path>
+              <path d="M 79,92 C 82,102 83,111 79,115" stroke-width="7"></path>
+              <path d="M 91,88 C 99,86 105,82 101,75" stroke-width="7.6"></path>
+            </g>
+            <path d="M 24,80 C 24,38 40,18 60,18 C 80,18 96,38 96,80 C 96,89 84,94 60,94 C 36,94 24,89 24,80 Z" fill="#2A2A2A" stroke="#8AD000" stroke-width="3.5" stroke-linejoin="round"></path>
+            <path d="M 96,80 C 96,38 80,18 60,18 C 74,27 84,46 84,80 C 84,88 76,92 62,93.6 C 84,93.4 96,89 96,80 Z" fill="#000000" opacity="0.24"></path>
+            <ellipse cx="31" cy="72" rx="6" ry="3.6" fill="#76B900"></ellipse>
+            <ellipse cx="89" cy="72" rx="6" ry="3.6" fill="#76B900"></ellipse>
+            <ellipse cx="43" cy="56" rx="11.5" ry="13.5" fill="#C4F06A"></ellipse>
+            <circle cx="39.4" cy="50.5" r="3.9" fill="#FAFAFA"></circle>
+            <circle cx="47.2" cy="61.5" r="2" fill="#FAFAFA" opacity="0.75"></circle>
+            <ellipse cx="77" cy="56" rx="11.5" ry="13.5" fill="#C4F06A"></ellipse>
+            <circle cx="73.4" cy="50.5" r="3.9" fill="#FAFAFA"></circle>
+            <circle cx="81.2" cy="61.5" r="2" fill="#FAFAFA" opacity="0.75"></circle>
+            <path d="M 54,78 C 56.5,83 63.5,83 66,78" fill="none" stroke="#C4F06A" stroke-width="3" stroke-linecap="round"></path>
+            <path d="M 47,84 L 73,84 L 71,93 L 49,93 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="1.8" stroke-linejoin="round"></path>
+            <path d="M 55,88 L 65,88" stroke="#C4F06A" stroke-width="1.4" opacity="0.8"></path>
+            <g fill="#1A1A1A" stroke="#8AD000" stroke-width="1.6" stroke-linejoin="round">
+              <path d="M 23,59 L 9,62 L 7,72 L 23,70 Z"></path>
+              <path d="M 97,59 L 111,62 L 113,72 L 97,70 Z"></path>
+              <path d="M 23,70 L 7,73 L 6,84 L 24,81 Z"></path>
+              <path d="M 97,70 L 113,73 L 114,84 L 96,81 Z"></path>
+            </g>
+            <g fill="none" stroke="#C4F06A" stroke-width="1.5" stroke-linecap="round" opacity="0.9">
+              <path d="M 12,64 L 12,69 M 17,63 L 17,68 M 11,75 L 11,80 M 16,74 L 16,79"></path>
+              <path d="M 108,64 L 108,69 M 103,63 L 103,68 M 109,75 L 109,80 M 104,74 L 104,79"></path>
+            </g>
+            <path d="M 25,45 L 11,41 L 9,59 L 24,59 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="1.8" stroke-linejoin="round"></path>
+            <path d="M 95,45 L 109,41 L 111,59 L 96,59 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="1.8" stroke-linejoin="round"></path>
+            <circle cx="16" cy="50" r="3.4" fill="#C4F06A"></circle>
+            <circle cx="104" cy="50" r="3.4" fill="#C4F06A"></circle>
+            <path d="M 25,50 C 25,29 40,15 60,15 C 80,15 95,29 95,50 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="2" stroke-linejoin="round"></path>
+            <path d="M 60,15 L 60,49" stroke="#000000" stroke-width="1.5" opacity="0.45"></path>
+            <circle cx="60" cy="20" r="3.2" fill="#C4F06A"></circle>
+            <g fill="#C4F06A" opacity="0.85">
+              <circle cx="38" cy="34" r="1.5"></circle>
+              <circle cx="47" cy="25" r="1.5"></circle>
+              <circle cx="73" cy="25" r="1.5"></circle>
+              <circle cx="82" cy="34" r="1.5"></circle>
+            </g>
+            <path d="M 19,49 L 101,49 L 96,59 L 24,59 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="1.8" stroke-linejoin="round"></path>
+            <path d="M 51,49 C 43,37 35,25 33,10 C 39,19 50,31 56,43 Z" fill="#C4F06A"></path>
+            <path d="M 69,49 C 77,37 85,25 87,10 C 81,19 70,31 64,43 Z" fill="#C4F06A"></path>
+            <circle cx="60" cy="44" r="5" fill="#1A1A1A" stroke="#C4F06A" stroke-width="1.6"></circle>
+            <g transform="rotate(-6 100 76)">
+              <path d="M 97,79 L 103,74 L 119,20 L 113,17 Z" fill="#F2F2F2" stroke="#848484" stroke-width="1.4" stroke-linejoin="round"></path>
+              <path d="M 100,76 L 115,20" stroke="#FAFAFA" stroke-width="1.2" opacity="0.85"></path>
+              <path d="M 94,80 L 104,72 L 109,78 L 99,86 Z" fill="#C4F06A"></path>
+              <path d="M 89,88 L 97,81 L 102,87 L 94,94 Z" fill="#1A1A1A"></path>
+              <path d="M 91,88 L 96,93 M 94,85 L 99,90" stroke="#C4F06A" stroke-width="1.4" opacity="0.7"></path>
+            </g>
+          </svg>
+      </div>
+      <div style="font: 700 118px/0.78 'Space Grotesk', system-ui, sans-serif; letter-spacing: -0.045em; color: #F2F2F2;">ct</div>
+      <div style="width: 91px; margin-left: 3px;">
+        <svg viewBox="0 0 84 108" style="display: block; width: 100%; height: auto;" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <ellipse cx="42" cy="56" rx="30" ry="44" fill="none" stroke="#F2F2F2" stroke-width="13"></ellipse>
+          <rect x="0" y="41" width="84" height="11" fill="#A6E62E"></rect>
+        </svg>
+      </div>
+    </div>
+    <div style="max-width: 420px; display: flex; flex-direction: column; gap: 12px;">
+      <div class="h">Los dos ceros riman</div>
+      <div class="p">El primero es la criatura: el pulpo samurái que ya vive en la app, el mismo dibujo del que está hecha la marca en el riel, en el visor de flota y en el splash. El segundo es su abstracción — la barra verde es el ala del kabuto, cortando el cero igual que el ala corta la cabeza.</div>
+      <div class="p">El nombre y el dibujo dejan de ser dos cosas que hay que explicar juntas.</div>
+    </div>
+  </div>
+
+  <!-- ── the mark, three levels of detail ─────────────────────────── -->
+  <div class="sect">
+    <div style="display: flex; align-items: baseline; gap: 14px; margin-bottom: 22px;">
+      <div class="h">La marca</div>
+      <div class="p" style="color:#848484;">Un solo dibujo, tres niveles de detalle. El nivel se elige por tamaño, no por gusto.</div>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px;">
+
+      <!-- full -->
+      <div style="border: 1px solid #393939; padding: 26px; display: flex; align-items: center; gap: 26px;">
+        <div style="width: 108px; flex-shrink: 0; padding: 8px 12px;">
+          <svg viewBox="0 0 120 122" style="display: block; width: 100%; height: auto; overflow: visible;" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <g fill="none" stroke="#8AD000" stroke-linecap="round">
+              <path d="M 31,88 C 26,99 24,108 29,112 C 32,114 35,111 34,107" stroke-width="8"></path>
+              <path d="M 43,92 C 40,102 39,111 43,115" stroke-width="7"></path>
+              <path d="M 55,94 C 54,104 53,112 56,116" stroke-width="6.4"></path>
+              <path d="M 67,94 C 68,104 69,112 66,116" stroke-width="6.4"></path>
+              <path d="M 79,92 C 82,102 83,111 79,115" stroke-width="7"></path>
+              <path d="M 91,88 C 99,86 105,82 101,75" stroke-width="7.6"></path>
+            </g>
+            <path d="M 24,80 C 24,38 40,18 60,18 C 80,18 96,38 96,80 C 96,89 84,94 60,94 C 36,94 24,89 24,80 Z" fill="#2A2A2A" stroke="#8AD000" stroke-width="3.5" stroke-linejoin="round"></path>
+            <path d="M 96,80 C 96,38 80,18 60,18 C 74,27 84,46 84,80 C 84,88 76,92 62,93.6 C 84,93.4 96,89 96,80 Z" fill="#000000" opacity="0.24"></path>
+            <ellipse cx="31" cy="72" rx="6" ry="3.6" fill="#76B900"></ellipse>
+            <ellipse cx="89" cy="72" rx="6" ry="3.6" fill="#76B900"></ellipse>
+            <ellipse cx="43" cy="56" rx="11.5" ry="13.5" fill="#C4F06A"></ellipse>
+            <circle cx="39.4" cy="50.5" r="3.9" fill="#FAFAFA"></circle>
+            <circle cx="47.2" cy="61.5" r="2" fill="#FAFAFA" opacity="0.75"></circle>
+            <ellipse cx="77" cy="56" rx="11.5" ry="13.5" fill="#C4F06A"></ellipse>
+            <circle cx="73.4" cy="50.5" r="3.9" fill="#FAFAFA"></circle>
+            <circle cx="81.2" cy="61.5" r="2" fill="#FAFAFA" opacity="0.75"></circle>
+            <path d="M 54,78 C 56.5,83 63.5,83 66,78" fill="none" stroke="#C4F06A" stroke-width="3" stroke-linecap="round"></path>
+            <path d="M 47,84 L 73,84 L 71,93 L 49,93 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="1.8" stroke-linejoin="round"></path>
+            <path d="M 55,88 L 65,88" stroke="#C4F06A" stroke-width="1.4" opacity="0.8"></path>
+            <g fill="#1A1A1A" stroke="#8AD000" stroke-width="1.6" stroke-linejoin="round">
+              <path d="M 23,59 L 9,62 L 7,72 L 23,70 Z"></path>
+              <path d="M 97,59 L 111,62 L 113,72 L 97,70 Z"></path>
+              <path d="M 23,70 L 7,73 L 6,84 L 24,81 Z"></path>
+              <path d="M 97,70 L 113,73 L 114,84 L 96,81 Z"></path>
+            </g>
+            <g fill="none" stroke="#C4F06A" stroke-width="1.5" stroke-linecap="round" opacity="0.9">
+              <path d="M 12,64 L 12,69 M 17,63 L 17,68 M 11,75 L 11,80 M 16,74 L 16,79"></path>
+              <path d="M 108,64 L 108,69 M 103,63 L 103,68 M 109,75 L 109,80 M 104,74 L 104,79"></path>
+            </g>
+            <path d="M 25,45 L 11,41 L 9,59 L 24,59 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="1.8" stroke-linejoin="round"></path>
+            <path d="M 95,45 L 109,41 L 111,59 L 96,59 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="1.8" stroke-linejoin="round"></path>
+            <circle cx="16" cy="50" r="3.4" fill="#C4F06A"></circle>
+            <circle cx="104" cy="50" r="3.4" fill="#C4F06A"></circle>
+            <path d="M 25,50 C 25,29 40,15 60,15 C 80,15 95,29 95,50 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="2" stroke-linejoin="round"></path>
+            <path d="M 60,15 L 60,49" stroke="#000000" stroke-width="1.5" opacity="0.45"></path>
+            <circle cx="60" cy="20" r="3.2" fill="#C4F06A"></circle>
+            <g fill="#C4F06A" opacity="0.85">
+              <circle cx="38" cy="34" r="1.5"></circle>
+              <circle cx="47" cy="25" r="1.5"></circle>
+              <circle cx="73" cy="25" r="1.5"></circle>
+              <circle cx="82" cy="34" r="1.5"></circle>
+            </g>
+            <path d="M 19,49 L 101,49 L 96,59 L 24,59 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="1.8" stroke-linejoin="round"></path>
+            <path d="M 51,49 C 43,37 35,25 33,10 C 39,19 50,31 56,43 Z" fill="#C4F06A"></path>
+            <path d="M 69,49 C 77,37 85,25 87,10 C 81,19 70,31 64,43 Z" fill="#C4F06A"></path>
+            <circle cx="60" cy="44" r="5" fill="#1A1A1A" stroke="#C4F06A" stroke-width="1.6"></circle>
+            <g transform="rotate(-6 100 76)">
+              <path d="M 97,79 L 103,74 L 119,20 L 113,17 Z" fill="#F2F2F2" stroke="#848484" stroke-width="1.4" stroke-linejoin="round"></path>
+              <path d="M 100,76 L 115,20" stroke="#FAFAFA" stroke-width="1.2" opacity="0.85"></path>
+              <path d="M 94,80 L 104,72 L 109,78 L 99,86 Z" fill="#C4F06A"></path>
+              <path d="M 89,88 L 97,81 L 102,87 L 94,94 Z" fill="#1A1A1A"></path>
+              <path d="M 91,88 L 96,93 M 94,85 L 99,90" stroke="#C4F06A" stroke-width="1.4" opacity="0.7"></path>
+            </g>
+          </svg>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div class="lbl">full · ≥ 64px</div>
+          <div class="p">Con katana, remaches, lacado y sombra de cel. La pose de la katana es el estado de la corrida.</div>
+        </div>
+      </div>
+
+      <!-- simple -->
+      <div style="border: 1px solid #393939; padding: 26px; display: flex; align-items: center; gap: 26px;">
+        <div style="width: 60px; flex-shrink: 0; padding: 8px 12px;">
+          <svg viewBox="0 0 120 122" style="display: block; width: 100%; height: auto; overflow: visible;" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <g fill="none" stroke="#8AD000" stroke-linecap="round">
+              <path d="M 31,88 C 26,99 24,108 29,112 C 32,114 35,111 34,107" stroke-width="8"></path>
+              <path d="M 43,92 C 40,102 39,111 43,115" stroke-width="7"></path>
+              <path d="M 55,94 C 54,104 53,112 56,116" stroke-width="6.4"></path>
+              <path d="M 67,94 C 68,104 69,112 66,116" stroke-width="6.4"></path>
+              <path d="M 79,92 C 82,102 83,111 79,115" stroke-width="7"></path>
+              <path d="M 91,88 C 99,86 105,82 101,75" stroke-width="7.6"></path>
+            </g>
+            <path d="M 24,80 C 24,38 40,18 60,18 C 80,18 96,38 96,80 C 96,89 84,94 60,94 C 36,94 24,89 24,80 Z" fill="#2A2A2A" stroke="#8AD000" stroke-width="3.5" stroke-linejoin="round"></path>
+            <ellipse cx="43" cy="56" rx="11.5" ry="13.5" fill="#C4F06A"></ellipse>
+            <circle cx="39.4" cy="50.5" r="3.9" fill="#FAFAFA"></circle>
+            <ellipse cx="77" cy="56" rx="11.5" ry="13.5" fill="#C4F06A"></ellipse>
+            <circle cx="73.4" cy="50.5" r="3.9" fill="#FAFAFA"></circle>
+            <path d="M 54,78 C 56.5,83 63.5,83 66,78" fill="none" stroke="#C4F06A" stroke-width="3" stroke-linecap="round"></path>
+            <path d="M 47,84 L 73,84 L 71,93 L 49,93 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="1.8" stroke-linejoin="round"></path>
+            <g fill="#1A1A1A" stroke="#8AD000" stroke-width="1.6" stroke-linejoin="round">
+              <path d="M 23,59 L 9,62 L 7,72 L 23,70 Z"></path>
+              <path d="M 97,59 L 111,62 L 113,72 L 97,70 Z"></path>
+            </g>
+            <path d="M 25,45 L 11,41 L 9,59 L 24,59 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="1.8" stroke-linejoin="round"></path>
+            <path d="M 95,45 L 109,41 L 111,59 L 96,59 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="1.8" stroke-linejoin="round"></path>
+            <path d="M 25,50 C 25,29 40,15 60,15 C 80,15 95,29 95,50 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="2" stroke-linejoin="round"></path>
+            <circle cx="60" cy="20" r="3.2" fill="#C4F06A"></circle>
+            <path d="M 19,49 L 101,49 L 96,59 L 24,59 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="1.8" stroke-linejoin="round"></path>
+            <path d="M 51,49 C 43,37 35,25 33,10 C 39,19 50,31 56,43 Z" fill="#C4F06A"></path>
+            <path d="M 69,49 C 77,37 85,25 87,10 C 81,19 70,31 64,43 Z" fill="#C4F06A"></path>
+            <circle cx="60" cy="44" r="5" fill="#1A1A1A" stroke="#C4F06A" stroke-width="1.6"></circle>
+            <g transform="rotate(-6 100 76)">
+              <path d="M 97,79 L 103,74 L 119,20 L 113,17 Z" fill="#F2F2F2" stroke="#848484" stroke-width="1.4" stroke-linejoin="round"></path>
+              <path d="M 94,80 L 104,72 L 109,78 L 99,86 Z" fill="#C4F06A"></path>
+              <path d="M 89,88 L 97,81 L 102,87 L 94,94 Z" fill="#1A1A1A"></path>
+            </g>
+          </svg>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div class="lbl">simple · 40–64px</div>
+          <div class="p">Cae el remache, el lacado fino y una capa de shikoro. Debajo de 40px eso deja de ser detalle y es ruido.</div>
+        </div>
+      </div>
+
+      <!-- mark -->
+      <div style="border: 1px solid #393939; padding: 26px; display: flex; align-items: center; gap: 26px;">
+        <div style="width: 60px; flex-shrink: 0; display: flex; align-items: flex-end; gap: 12px; padding: 8px 0;">
+          <div style="width: 26px;">
+            <svg viewBox="0 0 120 122" style="display: block; width: 100%; height: auto; overflow: visible;" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <g fill="none" stroke="#8AD000" stroke-linecap="round">
+                <path d="M 31,88 C 26,99 24,108 29,112 C 32,114 35,111 34,107" stroke-width="8"></path>
+                <path d="M 43,92 C 40,102 39,111 43,115" stroke-width="7"></path>
+                <path d="M 55,94 C 54,104 53,112 56,116" stroke-width="6.4"></path>
+                <path d="M 67,94 C 68,104 69,112 66,116" stroke-width="6.4"></path>
+                <path d="M 79,92 C 82,102 83,111 79,115" stroke-width="7"></path>
+                <path d="M 89,88 C 94,99 96,108 91,112 C 88,114 85,111 86,107" stroke-width="8"></path>
+              </g>
+              <path d="M 24,80 C 24,38 40,18 60,18 C 80,18 96,38 96,80 C 96,89 84,94 60,94 C 36,94 24,89 24,80 Z" fill="#2A2A2A" stroke="#8AD000" stroke-width="4.6" stroke-linejoin="round"></path>
+              <ellipse cx="43" cy="56" rx="11.5" ry="13.5" fill="#C4F06A"></ellipse>
+              <ellipse cx="77" cy="56" rx="11.5" ry="13.5" fill="#C4F06A"></ellipse>
+              <g stroke="#8AD000" stroke-linejoin="round">
+                <path d="M 25,45 L 11,41 L 9,59 L 24,59 Z" fill="#1A1A1A" stroke-width="2.4"></path>
+                <path d="M 95,45 L 109,41 L 111,59 L 96,59 Z" fill="#1A1A1A" stroke-width="2.4"></path>
+                <path d="M 25,50 C 25,29 40,15 60,15 C 80,15 95,29 95,50 Z" fill="#1A1A1A" stroke-width="2.8"></path>
+                <path d="M 19,49 L 101,49 L 96,59 L 24,59 Z" fill="#1A1A1A" stroke-width="2.4"></path>
+              </g>
+              <path d="M 51,49 C 43,37 35,25 33,10 C 39,19 50,31 56,43 Z" fill="#C4F06A"></path>
+              <path d="M 69,49 C 77,37 85,25 87,10 C 81,19 70,31 64,43 Z" fill="#C4F06A"></path>
+            </svg>
+          </div>
+          <div style="width: 18px;">
+            <svg viewBox="0 0 120 122" style="display: block; width: 100%; height: auto; overflow: visible;" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <g fill="none" stroke="#8AD000" stroke-linecap="round">
+                <path d="M 31,88 C 26,99 24,108 29,112 C 32,114 35,111 34,107" stroke-width="8"></path>
+                <path d="M 43,92 C 40,102 39,111 43,115" stroke-width="7"></path>
+                <path d="M 55,94 C 54,104 53,112 56,116" stroke-width="6.4"></path>
+                <path d="M 67,94 C 68,104 69,112 66,116" stroke-width="6.4"></path>
+                <path d="M 79,92 C 82,102 83,111 79,115" stroke-width="7"></path>
+                <path d="M 89,88 C 94,99 96,108 91,112 C 88,114 85,111 86,107" stroke-width="8"></path>
+              </g>
+              <path d="M 24,80 C 24,38 40,18 60,18 C 80,18 96,38 96,80 C 96,89 84,94 60,94 C 36,94 24,89 24,80 Z" fill="#2A2A2A" stroke="#8AD000" stroke-width="4.6" stroke-linejoin="round"></path>
+              <ellipse cx="43" cy="56" rx="11.5" ry="13.5" fill="#C4F06A"></ellipse>
+              <ellipse cx="77" cy="56" rx="11.5" ry="13.5" fill="#C4F06A"></ellipse>
+              <g stroke="#8AD000" stroke-linejoin="round">
+                <path d="M 25,45 L 11,41 L 9,59 L 24,59 Z" fill="#1A1A1A" stroke-width="2.4"></path>
+                <path d="M 95,45 L 109,41 L 111,59 L 96,59 Z" fill="#1A1A1A" stroke-width="2.4"></path>
+                <path d="M 25,50 C 25,29 40,15 60,15 C 80,15 95,29 95,50 Z" fill="#1A1A1A" stroke-width="2.8"></path>
+                <path d="M 19,49 L 101,49 L 96,59 L 24,59 Z" fill="#1A1A1A" stroke-width="2.4"></path>
+              </g>
+              <path d="M 51,49 C 43,37 35,25 33,10 C 39,19 50,31 56,43 Z" fill="#C4F06A"></path>
+              <path d="M 69,49 C 77,37 85,25 87,10 C 81,19 70,31 64,43 Z" fill="#C4F06A"></path>
+            </svg>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div class="lbl">mark · 14–26px</div>
+          <div class="p">Brazos, cabeza, ojos y silueta del kabuto. Sin katana: una hoja saliendo de una casilla de 16px se lee como un artefacto, no como una espada. <b style="color:#ECECEC;">Por encima de ~40px no sirve:</b> el ala del kabuto parte los ojos en dos ranuras y las kuwagata se leen como antenas — sale un escarabajo, no un pulpo.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── app icon ─────────────────────────────────────────────────── -->
+  <div class="sect">
+    <div style="display: flex; align-items: baseline; gap: 14px; margin-bottom: 22px;">
+      <div class="h">Ícono de aplicación</div>
+      <div class="p" style="color:#848484;">Invertido a propósito: a 32px en un dock, una casilla oscura con filete fino desaparece.</div>
+    </div>
+    <div style="display: flex; align-items: flex-end; gap: 40px;">
+      <div style="display: flex; align-items: flex-end; gap: 26px;">
+        <div style="display: flex; flex-direction: column; gap: 10px; align-items: center;">
+          <div style="width: 168px; height: 168px; background: linear-gradient(#8AD000, #76B900); border-radius: 36px; box-sizing: border-box; border: 1px solid rgba(15,20,0,0.28); display: flex; align-items: center; justify-content: center;">
+            <div style="width: 110px;">
+              <svg viewBox="0 0 120 122" style="display: block; width: 100%; height: auto; overflow: visible;" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <g fill="none" stroke="#0F1400" stroke-linecap="round">
+                  <path d="M 31,88 C 26,99 24,108 29,112 C 32,114 35,111 34,107" stroke-width="8"></path>
+                  <path d="M 43,92 C 40,102 39,111 43,115" stroke-width="7"></path>
+                  <path d="M 55,94 C 54,104 53,112 56,116" stroke-width="6.4"></path>
+                  <path d="M 67,94 C 68,104 69,112 66,116" stroke-width="6.4"></path>
+                  <path d="M 79,92 C 82,102 83,111 79,115" stroke-width="7"></path>
+                  <path d="M 89,88 C 94,99 96,108 91,112 C 88,114 85,111 86,107" stroke-width="8"></path>
+                </g>
+                <path d="M 24,80 C 24,38 40,18 60,18 C 80,18 96,38 96,80 C 96,89 84,94 60,94 C 36,94 24,89 24,80 Z" fill="#1A1A1A" stroke="#0F1400" stroke-width="4.6" stroke-linejoin="round"></path>
+                <ellipse cx="43" cy="56" rx="11.5" ry="13.5" fill="#8AD000"></ellipse>
+                <ellipse cx="77" cy="56" rx="11.5" ry="13.5" fill="#8AD000"></ellipse>
+                <g stroke="#0F1400" stroke-linejoin="round">
+                  <path d="M 25,45 L 11,41 L 9,59 L 24,59 Z" fill="#1A1A1A" stroke-width="2.4"></path>
+                  <path d="M 95,45 L 109,41 L 111,59 L 96,59 Z" fill="#1A1A1A" stroke-width="2.4"></path>
+                  <path d="M 25,50 C 25,29 40,15 60,15 C 80,15 95,29 95,50 Z" fill="#1A1A1A" stroke-width="2.8"></path>
+                  <path d="M 19,49 L 101,49 L 96,59 L 24,59 Z" fill="#1A1A1A" stroke-width="2.4"></path>
+                </g>
+                <path d="M 51,49 C 43,37 35,25 33,10 C 39,19 50,31 56,43 Z" fill="#8AD000"></path>
+                <path d="M 69,49 C 77,37 85,25 87,10 C 81,19 70,31 64,43 Z" fill="#8AD000"></path>
+              </svg>
+            </div>
+          </div>
+          <div class="lbl">512</div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px; align-items: center;">
+          <div style="width: 64px; height: 64px; background: linear-gradient(#8AD000, #76B900); border-radius: 14px; display: flex; align-items: center; justify-content: center;">
+            <div style="width: 42px;">
+              <svg viewBox="0 0 120 122" style="display: block; width: 100%; height: auto; overflow: visible;" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <g fill="none" stroke="#0F1400" stroke-linecap="round">
+                  <path d="M 31,88 C 26,99 24,108 29,112 C 32,114 35,111 34,107" stroke-width="8"></path>
+                  <path d="M 43,92 C 40,102 39,111 43,115" stroke-width="7"></path>
+                  <path d="M 55,94 C 54,104 53,112 56,116" stroke-width="6.4"></path>
+                  <path d="M 67,94 C 68,104 69,112 66,116" stroke-width="6.4"></path>
+                  <path d="M 79,92 C 82,102 83,111 79,115" stroke-width="7"></path>
+                  <path d="M 89,88 C 94,99 96,108 91,112 C 88,114 85,111 86,107" stroke-width="8"></path>
+                </g>
+                <path d="M 24,80 C 24,38 40,18 60,18 C 80,18 96,38 96,80 C 96,89 84,94 60,94 C 36,94 24,89 24,80 Z" fill="#1A1A1A" stroke="#0F1400" stroke-width="4.6" stroke-linejoin="round"></path>
+                <ellipse cx="43" cy="56" rx="11.5" ry="13.5" fill="#8AD000"></ellipse>
+                <ellipse cx="77" cy="56" rx="11.5" ry="13.5" fill="#8AD000"></ellipse>
+                <g stroke="#0F1400" stroke-linejoin="round">
+                  <path d="M 25,45 L 11,41 L 9,59 L 24,59 Z" fill="#1A1A1A" stroke-width="2.4"></path>
+                  <path d="M 95,45 L 109,41 L 111,59 L 96,59 Z" fill="#1A1A1A" stroke-width="2.4"></path>
+                  <path d="M 25,50 C 25,29 40,15 60,15 C 80,15 95,29 95,50 Z" fill="#1A1A1A" stroke-width="2.8"></path>
+                  <path d="M 19,49 L 101,49 L 96,59 L 24,59 Z" fill="#1A1A1A" stroke-width="2.4"></path>
+                </g>
+                <path d="M 51,49 C 43,37 35,25 33,10 C 39,19 50,31 56,43 Z" fill="#8AD000"></path>
+                <path d="M 69,49 C 77,37 85,25 87,10 C 81,19 70,31 64,43 Z" fill="#8AD000"></path>
+              </svg>
+            </div>
+          </div>
+          <div class="lbl">64</div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px; align-items: center;">
+          <div style="width: 32px; height: 32px; background: linear-gradient(#8AD000, #76B900); border-radius: 7px; display: flex; align-items: center; justify-content: center;">
+            <div style="width: 22px;">
+              <svg viewBox="0 0 120 122" style="display: block; width: 100%; height: auto; overflow: visible;" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <g fill="none" stroke="#0F1400" stroke-linecap="round">
+                  <path d="M 31,88 C 26,99 24,108 29,112 C 32,114 35,111 34,107" stroke-width="8"></path>
+                  <path d="M 43,92 C 40,102 39,111 43,115" stroke-width="7"></path>
+                  <path d="M 55,94 C 54,104 53,112 56,116" stroke-width="6.4"></path>
+                  <path d="M 67,94 C 68,104 69,112 66,116" stroke-width="6.4"></path>
+                  <path d="M 79,92 C 82,102 83,111 79,115" stroke-width="7"></path>
+                  <path d="M 89,88 C 94,99 96,108 91,112 C 88,114 85,111 86,107" stroke-width="8"></path>
+                </g>
+                <path d="M 24,80 C 24,38 40,18 60,18 C 80,18 96,38 96,80 C 96,89 84,94 60,94 C 36,94 24,89 24,80 Z" fill="#1A1A1A" stroke="#0F1400" stroke-width="4.6" stroke-linejoin="round"></path>
+                <ellipse cx="43" cy="56" rx="11.5" ry="13.5" fill="#8AD000"></ellipse>
+                <ellipse cx="77" cy="56" rx="11.5" ry="13.5" fill="#8AD000"></ellipse>
+                <g stroke="#0F1400" stroke-linejoin="round">
+                  <path d="M 25,45 L 11,41 L 9,59 L 24,59 Z" fill="#1A1A1A" stroke-width="2.4"></path>
+                  <path d="M 95,45 L 109,41 L 111,59 L 96,59 Z" fill="#1A1A1A" stroke-width="2.4"></path>
+                  <path d="M 25,50 C 25,29 40,15 60,15 C 80,15 95,29 95,50 Z" fill="#1A1A1A" stroke-width="2.8"></path>
+                  <path d="M 19,49 L 101,49 L 96,59 L 24,59 Z" fill="#1A1A1A" stroke-width="2.4"></path>
+                </g>
+                <path d="M 51,49 C 43,37 35,25 33,10 C 39,19 50,31 56,43 Z" fill="#8AD000"></path>
+                <path d="M 69,49 C 77,37 85,25 87,10 C 81,19 70,31 64,43 Z" fill="#8AD000"></path>
+              </svg>
+            </div>
+          </div>
+          <div class="lbl">32</div>
+        </div>
+      </div>
+
+      <div style="max-width: 480px; display: flex; flex-direction: column; gap: 12px;">
+        <div class="p"><b style="color:#ECECEC;">Reemplaza el visor.</b> El ícono actual (<span class="mono" style="color:#A6E62E;">resources/icon.svg</span>) todavía lleva la marca vieja con visor — es lo último que quedaba fuera del sistema. Este usa el mismo pulpo que la app.</div>
+        <div class="p"><b style="color:#ECECEC;">Única excepción al radio 0.</b> La esquina redondeada del ícono no es una decisión de marca: es la silueta que impone macOS. Dentro de la app, nada se redondea.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── palette ──────────────────────────────────────────────────── -->
+  <div class="sect">
+    <div style="display: flex; align-items: baseline; gap: 14px; margin-bottom: 22px;">
+      <div class="h">Paleta</div>
+      <div class="p" style="color:#848484;">Dos acentos, un rol cada uno. Nunca los dos en el mismo control.</div>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px;">
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="height: 64px; background: #76B900;"></div>
+        <div class="mono" style="color:#ECECEC;">#76B900</div>
+        <div class="p" style="font-size: 11.5px;">Verde — ejecuta y progresa. <b style="color:#ECECEC;">Sólo relleno</b> (2.41:1 sobre blanco).</div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="height: 64px; background: #A6E62E;"></div>
+        <div class="mono" style="color:#ECECEC;">#A6E62E</div>
+        <div class="p" style="font-size: 11.5px;">Verde texto sobre gris. El que se usa en la palabra.</div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="height: 64px; background: #9B6BFF;"></div>
+        <div class="mono" style="color:#ECECEC;">#9B6BFF</div>
+        <div class="p" style="font-size: 11.5px;">Violeta — agente, espera y decisión. Nunca en un botón que ejecuta.</div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="height: 64px; background: #1A1A1A; border: 1px solid #393939; box-sizing: border-box;"></div>
+        <div class="mono" style="color:#ECECEC;">#1A1A1A</div>
+        <div class="p" style="font-size: 11.5px;">Gris marca del chrome. Nunca negro puro.</div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="height: 64px; background: #2A2A2A;"></div>
+        <div class="mono" style="color:#ECECEC;">#2A2A2A</div>
+        <div class="p" style="font-size: 11.5px;">Tarjeta. La jerarquía es un gris más claro, no una sombra.</div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="height: 64px; background: #F2F2F2;"></div>
+        <div class="mono" style="color:#ECECEC;">#F2F2F2</div>
+        <div class="p" style="font-size: 11.5px;">Texto. #A8A8A8 es el piso de contraste; nada baja de ahí.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── rules ────────────────────────────────────────────────────── -->
+  <div class="sect" style="padding-bottom: 34px;">
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 28px;">
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div class="lbl">tipografía</div>
+        <div class="p"><b style="color:#ECECEC;">Space Grotesk 700</b> para la palabra y los títulos — es una cara de display, no va en cuerpo de texto. <b style="color:#ECECEC;">Hanken Grotesk</b> para lectura, <b style="color:#ECECEC;">JetBrains Mono</b> para código y metadata. Las tres van empaquetadas: la CSP no admite ningún origen remoto.</div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div class="lbl">aire</div>
+        <div class="p">El margen mínimo alrededor del lockup es la altura del ala del kabuto — la barra verde del cero. Nada entra en esa banda, ni una casilla de nav.</div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div class="lbl">tamaño mínimo</div>
+        <div class="p">Lockup completo: 96px de alto. Por debajo, marca <span class="mono">mark</span> + «ct0», o la marca sola. Nunca la palabra con la criatura apretada a menos de eso.</div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div class="lbl">lo que no</div>
+        <div class="p">No redondear. No poner sombra. No usar el verde como color de texto sobre blanco. No teñir la criatura de violeta salvo cuando representa una corrida esperando decisión — ahí el color <i>significa</i> algo.</div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

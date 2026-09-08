@@ -1,11 +1,26 @@
-# Kraken website
+# 0ct0 website
 
-The marketing/product site for Kraken — a standalone Vite + React app, fully
-isolated from the desktop app (its own `package.json`, `tsconfig`, Tailwind).
+The public site for **0ct0** — a standalone Vite + React app, fully isolated from the
+desktop app (its own `package.json`, `tsconfig`, Tailwind).
 
 **Stack:** Vite · React 18 · React Router · **React Flow** (`@xyflow/react`) ·
-Framer Motion · Tailwind · lucide-react. Aesthetic: *abyssal / bioluminescent* —
-deep-sea dark with the `#7c5cff` accent + cyan glow and the Kraken motif.
+Framer Motion · Tailwind · lucide-react.
+
+**Aesthetic: Signal** — the desktop app's own palette, mirrored from
+`src/styles.css` (`:root[data-theme='signal']`) into `tailwind.config.cjs`. Brand
+green `#76B900` on brand grey `#1E1E1E`, violet `#9B6BFF` for anything that waits
+on a human, **radius 0**, **no shadows**, hierarchy from a lighter grey plus a 1px
+line. Space Grotesk (display) / Hanken Grotesk (body) / JetBrains Mono.
+
+> Two accents, one role each: green = execute & progress, violet = agent, wait &
+> decide. Never both on the same control. That rule is the reason the site reads
+> as the app rather than as marketing for it.
+
+The mark is `src/components/Octo.tsx` — the octopus samurai, mirrored path-for-path
+from the app's `src/components/wide/OctoMascot.tsx`, so the site and the app show
+the same creature. `detail="mark"` is the 14–26px silhouette; `detail="full"` is
+what you need from ~64px up, because at `mark` the kabuto's brim cuts the eyes into
+slits and the kuwagata read as antennae.
 
 ## Develop
 
@@ -18,8 +33,9 @@ npm run build      # tsc --noEmit + vite build → dist/
 
 ## Deploy
 
-The public site is this `website/` directory only — the Electron renderer in the repo's
-`src/` is desktop-only (it depends on the `window.kraken` IPC bridge) and is **not** web-hostable.
+The public site is this `website/` directory only — the Electron renderer in the
+repo's `src/` is desktop-only (it depends on the `window.octo` IPC bridge) and is
+**not** web-hostable.
 
 We ship a **Docker + nginx** image and a **DigitalOcean App Platform** spec:
 
@@ -48,32 +64,40 @@ devDependency doesn't pull browsers into the image.
 
 | Route | What |
 | --- | --- |
-| `/` | Hero, SDD-loop React Flow, two backends, feature grid, orchestration, CTA |
-| `/features` | Full capability breakdown + real app screenshots |
-| `/workflow` | The SDD methodology + the interactive React Flow diagram |
-| `/docs` | Getting started + links to the repo's `docs/*` |
-| `/download` | Install / run steps + prerequisites |
+| `/` | Hero + the spec's on-disk shape, the SDD loop as React Flow, the two backends, six differentiators, orchestration, CTA |
+| `/features` | Every capability, grouped the way the app is: the loop · the engine · your setup · at scale |
+| `/workflow` | The methodology, the interactive React Flow diagram, and what ends each stage |
+| `/docs` | First run + an index of the repo's `docs/*` |
+| `/download` | Requirements and the three install steps |
 
-React Flow lives in `src/components/flow/` (`SddFlow` mini-loop on Home,
+React Flow lives in `src/components/flow/` (`SddFlow` linear loop on Home,
 `WorkflowFlow` interactive diagram on Workflow, shared themed `nodes`).
 
-## Screenshots
+## Product imagery
 
-Product shots in `public/screens/` are **real captures of the Electron app**,
-produced by Playwright:
+There are **no product screenshots on the site right now, on purpose.** The ones
+that used to live in `public/screens/` were captured in June 2026, before the
+rename and before the four-surface shell landed — they showed an app that no
+longer exists, which is worse than showing none. They were deleted rather than
+shipped stale.
+
+`scripts/shoot-app.mjs` still exists and still seeds `demo/workspace/` (a sample
+feature + bugfix spec), points the app's stored `lastWorkspace` at it, then drives
+the renderer and captures each view:
 
 ```bash
 # from repo root: build the app first
 npm run build
 # then, from website/:
-node scripts/shoot-app.mjs    # seeds a demo workspace, launches the app, captures public/screens/*.png
+node scripts/shoot-app.mjs    # → public/screens/*.png
 node scripts/shoot-site.mjs   # screenshots the website pages → preview/ (needs `npm run dev` running)
 ```
 
-`scripts/shoot-app.mjs` seeds `demo/workspace/` (a sample feature + bugfix spec),
-points the app's stored `lastWorkspace` at it, then drives the renderer and
-captures each view. The demo markdown specs are committed; generated artifacts
-(`.git/`, `spec.json`, scratch files) are gitignored.
+> **Before trusting it:** its view selectors were written against the pre-redesign
+> UI and have not been re-verified against the current four-surface shell. Expect
+> to fix the selectors. Once the captures are real again, wire them back into the
+> pages — until then the site uses honest diagrams built from the same tokens as
+> the app, never mock screenshots dressed up as real ones.
 
 > The site renders scroll-reveals statically when the URL carries `?shot` (see
 > `STILL` in `src/components/site.ts`), so full-page screenshots capture every section.

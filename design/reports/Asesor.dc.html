@@ -1,0 +1,150 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; background: #FFFFFF; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', sans-serif; -webkit-font-smoothing: antialiased; color: #0D1B2A; }
+    a { color: #0077FF; text-decoration: none; } a:hover { color: #003973; }
+    * { box-sizing: border-box; }
+    .num { font-variant-numeric: tabular-nums; }
+  </style>
+</helmet>
+
+<div style="width:794px; height:1123px; background:#FFFFFF; display:flex; flex-direction:column; padding:40px 44px 0 44px;">
+
+  <div style="display:flex; align-items:flex-start; gap:12px; padding-bottom:14px; border-bottom:2px solid #003973;">
+    <div style="width:34px; height:34px; background:#003973; display:grid; place-items:center; flex:none;">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 7-8"/><path d="M17 7h4v4"/></svg>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:2px;">
+      <div style="font-size:14px; font-weight:700; letter-spacing:-0.01em;">Gravity Quant</div>
+      <div style="font-size:11px; color:#8494A7;">Diego Fernández · 28 clientes</div>
+    </div>
+    <div style="flex:1;"></div>
+    <div style="text-align:right; display:flex; flex-direction:column; gap:2px;">
+      <div style="font-size:11px; color:#8494A7; text-transform:uppercase; letter-spacing:0.08em; font-weight:600;">Tu cartera de clientes</div>
+      <div class="num" style="font-size:12px; color:#3D5068;">semana del 28 sep 2026</div>
+    </div>
+  </div>
+
+  <!-- ===== lo primero: a quién hay que llamar ===== -->
+  <div style="margin-top:20px;">
+    <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:11px;">
+      <h2 style="margin:0; font-size:16px; font-weight:700; letter-spacing:-0.01em;">Cinco cuentas necesitan algo tuyo</h2>
+      <span style="font-size:12px; color:#8494A7;">el resto está dentro de parámetros</span>
+    </div>
+
+    <table class="num" style="width:100%; border-collapse:collapse; font-size:12.5px;">
+      <thead>
+        <tr style="border-bottom:1px solid #D5DCE5;">
+          <th style="text-align:left; font-size:10.5px; font-weight:600; color:#8494A7; text-transform:uppercase; letter-spacing:0.06em; padding:0 0 7px 0;">Cliente</th>
+          <th style="text-align:left; font-size:10.5px; font-weight:600; color:#8494A7; text-transform:uppercase; letter-spacing:0.06em; padding:0 0 7px 0;">Cuenta</th>
+          <th style="text-align:right; font-size:10.5px; font-weight:600; color:#8494A7; text-transform:uppercase; letter-spacing:0.06em; padding:0 0 7px 0;">AUM</th>
+          <th style="text-align:left; font-size:10.5px; font-weight:600; color:#8494A7; text-transform:uppercase; letter-spacing:0.06em; padding:0 0 7px 0 ; padding-left:16px;">Qué pasa</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid #F0F3F7;">
+          <td style="padding:9px 0; font-weight:600;">Inversiones Andina S.A.</td><td style="color:#3D5068;">38104</td>
+          <td style="text-align:right; font-weight:600;">$ 428,1 M</td>
+          <td style="padding-left:16px;"><span style="display:inline-flex; align-items:center; gap:5px; font-size:12px; color:#E62626; font-weight:600;"><span style="width:6px; height:6px; background:#E62626; display:block;"></span>Desvío 9,4 pp</span></td>
+        </tr>
+        <tr style="border-bottom:1px solid #F0F3F7;">
+          <td style="padding:9px 0; font-weight:600;">M. Rossi</td><td style="color:#3D5068;">41000</td>
+          <td style="text-align:right; font-weight:600;">$ 118,5 M</td>
+          <td style="padding-left:16px;"><span style="display:inline-flex; align-items:center; gap:5px; font-size:12px; color:#D97706; font-weight:600;"><span style="width:6px; height:6px; background:#D97706; display:block;"></span>Desvío 6,2 pp</span></td>
+        </tr>
+        <tr style="border-bottom:1px solid #F0F3F7;">
+          <td style="padding:9px 0; font-weight:600;">Estancia del Sur</td><td style="color:#3D5068;">39877</td>
+          <td style="text-align:right; font-weight:600;">$ 224,0 M</td>
+          <td style="padding-left:16px;"><span style="display:inline-flex; align-items:center; gap:5px; font-size:12px; color:#D97706; font-weight:600;"><span style="width:6px; height:6px; background:#D97706; display:block;"></span>18% en efectivo hace 41 días</span></td>
+        </tr>
+        <tr style="border-bottom:1px solid #F0F3F7;">
+          <td style="padding:9px 0; font-weight:600;">Delta Capital</td><td style="color:#3D5068;">40219</td>
+          <td style="text-align:right; font-weight:600;">$ 187,0 M</td>
+          <td style="padding-left:16px;"><span style="display:inline-flex; align-items:center; gap:5px; font-size:12px; color:#3D5068;"><span style="width:6px; height:6px; background:#8494A7; display:block;"></span>Retiro de $12 M pedido el 26/09</span></td>
+        </tr>
+        <tr style="border-bottom:1px solid #F0F3F7;">
+          <td style="padding:9px 0; font-weight:600;">Grupo Ferreyra</td><td style="color:#3D5068;">37650</td>
+          <td style="text-align:right; font-weight:600;">$ 315,0 M</td>
+          <td style="padding-left:16px;"><span style="display:inline-flex; align-items:center; gap:5px; font-size:12px; color:#3D5068;"><span style="width:6px; height:6px; background:#8494A7; display:block;"></span>Sin rebalancear hace 94 días</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ===== el tamaño del libro ===== -->
+  <div style="margin-top:26px;">
+    <h2 style="margin:0 0 11px 0; font-size:13px; font-weight:600; letter-spacing:0.02em;">Tu libro</h2>
+    <div style="display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:1px; background:#D5DCE5; border:1px solid #D5DCE5;">
+      <div style="background:#FFFFFF; padding:14px 15px; display:flex; flex-direction:column; gap:4px;">
+        <div style="font-size:11px; color:#8494A7; font-weight:600;">AUM total</div>
+        <div class="num" style="font-size:21px; font-weight:700; letter-spacing:-0.025em;">$ 2.184 M</div>
+        <div class="num" style="font-size:11px; color:#00875C; font-weight:600;">+3,1% en el mes</div>
+      </div>
+      <div style="background:#FFFFFF; padding:14px 15px; display:flex; flex-direction:column; gap:4px;">
+        <div style="font-size:11px; color:#8494A7; font-weight:600;">En dólares</div>
+        <div class="num" style="font-size:21px; font-weight:700; letter-spacing:-0.025em;">US$ 1,56 M</div>
+        <div class="num" style="font-size:11px; color:#E62626; font-weight:600;">−0,4% en el mes</div>
+      </div>
+      <div style="background:#FFFFFF; padding:14px 15px; display:flex; flex-direction:column; gap:4px;">
+        <div style="font-size:11px; color:#8494A7; font-weight:600;">Flujo neto del mes</div>
+        <div class="num" style="font-size:21px; font-weight:700; letter-spacing:-0.025em; color:#00875C;">+ $ 34,2 M</div>
+        <div class="num" style="font-size:11px; color:#8494A7;">3 altas · 1 retiro</div>
+      </div>
+      <div style="background:#FFFFFF; padding:14px 15px; display:flex; flex-direction:column; gap:4px;">
+        <div style="font-size:11px; color:#8494A7; font-weight:600;">Dentro de parámetros</div>
+        <div class="num" style="font-size:21px; font-weight:700; letter-spacing:-0.025em;">23 / 28</div>
+        <div class="num" style="font-size:11px; color:#8494A7;">desvío menor a 5 pp</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== distribución por perfil ===== -->
+  <div style="margin-top:26px;">
+    <h2 style="margin:0 0 11px 0; font-size:13px; font-weight:600; letter-spacing:0.02em;">Cómo se reparte por perfil</h2>
+    <div style="display:flex; height:34px; border:1px solid #D5DCE5;">
+      <div style="width:42%; background:#059669; display:flex; align-items:center; padding-left:12px;"><span class="num" style="font-size:12px; font-weight:600; color:#FFFFFF;">Conservador · 42%</span></div>
+      <div style="width:36%; background:#D97706; display:flex; align-items:center; padding-left:12px;"><span class="num" style="font-size:12px; font-weight:600; color:#FFFFFF;">Moderado · 36%</span></div>
+      <div style="width:22%; background:#DC2626; display:flex; align-items:center; padding-left:12px;"><span class="num" style="font-size:12px; font-weight:600; color:#FFFFFF;">Agresivo · 22%</span></div>
+    </div>
+    <div class="num" style="display:flex; gap:22px; margin-top:8px; font-size:11.5px; color:#8494A7;">
+      <span>12 clientes · $ 917 M</span><span>10 clientes · $ 786 M</span><span>6 clientes · $ 481 M</span>
+    </div>
+  </div>
+
+  <!-- ===== quién se movió ===== -->
+  <div style="margin-top:26px; flex:1;">
+    <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:9px;">
+      <h2 style="margin:0; font-size:13px; font-weight:600; letter-spacing:0.02em;">Los que más se movieron</h2>
+      <span style="font-size:11px; color:#8494A7;">variación de AUM en el mes, medida en dólares MEP</span>
+    </div>
+    <table class="num" style="width:100%; border-collapse:collapse; font-size:12.5px;">
+      <tbody>
+        <tr style="border-bottom:1px solid #F0F3F7;"><td style="padding:7px 0; font-weight:600; width:220px;">Estancia del Sur</td><td style="width:300px;"><div style="height:8px; width:186px; background:#00B67A;"></div></td><td style="text-align:right; color:#00875C; font-weight:600;">+6,5%</td><td style="text-align:right; color:#3D5068;">US$ 160.000</td></tr>
+        <tr style="border-bottom:1px solid #F0F3F7;"><td style="padding:7px 0; font-weight:600;">Inversiones Andina S.A.</td><td><div style="height:8px; width:120px; background:#00B67A;"></div></td><td style="text-align:right; color:#00875C; font-weight:600;">+4,2%</td><td style="text-align:right; color:#3D5068;">US$ 305.786</td></tr>
+        <tr style="border-bottom:1px solid #F0F3F7;"><td style="padding:7px 0; font-weight:600;">Grupo Ferreyra</td><td><div style="height:8px; width:60px; background:#00B67A;"></div></td><td style="text-align:right; color:#00875C; font-weight:600;">+2,1%</td><td style="text-align:right; color:#3D5068;">US$ 225.000</td></tr>
+        <tr style="border-bottom:1px solid #F0F3F7;"><td style="padding:7px 0; font-weight:600;">Delta Capital</td><td><div style="height:8px; width:37px; background:#00B67A;"></div></td><td style="text-align:right; color:#00875C; font-weight:600;">+1,3%</td><td style="text-align:right; color:#3D5068;">US$ 133.571</td></tr>
+        <tr><td style="padding:7px 0; font-weight:600;">M. Rossi</td><td><div style="height:8px; width:23px; background:#E62626;"></div></td><td style="text-align:right; color:#E62626; font-weight:600;">−0,8%</td><td style="text-align:right; color:#3D5068;">US$ 84.623</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div style="display:flex; align-items:flex-end; gap:16px; padding:12px 0 16px 0; border-top:1px solid #E8EDF2; margin-top:14px;">
+    <p style="margin:0; font-size:10px; line-height:1.45; color:#8494A7; max-width:74ch;">
+      Umbral de desvío configurado por cartera modelo; el que dispara la alerta es el de cada cuenta. «Sin rebalancear» cuenta días desde la última orden ejecutada por el balanceador. Uso interno del asesor — no para distribución al cliente.
+    </p>
+    <div style="flex:1;"></div>
+    <span class="num" style="font-size:10px; color:#8494A7; white-space:nowrap;">1 / 1</span>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

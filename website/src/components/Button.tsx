@@ -1,18 +1,15 @@
 import { Link } from 'react-router-dom';
 import type { ReactNode } from 'react';
 
-type Variant = 'primary' | 'ghost' | 'glass';
+type Variant = 'primary' | 'ghost';
 
 const base =
-  'group inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60';
+  'group inline-flex items-center justify-center gap-2 px-5 py-3 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent';
 
 const variants: Record<Variant, string> = {
-  primary:
-    'bg-accent text-white shadow-glow hover:shadow-[0_0_0_1px_rgba(124,92,255,0.6),0_0_70px_-8px_rgba(124,92,255,0.8)] hover:-translate-y-0.5',
-  ghost:
-    'text-ink-100 ring-1 ring-inset ring-white/12 hover:ring-white/25 hover:bg-white/[0.04]',
-  glass:
-    'glass text-ink-100 hover:border-white/20 hover:bg-ink-900/70',
+  // Green is fill-only, and #0F1400 is the only ink allowed on it.
+  primary: 'bg-accent text-accent-fg hover:bg-accent-hi',
+  ghost: 'border border-line text-ink-100 hover:border-ink-600 hover:bg-card',
 };
 
 interface Props {
