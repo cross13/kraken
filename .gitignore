@@ -30,3 +30,10 @@ yarn-error.log*
 .vscode/*
 !.vscode/extensions.json
 *.swp
+
+# Python bytecode (design generators)
+__pycache__/
+*.pyc
+
+# Local Octo workspace data
+.octo/
