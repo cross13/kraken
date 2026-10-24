@@ -22,6 +22,7 @@ export type StepKey =
   | 'refine'
   | 'polish'
   | 'audit'
+  | 'review'
   | 'chat';
 
 export type ModelOption = ModelInfo;

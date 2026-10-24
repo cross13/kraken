@@ -15,7 +15,8 @@ export type RoutableAction =
   | 'task-execute'
   | 'task-refine'
   | 'polish'
-  | 'audit';
+  | 'audit'
+  | 'review';
 
 export const ROUTABLE_ACTIONS: { key: RoutableAction; label: string; hint: string }[] = [
   { key: 'requirements', label: 'Requirements', hint: 'Draft & refine feature requirements' },
@@ -25,6 +26,7 @@ export const ROUTABLE_ACTIONS: { key: RoutableAction; label: string; hint: strin
   { key: 'task-refine', label: 'Task refine', hint: 'Adjust a completed task from feedback' },
   { key: 'polish', label: 'Polish', hint: 'Final review pass when all tasks are done' },
   { key: 'audit', label: 'Audit', hint: 'spec-doctor drift check (read-only)' },
+  { key: 'review', label: 'Code review', hint: 'Review a branch or pull request diff (read-only)' },
 ];
 
 export interface ModuleConfig extends RouterConfig {

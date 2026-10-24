@@ -330,7 +330,8 @@ Fire Claude runs automatically on app-level events.
 - **`electron/github.ts`** — a **dependency-free** GitHub REST client. Token via `safeStorage`
   (same pattern as the API key). Exposed through `github:*` IPC: repo resolution from the `origin`
   remote, token validation, remote-branch listing (the valid PR base targets), and PR
-  list/create/merge. Returns `GitHubOpResult<T>`.
+  list/create/merge, plus PR read/files/review for code review (see *Code review* above). Returns
+  `GitHubOpResult<T>`.
 - **UI:** the **Source Control** sidebar panel (`SourceControlView`) drives both. It is
   **spec-aware** — it reads the active editor tab's spec for branch/commit/PR defaults and writes
   branch/commit/PR state back into `SpecMeta` (`branch`, `lastCommitHash`, `prNumber`, …). Current
@@ -339,6 +340,35 @@ Fire Claude runs automatically on app-level events.
   `github.listBranches(cwd)`, defaulting to the repo's actual default branch. The dialog also has a
   **Generate with Claude** button that streams a PR description from the spec's content
   (`source: 'pr-description'`, registered in the orchestrator) straight into the body field.
+
+## Code review (`src/lib/codeReview.ts` + `src/components/review/`)
+
+One review run, two targets. **Ship › Code review** (`CodeReviewPanel`, between the ticket panel
+and the PR composer) reviews the spec's committed branch via `git.branchDiff` — the same
+`base...HEAD` range the PR will show — against the spec's requirements and plan. **Activity ›
+Reviews** (`PrReviewStudio`) lists the repo's open PRs and reviews one from `github.prFiles`, so it
+need not be checked out; the PR description is quoted as data between markers, never as
+instructions.
+
+- **Routing:** `{kind: 'review'}` → `code-reviewer` (pinnable under Library › Routing › Advanced
+  as *Code review*). The run is `kind: 'review'`, read-only by prompt: a review reports, fixing is
+  a separate click.
+- **Format:** the `code-review-format` skill (bundled default, injected by `routeReviewSkill` under
+  the same toggle/disabled list as the doc-format skills) asks for a `## Summary` and one `json`
+  findings array; the prompt keeps the minimum contract so a review parses with injection off.
+  `parseReview` is forgiving — last `json` fence, then any bare array, unknown severities mapped
+  (`critical` → blocker, `low` → nit).
+- **Findings** (`FindingsList`) open the file in the overlay and **Fix with Claude** hands a
+  one-finding prompt to the Assistant (`chat.pendingPrompt`). On a PR, Fix is offered only when the
+  PR's head branch is the one checked out — otherwise the fix would land on the wrong branch.
+- **Persistence:** the local review goes to `<spec>/review.md` and `SpecMeta.review` (HEAD sha +
+  counts); Ship marks it **stale** when HEAD moves, and `PrComposer` notes *Not reviewed yet* or the
+  blocker count beside *Create pull request*. Advisory — it never blocks the PR.
+- **Posting to GitHub** follows the ticket rule: `prReviewDraft` builds the exact body + inline
+  comments, the UI shows them, and only then `github:pr-review` posts a `COMMENT` review pinned to
+  the PR's `headSha`. A finding becomes an inline comment only when its line is inside a hunk
+  (`commentableLines`) — GitHub rejects the whole review otherwise — and the rest are listed in the
+  body.
 
 ## Terminals — interactive PTY sessions
 

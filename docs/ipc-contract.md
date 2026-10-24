@@ -53,6 +53,9 @@ no-op once the workspace is current.
 ### `specs`
 `list(root)`, `create(root, name, kind, brief?)`, `read(root, id)`, `writeFile(root, id, file, content)`,
 `advance(root, id)`, `setPhase(root, id, phase)`, `delete(root, id)` — the SDD spec lifecycle.
+`readReview(root, id)` / `saveReview({root, id, markdown, stamp})` read and write the spec's
+`review.md` and stamp `SpecMeta.review`; written directly, **not** through `writeFile`, so a saved
+review never fires `file-save-in-app` hooks.
 `advance` walks `requirements → plan → build → done`; `setPhase` can reopen a phase (Re-sync).
 `create`'s optional `brief` is the Home composer's text: it is stored on `SpecMeta` and quoted at
 the top of the seeded first document — creating a spec never starts a Claude run.
@@ -134,6 +137,9 @@ base: the commits (`git log base..HEAD`) and the per-file line counts (`git diff
 base...HEAD`, three dots — the changes *this branch introduced*, not what happened on the base
 meanwhile). The base is `origin/HEAD` when the remote sets it, else a guess flagged as
 `baseGuessed`. Backs the PR composer.
+`branchDiff({cwd, base?})` → `BranchDiff` is the same range as **patch text** (`git diff
+base...HEAD`) plus HEAD's hash, cut at ~240 KB with `truncated: true` so a review never claims to
+have read code it was not shown. Backs the Ship code review.
 `status`, `listChanges`, `stage`, `unstage`, `stageAll`, `unstageAll`, `fetch`, `pull`, `push`,
 `listBranches`, `checkout`, `createBranch`, `commitPush`. Backed by `electron/git.ts`. All return
 `{ ok, error?, output, … }` result objects.
@@ -141,7 +147,11 @@ meanwhile). The base is `origin/HEAD` when the remote sets it, else a guess flag
 ### `github`
 `hasToken`, `setToken`, `clearToken`, `tokenStatus`, `repoInfo(cwd)`,
 `listBranches(cwd)` (remote branches — the valid PR base targets, used by the create-PR base
-typeahead), `listPrs(args)`, `createPr(args)`, `mergePr(args)`. Backed by `electron/github.ts`
+typeahead), `listPrs(args)`, `createPr(args)`, `mergePr(args)`, and the code-review trio:
+`getPr({cwd, number})` (the PR + its `headSha`), `prFiles({cwd, number})` → `PrFile[]` (paged to
+the end, each with GitHub's per-file patch) and `prReview({cwd, number, body, commitId?,
+comments})` — **always** `event: 'COMMENT'`, never approve/request-changes, and only called after
+the renderer has shown the exact body + inline comments. Backed by `electron/github.ts`
 (dependency-free REST client). PR/repo methods return `GitHubOpResult<T>`.
 
 ### `data`

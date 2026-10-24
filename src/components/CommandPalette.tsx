@@ -24,6 +24,7 @@ import {
   MonitorSmartphone,
   GraduationCap,
   Maximize2,
+  FileSearch,
 } from 'lucide-react';
 import { useWorkspace } from '../stores/workspace';
 import { useUi, stageForPhase, type LibrarySection, type ActivityTab } from '../stores/ui';
@@ -52,6 +53,7 @@ const ACTIVITY_DESTS: { tab: ActivityTab; label: string; icon: React.ReactNode }
   { tab: 'runs', label: 'Activity — live runs', icon: <Network size={15} /> },
   { tab: 'history', label: 'Activity — history', icon: <History size={15} /> },
   { tab: 'specs', label: 'Activity — spec analytics', icon: <BarChart3 size={15} /> },
+  { tab: 'reviews', label: 'Activity — review a pull request', icon: <FileSearch size={15} /> },
   { tab: 'terminals', label: 'Activity — terminals', icon: <SquareTerminal size={15} /> },
 ];
 

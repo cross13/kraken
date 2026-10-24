@@ -305,6 +305,14 @@ ${branchDigest(branch)}`,
           </button>
         ) : null}
         <div className="flex-1" />
+        {/* Advisory only: a review informs the PR, it never blocks it. */}
+        {!meta.review ? (
+          <span className="text-[11.5px] text-faint">Not reviewed yet</span>
+        ) : meta.review.counts.blocker ? (
+          <span className="text-[11.5px] text-bad">
+            {meta.review.counts.blocker} blocker{meta.review.counts.blocker > 1 ? 's' : ''} in the last review
+          </span>
+        ) : null}
         <button
           onClick={create}
           disabled={creating || nothingToShip}

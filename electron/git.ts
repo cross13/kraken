@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import type { BranchCommit, BranchFile, BranchSummary } from './shared/types.js';
+import type { BranchCommit, BranchDiff, BranchFile, BranchSummary } from './shared/types.js';
 
 export interface GitStatus {
   isRepo: boolean;
@@ -608,4 +608,53 @@ export function gitBranchSummary(cwd: string, preferredBase?: string): BranchSum
   files.sort((x, y) => y.added + y.deleted - (x.added + x.deleted));
 
   return { ok: true, branch, base, baseGuessed: guessed, commits, files, added, deleted, dirty };
+}
+
+/** Roughly 60k tokens of patch — past that a review reads the file list, not the code. */
+const REVIEW_PATCH_CAP = 240_000;
+
+/**
+ * The patch text `gitBranchSummary` only counts: what a code review reads.
+ *
+ * Same base resolution and the same three-dot range, so the review and the PR
+ * description describe the same change. The patch is cut at a byte cap and says
+ * so (`truncated`) — a review that silently saw half a diff would report a clean
+ * bill of health for code it never read.
+ */
+export function gitBranchDiff(cwd: string, preferredBase?: string): BranchDiff {
+  const summary = gitBranchSummary(cwd, preferredBase);
+  const empty: BranchDiff = {
+    ok: false,
+    base: summary.base,
+    baseGuessed: summary.baseGuessed,
+    head: null,
+    files: summary.files,
+    patch: '',
+    truncated: false,
+    error: summary.error,
+  };
+  if (!summary.ok || !summary.base) return empty;
+
+  const head = git(cwd, ['rev-parse', 'HEAD']).stdout.trim() || null;
+  // Node's default maxBuffer (1 MB) is far below a real branch's diff.
+  const diff = spawnSync('git', ['diff', '--no-color', '--unified=3', `${summary.base}...HEAD`], {
+    cwd,
+    encoding: 'utf8',
+    timeout: 30000,
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  if (diff.status !== 0) {
+    return { ...empty, head, error: diff.stderr?.trim() || 'Could not read the branch diff.' };
+  }
+  const full = diff.stdout ?? '';
+  const truncated = full.length > REVIEW_PATCH_CAP;
+  return {
+    ok: true,
+    base: summary.base,
+    baseGuessed: summary.baseGuessed,
+    head,
+    files: summary.files,
+    patch: truncated ? full.slice(0, REVIEW_PATCH_CAP) : full,
+    truncated,
+  };
 }

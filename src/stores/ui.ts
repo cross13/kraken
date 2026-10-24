@@ -10,7 +10,7 @@ import type {
 export type Surface = 'home' | 'spec' | 'activity' | 'library';
 
 /** Tabs inside the Activity surface (the single "what's running" center). */
-export type ActivityTab = 'runs' | 'history' | 'specs' | 'terminals' | 'graph';
+export type ActivityTab = 'runs' | 'history' | 'specs' | 'reviews' | 'terminals' | 'graph';
 
 /** Sections inside the consolidated Library surface. */
 export type LibrarySection =

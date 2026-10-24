@@ -16,6 +16,7 @@ import { useUi } from '../../stores/ui';
 import { CompletionSummary } from './CompletionSummary';
 import { PrComposer } from './PrComposer';
 import { TicketPanel } from './TicketPanel';
+import { CodeReviewPanel } from '../review/CodeReviewPanel';
 import { polishSpec } from '../../lib/specActions';
 import { cn } from '../../lib/cn';
 import type { SpecMeta } from '../../../electron/shared/types';
@@ -193,6 +194,10 @@ export function ShipView({ meta, onReopen }: { meta: SpecMeta; onReopen: () => v
           files={{ requirements: requirementsMd }}
           summary={summaryText}
         />
+
+        {/* Review the committed branch before the PR exposes it — advisory,
+            never a gate. Needs a repo; the diff is against the branch's base. */}
+        {git?.isRepo && <CodeReviewPanel meta={meta} specRel={specRel} />}
 
         {/* The PR, composed from what the branch actually contains. Only once
             there is a remote and a token — otherwise there is nothing to open. */}

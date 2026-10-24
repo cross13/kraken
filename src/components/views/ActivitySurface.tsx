@@ -7,6 +7,7 @@ import {
   History,
   Workflow,
   BarChart3,
+  FileSearch,
 } from 'lucide-react';
 import { useUi, type ActivityTab } from '../../stores/ui';
 import { OrchestratorView } from '../sidebar/OrchestratorView';
@@ -14,12 +15,14 @@ import { HistoryView } from '../sidebar/HistoryView';
 import { AgentGraphView } from './AgentGraphView';
 import { SpecsStudio } from './SpecsStudio';
 import { TerminalView } from './TerminalView';
+import { PrReviewStudio } from '../review/PrReviewStudio';
 import { cn } from '../../lib/cn';
 
 const TABS: { tab: ActivityTab; label: string; icon: React.ReactNode }[] = [
   { tab: 'runs', label: 'Runs', icon: <Network size={13} /> },
   { tab: 'history', label: 'History', icon: <History size={13} /> },
   { tab: 'specs', label: 'Specs', icon: <BarChart3 size={13} /> },
+  { tab: 'reviews', label: 'Reviews', icon: <FileSearch size={13} /> },
   { tab: 'terminals', label: 'Terminals', icon: <SquareTerminal size={13} /> },
   { tab: 'graph', label: 'Graph', icon: <Workflow size={13} /> },
 ];
@@ -27,7 +30,7 @@ const TABS: { tab: ActivityTab; label: string; icon: React.ReactNode }[] = [
 /**
  * Activity — the single command center for "what's running": live runs with
  * cancel + the one concurrency control, run history, **Specs** (per-spec run
- * analytics), terminals (PTYs stay mounted app-wide), and the agent graph.
+ * analytics), **Reviews** (code review of open pull requests), terminals (PTYs stay mounted app-wide), and the agent graph.
  * Everything else in the app shows only indicators that deep-link here.
  *
  * Specs lives here rather than on Home because it answers a question about
@@ -79,6 +82,13 @@ export function ActivitySurface() {
             <SpecsStudio />
           </div>
         )}
+        {/* Kept mounted so a review in flight survives switching tabs. */}
+        <div
+          className="absolute inset-0"
+          style={{ display: tab === 'reviews' ? 'block' : 'none' }}
+        >
+          <PrReviewStudio />
+        </div>
         <div
           className="absolute inset-0"
           style={{ display: tab === 'terminals' ? 'block' : 'none' }}

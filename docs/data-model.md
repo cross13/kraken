@@ -19,7 +19,14 @@ A spec is a **directory** under the workspace at `.octo/specs/<id>/`:
   requirements.md  # feature specs   (or bugfix.md for bugfix specs)
   plan.md          # the technical plan, incl. its `## Tasks` waves
   tasks.md         # DERIVED from plan.md at the Plan gate — the live, tickable copy
+  summary.md       # the Ship completion summary (CompletionSummary)
+  review.md        # the last code review of the spec's branch (Ship › Code review)
 ```
+
+`review.md` is a header comment (`<!-- octo:review target=… head=<sha> at=… -->`), a `## Summary`
+and a `## Findings` fenced `json` array of `ReviewFinding` without ids — the same shape the
+`code-review-format` skill asks a reviewer for, so `parseReview` (`src/lib/codeReview.ts`) reads
+both. It is not a phase document: `readSpec` does not return it.
 
 - **Phase order is fixed and load-bearing:** `requirements → plan → build → done`
   (`SpecPhase`). `plan` and `build` were called `design` and `tasks` before the methodology
@@ -51,7 +58,9 @@ the Home composer, passed to `specs:create`. Creating a spec starts no Claude ru
 has to be persisted: it is quoted at the top of the seeded `requirements.md`/`bugfix.md` and
 re-sent as grounding when the user later presses *Draft … with Claude*. Plus optional git/GitHub
 workflow state written back by the Source Control panel: `branch`, `committedAt`,
-`lastCommitHash`, `lastCommitPushed`, `prNumber`, `prUrl`, `prState`.
+`lastCommitHash`, `lastCommitPushed`, `prNumber`, `prUrl`, `prState`. And `review?:
+SpecReviewStamp` (`{at, sha, counts}`) — enough for Ship and the PR composer to show the tally and
+whether HEAD has moved since.
 
 ## Starting clean
 
@@ -214,8 +223,12 @@ the agent graph would treat the stale row as live and spin a finished task forev
   unit of the streaming protocol. `channel` (`StreamChannel` = `'text' | 'thinking' | 'tool' |
   'tool_result'`) tags delta events so the renderer can render thinking/tool output distinctly;
   it defaults to `'text'`.
-- `RunKind` — `'task' | 'refine' | 'polish' | 'chat' | 'spec' | 'audit' | 'hook'`; tags every run
-  in the orchestrator registry and the DB.
+- `RunKind` — `'task' | 'refine' | 'polish' | 'chat' | 'spec' | 'audit' | 'review' | 'hook'`;
+  tags every run in the orchestrator registry and the DB. `review` groups with `audit` in the
+  graph (both read the work; neither changes it).
+- Code review — `ReviewSeverity` (`blocker | major | minor | nit`), `ReviewFinding`, `CodeReview`
+  (`target` = `branch:<name>` or `pr:<n>`), `BranchDiff`, `PrFile`, `PrReviewComment` (a RIGHT-side
+  line), `SpecReviewStamp`.
 - `ActiveRun` / `FinishedRun` — the in-flight and recent-activity shapes used by the orchestrator
   store. See [`renderer.md`](./renderer.md).
 - `HookConfig`, `HookTrigger`, `HookFireContext`, `HookFireEvent`, `HookRunRow` — hooks.

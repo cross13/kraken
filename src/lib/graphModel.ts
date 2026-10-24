@@ -55,6 +55,8 @@ export const KIND_TO_GROUP: Record<RunKind, RunGroup> = {
   spec: 'spec',
   hook: 'hook',
   audit: 'audit',
+  // A code review is a read of the work, like an audit — not a step that changes it.
+  review: 'audit',
   chat: 'chat',
 };
 
@@ -70,7 +72,7 @@ export const GROUP_META: Record<RunGroup, GroupMeta> = {
   execution: { label: 'Task execution', hint: 'Wave tasks from tasks.md', color: '#38bdf8' },
   spec: { label: 'Spec generation', hint: 'Drafting requirements / plan / tasks', color: '#a78bfa' },
   hook: { label: 'Hooks', hint: 'Event-triggered agent runs', color: '#fbbf24' },
-  audit: { label: 'Audit', hint: 'Drift detection (spec-doctor)', color: '#2dd4bf' },
+  audit: { label: 'Audit & review', hint: 'Drift detection and code review', color: '#2dd4bf' },
   chat: { label: 'Chat', hint: 'Interactive chat runs', color: '#94a3b8' },
 };
 
