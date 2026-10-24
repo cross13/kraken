@@ -191,6 +191,9 @@ and the **⌘K** command palette.
   permission prompts, and slash commands natively.
 - **Git & GitHub** — status, branch, commit, push, and PR create/list/merge, driven from the Ship
   panel and the global repo panel.
+- **Code review** — review the spec's branch in Ship before the PR (findings by severity, saved to
+  `review.md`, *Fix with Claude* per finding), or any open pull request from Activity › Reviews.
+  Posting back to GitHub shows the exact review first and only ever sends a comment.
 - **Travel Display** — an optional read-only fleet monitor on a second, ultrawide display, where
   every run in flight is an octopus and everything the creature does means something.
 - **Theming** — four palettes (**Signal** — the default and the brand, Abyss, Bioluminescent,

@@ -17,6 +17,7 @@ import {
   ArrowLeft,
   Waves,
   Pause,
+  FileSearch,
 } from 'lucide-react';
 import type { ActiveRun, RunKind, RunRow, StreamChannel } from '../../../electron/shared/types';
 import { useTheme, THEME_LABEL } from '../../stores/theme';
@@ -35,6 +36,7 @@ const KIND_META: Record<RunKind, { label: string; icon: React.ReactNode }> = {
   polish: { label: 'Polish', icon: <Sparkles size={11} /> },
   chat: { label: 'Chat', icon: <MessageSquare size={11} /> },
   spec: { label: 'Spec', icon: <FileText size={11} /> },
+  review: { label: 'Review', icon: <FileSearch size={11} /> },
   audit: { label: 'Audit', icon: <Stethoscope size={11} /> },
   hook: { label: 'Hook', icon: <Bot size={11} /> },
 };
@@ -42,7 +44,7 @@ function kindMeta(kind?: RunKind) {
   return kind ? KIND_META[kind] : { label: 'Run', icon: <Bot size={11} /> };
 }
 /** Kinds that read as "deciding" rather than "executing" — violet, per the brand. */
-const THINKING_KINDS: RunKind[] = ['spec', 'audit'];
+const THINKING_KINDS: RunKind[] = ['spec', 'audit', 'review'];
 
 type FinalStatus = 'done' | 'error' | 'cancelled';
 type RunStatus = 'running' | 'queued' | FinalStatus;

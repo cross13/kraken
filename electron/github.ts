@@ -5,6 +5,8 @@
 import type {
   GitHubOpResult,
   GitHubTokenStatus,
+  PrFile,
+  PrReviewComment,
   PullRequestMeta,
 } from './shared/types.js';
 import { gitCurrentBranch, gitRemoteUrl } from './git.js';
@@ -242,4 +244,92 @@ export async function ghMergePullRequest(
   );
   if (!res.ok) return { ok: false, error: res.error };
   return { ok: true, data: res.data };
+}
+
+export async function ghGetPullRequest(
+  token: string,
+  owner: string,
+  repo: string,
+  number: number
+): Promise<GitHubOpResult<PullRequestMeta & { headSha: string }>> {
+  const res = await ghFetch<GhPull & { head: { ref: string; sha: string } }>(
+    token,
+    `/repos/${owner}/${repo}/pulls/${number}`
+  );
+  if (!res.ok || !res.data) return { ok: false, error: res.error };
+  return { ok: true, data: { ...toPrMeta(res.data), headSha: res.data.head.sha } };
+}
+
+interface GhPrFile {
+  filename: string;
+  status: string;
+  additions: number;
+  deletions: number;
+  patch?: string;
+}
+
+/**
+ * The files a pull request changes, each with GitHub's own patch. Paged: the
+ * endpoint caps at 100 per page and 3000 overall, so a large PR is read to the
+ * end rather than reviewed from its first page.
+ */
+export async function ghPullRequestFiles(
+  token: string,
+  owner: string,
+  repo: string,
+  number: number
+): Promise<GitHubOpResult<PrFile[]>> {
+  const files: PrFile[] = [];
+  for (let page = 1; page <= 30; page++) {
+    const res = await ghFetch<GhPrFile[]>(
+      token,
+      `/repos/${owner}/${repo}/pulls/${number}/files?per_page=100&page=${page}`
+    );
+    if (!res.ok) return { ok: false, error: res.error };
+    const batch = res.data ?? [];
+    for (const f of batch) {
+      files.push({
+        path: f.filename,
+        status: f.status,
+        added: f.additions,
+        deleted: f.deletions,
+        patch: f.patch,
+      });
+    }
+    if (batch.length < 100) break;
+  }
+  return { ok: true, data: files };
+}
+
+/**
+ * Post a review. Always `COMMENT`: approving or requesting changes is a person's
+ * call, and Octo never makes it on their behalf.
+ */
+export async function ghCreateReview(
+  token: string,
+  owner: string,
+  repo: string,
+  number: number,
+  params: { body: string; commitId?: string; comments: PrReviewComment[] }
+): Promise<GitHubOpResult<{ url: string }>> {
+  const res = await ghFetch<{ html_url: string }>(
+    token,
+    `/repos/${owner}/${repo}/pulls/${number}/reviews`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        body: params.body,
+        event: 'COMMENT',
+        ...(params.commitId ? { commit_id: params.commitId } : {}),
+        comments: params.comments.map((c) => ({
+          path: c.path,
+          line: c.line,
+          side: 'RIGHT',
+          body: c.body,
+        })),
+      }),
+    }
+  );
+  if (!res.ok) return { ok: false, error: res.error };
+  return { ok: true, data: { url: res.data?.html_url ?? '' } };
 }

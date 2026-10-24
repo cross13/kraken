@@ -102,6 +102,8 @@ function buildAction(key: RoutableAction, taskText: string): Action {
       return { kind: 'polish' };
     case 'audit':
       return { kind: 'audit' };
+    case 'review':
+      return { kind: 'review' };
   }
 }
 

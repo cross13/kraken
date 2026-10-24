@@ -82,7 +82,7 @@ Everything is registered in `registerIpc()`. Key responsibilities living here:
 - **Default library** — the content lives in **`electron/defaultLibrary.ts`** (dependency-free,
   so `npm run hashes` can import it with Node's TS stripping); `seedDefaultAgents`/`Skills`/
   `Steering`/`Hooks` write it into `.claude/` and `.octo/` ("Seed defaults" in the UI). It ships
-  12 agents, 6 skills, 3 steering scaffolds and 3 hooks. Seeding is an **upgrade**, not just a
+  12 agents, 7 skills, 3 steering scaffolds and 3 hooks. Seeding is an **upgrade**, not just a
   first install: `seedDefaultFile` (`electron/seedDefaults.ts`) rewrites a default the user never
   edited — recognised via the `seededDefaults` hash ledger plus the bundled
   `SHIPPED_DEFAULT_HASHES` — and leaves any edited file untouched, returning a `SeedReport`
@@ -213,7 +213,7 @@ results arrive through `claude.onEvent(handler)`.
   the spec auto-advances to `done` when the last task completes, `CompletionSummary`
   auto-generates into `summary.md`, and branch/Commit all/Create PR sit right there. **Activity**
   (`ActivitySurface`) is the single "what's running" center (Runs = `OrchestratorView`, History,
-  **Specs** = `SpecsStudio`, the per-spec run analytics, Terminals, Graph). **Library** (`LibrarySurface`) consolidates config: Agents · Skills · Hooks ·
+  **Specs** = `SpecsStudio`, the per-spec run analytics, **Reviews** = `PrReviewStudio`, Terminals, Graph). **Library** (`LibrarySurface`) consolidates config: Agents · Skills · Hooks ·
   Steering · Routing (`RouterStudio`, now a read-only routing explainer + Advanced pins) ·
   Appearance (`SyntaxStudio`) · Settings (regrouped: Connection / Models incl. the **planning
   model** / Repository / Advanced / **Danger zone** — the `data:reset` wipe of specs on disk +
@@ -360,6 +360,15 @@ spec's **Ship panel** (`ShipView`: branch → Commit all → Create PR, prefille
 auto-generated summary) and from the global **repo panel** (`SourceControlView variant="page"`,
 opened as an overlay from the command-bar project pill / ⌘K). Both are spec-aware (`ui.activeSpecId`
 resolves "the spec you're working on") and write branch/commit/PR state back into `SpecMeta`.
+
+### Code review (`src/lib/codeReview.ts` + `src/components/review/`)
+One read-only review run (`{kind:'review'}` → `code-reviewer`, `RunKind 'review'`, findings in the
+`code-review-format` skill's JSON shape, parsed by `parseReview`) over two targets: **Ship › Code
+review** (`CodeReviewPanel`) reviews the spec branch's `git:branch-diff` and writes `review.md` +
+`SpecMeta.review` (HEAD sha → *stale* after a new commit; advisory, never blocks the PR), and
+**Activity › Reviews** (`PrReviewStudio`) reviews any open PR from `github:pr-files`. Posting back
+is the ticket rule again — the exact body + inline comments are shown first, and
+`github:pr-review` only ever sends a `COMMENT`. See `docs/subsystems.md` → Code review.
 
 ### Terminals — interactive PTY sessions (`electron/terminal.ts` + `TerminalView`/`TerminalsView`)
 Where `claude:stream` is one-shot and fire-and-forget (`-p`, no stdin), terminals are a **fully

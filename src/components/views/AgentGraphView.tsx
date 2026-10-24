@@ -32,6 +32,7 @@ import {
   MessageSquare,
   Stethoscope,
   Zap,
+  FileSearch,
 } from 'lucide-react';
 import { useWorkspace } from '../../stores/workspace';
 import { useOrchestrator } from '../../stores/orchestrator';
@@ -70,6 +71,7 @@ const KIND_ICON: Record<RunKind, (p: { size?: number }) => JSX.Element> = {
   chat: (p) => <MessageSquare {...p} />,
   spec: (p) => <FileText {...p} />,
   audit: (p) => <Stethoscope {...p} />,
+  review: (p) => <FileSearch {...p} />,
   hook: (p) => <Zap {...p} />,
 };
 
@@ -80,6 +82,7 @@ const KIND_LABEL: Record<RunKind, string> = {
   chat: 'Chat',
   spec: 'Spec',
   audit: 'Audit',
+  review: 'Review',
   hook: 'Hook',
 };
 

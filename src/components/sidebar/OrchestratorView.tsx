@@ -17,6 +17,7 @@ import {
   Sparkles,
   Wand2,
   Trash2,
+  FileSearch,
 } from 'lucide-react';
 import { OctoMark } from '../OctoMark';
 import { cn } from '../../lib/cn';
@@ -29,6 +30,7 @@ const KIND_META: Record<RunKind, { label: string; icon: React.ReactNode; cls: st
   polish: { label: 'Polish', icon: <Sparkles size={11} />, cls: 'bg-agent/15 text-agent-text' },
   chat: { label: 'Chat', icon: <MessageSquare size={11} />, cls: 'bg-ink-700 text-ink-200' },
   spec: { label: 'Spec', icon: <FileText size={11} />, cls: 'bg-ink-50/[0.06] text-dim' },
+  review: { label: 'Review', icon: <FileSearch size={11} />, cls: 'bg-accent/15 text-accent' },
   audit: { label: 'Audit', icon: <Stethoscope size={11} />, cls: 'bg-warn/15 text-warn' },
   hook: { label: 'Hook', icon: <Bot size={11} />, cls: 'bg-good/15 text-good' },
 };

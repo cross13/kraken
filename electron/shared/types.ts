@@ -34,6 +34,16 @@ export interface SpecMeta {
   prState?: 'open' | 'closed' | 'merged';
   /** The tracker ticket this spec is linked to, if any. */
   ticket?: SpecTicketLink;
+  /** The last code review of this spec's branch (`review.md` holds the findings). */
+  review?: SpecReviewStamp;
+}
+
+/** Enough about the last review for Ship to say whether it is still current. */
+export interface SpecReviewStamp {
+  at: string;
+  /** HEAD when the review ran — a later commit makes it stale */
+  sha: string;
+  counts: Record<ReviewSeverity, number>;
 }
 
 /** What a spec knows about its ticket. The tracker stays the source of truth. */
@@ -551,6 +561,43 @@ export interface BranchSummary {
   error?: string;
 }
 
+/** The patch text a branch adds on top of its base — what a code review reads. */
+export interface BranchDiff {
+  ok: boolean;
+  base: string | null;
+  baseGuessed: boolean;
+  /** HEAD's commit hash, so a review can be stamped and later found stale */
+  head: string | null;
+  files: BranchFile[];
+  /** unified diff, `base...HEAD`, cut at a byte cap */
+  patch: string;
+  /** true when `patch` was cut — the review must say it saw only part */
+  truncated: boolean;
+  error?: string;
+}
+
+// ---------- Code review ----------
+
+export type ReviewSeverity = 'blocker' | 'major' | 'minor' | 'nit';
+
+export interface ReviewFinding {
+  id: string;
+  severity: ReviewSeverity;
+  file: string;
+  line?: number;
+  title: string;
+  detail: string;
+  suggestion?: string;
+}
+
+export interface CodeReview {
+  /** `branch:<name>` for a local review, `pr:<number>` for a GitHub one */
+  target: string;
+  summary: string;
+  findings: ReviewFinding[];
+  createdAt: string;
+}
+
 export interface SeedReport {
   created: string[];
   upgraded: string[];
@@ -596,7 +643,15 @@ export interface SteeringWriteInput {
 export type RunPhaseStatus = 'queued' | 'running' | 'done' | 'error' | 'cancelled';
 
 /** What kind of work a run represents — drives grouping/labelling in the UI. */
-export type RunKind = 'task' | 'refine' | 'polish' | 'chat' | 'spec' | 'audit' | 'hook';
+export type RunKind =
+  | 'task'
+  | 'refine'
+  | 'polish'
+  | 'chat'
+  | 'spec'
+  | 'audit'
+  | 'review'
+  | 'hook';
 
 export interface ActiveRun {
   requestId: string;
@@ -722,6 +777,23 @@ export interface PullRequestMeta {
   author: string;
   createdAt: string;
   updatedAt: string;
+}
+
+/** One changed file of a pull request, with GitHub's per-file patch. */
+export interface PrFile {
+  path: string;
+  status: string;
+  added: number;
+  deleted: number;
+  /** absent for binary files and for patches GitHub declines to inline */
+  patch?: string;
+}
+
+/** An inline comment in a review — `line` is on the RIGHT (new) side of the diff. */
+export interface PrReviewComment {
+  path: string;
+  line: number;
+  body: string;
 }
 
 export interface GitHubOpResult<T = unknown> {

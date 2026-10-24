@@ -1,7 +1,11 @@
 import { contextBridge, ipcRenderer, webFrame } from 'electron';
 import type {
   AgentMeta,
+  BranchDiff,
   BranchSummary,
+  PrFile,
+  PrReviewComment,
+  SpecReviewStamp,
   McpCallResult,
   McpToolMeta,
   TicketAction,
@@ -80,6 +84,11 @@ const api = {
       ipcRenderer.invoke('specs:set-phase', root, id, phase) as Promise<SpecMeta>,
     delete: (root: string, id: string) =>
       ipcRenderer.invoke('specs:delete', root, id) as Promise<void>,
+    /** `review.md` beside the spec, or null when the branch was never reviewed. */
+    readReview: (root: string, id: string) =>
+      ipcRenderer.invoke('specs:read-review', root, id) as Promise<string | null>,
+    saveReview: (args: { root: string; id: string; markdown: string; stamp: SpecReviewStamp }) =>
+      ipcRenderer.invoke('specs:save-review', args) as Promise<SpecMeta | null>,
   },
   /** Wholesale reset of the SDD data — specs on disk + the history DB. */
   data: {
@@ -324,6 +333,9 @@ const api = {
     /** Commits + per-file line counts this branch adds on top of its base. */
     branchSummary: (args: { cwd: string; base?: string }) =>
       ipcRenderer.invoke('git:branch-summary', args) as Promise<BranchSummary>,
+    /** The patch text behind `branchSummary` — what a code review reads. */
+    branchDiff: (args: { cwd: string; base?: string }) =>
+      ipcRenderer.invoke('git:branch-diff', args) as Promise<BranchDiff>,
     listChanges: (cwd: string) =>
       ipcRenderer.invoke('git:list-changes', cwd) as Promise<{
         ok: boolean;
@@ -442,6 +454,20 @@ const api = {
       ipcRenderer.invoke('github:merge-pr', args) as Promise<
         GitHubOpResult<{ merged: boolean; message: string }>
       >,
+    getPr: (args: { cwd: string; number: number }) =>
+      ipcRenderer.invoke('github:get-pr', args) as Promise<
+        GitHubOpResult<PullRequestMeta & { headSha: string }>
+      >,
+    prFiles: (args: { cwd: string; number: number }) =>
+      ipcRenderer.invoke('github:pr-files', args) as Promise<GitHubOpResult<PrFile[]>>,
+    /** Always posts a COMMENT review — never approves or requests changes. */
+    prReview: (args: {
+      cwd: string;
+      number: number;
+      body: string;
+      commitId?: string;
+      comments: PrReviewComment[];
+    }) => ipcRenderer.invoke('github:pr-review', args) as Promise<GitHubOpResult<{ url: string }>>,
   },
   history: {
     listRuns: (opts: { workspacePath?: string | null; specId?: string | null; limit?: number }) =>

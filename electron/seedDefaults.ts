@@ -58,6 +58,7 @@ export const SHIPPED_DEFAULT_HASHES: Record<string, string[]> = {
   'hooks/code-validate-improve.json': ['69cd62fae6ff7650'],
   'hooks/docs-changelog.json': ['971c3dc25583595c', 'ce83c2e74a871225'],
   'hooks/spec-format-audit.json': ['6c29f0489e73ebe5'],
+  'skills/code-review-format/SKILL.md': ['e892ba55a7d8073a'],
   'skills/sdd-bugfix/SKILL.md': ['fe9ab1d9d516c11c', '224f208f63ac623e'],
   'skills/sdd-feature/SKILL.md': ['b06bfbf925d9e768', 'fcc0e2d87ff3d8f0', '4ffcf29f6dc3f86e'],
   'skills/spec-bugfix-format/SKILL.md': ['1dd262bded00177c'],

@@ -31,6 +31,7 @@ import {
   gitStageAll,
   gitUnstageAll,
   gitBranchSummary,
+  gitBranchDiff,
 } from './git.js';
 import {
   resolveRepo,
@@ -40,6 +41,9 @@ import {
   ghCreatePullRequest,
   ghMergePullRequest,
   ghListBranches,
+  ghGetPullRequest,
+  ghPullRequestFiles,
+  ghCreateReview,
 } from './github.js';
 import { TerminalManager } from './terminal.js';
 import {
@@ -97,6 +101,8 @@ import type {
   StreamChannel,
   TerminalCreateOpts,
   TerminalProfile,
+  SpecReviewStamp,
+  PrReviewComment,
 } from './shared/types.js';
 import { tasksDocFromPlan } from './shared/planTasks.js';
 import { emptyReport, seedDefaultFile, type SeedLedger } from './seedDefaults.js';
@@ -496,6 +502,22 @@ function registerIpc() {
     setSpecPhase(root, id, phase)
   );
   ipcMain.handle('specs:delete', (_e, root: string, id: string) => removeSpec(root, id));
+  // The code review lives beside the spec but is not a phase document: it is
+  // written here, not through `writeSpecFile`, so saving one never fires the
+  // file-save-in-app hooks and never shows up as a phase file.
+  ipcMain.handle('specs:read-review', async (_e, root: string, id: string) => {
+    const fp = path.join(root, '.octo', 'specs', id, 'review.md');
+    return existsSync(fp) ? fs.readFile(fp, 'utf8') : null;
+  });
+  ipcMain.handle(
+    'specs:save-review',
+    async (_e, args: { root: string; id: string; markdown: string; stamp: SpecReviewStamp }) => {
+      const dir = path.join(args.root, '.octo', 'specs', args.id);
+      if (!existsSync(dir)) throw new Error(`Spec ${args.id} not found.`);
+      await fs.writeFile(path.join(dir, 'review.md'), args.markdown, 'utf8');
+      return patchSpecMeta(args.root, args.id, { review: args.stamp });
+    }
+  );
 
   ipcMain.handle('skills:list', (_e, root: string) => listSkills(root));
   ipcMain.handle('skills:read', (_e, p: string) => fs.readFile(p, 'utf8'));
@@ -845,6 +867,10 @@ function registerIpc() {
   ipcMain.handle('git:branch-summary', (_e, args: { cwd: string; base?: string }) =>
     gitBranchSummary(args.cwd, args.base)
   );
+  // ...and the patch text itself, for a code review.
+  ipcMain.handle('git:branch-diff', (_e, args: { cwd: string; base?: string }) =>
+    gitBranchDiff(args.cwd, args.base)
+  );
   ipcMain.handle('git:stage', (_e, args: { workspacePath: string; paths: string[] }) =>
     gitStage(args.workspacePath, args.paths)
   );
@@ -1048,6 +1074,52 @@ function registerIpc() {
         }
       }
       return res;
+    }
+  );
+
+  ipcMain.handle('github:get-pr', async (_e, args: { cwd: string; number: number }) => {
+    const token = getGithubToken();
+    if (!token) return { ok: false, error: 'No GitHub token configured.' };
+    const repo = resolveRepo(args.cwd);
+    if (!repo.ok || !repo.owner || !repo.repo) {
+      return { ok: false, error: repo.error ?? 'Could not resolve repository.' };
+    }
+    return ghGetPullRequest(token, repo.owner, repo.repo, args.number);
+  });
+  ipcMain.handle('github:pr-files', async (_e, args: { cwd: string; number: number }) => {
+    const token = getGithubToken();
+    if (!token) return { ok: false, error: 'No GitHub token configured.' };
+    const repo = resolveRepo(args.cwd);
+    if (!repo.ok || !repo.owner || !repo.repo) {
+      return { ok: false, error: repo.error ?? 'Could not resolve repository.' };
+    }
+    return ghPullRequestFiles(token, repo.owner, repo.repo, args.number);
+  });
+  // A write to someone else's PR: the renderer shows the exact body + inline
+  // comments before calling this, the same rule as a ticket write.
+  ipcMain.handle(
+    'github:pr-review',
+    async (
+      _e,
+      args: {
+        cwd: string;
+        number: number;
+        body: string;
+        commitId?: string;
+        comments: PrReviewComment[];
+      }
+    ) => {
+      const token = getGithubToken();
+      if (!token) return { ok: false, error: 'No GitHub token configured.' };
+      const repo = resolveRepo(args.cwd);
+      if (!repo.ok || !repo.owner || !repo.repo) {
+        return { ok: false, error: repo.error ?? 'Could not resolve repository.' };
+      }
+      return ghCreateReview(token, repo.owner, repo.repo, args.number, {
+        body: args.body,
+        commitId: args.commitId,
+        comments: args.comments,
+      });
     }
   );
 

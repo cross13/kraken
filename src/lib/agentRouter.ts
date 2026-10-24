@@ -18,7 +18,8 @@ export type Action =
   | { kind: 'task-execute'; taskAgent?: string; taskText?: string }
   | { kind: 'task-refine'; taskAgent?: string; taskText?: string }
   | { kind: 'polish' }
-  | { kind: 'audit' };
+  | { kind: 'audit' }
+  | { kind: 'review' };
 
 /** Why an agent was chosen — surfaced in the UI so routing is transparent. */
 export type RouteReason =
@@ -174,6 +175,9 @@ export function actionProfile(action: Action): ActionProfile {
       return { preferred: ['code-reviewer'], keywords: ['review', 'reviewer', 'quality', 'refactor', 'lint', 'polish'] };
     case 'audit':
       return { preferred: ['spec-doctor', 'code-reviewer'], keywords: ['audit', 'doctor', 'drift', 'review', 'consistency'] };
+    case 'review':
+      // Read-only: it reports findings, it does not fix them (that is Polish).
+      return { preferred: ['code-reviewer'], keywords: ['review', 'reviewer', 'quality', 'correctness', 'security'] };
   }
 }
 
@@ -328,6 +332,16 @@ export function routeFormatSkill(file: SpecDocFile, skills: SkillMeta[]): SkillM
   const name = FORMAT_SKILLS[file];
   if (activeConfig.disabledSkills.includes(name)) return null;
   return skills.find((s) => s.name === name) ?? null;
+}
+
+/**
+ * The findings-format skill a code review carries — the review's equivalent of
+ * `routeFormatSkill`, under the same injection toggle and disabled list.
+ */
+export function routeReviewSkill(skills: SkillMeta[]): SkillMeta | null {
+  if (!activeConfig.skillInjection) return null;
+  if (activeConfig.disabledSkills.includes('code-review-format')) return null;
+  return skills.find((s) => s.name === 'code-review-format') ?? null;
 }
 
 /** Find an installed skill by exact name. */

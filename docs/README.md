@@ -18,7 +18,7 @@ deeper into *how to build*.
 | [`data-model.md`](./data-model.md) | Shared types, on-disk spec shape, and the SQLite schema | You're changing what gets stored or persisted |
 | [`backends.md`](./backends.md) | The CLI vs API Claude-streaming backends and the common event stream | You're touching how Claude is invoked or streamed |
 | [`renderer.md`](./renderer.md) | Zustand stores, component tree, layout, agent routing, skill injection | You're building UI or changing client-side state |
-| [`subsystems.md`](./subsystems.md) | Hooks, steering, orchestration, agents/skills, git/GitHub, terminals, Travel Display | You're working on one of those features |
+| [`subsystems.md`](./subsystems.md) | Hooks, steering, orchestration, agents/skills, git/GitHub, code review, terminals, Travel Display | You're working on one of those features |
 | [`adding-a-feature.md`](./adding-a-feature.md) | A step-by-step recipe for shipping a new module end-to-end | You're creating a new module/view/feature from scratch |
 | [`security-review.md`](./security-review.md) | The last full audit: what was found, what was fixed, what is still open, and what was verified sound | You're touching secrets, IPC handlers, subprocess spawning, or anything that renders content the app didn't author |
 | [`refactor-metodologia-y-rebranding.md`](./refactor-metodologia-y-rebranding.md) | The move from four SDD phases to **Definir · Plan · Construir**, plus the Signal rebranding — phased plan with a master checklist | You want the *why* behind the current three-stage flow, or you're picking up a remaining phase |

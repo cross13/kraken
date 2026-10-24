@@ -79,7 +79,7 @@ The shell state. `surface: 'home' | 'spec' | 'activity' | 'library'` plus per-su
 - **Spec**: `activeSpecId` + `specStage` (`'define' | 'plan' | 'build'`, mapped from the
   spec's phase by `stageForPhase`);
   `openSpec(specId, stage?)` navigates (use `stageForPhase(phase)` to land on the right stage).
-- **Activity**: `activityTab` (`'runs' | 'history' | 'terminals' | 'graph'`), `openActivity(tab?)`.
+- **Activity**: `activityTab` (`'runs' | 'history' | 'specs' | 'reviews' | 'terminals' | 'graph'`), `openActivity(tab?)`.
 - **Library**: `librarySection` (`'agents' | 'skills' | 'hooks' | 'steering' | 'routing' |
   'appearance' | 'settings'`), `openLibrary(section?)`.
 - **Drawers**: `assistantOpen`/`toggleAssistant` (+ persisted `assistantWidth`), `explorerOpen`.
@@ -528,7 +528,8 @@ editor, because clicking into text to type is the reflex. Stage bodies:
   arrival (`auto` prop; persisted to `<spec>/summary.md`) and reports its text up; below it, the
   ship actions: create branch (`feat/<specId>` when on main/master) → **Commit all** (message
   prefilled from the summary, pushes when an origin exists) → **Create PR** (title/body prefilled;
-  needs a GitHub token) → View PR. Plus **Polish** (`polishSpec` in `specActions.ts`) and Reopen
+  needs a GitHub token) → View PR. Between the ticket panel and the PR composer sits
+  **Code review** (`review/CodeReviewPanel.tsx`, see `subsystems.md` → Code review). Plus **Polish** (`polishSpec` in `specActions.ts`) and Reopen
   tasks. All existing `git:*` / `github:*` IPC; branch/commit/PR state still writes back into
   `SpecMeta`.
 
@@ -550,7 +551,9 @@ container; rows open the run viewer in the overlay), **Specs** (`SpecsStudio`: w
 went — counts by phase and kind, run totals, error rate and time spent from the `runs` table,
 plus a per-spec detail with recent runs, the phase-advance timeline and a delete. Mounted only
 while the tab is open, because it queries the history DB on mount and Activity stays mounted for
-the whole session), **Terminals** (session chips + panes; `TerminalView` instances stay mounted
+the whole session), **Reviews** (`review/PrReviewStudio.tsx`: open PRs on the left-hand list,
+the selected PR's review, findings and the confirm-then-post step; kept mounted so a review in
+flight survives a tab switch), **Terminals** (session chips + panes; `TerminalView` instances stay mounted
 app-wide via the `ui.terminals` store so PTYs survive navigation), and **Graph**
 (`AgentGraphView`).
 

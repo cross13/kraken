@@ -12,6 +12,7 @@ import {
   Stethoscope,
   Zap,
   Bot,
+  FileSearch,
 } from 'lucide-react';
 import { useOrchestrator } from '../stores/orchestrator';
 import { cn } from '../lib/cn';
@@ -24,6 +25,7 @@ const KIND_META: Record<RunKind, { label: string; icon: React.ReactNode }> = {
   polish: { label: 'Polish', icon: <Sparkles size={12} /> },
   chat: { label: 'Chat', icon: <MessageSquare size={12} /> },
   spec: { label: 'Spec', icon: <FileText size={12} /> },
+  review: { label: 'Review', icon: <FileSearch size={12} /> },
   audit: { label: 'Audit', icon: <Stethoscope size={12} /> },
   hook: { label: 'Hook', icon: <Zap size={12} /> },
 };
