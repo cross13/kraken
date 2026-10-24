@@ -28,7 +28,7 @@ import { useUi } from '../../stores/ui';
 import { useOrchestrator } from '../../stores/orchestrator';
 import type {
   GitHubRepoInfo,
-  GitHubTokenStatus,
+  GitHubAuthStatus,
   PullRequestMeta,
   SpecMeta,
 } from '../../../electron/shared/types';
@@ -64,7 +64,7 @@ export function SourceControlView({
   const spec = useActiveSpec();
 
   const [status, setStatus] = useState<GitStatus | null>(null);
-  const [tokenStatus, setTokenStatus] = useState<GitHubTokenStatus | null>(null);
+  const [tokenStatus, setTokenStatus] = useState<GitHubAuthStatus | null>(null);
   const [repo, setRepo] = useState<GitHubRepoInfo | null>(null);
   const [prs, setPrs] = useState<PullRequestMeta[]>([]);
   const [filter, setFilter] = useState<Filter>('open');
@@ -81,7 +81,7 @@ export function SourceControlView({
   }, [root]);
 
   const refreshToken = useCallback(async () => {
-    const s = await window.octo.github.tokenStatus();
+    const s = await window.octo.github.status();
     setTokenStatus(s);
     return s;
   }, []);
@@ -112,7 +112,7 @@ export function SourceControlView({
 
   useEffect(() => {
     refreshToken().then((s) => {
-      if (s.hasToken && s.valid) loadPrs(filter);
+      if (s.loggedIn) loadPrs(filter);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshToken, loadPrs]);
@@ -1046,7 +1046,7 @@ function PullRequestSection({
   root: string;
   spec: SpecMeta | null;
   repo: GitHubRepoInfo | null;
-  tokenStatus: GitHubTokenStatus | null;
+  tokenStatus: GitHubAuthStatus | null;
   prs: PullRequestMeta[];
   filter: Filter;
   loading: boolean;
@@ -1064,16 +1064,8 @@ function PullRequestSection({
         <div className="text-[11px] text-ink-500 flex items-center gap-1.5">
           <Loader2 size={11} className="animate-spin" /> Checking GitHub…
         </div>
-      ) : !tokenStatus.hasToken ? (
-        <TokenSetup onSaved={onTokenSaved} />
-      ) : tokenStatus.valid === false ? (
-        <>
-          <div className="rounded-md border border-bad/30 bg-bad/5 p-2 text-[11px] text-bad flex items-start gap-1.5 mb-2">
-            <AlertCircle size={12} className="mt-0.5 shrink-0" />
-            <span>GitHub token rejected: {tokenStatus.error}</span>
-          </div>
-          <TokenSetup replace onSaved={onTokenSaved} />
-        </>
+      ) : !tokenStatus.loggedIn ? (
+        <GhSetup status={tokenStatus} onRecheck={onTokenSaved} />
       ) : repo && !repo.ok ? (
         <p className="text-[11px] text-ink-400 leading-snug">
           {repo.error} Add a github.com <code className="text-ink-300">origin</code>{' '}
@@ -1625,72 +1617,40 @@ function CreatePrDialog({
   );
 }
 
-function TokenSetup({
-  onSaved,
-  replace,
-}: {
-  onSaved: () => void;
-  replace?: boolean;
-}) {
-  const [token, setToken] = useState('');
-  const [busy, setBusy] = useState(false);
-
-  const save = async () => {
-    if (!token.trim()) return;
-    setBusy(true);
-    await window.octo.github.setToken(token.trim());
-    setToken('');
-    setBusy(false);
-    onSaved();
-  };
-
+/** GitHub runs through the local `gh` CLI; this says what is missing and re-checks. */
+function GhSetup({ status, onRecheck }: { status: GitHubAuthStatus; onRecheck: () => void }) {
   return (
     <div className="space-y-2">
-      {!replace && (
-        <div className="flex items-start gap-2 text-[11px] text-ink-400 leading-snug">
-          <KeyRound size={13} className="text-accent mt-0.5 shrink-0" />
-          <span>Connect a GitHub token to create and manage pull requests.</span>
-        </div>
-      )}
-      <input
-        type="password"
-        placeholder="ghp_… or github_pat_…"
-        value={token}
-        onChange={(e) => setToken(e.target.value)}
-        className="w-full text-xs px-2 py-1.5 rounded-md bg-ink-950 border border-ink-800 focus:border-accent outline-none font-mono"
-      />
+      <div className="flex items-start gap-2 text-[11px] text-ink-400 leading-snug">
+        <KeyRound size={13} className="text-accent mt-0.5 shrink-0" />
+        <span>
+          Pull requests go through your local <code className="text-ink-200">gh</code> CLI —{' '}
+          {status.installed ? (
+            <>
+              run <code className="text-ink-200">gh auth login</code> in a terminal to sign in.
+            </>
+          ) : (
+            <>
+              install it from{' '}
+              <a
+                href="https://cli.github.com"
+                target="_blank"
+                rel="noreferrer"
+                className="text-accent hover:underline inline-flex items-center gap-0.5"
+              >
+                cli.github.com <ExternalLink size={9} />
+              </a>{' '}
+              and run <code className="text-ink-200">gh auth login</code>.
+            </>
+          )}
+        </span>
+      </div>
       <button
-        onClick={save}
-        disabled={!token.trim() || busy}
-        className="w-full text-xs flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md bg-accent text-accent-fg hover:opacity-90 disabled:opacity-40"
+        onClick={onRecheck}
+        className="w-full text-xs flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md bg-ink-800 text-ink-100 hover:bg-ink-700"
       >
-        {busy ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
-        {replace ? 'Replace token' : 'Save token'}
+        <Check size={12} /> Check again
       </button>
-      <details className="text-[10px] text-ink-400">
-        <summary className="cursor-pointer hover:text-ink-200">
-          How do I create a token?
-        </summary>
-        <ol className="list-decimal ml-4 mt-2 space-y-1 leading-relaxed">
-          <li>
-            Open{' '}
-            <a
-              href="https://github.com/settings/tokens"
-              target="_blank"
-              rel="noreferrer"
-              className="text-accent hover:underline inline-flex items-center gap-0.5"
-            >
-              github.com/settings/tokens <ExternalLink size={9} />
-            </a>
-            .
-          </li>
-          <li>
-            Grant the <code className="text-ink-200">repo</code> scope (classic) or{' '}
-            <b>Pull requests: read &amp; write</b> + <b>Contents: read</b> (fine-grained).
-          </li>
-          <li>Paste it above — it's encrypted with your OS keychain.</li>
-        </ol>
-      </details>
     </div>
   );
 }

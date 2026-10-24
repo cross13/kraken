@@ -753,13 +753,16 @@ export interface GitHubRepoInfo {
   error?: string;
 }
 
-/** Result of validating the stored GitHub token against the API. */
-export interface GitHubTokenStatus {
-  hasToken: boolean;
-  valid?: boolean;
+/**
+ * Whether GitHub is reachable through the local GitHub CLI. Octo keeps no token:
+ * every call is `gh api`, authenticated by `gh auth login`.
+ */
+export interface GitHubAuthStatus {
+  /** `gh` is on PATH */
+  installed: boolean;
+  /** `gh` has an authenticated account it will act as */
+  loggedIn: boolean;
   login?: string;
-  /** scopes reported by the token, if available */
-  scopes?: string[];
   error?: string;
 }
 

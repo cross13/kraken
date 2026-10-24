@@ -84,8 +84,9 @@ If `npm install` leaves you with an ABI error on first launch, re-run
 
 ### Optional
 
-- **GitHub token** (Settings › Repository) — enables Create PR / list / merge from the Ship panel.
-  Stored with the same `safeStorage` mechanism as the API key.
+- **The GitHub CLI** ([`gh`](https://cli.github.com), signed in with `gh auth login`) — enables
+  Create PR / list / merge and pull-request reviews. Octo calls `gh api` and acts as the account
+  `gh` is signed in to; it stores no GitHub token of its own.
 - **A ticket tracker** (Library › Tickets) — Jira, Linear, or any MCP server. Credentials go in
   the keychain, via a token or an OAuth 2.1 sign-in.
 - **A second display** — the optional **Travel Display** targets an ultrawide bar monitor
@@ -345,8 +346,8 @@ subsystem must update the matching doc in the same change.
 
 ## Security
 
-0ct0 runs locally and drives Claude through your own CLI or API key. Secrets (the Anthropic key,
-the GitHub token, tracker credentials) are encrypted with Electron `safeStorage` into the OS
+0ct0 runs locally and drives Claude through your own CLI or API key. Secrets (the Anthropic key and
+tracker credentials) are encrypted with Electron `safeStorage` into the OS
 keychain. The renderer is context-isolated with Node integration off, and the CSP admits no remote
 origin but `api.anthropic.com`.
 

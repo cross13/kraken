@@ -327,9 +327,12 @@ Fire Claude runs automatically on app-level events.
 - **`electron/git.ts`** — per-workspace git helpers (status, branches, checkout, create-branch,
   commit/push, pull/fetch, stage/unstage) surfaced through `git:*` IPC. All return
   `{ ok, error?, output, … }` result objects.
-- **`electron/github.ts`** — a **dependency-free** GitHub REST client. Token via `safeStorage`
-  (same pattern as the API key). Exposed through `github:*` IPC: repo resolution from the `origin`
-  remote, token validation, remote-branch listing (the valid PR base targets), and PR
+- **`electron/github.ts`** — a GitHub REST client over the user's **local GitHub CLI**: every call
+  is `gh api <path>` (`runGh`, async spawn with the expanded PATH handed over by `setGhEnv`, prompts
+  and the update notifier disabled), so auth is whatever `gh auth login` set up and Octo stores no
+  GitHub token. Errors come back from gh's stdout JSON `message` or its `HTTP nnn` stderr line; a
+  missing binary is reported as such. Exposed through `github:*` IPC: repo resolution from the
+  `origin` remote, `github:status` (installed / signed in / login, via `gh api user`), remote-branch listing (the valid PR base targets), and PR
   list/create/merge, plus PR read/files/review for code review (see *Code review* above). Returns
   `GitHubOpResult<T>`.
 - **UI:** the **Source Control** sidebar panel (`SourceControlView`) drives both. It is

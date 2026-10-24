@@ -57,7 +57,7 @@ Verified as **already correct** — do not regress these:
 - A restrictive CSP in `index.html` (`default-src 'self'`, `script-src 'self'`).
 - `setWindowOpenHandler` returns `{ action: 'deny' }` on both windows.
 - `openUrlInChrome` validates `URL` parsing and rejects anything that isn't `http:`/`https:`.
-- Secrets (Anthropic key, GitHub token) encrypted via `safeStorage` and never written in plaintext.
+- Secrets (Anthropic key, tracker credentials) encrypted via `safeStorage` and never written in plaintext; GitHub goes through the local `gh` CLI and stores nothing.
 - `allowBash` defaults to **false**.
 
 Open items:

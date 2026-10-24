@@ -145,7 +145,8 @@ have read code it was not shown. Backs the Ship code review.
 `{ ok, error?, output, … }` result objects.
 
 ### `github`
-`hasToken`, `setToken`, `clearToken`, `tokenStatus`, `repoInfo(cwd)`,
+`status()` → `GitHubAuthStatus` (`{installed, loggedIn, login?, error?}` — is the local `gh` CLI
+there and signed in; there is no token to set, Octo calls `gh api`), `repoInfo(cwd)`,
 `listBranches(cwd)` (remote branches — the valid PR base targets, used by the create-PR base
 typeahead), `listPrs(args)`, `createPr(args)`, `mergePr(args)`, and the code-review trio:
 `getPr({cwd, number})` (the PR + its `headSha`), `prFiles({cwd, number})` → `PrFile[]` (paged to

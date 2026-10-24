@@ -9,11 +9,10 @@ import {
   Send,
 } from 'lucide-react';
 import { useWorkspace } from '../../stores/workspace';
-import { useUi } from '../../stores/ui';
 import { prReviewDraft, prReviewPrompt, reviewCounts, runReview, type PrReviewDraft } from '../../lib/codeReview';
 import { FindingsList, countsLabel } from './FindingsList';
 import { cn } from '../../lib/cn';
-import type { CodeReview, PrFile, PullRequestMeta } from '../../../electron/shared/types';
+import type { CodeReview, GitHubAuthStatus, PrFile, PullRequestMeta } from '../../../electron/shared/types';
 
 interface PrState {
   pr: PullRequestMeta & { headSha: string };
@@ -28,17 +27,15 @@ interface PrState {
 
 /**
  * Activity › Reviews — review any open pull request of the workspace's repo.
- * Reads the PR's files through the GitHub API (so the PR need not be checked
- * out), runs the same review as Ship, and can post it back. Posting is a write
+ * Reads the PR's files through `gh api` (so the PR need not be checked out), runs the same review as Ship, and can post it back. Posting is a write
  * to someone else's PR, so it follows the ticket rule: the exact body and inline
  * comments are shown first, and the review is always a COMMENT.
  */
 export function PrReviewStudio() {
   const root = useWorkspace((s) => s.root);
-  const openLibrary = useUi((s) => s.openLibrary);
   const [prs, setPrs] = useState<PullRequestMeta[] | null>(null);
   const [listError, setListError] = useState<string | null>(null);
-  const [hasToken, setHasToken] = useState<boolean | null>(null);
+  const [gh, setGh] = useState<GitHubAuthStatus | null>(null);
   const [branch, setBranch] = useState<string | null>(null);
   const [active, setActive] = useState<PrState | null>(null);
   const [confirming, setConfirming] = useState(false);
@@ -47,15 +44,19 @@ export function PrReviewStudio() {
   const load = async () => {
     if (!root) return;
     setListError(null);
-    const token = await window.octo.github.hasToken();
-    setHasToken(token);
-    if (!token) return;
+    const auth = await window.octo.github.status();
+    setGh(auth);
+    if (!auth.loggedIn) return;
     const [res, status] = await Promise.all([
       window.octo.github.listPrs({ cwd: root, state: 'open' }),
       window.octo.git.status(root),
     ]);
     setBranch(status.branch);
-    if (!res.ok) setListError(res.error ?? 'Could not list pull requests.');
+    if (!res.ok) {
+      setListError(res.error ?? 'Could not list pull requests.');
+      setPrs(null);
+      return;
+    }
     setPrs(res.data ?? []);
   };
 
@@ -128,14 +129,18 @@ export function PrReviewStudio() {
     else patch({ error: res.error ?? 'GitHub rejected the review.' });
   };
 
-  if (hasToken === false) {
+  if (gh && !gh.loggedIn) {
     return (
-      <div className="k-wide py-10 text-[13px] text-dim">
-        Reviewing pull requests needs a GitHub token.{' '}
-        <button className="text-accent-text underline" onClick={() => openLibrary('settings')}>
-          Add one in Settings › Repository
+      <div className="k-wide py-10 text-[13px] text-dim space-y-2">
+        <p>
+          Reviewing pull requests goes through your local <code className="text-ink-200">gh</code> CLI,{' '}
+          {gh.installed ? 'which is not signed in.' : 'which is not installed.'}{' '}
+          {gh.installed ? 'Run ' : 'Install it from cli.github.com, then run '}
+          <code className="text-ink-200">gh auth login</code> in a terminal.
+        </p>
+        <button className="text-accent-text underline" onClick={() => void load()}>
+          Check again
         </button>
-        .
       </div>
     );
   }
@@ -273,7 +278,7 @@ export function PrReviewStudio() {
                 <AlertCircle size={12} /> {listError}
               </p>
             )}
-            {prs === null && <Loader2 size={14} className="animate-spin text-dim" />}
+            {prs === null && !listError && <Loader2 size={14} className="animate-spin text-dim" />}
             {prs?.length === 0 && <p className="text-[12px] text-dim">No open pull requests.</p>}
             {prs?.map((p) => (
               <button

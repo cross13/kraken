@@ -66,7 +66,10 @@ export function ShipView({ meta, onReopen }: { meta: SpecMeta; onReopen: () => v
 
   useEffect(() => {
     readGit();
-    window.octo.github.hasToken().then(setHasGithub).catch(() => setHasGithub(false));
+    window.octo.github
+      .status()
+      .then((s) => setHasGithub(s.loggedIn))
+      .catch(() => setHasGithub(false));
     const t = setInterval(readGit, 5000);
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps

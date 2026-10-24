@@ -37,7 +37,7 @@ import type {
   McpServerMeta,
   ModelDiscovery,
   GitHubRepoInfo,
-  GitHubTokenStatus,
+  GitHubAuthStatus,
   PullRequestMeta,
   GitHubOpResult,
   TerminalCreateOpts,
@@ -416,12 +416,8 @@ const api = {
       }>,
   },
   github: {
-    hasToken: () => ipcRenderer.invoke('github:has-token') as Promise<boolean>,
-    setToken: (token: string) =>
-      ipcRenderer.invoke('github:set-token', token) as Promise<void>,
-    clearToken: () => ipcRenderer.invoke('github:clear-token') as Promise<void>,
-    tokenStatus: () =>
-      ipcRenderer.invoke('github:token-status') as Promise<GitHubTokenStatus>,
+    /** Is the local `gh` CLI installed and signed in? Octo stores no GitHub token. */
+    status: () => ipcRenderer.invoke('github:status') as Promise<GitHubAuthStatus>,
     repoInfo: (cwd: string) =>
       ipcRenderer.invoke('github:repo-info', cwd) as Promise<GitHubRepoInfo>,
     listBranches: (cwd: string) =>

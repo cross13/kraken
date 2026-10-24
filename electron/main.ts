@@ -35,7 +35,8 @@ import {
 } from './git.js';
 import {
   resolveRepo,
-  ghValidateToken,
+  ghAuthStatus,
+  setGhEnv,
   ghDefaultBranch,
   ghListPullRequests,
   ghCreatePullRequest,
@@ -169,6 +170,7 @@ const BASH_TOOL = 'Bash';
 
 interface StoreSchema {
   apiKeyEncrypted?: string;
+  /** Legacy: GitHub now goes through the local `gh` CLI; this is no longer read. */
   githubTokenEncrypted?: string;
   lastWorkspace?: string;
   model?: string;
@@ -472,6 +474,8 @@ app.on('window-all-closed', () => {
 // ---------- IPC ----------
 
 function registerIpc() {
+  // `gh` lives in Homebrew / ~/.local more often than not — same PATH as the Claude CLI.
+  setGhEnv({ ...process.env, PATH: expandedPath() });
   ipcMain.handle('workspace:pick', pickWorkspace);
   ipcMain.handle('workspace:get-last', () => store.get('lastWorkspace') ?? null);
   ipcMain.handle('workspace:get-recents', () => store.get('recentWorkspaces') ?? []);
@@ -940,32 +944,23 @@ function registerIpc() {
   );
 
   // ---------- GitHub ----------
-  ipcMain.handle('github:has-token', () => !!store.get('githubTokenEncrypted'));
-  ipcMain.handle('github:set-token', (_e, token: string) => setGithubToken(token));
-  ipcMain.handle('github:clear-token', () => store.delete('githubTokenEncrypted'));
-  ipcMain.handle('github:token-status', async () => {
-    const token = getGithubToken();
-    if (!token) return { hasToken: false };
-    return ghValidateToken(token);
-  });
+  // GitHub goes through the local `gh` CLI — no token is stored by Octo.
+  ipcMain.handle('github:status', () => ghAuthStatus());
   ipcMain.handle('github:repo-info', async (_e, cwd: string) => {
     const base = resolveRepo(cwd);
     if (!base.ok) return base;
-    const token = getGithubToken();
     let defaultBranch: string | undefined;
-    if (token && base.owner && base.repo) {
-      defaultBranch = (await ghDefaultBranch(token, base.owner, base.repo)) ?? undefined;
+    if (base.owner && base.repo) {
+      defaultBranch = (await ghDefaultBranch(base.owner, base.repo)) ?? undefined;
     }
     return { ...base, defaultBranch };
   });
   ipcMain.handle('github:list-branches', async (_e, cwd: string) => {
-    const token = getGithubToken();
-    if (!token) return { ok: false, error: 'No GitHub token configured.' };
     const repo = resolveRepo(cwd);
     if (!repo.ok || !repo.owner || !repo.repo) {
       return { ok: false, error: repo.error ?? 'Could not resolve repository.' };
     }
-    return ghListBranches(token, repo.owner, repo.repo);
+    return ghListBranches(repo.owner, repo.repo);
   });
   ipcMain.handle(
     'github:list-prs',
@@ -973,13 +968,11 @@ function registerIpc() {
       _e,
       args: { cwd: string; state?: 'open' | 'closed' | 'all'; head?: string }
     ) => {
-      const token = getGithubToken();
-      if (!token) return { ok: false, error: 'No GitHub token configured.' };
       const repo = resolveRepo(args.cwd);
       if (!repo.ok || !repo.owner || !repo.repo) {
         return { ok: false, error: repo.error ?? 'Could not resolve repository.' };
       }
-      return ghListPullRequests(token, repo.owner, repo.repo, {
+      return ghListPullRequests(repo.owner, repo.repo, {
         state: args.state,
         head: args.head,
       });
@@ -1000,8 +993,6 @@ function registerIpc() {
         push?: boolean;
       }
     ) => {
-      const token = getGithubToken();
-      if (!token) return { ok: false, error: 'No GitHub token configured.' };
       const repo = resolveRepo(args.cwd);
       if (!repo.ok || !repo.owner || !repo.repo) {
         return { ok: false, error: repo.error ?? 'Could not resolve repository.' };
@@ -1019,9 +1010,9 @@ function registerIpc() {
       }
       let base = args.base;
       if (!base) {
-        base = (await ghDefaultBranch(token, repo.owner, repo.repo)) ?? 'main';
+        base = (await ghDefaultBranch(repo.owner, repo.repo)) ?? 'main';
       }
-      const res = await ghCreatePullRequest(token, repo.owner, repo.repo, {
+      const res = await ghCreatePullRequest(repo.owner, repo.repo, {
         title: args.title,
         head,
         base,
@@ -1053,15 +1044,11 @@ function registerIpc() {
         method?: 'merge' | 'squash' | 'rebase';
       }
     ) => {
-      const token = getGithubToken();
-      if (!token) return { ok: false, error: 'No GitHub token configured.' };
       const repo = resolveRepo(args.cwd);
       if (!repo.ok || !repo.owner || !repo.repo) {
         return { ok: false, error: repo.error ?? 'Could not resolve repository.' };
       }
-      const res = await ghMergePullRequest(
-        token,
-        repo.owner,
+      const res = await ghMergePullRequest(repo.owner,
         repo.repo,
         args.number,
         args.method
@@ -1078,22 +1065,18 @@ function registerIpc() {
   );
 
   ipcMain.handle('github:get-pr', async (_e, args: { cwd: string; number: number }) => {
-    const token = getGithubToken();
-    if (!token) return { ok: false, error: 'No GitHub token configured.' };
     const repo = resolveRepo(args.cwd);
     if (!repo.ok || !repo.owner || !repo.repo) {
       return { ok: false, error: repo.error ?? 'Could not resolve repository.' };
     }
-    return ghGetPullRequest(token, repo.owner, repo.repo, args.number);
+    return ghGetPullRequest(repo.owner, repo.repo, args.number);
   });
   ipcMain.handle('github:pr-files', async (_e, args: { cwd: string; number: number }) => {
-    const token = getGithubToken();
-    if (!token) return { ok: false, error: 'No GitHub token configured.' };
     const repo = resolveRepo(args.cwd);
     if (!repo.ok || !repo.owner || !repo.repo) {
       return { ok: false, error: repo.error ?? 'Could not resolve repository.' };
     }
-    return ghPullRequestFiles(token, repo.owner, repo.repo, args.number);
+    return ghPullRequestFiles(repo.owner, repo.repo, args.number);
   });
   // A write to someone else's PR: the renderer shows the exact body + inline
   // comments before calling this, the same rule as a ticket write.
@@ -1109,13 +1092,11 @@ function registerIpc() {
         comments: PrReviewComment[];
       }
     ) => {
-      const token = getGithubToken();
-      if (!token) return { ok: false, error: 'No GitHub token configured.' };
       const repo = resolveRepo(args.cwd);
       if (!repo.ok || !repo.owner || !repo.repo) {
         return { ok: false, error: repo.error ?? 'Could not resolve repository.' };
       }
-      return ghCreateReview(token, repo.owner, repo.repo, args.number, {
+      return ghCreateReview(repo.owner, repo.repo, args.number, {
         body: args.body,
         commitId: args.commitId,
         comments: args.comments,
@@ -1610,7 +1591,7 @@ async function dataUsage(root: string): Promise<DataUsage> {
  * Start clean: delete the spec folders on disk and the mirrored history rows.
  *
  * Deliberately scoped to **the data the SDD loop produces**. It never touches
- * settings, the stored API key / GitHub token, agents, skills, hooks or
+ * settings, the stored API key, agents, skills, hooks or
  * steering — wiping those would cost the user their setup, not their clutter.
  * Refuses while agents are still running, so nothing writes a spec back after
  * the delete.
@@ -2538,7 +2519,7 @@ function getApiKey(): string | null {
   return decryptSecret(store.get('apiKeyEncrypted'));
 }
 
-// Generic secret encryption used for both the Anthropic key and GitHub token.
+// Generic secret encryption used for the Anthropic key and MCP credentials.
 function encryptSecret(value: string): string {
   if (!safeStorage.isEncryptionAvailable()) {
     return Buffer.from(value).toString('base64');
@@ -2561,14 +2542,6 @@ function decryptSecret(stored: string | undefined): string | null {
     // would hand the caller garbage and surface as a confusing 401.
     return null;
   }
-}
-
-function setGithubToken(token: string) {
-  store.set('githubTokenEncrypted', encryptSecret(token));
-}
-
-function getGithubToken(): string | null {
-  return decryptSecret(store.get('githubTokenEncrypted'));
 }
 
 // ---------- CLI detection ----------

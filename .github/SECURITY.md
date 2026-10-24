@@ -33,8 +33,8 @@ account, and uploads nothing: it spawns your installed Claude CLI, or calls
 
 **What we defend.**
 
-- **Secrets at rest.** The Anthropic API key, the GitHub token and every MCP tracker
-  credential go through one path — Electron `safeStorage` (the OS keychain), persisted by
+- **Secrets at rest.** The Anthropic API key and every MCP tracker credential go through one
+  path — Electron `safeStorage` (the OS keychain), persisted by
   `electron-store`. Nothing writes a credential to a log; the CLI invocation recorded in the
   run history has its prompt redacted. *Known gap:* where `safeStorage` reports encryption
   unavailable, the value falls back to base64, which is encoding and not encryption — see

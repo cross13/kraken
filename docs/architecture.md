@@ -43,8 +43,9 @@ Owns everything privileged. Handlers are registered in **`registerIpc()`** via
 - **Backend dispatch** — `streamClaude` records a run row, prepends steering, then forks to
   `streamViaCli` or `streamViaApi` based on the `backend` setting. Both emit identical
   `claude:event` messages. See [`backends.md`](./backends.md).
-- **Secrets** — API key and GitHub token are encrypted with Electron `safeStorage` (OS
-  keychain) and persisted via `electron-store`. Never stored in plaintext.
+- **Secrets** — the API key and tracker credentials are encrypted with Electron `safeStorage`
+  (OS keychain) and persisted via `electron-store`. Never stored in plaintext. GitHub holds no
+  secret here: it goes through the user's local `gh` CLI.
 - **Subsystems** — hooks, steering, agents/skills seeding. See [`subsystems.md`](./subsystems.md).
 - **Windows** — the primary window (`createWindow`, 1440×900) plus an optional **Travel
   Display** (`createWideWindow`): a second, frameless window placed on a detected secondary

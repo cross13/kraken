@@ -353,9 +353,10 @@ to `localStorage`). Navigation state is `ui.surface` plus per-surface fields (`a
 
 ### Git & GitHub — `electron/git.ts`, `electron/github.ts`
 Per-workspace git helpers (status, current-branch, create-branch, commit-push, push-current)
-surfaced through `git:*` IPC. `github.ts` is a dependency-free GitHub REST client (token via
-`safeStorage`, same pattern as the API key) exposed through `github:*` IPC — repo resolution
-from the `origin` remote, token validation, and PR list/create/merge. Both are driven from the
+surfaced through `git:*` IPC. `github.ts` is a GitHub REST client over the user's **local `gh` CLI** — every call is
+`gh api …`, so auth is `gh auth login` and **Octo stores no GitHub token** — exposed through
+`github:*` IPC: repo resolution from the `origin` remote, `github:status` (gh installed / signed
+in as whom), and PR list/create/merge/read/files/review. Both are driven from the
 spec's **Ship panel** (`ShipView`: branch → Commit all → Create PR, prefilled from the
 auto-generated summary) and from the global **repo panel** (`SourceControlView variant="page"`,
 opened as an overlay from the command-bar project pill / ⌘K). Both are spec-aware (`ui.activeSpecId`

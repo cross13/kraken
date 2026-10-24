@@ -528,7 +528,7 @@ editor, because clicking into text to type is the reflex. Stage bodies:
   arrival (`auto` prop; persisted to `<spec>/summary.md`) and reports its text up; below it, the
   ship actions: create branch (`feat/<specId>` when on main/master) → **Commit all** (message
   prefilled from the summary, pushes when an origin exists) → **Create PR** (title/body prefilled;
-  needs a GitHub token) → View PR. Between the ticket panel and the PR composer sits
+  needs `gh` signed in) → View PR. Between the ticket panel and the PR composer sits
   **Code review** (`review/CodeReviewPanel.tsx`, see `subsystems.md` → Code review). Plus **Polish** (`polishSpec` in `specActions.ts`) and Reopen
   tasks. All existing `git:*` / `github:*` IPC; branch/commit/PR state still writes back into
   `SpecMeta`.
@@ -644,7 +644,7 @@ from more than one spec got a PR body that described the spec instead of the dif
 - **Everything is editable before it is sent.** Touching the body stops it re-deriving.
 - It warns when `origin/HEAD` is unset (the base is a guess, so the file list may be wrong) and
   when the working tree is dirty (those changes are *not* in the description).
-- Rendered inside Ship, only once there is an origin remote and a GitHub token.
+- Rendered inside Ship, only once there is an origin remote and `gh` is signed in.
 
 ## Text selection
 

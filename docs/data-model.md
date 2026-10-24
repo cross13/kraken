@@ -244,7 +244,7 @@ the agent graph would treat the stale row as live and spin a finished task forev
   clone, so it must list every shipped body (`npm run hashes`). `seededLibraryVersion`
   (`Record<workspacePath, number>`) records `LIBRARY_VERSION` at the last on-open upgrade pass and
   lets it skip entirely. See [`subsystems.md`](./subsystems.md) → Agents & Skills.
-- `GitHubRepoInfo`, `GitHubTokenStatus`, `PullRequestMeta`, `GitHubOpResult<T>` — GitHub.
+- `GitHubRepoInfo`, `GitHubAuthStatus`, `PullRequestMeta`, `GitHubOpResult<T>` — GitHub.
 - `ModelInfo`, `ModelDiscovery`, `ModelOrigin` — model discovery. `ModelOrigin`
   (`'api' | 'cli-config' | 'catalog'`) records **how Octo learned about a model**, and is
   distinct from `ModelSource` (`explicit | settings-default | cli-default | api-default`), which

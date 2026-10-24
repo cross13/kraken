@@ -30,8 +30,9 @@ is a placeholder or documentation:
 - `docs/backends.md`, `website/src/pages/*` — prose describing the key format.
 
 Secrets at rest are handled through one path: `encryptSecret` / `decryptSecret` in
-`electron/main.ts`, over Electron `safeStorage`, persisted by `electron-store`. The Anthropic key,
-the GitHub token and every MCP tracker credential go through it. Nothing writes a credential to a
+`electron/main.ts`, over Electron `safeStorage`, persisted by `electron-store`. The Anthropic key
+and every MCP tracker credential go through it. (GitHub no longer does: every GitHub call is
+`gh api` through the user's local GitHub CLI, so Octo holds no GitHub credential at all.) Nothing writes a credential to a
 log, and `updateRunCommand` deliberately redacts the `-p <prompt>` argument before recording the
 invocation (`electron/main.ts`, the `redactedArgs` line).
 
@@ -185,7 +186,8 @@ if (!safeStorage.isEncryptionAvailable()) {
 When the OS keychain is unavailable — a Linux box with no keyring service running is the common
 case — the key is stored **base64-encoded, which is encoding, not encryption**, under a field
 named `apiKeyEncrypted`, in a world-readable `config.json` in the app's userData directory. The
-same branch exists in `encryptSecret`, so it covers the GitHub token and every tracker credential.
+same branch exists in `encryptSecret`, so it covers every tracker credential (and covered the
+GitHub token, before GitHub moved to the local `gh` CLI).
 
 Nothing tells the user this happened, and the documentation asserted the opposite. (The README's
 claim has been corrected in this change; the code has not.)

@@ -31,7 +31,7 @@ import { useOrchestrator } from '../../stores/orchestrator';
 import { useUi } from '../../stores/ui';
 import type {
   McpServerMeta,
-  GitHubTokenStatus,
+  GitHubAuthStatus,
   ModelInfo,
   DataResetReport,
   DataUsage,
@@ -70,9 +70,7 @@ export function SettingsView({ variant = 'panel' }: { variant?: 'panel' | 'page'
   const [showApiKeyHelp, setShowApiKeyHelp] = useState(false);
   const [perms, setPerms] = useState<Permissions | null>(null);
   const [mcp, setMcp] = useState<McpServerMeta[]>([]);
-  const [github, setGithub] = useState<GitHubTokenStatus | null>(null);
-  const [ghTokenInput, setGhTokenInput] = useState('');
-  const [ghEditing, setGhEditing] = useState(false);
+  const [github, setGithub] = useState<GitHubAuthStatus | null>(null);
   const root = useWorkspace((s) => s.root);
   const pickWorkspace = useWorkspace((s) => s.pickWorkspace);
   const openWorkspace = useWorkspace((s) => s.openWorkspace);
@@ -85,7 +83,7 @@ export function SettingsView({ variant = 'panel' }: { variant?: 'panel' | 'page'
     window.octo.settings.getBackend().then(setBackend);
     window.octo.settings.getPermissions().then(setPerms);
     window.octo.mcp.list().then(setMcp).catch(() => setMcp([]));
-    window.octo.github.tokenStatus().then(setGithub).catch(() => setGithub(null));
+    window.octo.github.status().then(setGithub).catch(() => setGithub(null));
     redetectCli();
   }, []);
 
@@ -107,17 +105,9 @@ export function SettingsView({ variant = 'panel' }: { variant?: 'panel' | 'page'
     }
   }, [root]);
 
-  const saveGhToken = async () => {
-    if (!ghTokenInput.trim()) return;
-    await window.octo.github.setToken(ghTokenInput.trim());
-    setGhTokenInput('');
-    setGhEditing(false);
-    setGithub(await window.octo.github.tokenStatus());
-  };
-
-  const clearGhToken = async () => {
-    await window.octo.github.clearToken();
-    setGithub(await window.octo.github.tokenStatus());
+  const recheckGithub = async () => {
+    setGithub(null);
+    setGithub(await window.octo.github.status());
   };
 
   const savePerms = async (next: Partial<Permissions>) => {
@@ -458,80 +448,39 @@ export function SettingsView({ variant = 'panel' }: { variant?: 'panel' | 'page'
             <Github size={12} /> GitHub
           </h3>
           <div className="rounded-md border border-ink-800 bg-ink-900/60 p-3 space-y-2">
-            {github?.hasToken && !ghEditing ? (
-              <>
-                {github.valid ? (
-                  <div className="flex items-center gap-2 text-xs text-ok">
-                    <Check size={13} /> Connected
-                    {github.login && (
-                      <span className="text-ink-300">as @{github.login}</span>
-                    )}
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 text-xs text-bad">
-                    <AlertCircle size={13} /> Token invalid
-                  </div>
-                )}
-                {github.scopes && github.scopes.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {github.scopes.map((s) => (
-                      <span
-                        key={s}
-                        className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-ink-800 text-ink-200"
-                      >
-                        {s}
-                      </span>
-                    ))}
-                  </div>
-                )}
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setGhEditing(true)}
-                    className="text-xs px-2 py-1 rounded-md bg-ink-800 hover:bg-ink-700 text-ink-100"
-                  >
-                    Replace
-                  </button>
-                  <button
-                    onClick={clearGhToken}
-                    className="text-xs px-2 py-1 rounded-md text-bad hover:bg-bad/10 flex items-center gap-1"
-                  >
-                    <Trash2 size={11} /> Disconnect
-                  </button>
-                </div>
-              </>
+            {!github ? (
+              <div className="flex items-center gap-2 text-xs text-ink-400">
+                <Loader2 size={12} className="animate-spin" /> Checking the GitHub CLI…
+              </div>
+            ) : github.loggedIn ? (
+              <div className="flex items-center gap-2 text-xs text-ok">
+                <Check size={13} /> Connected through <code className="text-ink-200">gh</code>
+                {github.login && <span className="text-ink-300">as @{github.login}</span>}
+              </div>
             ) : (
-              <>
-                <input
-                  type="password"
-                  placeholder="ghp_… or github_pat_…"
-                  value={ghTokenInput}
-                  onChange={(e) => setGhTokenInput(e.target.value)}
-                  className="w-full text-xs px-2 py-1.5 rounded-md bg-ink-950 border border-ink-800 focus:border-accent outline-none font-mono"
-                />
-                <div className="flex gap-2">
-                  <button
-                    onClick={saveGhToken}
-                    className="text-xs px-3 py-1 rounded-md bg-accent text-accent-fg hover:opacity-90"
-                  >
-                    Save
-                  </button>
-                  {ghEditing && (
-                    <button
-                      onClick={() => setGhEditing(false)}
-                      className="text-xs px-3 py-1 rounded-md text-ink-300 hover:bg-ink-800"
-                    >
-                      Cancel
-                    </button>
-                  )}
-                </div>
-                <p className="text-[10px] text-ink-500 leading-snug">
-                  Personal Access Token with <code className="text-ink-300">repo</code> (or
-                  fine-grained PR read/write) scope. Stored via your OS keychain. Used to
-                  open and merge pull requests from the{' '}
-                  <span className="text-ink-300">Pull Requests</span> panel.
-                </p>
-              </>
+              <div className="flex items-start gap-2 text-xs text-bad">
+                <AlertCircle size={13} className="mt-0.5 shrink-0" />
+                <span>{github.installed ? 'The GitHub CLI is not signed in.' : 'The GitHub CLI (gh) is not installed.'}</span>
+              </div>
             )}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={recheckGithub}
+                className="text-xs px-2 py-1 rounded-md bg-ink-800 hover:bg-ink-700 text-ink-100"
+              >
+                Check again
+              </button>
+            </div>
+            <p className="text-[10px] text-ink-500 leading-snug">
+              Pull requests and reviews go through your local{' '}
+              <code className="text-ink-300">gh</code> CLI and act as the account it is signed in to —
+              Octo stores no GitHub token. {github && !github.loggedIn && (
+                <>
+                  {github.installed ? 'Run ' : 'Install it from cli.github.com, then run '}
+                  <code className="text-ink-300">gh auth login</code> in a terminal.
+                </>
+              )}
+            </p>
           </div>
         </section>
 
@@ -805,7 +754,7 @@ function DangerZone({ root }: { root: string }) {
       <div className="rounded-md border border-bad/30 bg-bad/[0.05] p-3 space-y-3">
         <p className="text-[10.5px] text-ink-300 leading-snug">
           Start clean on the current methodology: delete the specs on disk and the run history.
-          Your settings, API key, GitHub token, agents, skills, hooks and steering are{' '}
+          Your settings, API key, agents, skills, hooks and steering are{' '}
           <span className="text-ink-100">not</span> touched.
         </p>
 
