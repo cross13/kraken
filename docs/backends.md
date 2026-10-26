@@ -46,6 +46,17 @@ Active child processes are tracked in **`activeStreams`** (keyed by `requestId`)
   Electron's inherited PATH is too narrow to find the binary.
 - Parses the `stream-json` lines and turns them into `delta` / `done` / `error` events, plus
   file-touch records for the `run_files` table.
+- **The CLI's `result` event ends the run**, not the process closing its pipes. A tool can leave a
+  grandchild holding stdout open (a backgrounded command, a git/ssh helper), and waiting for
+  `'close'` alone left such runs `running` forever. A `finish()` guard emits exactly one terminal
+  event; `'exit'` (with a 1.5 s grace for the tail of stdout) and `'close'` are the fallback when no
+  `result` arrives, and a CLI still alive 5 s after its `result` is sent SIGTERM.
+- **`readOnly` runs** (`ClaudePayload.readOnly`, set by every code review) get `--allowedTools
+  Read,Glob,Grep`, `--disallowedTools Write,Edit,MultiEdit,NotebookEdit,Bash` and permission mode
+  `default` regardless of Settings — `acceptEdits` would auto-approve an edit the allow-list never
+  named.
+- `emit()` skips `sender.send` when the window is gone (it throws on a destroyed `webContents`)
+  but still mirrors into SQLite and finishes the run row.
 
 ## `streamViaApi`
 

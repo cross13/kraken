@@ -4,10 +4,13 @@ import type {
   TicketProviderConfig,
   TicketSummary,
 } from '../../electron/shared/types';
+import type { GuideLang } from '../../guides/guides';
 
 // The app is four singleton surfaces — no tab bar, no focus mode. Everything
 // else renders as a drawer (assistant, explorer) or a slide-over overlay.
-export type Surface = 'home' | 'spec' | 'activity' | 'library';
+// `learn` is the interactive guide: it asks what you want to do and builds the
+// path through the guides from the answer (`views/LearnView.tsx`).
+export type Surface = 'home' | 'spec' | 'activity' | 'library' | 'learn';
 
 /** Tabs inside the Activity surface (the single "what's running" center). */
 export type ActivityTab = 'runs' | 'history' | 'specs' | 'reviews' | 'terminals' | 'graph';
@@ -42,7 +45,9 @@ export type Overlay =
   // already holds everything the header needs, so the panel opens filled in and
   // fills the rest as the read lands.
   | { kind: 'ticket'; ticket: TicketSummary; provider?: TicketProviderConfig }
-  | { kind: 'repo' };
+  | { kind: 'repo' }
+  // A how-to from `guides/` — the same content the public site renders.
+  | { kind: 'guide'; id: string };
 
 /** A live PTY session, hosted app-wide so the process survives navigation. */
 export interface TerminalSession {
@@ -73,6 +78,17 @@ function saveNum(key: string, n: number) {
   } catch {
     // ignore (e.g. storage disabled)
   }
+}
+
+/** Guides follow the system language until the reader picks one. */
+function loadGuideLang(): GuideLang {
+  try {
+    const v = localStorage.getItem('octo.guidesLang');
+    if (v === 'en' || v === 'es') return v;
+  } catch {
+    // ignore (e.g. storage disabled)
+  }
+  return navigator.language.toLowerCase().startsWith('es') ? 'es' : 'en';
 }
 
 function loadBool(key: string, fallback: boolean) {
@@ -163,6 +179,10 @@ interface UiStore {
   openOverlay: (o: Overlay) => void;
   closeOverlay: () => void;
 
+  /** Language the guides render in — the only bilingual content in the app. */
+  guideLang: GuideLang;
+  setGuideLang: (l: GuideLang) => void;
+
   // ---- Terminals (rendered in Activity, hosted app-wide) ----
   terminals: TerminalSession[];
   activeTerminalId: string | null;
@@ -172,7 +192,10 @@ interface UiStore {
 
   /** Bumped when something (⌘K "New spec") wants Home's composer focused. */
   composerNonce: number;
-  focusComposer: () => void;
+  /** Text to place in Home's composer on the next focus (Learn's examples). */
+  composerDraft: string | null;
+  focusComposer: (draft?: string) => void;
+  takeComposerDraft: () => string | null;
 }
 
 export const useUi = create<UiStore>((set, get) => ({
@@ -232,6 +255,16 @@ export const useUi = create<UiStore>((set, get) => ({
   openOverlay: (o) => set({ overlay: o }),
   closeOverlay: () => set({ overlay: null }),
 
+  guideLang: loadGuideLang(),
+  setGuideLang: (l) => {
+    try {
+      localStorage.setItem('octo.guidesLang', l);
+    } catch {
+      // ignore (e.g. storage disabled)
+    }
+    set({ guideLang: l });
+  },
+
   terminals: [],
   activeTerminalId: null,
   addTerminal: (profile) => {
@@ -259,6 +292,16 @@ export const useUi = create<UiStore>((set, get) => ({
   setActiveTerminal: (id) => set({ activeTerminalId: id }),
 
   composerNonce: 0,
-  focusComposer: () =>
-    set((s) => ({ surface: 'home', composerNonce: s.composerNonce + 1 })),
+  composerDraft: null,
+  focusComposer: (draft) =>
+    set((s) => ({
+      surface: 'home',
+      composerNonce: s.composerNonce + 1,
+      composerDraft: draft ?? null,
+    })),
+  takeComposerDraft: () => {
+    const d = get().composerDraft;
+    if (d !== null) set({ composerDraft: null });
+    return d;
+  },
 }));

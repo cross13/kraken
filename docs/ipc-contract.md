@@ -140,6 +140,16 @@ meanwhile). The base is `origin/HEAD` when the remote sets it, else a guess flag
 `branchDiff({cwd, base?})` → `BranchDiff` is the same range as **patch text** (`git diff
 base...HEAD`) plus HEAD's hash, cut at ~240 KB with `truncated: true` so a review never claims to
 have read code it was not shown. Backs the Ship code review.
+`prCheckout({cwd, number, base})` → `PrCheckout` checks a pull request out **locally** for
+Activity › Reviews: `git fetch origin +refs/pull/<n>/head +refs/heads/<base>` into private refs
+(`refs/octo/pr/<n>/{head,base}` — never a branch the user sees), then the head goes **detached into
+its own worktree** under `userData/reviews/<sha1(workspace)>/pr-<n>`, so the workspace's own
+checkout is never touched. Returns the worktree `dir`, `head`, the merge-base as `base`, and
+`files: PrFile[]` with local per-file patches (`merge-base..head`, `--no-renames`; status is git's
+letter; patch omitted for binary files or past 400 KB). The networked steps are async with
+`GIT_TERMINAL_PROMPT=0`, so a missing credential is an error rather than a hung prompt.
+`prCheckoutPrune({cwd, keep})` removes the worktrees + refs of PRs not in `keep` (called with the
+open-PR list on every load).
 `status`, `listChanges`, `stage`, `unstage`, `stageAll`, `unstageAll`, `fetch`, `pull`, `push`,
 `listBranches`, `checkout`, `createBranch`, `commitPush`. Backed by `electron/git.ts`. All return
 `{ ok, error?, output, … }` result objects.
@@ -150,7 +160,7 @@ there and signed in; there is no token to set, Octo calls `gh api`), `repoInfo(c
 `listBranches(cwd)` (remote branches — the valid PR base targets, used by the create-PR base
 typeahead), `listPrs(args)`, `createPr(args)`, `mergePr(args)`, and the code-review trio:
 `getPr({cwd, number})` (the PR + its `headSha`), `prFiles({cwd, number})` → `PrFile[]` (paged to
-the end, each with GitHub's per-file patch) and `prReview({cwd, number, body, commitId?,
+the end, each with GitHub's per-file patch — now only the fallback when `git.prCheckout` fails) and `prReview({cwd, number, body, commitId?,
 comments})` — **always** `event: 'COMMENT'`, never approve/request-changes, and only called after
 the renderer has shown the exact body + inline comments. Backed by `electron/github.ts`
 (dependency-free REST client). PR/repo methods return `GitHubOpResult<T>`.

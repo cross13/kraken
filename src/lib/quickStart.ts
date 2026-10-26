@@ -90,7 +90,7 @@ export function buildSteps(s: QuickStartState): Step[] {
     {
       id: 'library',
       title: 'Install the bundled library',
-      why: 'Twelve agents, six skills and the hooks that drive the SDD loop. The format skills are what keep Claude writing documents this app can actually parse.',
+      why: 'Twelve agents, seven skills and the hooks that drive the SDD loop. The format skills are what keep Claude writing documents this app can actually parse.',
       done: s.agents.length > 0 && s.skills.length > 0,
       detail:
         s.agents.length > 0
@@ -167,7 +167,7 @@ export const TIPS: Tip[] = [
   },
   {
     title: 'Watch runs on a second screen',
-    body: 'The Travel Display (⌘K → Open Travel Display) puts every in-flight run on a secondary monitor as one colony. The katana pose is the verb, the face is the status, and the leash is what a task is waiting on.',
+    body: 'The Travel Display (⌘K → Open Travel Display) puts every in-flight run on a secondary monitor as one colony. The light behind each visor is the status, and the leash is what a task is waiting on.',
   },
 ];
 

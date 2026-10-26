@@ -6,6 +6,8 @@ import { Features } from './pages/Features';
 import { Workflow } from './pages/Workflow';
 import { Docs } from './pages/Docs';
 import { Download } from './pages/Download';
+import { Guides } from './pages/Guides';
+import { Guide } from './pages/Guide';
 import { NotFound } from './pages/NotFound';
 
 function ScrollToTop() {
@@ -26,6 +28,10 @@ export default function App() {
           <Route path="/features" element={<Features />} />
           <Route path="/workflow" element={<Workflow />} />
           <Route path="/docs" element={<Docs />} />
+          <Route path="/guides" element={<Guides lang="en" />} />
+          <Route path="/guides/:id" element={<Guide lang="en" />} />
+          <Route path="/es/guides" element={<Guides lang="es" />} />
+          <Route path="/es/guides/:id" element={<Guide lang="es" />} />
           <Route path="/download" element={<Download />} />
           <Route path="*" element={<NotFound />} />
         </Route>

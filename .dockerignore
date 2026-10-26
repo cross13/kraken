@@ -1,0 +1,14 @@
+# The only image built from this repo is the public site (website/Dockerfile),
+# and its context is the repo root so it can read the shared guides/. Allowlist:
+# everything is excluded except the two folders that build needs.
+*
+!website
+!guides
+
+website/node_modules
+website/dist
+website/preview
+website/demo/workspace
+website/scripts
+website/**/*.tsbuildinfo
+**/.DS_Store

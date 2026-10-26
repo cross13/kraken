@@ -9,23 +9,20 @@
     <title>Octo</title>
   </head>
   <body class="bg-ink-950 text-ink-100 font-sans antialiased">
-    <!-- Boot splash — the same octopus samurai the app is made of
-         (`OctoMascot`, state `work`, full detail), hand-inlined because this
-         paints before the bundle: pure HTML/CSS, no script. App.tsx fades it
-         out once the workspace is restored. The keyframes are a copy of the
-         mascot block in styles.css — keep the two in sync. Colours are
-         Signal's literals, not CSS variables (styles.css does not exist yet,
-         and the CSP forbids the inline script that would read the persisted
-         theme), so a non-default theme costs one brand-coloured frame. -->
+    <!-- Boot splash — Mochi, the creature the app is made of (`OctoMascot`,
+         state `work`, full detail), hand-inlined because this paints before the
+         bundle: pure HTML/CSS, no script. App.tsx fades it out once the
+         workspace is restored. The keyframes are a copy of the mascot block in
+         styles.css — keep the two in sync. The light behind the visor is
+         Signal's literal (#C4F06A, `--accent-num`), not a CSS variable
+         (styles.css does not exist yet, and the CSP forbids the inline script
+         that would read the persisted theme), so a non-default theme costs one
+         brand-coloured frame. Mochi's body colours are literals everywhere. -->
     <style>
       @keyframes octo-squash { 0%, 100% { transform: translateY(0) scale(1.03, 0.97); } 45% { transform: translateY(-7px) scale(0.96, 1.05); } 70% { transform: translateY(-3px) scale(1, 1); } }
-      @keyframes octo-tent-sway { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
-      @keyframes octo-blink { 0%, 91%, 100% { transform: scaleY(1); } 93.5% { transform: scaleY(0.06); } 96% { transform: scaleY(1); } }
-      @keyframes octo-blush { 0%, 100% { opacity: 0.32; } 50% { opacity: 0.6; } }
-      @keyframes octo-lag { 0%, 100% { transform: translateY(1.3px) rotate(0.9deg); } 45% { transform: translateY(-1.3px) rotate(-0.9deg); } }
-      @keyframes octo-lag-far { 0%, 100% { transform: translateY(2.2px) rotate(1.6deg); } 45% { transform: translateY(-2.2px) rotate(-1.6deg); } }
-      @keyframes octo-cut { 0%, 52% { transform: rotate(0deg); } 60% { transform: rotate(-26deg); } 66% { transform: rotate(38deg); } 80% { transform: rotate(-4deg); } 100% { transform: rotate(0deg); } }
-      @keyframes octo-slash { 0%, 60% { opacity: 0; stroke-dasharray: 0 200; } 66% { opacity: 0.9; stroke-dasharray: 130 200; } 84%, 100% { opacity: 0; stroke-dasharray: 130 200; } }
+      @keyframes mochi-scan { from { transform: translateX(-20px); } to { transform: translateX(104px); } }
+      @keyframes mochi-led { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+      @keyframes mochi-flow { to { stroke-dashoffset: -16; } }
       @keyframes octo-dot-pulse { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }
       #boot-splash {
         position: fixed; inset: 0; z-index: 9999;
@@ -33,90 +30,57 @@
         background: #1a1a1a; transition: opacity 320ms ease;
       }
       #boot-splash.done { opacity: 0; pointer-events: none; }
-      #boot-splash .tent { transform-box: fill-box; transform-origin: 50% 0%; animation: octo-tent-sway 1.9s ease-in-out infinite; }
-      #boot-splash .eyes { transform-box: view-box; transform-origin: 60px 56px; animation: octo-blink 4.4s infinite; }
-      #boot-splash .blush { animation: octo-blush 2.8s ease-in-out infinite; }
-      #boot-splash .crest { transform-box: view-box; transform-origin: 60px 50px; animation: octo-lag 2.4s ease-in-out infinite; animation-delay: -0.13s; }
-      #boot-splash .shikoro { transform-box: view-box; transform-origin: 60px 58px; animation: octo-lag-far 2.4s ease-in-out infinite; animation-delay: -0.22s; }
-      #boot-splash .sword { transform-box: view-box; transform-origin: 96px 88px; animation: octo-cut 2.8s cubic-bezier(0.2, 0, 0.05, 1) infinite; }
-      #boot-splash .slash { animation: octo-slash 2.8s ease-out infinite; }
+      #boot-splash .scan { animation: mochi-scan 1.1s linear infinite; }
+      #boot-splash .led { animation: mochi-led 0.5s ease-in-out infinite; }
+      #boot-splash .flow { animation: mochi-flow 1.4s linear infinite; }
       #boot-splash .dot { width: 6px; height: 6px; border-radius: 0; background: #76b900; animation: octo-dot-pulse 1.2s infinite; }
       @media (prefers-reduced-motion: reduce) {
-        #boot-splash .bob, #boot-splash .tent, #boot-splash .eyes, #boot-splash .blush,
-        #boot-splash .crest, #boot-splash .shikoro, #boot-splash .sword, #boot-splash .slash,
+        #boot-splash .bob, #boot-splash .scan, #boot-splash .led, #boot-splash .flow,
         #boot-splash .dot { animation: none; }
       }
     </style>
     <div id="boot-splash">
       <div class="bob" style="animation: octo-squash 2.4s ease-in-out infinite; transform-origin: 50% 100%">
-        <svg viewBox="0 0 120 122" width="112" height="114" style="overflow: visible; filter: drop-shadow(0 0 9px rgba(118, 185, 0, 0.4))">
-          <!-- arms; the sixth holds the katana -->
-          <path class="tent" d="M 31,88 C 26,99 24,108 29,112 C 32,114 35,111 34,107" fill="none" stroke="#8AD000" stroke-width="8" stroke-linecap="round" />
-          <path class="tent" style="animation-delay: -0.5s" d="M 43,92 C 40,102 39,111 43,115" fill="none" stroke="#8AD000" stroke-width="7" stroke-linecap="round" />
-          <path class="tent" style="animation-delay: -1s" d="M 55,94 C 54,104 53,112 56,116" fill="none" stroke="#8AD000" stroke-width="6.4" stroke-linecap="round" />
-          <path class="tent" style="animation-delay: -1.5s" d="M 67,94 C 68,104 69,112 66,116" fill="none" stroke="#8AD000" stroke-width="6.4" stroke-linecap="round" />
-          <path class="tent" style="animation-delay: -0.2s" d="M 79,92 C 82,102 83,111 79,115" fill="none" stroke="#8AD000" stroke-width="7" stroke-linecap="round" />
-          <path class="tent" style="animation-delay: -0.9s" d="M 91,88 C 99,86 105,82 101,75" fill="none" stroke="#8AD000" stroke-width="7.6" stroke-linecap="round" />
-
-          <!-- head -->
-          <path d="M 24,80 C 24,38 40,18 60,18 C 80,18 96,38 96,80 C 96,89 84,94 60,94 C 36,94 24,89 24,80 Z" fill="#2A2A2A" stroke="#8AD000" stroke-width="3.5" stroke-linejoin="round" />
-          <path d="M 96,80 C 96,38 80,18 60,18 C 74,27 84,46 84,80 C 84,88 76,92 62,93.6 C 84,93.4 96,89 96,80 Z" fill="#000" opacity="0.24" />
-          <g class="blush">
-            <ellipse cx="31" cy="72" rx="6" ry="3.6" fill="#76B900" />
-            <ellipse cx="89" cy="72" rx="6" ry="3.6" fill="#76B900" />
-          </g>
-          <g class="eyes">
-            <ellipse cx="43" cy="56" rx="11.5" ry="13.5" fill="#C4F06A" />
-            <circle cx="39.4" cy="50.5" r="3.9" fill="#FAFAFA" />
-            <circle cx="47.2" cy="61.5" r="2" fill="#FAFAFA" opacity="0.75" />
-            <ellipse cx="77" cy="56" rx="11.5" ry="13.5" fill="#C4F06A" />
-            <circle cx="73.4" cy="50.5" r="3.9" fill="#FAFAFA" />
-            <circle cx="81.2" cy="61.5" r="2" fill="#FAFAFA" opacity="0.75" />
-          </g>
-          <path d="M 54,78 C 56.5,83 63.5,83 66,78" fill="none" stroke="#C4F06A" stroke-width="3" stroke-linecap="round" />
-
-          <!-- chin guard, then the layered neck guard -->
-          <path d="M 47,84 L 73,84 L 71,93 L 49,93 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="1.8" stroke-linejoin="round" />
-          <path d="M 55,88 L 65,88" stroke="#C4F06A" stroke-width="1.4" opacity="0.8" />
-          <g class="shikoro">
-            <path d="M 23,59 L 9,62 L 7,72 L 23,70 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="1.6" stroke-linejoin="round" />
-            <path d="M 97,59 L 111,62 L 113,72 L 97,70 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="1.6" stroke-linejoin="round" />
-            <path d="M 23,70 L 7,73 L 6,84 L 24,81 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="1.6" stroke-linejoin="round" />
-            <path d="M 97,70 L 113,73 L 114,84 L 96,81 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="1.6" stroke-linejoin="round" />
-            <g stroke="#C4F06A" stroke-width="1.5" stroke-linecap="round" opacity="0.9">
-              <path d="M 12,64 L 12,69 M 17,63 L 17,68 M 11,75 L 11,80 M 16,74 L 16,79" />
-              <path d="M 108,64 L 108,69 M 103,63 L 103,68 M 109,75 L 109,80 M 104,74 L 104,79" />
+        <svg viewBox="0 0 200 200" width="120" height="120" style="overflow: visible">
+          <defs>
+            <linearGradient id="bs-skin" x1="100" y1="62" x2="100" y2="173" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stop-color="#FFFBFF" /><stop offset="0.6" stop-color="#EDE4FF" /><stop offset="1" stop-color="#C4B3EE" />
+            </linearGradient>
+            <linearGradient id="bs-rim" x1="30" y1="110" x2="170" y2="110" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stop-color="#3EF0FF" stop-opacity="0.9" /><stop offset="1" stop-color="#FF3EA5" stop-opacity="0.9" />
+            </linearGradient>
+            <clipPath id="bs-visor"><rect x="50" y="90" width="100" height="38" rx="19" /></clipPath>
+            <filter id="bs-glow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3" /></filter>
+            <filter id="bs-halo" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="14" /></filter>
+          </defs>
+          <!-- glow and floor shadow -->
+          <ellipse cx="100" cy="128" rx="64" ry="46" fill="#C4F06A" opacity="0.3" filter="url(#bs-halo)" />
+          <ellipse cx="100" cy="177" rx="62" ry="6" fill="#C4F06A" opacity="0.4" />
+          <!-- antenna and LED -->
+          <path d="M 110,64 C 112,52 116,46 124,40" fill="none" stroke="#2E2850" stroke-width="3.2" stroke-linecap="round" />
+          <g class="led"><circle cx="125" cy="39" r="9" fill="#C4F06A" opacity="0.28" /><circle cx="125" cy="39" r="4.6" fill="#C4F06A" /></g>
+          <!-- body -->
+          <path d="M 30,150 C 30,96 60,62 100,62 C 140,62 170,96 170,150 C 170,168 150,173 100,173 C 50,173 30,168 30,150 Z" fill="url(#bs-skin)" stroke="url(#bs-rim)" stroke-width="2.6" />
+          <ellipse cx="68" cy="82" rx="13" ry="5.5" fill="#fff" opacity="0.9" transform="rotate(-30 68 82)" />
+          <!-- circuits, data port, cheeks -->
+          <path class="flow" d="M 38,152 L 52,152 L 60,160 L 72,160 M 162,152 L 148,152 L 140,160 L 128,160" fill="none" stroke="#2FD6E8" stroke-width="1.7" stroke-dasharray="5 3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85" />
+          <circle cx="72" cy="160" r="2.4" fill="#2FD6E8" /><circle cx="128" cy="160" r="2.4" fill="#2FD6E8" />
+          <rect x="164" y="122" width="9" height="17" rx="2.5" fill="#2E2850" />
+          <rect x="166" y="125" width="5" height="3" rx="1" fill="#3EF0FF" /><rect x="166" y="131" width="5" height="3" rx="1" fill="#FF3EA5" />
+          <rect x="55" y="134" width="15" height="5" rx="2.5" fill="#FF3EA5" opacity="0.6" />
+          <rect x="130" y="134" width="15" height="5" rx="2.5" fill="#FF3EA5" opacity="0.6" />
+          <!-- visor, scanning: booting is work -->
+          <rect x="50" y="90" width="100" height="38" rx="19" fill="#120F22" stroke="#2E2850" stroke-width="2" />
+          <g clip-path="url(#bs-visor)">
+            <g filter="url(#bs-glow)">
+              <rect class="scan" x="50" y="90" width="16" height="38" fill="#C4F06A" opacity="0.35" />
+              <rect x="73" y="104" width="14" height="9" rx="3" fill="#C4F06A" /><rect x="113" y="104" width="14" height="9" rx="3" fill="#C4F06A" />
             </g>
+            <rect class="scan" x="50" y="90" width="16" height="38" fill="#C4F06A" opacity="0.35" />
+            <rect x="73" y="104" width="14" height="9" rx="3" fill="#C4F06A" /><rect x="113" y="104" width="14" height="9" rx="3" fill="#C4F06A" />
           </g>
-
-          <!-- kabuto -->
-          <g class="crest">
-            <path d="M 25,45 L 11,41 L 9,59 L 24,59 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="1.8" stroke-linejoin="round" />
-            <path d="M 95,45 L 109,41 L 111,59 L 96,59 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="1.8" stroke-linejoin="round" />
-            <circle cx="16" cy="50" r="3.4" fill="#C4F06A" />
-            <circle cx="104" cy="50" r="3.4" fill="#C4F06A" />
-            <path d="M 25,50 C 25,29 40,15 60,15 C 80,15 95,29 95,50 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="2" stroke-linejoin="round" />
-            <path d="M 60,15 L 60,49" stroke="#000" stroke-width="1.5" opacity="0.45" />
-            <circle cx="60" cy="20" r="3.2" fill="#C4F06A" />
-            <g fill="#C4F06A" opacity="0.85">
-              <circle cx="38" cy="34" r="1.5" /><circle cx="47" cy="25" r="1.5" />
-              <circle cx="73" cy="25" r="1.5" /><circle cx="82" cy="34" r="1.5" />
-            </g>
-            <path d="M 19,49 L 101,49 L 96,59 L 24,59 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="1.8" stroke-linejoin="round" />
-            <path d="M 51,49 C 43,37 35,25 33,10 C 39,19 50,31 56,43 Z" fill="#C4F06A" />
-            <path d="M 69,49 C 77,37 85,25 87,10 C 81,19 70,31 64,43 Z" fill="#C4F06A" />
-            <circle cx="60" cy="44" r="5" fill="#1A1A1A" stroke="#C4F06A" stroke-width="1.6" />
-          </g>
-
-          <!-- the katana, drawn and cutting: booting is work -->
-          <g class="sword" transform="rotate(-6 100 76)">
-            <path d="M 97,79 L 103,74 L 119,20 L 113,17 Z" fill="#F2F2F2" stroke="#848484" stroke-width="1.4" stroke-linejoin="round" />
-            <path d="M 100,76 L 115,20" stroke="#FAFAFA" stroke-width="1.2" opacity="0.85" />
-            <path d="M 94,80 L 104,72 L 109,78 L 99,86 Z" fill="#C4F06A" />
-            <path d="M 89,88 L 97,81 L 102,87 L 94,94 Z" fill="#1A1A1A" />
-            <path d="M 91,88 L 96,93 M 94,85 L 99,90" stroke="#C4F06A" stroke-width="1.4" opacity="0.7" />
-          </g>
-          <path class="slash" d="M 30,26 C 56,8 90,10 112,30" fill="none" stroke="#FAFAFA" stroke-width="3" stroke-linecap="round" opacity="0" />
+          <path d="M 62,96 L 82,96" stroke="#fff" stroke-opacity="0.22" stroke-width="2" stroke-linecap="round" />
+          <path d="M 92,140 Q 96,144 100,140 Q 104,144 108,140" fill="none" stroke="#4A3F6B" stroke-width="2.6" stroke-linecap="round" />
         </svg>
       </div>
       <div style="display: flex; gap: 6px; align-items: center">

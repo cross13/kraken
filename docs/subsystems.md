@@ -349,13 +349,22 @@ Fire Claude runs automatically on app-level events.
 One review run, two targets. **Ship › Code review** (`CodeReviewPanel`, between the ticket panel
 and the PR composer) reviews the spec's committed branch via `git.branchDiff` — the same
 `base...HEAD` range the PR will show — against the spec's requirements and plan. **Activity ›
-Reviews** (`PrReviewStudio`) lists the repo's open PRs and reviews one from `github.prFiles`, so it
-need not be checked out; the PR description is quoted as data between markers, never as
-instructions.
+Reviews** (`PrReviewStudio`) lists the repo's open PRs; opening one **checks it out locally**
+(`git.prCheckout`: private refs + a detached worktree under `userData/reviews/`, the workspace's own
+branch untouched) and shows GitHub's *Files changed* from disk — `DiffFiles`: a filterable file
+list beside every file's diff with old/new line numbers, *Viewed* checkboxes, *Open* (the PR's
+version of the file, from the worktree) and the review's findings inline under their line. Deleted
+and >1200-line files start collapsed and each diff mounts only near the viewport (`Lazy`), because
+a PR that drops a vendored tree is hundreds of thousands of rows. The reviewer runs **inside that
+worktree**, so it reads the PR's real files with nothing to fetch; if the checkout fails the studio
+falls back to `github.prFiles` patches and says so. Each PR keeps its own state, so switching PRs
+never drops a review in flight, and the running review shows an elapsed clock plus one line per
+tool call. The PR description is quoted as data between markers, never as instructions; deleted
+files are listed by name only in the prompt.
 
 - **Routing:** `{kind: 'review'}` → `code-reviewer` (pinnable under Library › Routing › Advanced
-  as *Code review*). The run is `kind: 'review'`, read-only by prompt: a review reports, fixing is
-  a separate click.
+  as *Code review*). The run is `kind: 'review'` and **`readOnly`** (Read/Glob/Grep only, enforced
+  by CLI flags — see `backends.md`): a review reports, fixing is a separate click.
 - **Format:** the `code-review-format` skill (bundled default, injected by `routeReviewSkill` under
   the same toggle/disabled list as the doc-format skills) asks for a `## Summary` and one `json`
   findings array; the prompt keeps the minimum contract so a review parses with injection off.
@@ -369,7 +378,8 @@ instructions.
   blocker count beside *Create pull request*. Advisory — it never blocks the PR.
 - **Posting to GitHub** follows the ticket rule: `prReviewDraft` builds the exact body + inline
   comments, the UI shows them, and only then `github:pr-review` posts a `COMMENT` review pinned to
-  the PR's `headSha`. A finding becomes an inline comment only when its line is inside a hunk
+  the commit that was reviewed (the checkout's head, else the PR's `headSha`; the studio warns when
+  GitHub's head has moved since the checkout). A finding becomes an inline comment only when its line is inside a hunk
   (`commentableLines`) — GitHub rejects the whole review otherwise — and the rest are listed in the
   body.
 
@@ -444,10 +454,10 @@ layout on the primary screen — handy when travelling with a second display.
 - **UI — the colony (`src/components/wide/WideApp.tsx` + `OctoMascot.tsx`):** the renderer entry
   (`src/main.tsx`) branches on `win.isWideRenderer()` to render `WideApp` instead of `App`. It is
   self-contained (no sidebar deps) and the whole window is **one colony**: every run in flight is
-  an octopus (`OctoMascot` — **the same drawing the app's brand mark is made of**: `OctoMark`
+  a **Mochi** (`OctoMascot` — **the same drawing the app's brand mark is made of**: `OctoMark`
   renders it at `detail="mark"`, so the main window and the travel window show one creature, not
-  a logo and a mascot that merely rhyme. Coloured entirely from theme variables so it re-skins
-  with the app; see `docs/renderer.md` → Brand), and **everything the creature does carries
+  a logo and a mascot that merely rhyme. Its light comes from theme variables; see
+  `docs/renderer.md` → Brand), and **everything the creature does carries
   meaning**:
   - **Which zone it lives in = which spec it belongs to.** Runs are grouped by `specId` into
     dashed-bordered zones (runs with no spec — chat, hooks, stray audits — share a trailing
@@ -460,18 +470,13 @@ layout on the primary screen — handy when travelling with a second display.
   - **The dashed violet leash = what it waits on.** Each queued run's `dependsOn` is drawn as an
     animated curve to the run holding it up (an SVG overlay in zone percentages, with
     `vector-effect: non-scaling-stroke` so the dashes stay uniform under the non-uniform viewBox).
-  - **The face = the status.** Five `MascotState`s: big blinking eyes while working (green),
-    violet while *deciding* (`spec`/`audit` runs — the brand's second accent), shut with floating
-    `zzz` while queued, happy arcs when done, crossed out and shaking when it failed.
-  - **The katana's pose = the verb.** The creature is a chibi *samurai* — a kabuto bowl with a
-    `kuwagata` crest, fukigaeshi, a lacquered `shikoro` neck guard and a chin plate that
-    deliberately leaves the mouth free to emote — and its sword carries the run's activity at a
-    distance the face can't: drawn and **cutting** (with a slash arc) while working, **sheathed**
-    with a hand on the hilt while deciding, **resting** while queued, flicked clean (*chiburi*,
-    with drifting petals) on a win, and **driven into the ground** on a failure. Armour animates a
-    beat behind the head (`octo-lag`), which is the follow-through that makes it read as armour.
-    `detail="simple"` drops the rivets, lacing, mon and cel shade for anything under ~40px — the
-    reef and the compressed colony use it, exactly as a sprite sheet would carry a second drawing.
+  - **The visor = the status.** Five `MascotState`s, each its own light (theme tokens) and its own
+    eyes behind Mochi's visor: a **scanning bar** while working (green), a **sideways glance with
+    thought bubbles** while *deciding* (`spec`/`audit` runs — violet, the brand's second accent),
+    **shut** with floating `zzz` while queued, **^ ^ with sparkles** when done, **crossed out** and
+    shaking when it failed. The antenna LED pulses with it (fast while working or failed, dim while
+    queued) and current runs along the circuit traces. `detail="simple"` drops the halo blur and
+    the extras for anything under ~64px — the reef and the compressed colony use it.
   - **The speech bubble = the tool it is running right now**, parsed back out of the live `tool`
     delta (`toolHeadline` unwraps the markdown `summarizeToolUse` emits into "Edit
     src/lib/session.ts" / "Bash npm run typecheck") with the newest output line beneath it.

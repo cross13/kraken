@@ -222,8 +222,8 @@ function loadQuiet(): boolean {
 const clampZoom = (z: number) => Math.round(Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, z)) * 100) / 100;
 
 /**
- * The Travel Display — the fleet as a **colony**. Every run in flight is an
- * octopus, and everything the creature does carries meaning: which zone it
+ * The Travel Display — the fleet as a **colony**. Every run in flight is a
+ * Mochi, and everything the creature does carries meaning: which zone it
  * lives in is the spec it belongs to, the dashed violet leash is what it is
  * waiting on, its face is its status (scanning eyes while working, shut with
  * "zzz" while queued, crossed out when it failed), and its speech bubble is the

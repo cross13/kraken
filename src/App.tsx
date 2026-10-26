@@ -7,6 +7,7 @@ import { ExplorerDrawer } from './components/ExplorerDrawer';
 import { ResizeHandle } from './components/ResizeHandle';
 import { HomeView } from './components/views/HomeView';
 import { QuickStart } from './components/views/QuickStart';
+import { LearnView } from './components/views/LearnView';
 import { SpecFlow } from './components/views/SpecFlow';
 import { ActivitySurface } from './components/views/ActivitySurface';
 import { LibrarySurface } from './components/views/LibrarySurface';
@@ -139,7 +140,7 @@ export default function App() {
         <SurfaceNav />
 
         <div className="flex-1 min-w-0 flex gap-1.5 pr-2 pb-2">
-          {/* Surfaces are singletons. Home / Activity / Library stay mounted
+          {/* Surfaces are singletons. Home / Activity / Library / Learn stay mounted
               (display-toggled) so terminals keep their PTYs and lists keep
               their scroll; the Spec flow mounts per spec. */}
           <main className="flex-1 min-w-0 relative rounded-xl ring-1 ring-ink-50/[0.07] bg-ink-950 overflow-hidden">
@@ -165,6 +166,12 @@ export default function App() {
               style={{ display: surface === 'library' ? 'block' : 'none' }}
             >
               <LibrarySurface />
+            </div>
+            <div
+              className="absolute inset-0"
+              style={{ display: surface === 'learn' ? 'block' : 'none' }}
+            >
+              <LearnView />
             </div>
           </main>
 

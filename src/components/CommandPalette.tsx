@@ -25,10 +25,13 @@ import {
   GraduationCap,
   Maximize2,
   FileSearch,
+  BookOpen,
 } from 'lucide-react';
 import { useWorkspace } from '../stores/workspace';
 import { useUi, stageForPhase, type LibrarySection, type ActivityTab } from '../stores/ui';
 import { cn } from '../lib/cn';
+import { GUIDES } from '../lib/guides';
+import { AREA_LABELS } from '../../guides/guides';
 
 interface Item {
   id: string;
@@ -70,6 +73,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
   const addTerminal = useUi((s) => s.addTerminal);
   const setZen = useUi((s) => s.setZen);
   const activeSpecId = useUi((s) => s.activeSpecId);
+  const guideLang = useUi((s) => s.guideLang);
   const [q, setQ] = useState('');
   const [sel, setSel] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -132,6 +136,14 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
       icon: <MonitorSmartphone size={15} />,
       group: 'Commands',
       run: () => window.octo.win.toggleWide(),
+    });
+    out.push({
+      id: 'dest:learn',
+      label: 'Learn — what do you want to work on?',
+      hint: 'guided paths · examples',
+      icon: <GraduationCap size={15} />,
+      group: 'Go to',
+      run: () => setSurface('learn'),
     });
     out.push({
       id: 'cmd:quick-start',
@@ -197,8 +209,20 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
       group: 'Go to',
       run: () => openOverlay({ kind: 'repo' }),
     });
+    // Last, so a search for a screen lands on the screen before the guide about it.
+    for (const g of GUIDES.byLang[guideLang]) {
+      out.push({
+        id: `guide:${g.id}`,
+        label: g.title,
+        hint: `${g.track === 'start' ? (guideLang === 'es' ? 'Empezá acá' : 'Start here') : AREA_LABELS[g.area][guideLang]} · ${g.minutes} min`,
+        icon: <BookOpen size={15} />,
+        group: guideLang === 'es' ? 'Guías' : 'Guides',
+        run: () => openOverlay({ kind: 'guide', id: g.id }),
+      });
+    }
     return out;
   }, [
+    guideLang,
     specs,
     openSpec,
     setSurface,
@@ -213,7 +237,8 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    if (!needle) return items;
+    // Thirty guides would bury the commands, so they only show once you search.
+    if (!needle) return items.filter((it) => !it.id.startsWith('guide:'));
     return items.filter(
       (it) =>
         it.label.toLowerCase().includes(needle) ||

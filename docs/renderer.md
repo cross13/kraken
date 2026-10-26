@@ -4,10 +4,10 @@ React 18 + Tailwind + Zustand. The renderer talks to the backend **only** throug
 `window.octo.*` (see [`ipc-contract.md`](./ipc-contract.md)). There is no global state outside
 the Zustand stores.
 
-## The four-surface shell
+## The surface shell
 
-The app is **four singleton surfaces** — Home, Spec, Activity, Library — selected by a slim
-4-icon left nav (`SurfaceNav`). There is **no tab bar and no focus mode**. Everything else renders
+The app is **four working surfaces** — Home, Spec, Activity, Library — plus **Learn**, the
+interactive guide (see *Learn* below), all singletons selected by a slim icon nav (`SurfaceNav`). There is **no tab bar and no focus mode**. Everything else renders
 as a drawer or a slide-over on top of the active surface:
 
 - the **Assistant** (chat) — right drawer, ⌘J (`AssistantDrawer` → `ChatPanel`)
@@ -16,14 +16,14 @@ as a drawer or a slide-over on top of the active surface:
   run viewers, Open Questions, the hook editor, and the global **repo panel**
   (`SourceControlView variant="page"`), opened from the top bar's project·branch pill.
 
-Home, Activity, and Library stay mounted (display-toggled) so terminals keep their PTYs and lists
+Home, Activity, Library and Learn stay mounted (display-toggled) so terminals keep their PTYs and lists
 keep scroll position; the Spec flow mounts per spec (`key={activeSpecId}`).
 
 **Second entry point — the Travel Display.** `src/main.tsx` branches on `win.isWideRenderer()`
 (`location.hash === '#wide'`): the main window renders `App`, but the optional wide second window
 (opened by the main process onto a secondary display) renders `src/components/wide/WideApp.tsx`
 instead — a read-only fleet monitor mirroring the `orchestrator` registry as a **colony**: one
-octopus (`wide/OctoMascot.tsx`) per run in flight, grouped into a zone per spec, leashed to
+Mochi (`wide/OctoMascot.tsx`) per run in flight, grouped into a zone per spec, leashed to
 whatever it is waiting on, its face carrying its status and its speech bubble the tool it is
 running; clicking one opens its full run detail beside the compressed colony. The CommandBar
 carries the toggle (a `MonitorSmartphone` icon reflecting open state) and ⌘K has an *Open Travel
@@ -64,10 +64,12 @@ from here and call `refreshAll()` after a mutation.
 
 ### `chat.ts` — `useChat`
 The Assistant session's single conversation: `messages`, `busy`, `currentRequestId`, `selectedAgent`,
-and `pendingPrompt`. Actions: `push`, `appendDelta(id, text, channel?)`, `finish(id)`,
+`pendingPrompt` and `pendingContext`. Actions: `push`, `appendDelta(id, text, channel?)`, `finish(id)`,
 `fail(id, error)`, `clear`, `setBusy(b, requestId?)`, `setSelectedAgent`, `setPendingPrompt`.
 `pendingPrompt` is a **cross-component handoff**: Home's composer routes question-shaped input
 (ends with `?`) here (and opens the Assistant); `ChatPanel` watches it and, once idle, sends it.
+`setPendingPrompt(text, context?)` can carry **system context for that one send** — Learn hands
+over the guides behind a question this way, so the transcript shows the question, not the guides.
 `appendDelta` is **channel-aware**: it keeps a flat `content` string *and* builds
 `segments: MessageSegment[]` — consecutive same-channel deltas merge, while `tool`/`tool_result`
 chunks each become their own segment. `ChatPanel` renders assistant messages from `segments`
@@ -76,6 +78,7 @@ chunks each become their own segment. `ChatPanel` renders assistant messages fro
 ### `ui.ts` — `useUi`
 The shell state. `surface: 'home' | 'spec' | 'activity' | 'library'` plus per-surface state:
 
+- `surface` also takes `'learn'`.
 - **Spec**: `activeSpecId` + `specStage` (`'define' | 'plan' | 'build'`, mapped from the
   spec's phase by `stageForPhase`);
   `openSpec(specId, stage?)` navigates (use `stageForPhase(phase)` to land on the right stage).
@@ -85,7 +88,10 @@ The shell state. `surface: 'home' | 'spec' | 'activity' | 'library'` plus per-su
 - **Drawers**: `assistantOpen`/`toggleAssistant` (+ persisted `assistantWidth`), `explorerOpen`.
 - **Overlay**: `overlay: Overlay | null` with `openOverlay`/`closeOverlay` — the discriminated
   union `{kind: 'file'|'agent'|'skill', path}` / `{kind: 'run', runId}` /
-  `{kind: 'questions', specId}` / `{kind: 'hook', hookId?}` / `{kind: 'repo'}`.
+  `{kind: 'questions', specId}` / `{kind: 'hook', hookId?}` / `{kind: 'repo'}` /
+  `{kind: 'guide', id}`.
+- **Guides**: `guideLang` (`'en' | 'es'`, persisted as `localStorage['octo.guidesLang']`, defaults
+  to the system language) + `setGuideLang` — shared by Quick Start's index and the guide overlay.
 - **Zen**: `zenOpen` + `setZen`/`toggleZen` — the full-window reading mode (`views/ZenReader`).
   It is *not* an overlay (it takes the whole viewport instead of sliding in beside a surface), so
   it lives on its own flag. It belongs to the document on screen: `setSurface` away from `spec`,
@@ -93,7 +99,9 @@ The shell state. `surface: 'home' | 'spec' | 'activity' | 'library'` plus per-su
 - **Terminals**: `terminals: TerminalSession[]` + `activeTerminalId` with
   `addTerminal(profile)` / `closeTerminal` / `setActiveTerminal` — sessions are store-level so the
   PTY-hosting panes can stay mounted app-wide (the session id doubles as the PTY id).
-- `composerNonce`/`focusComposer()` — ⌘K "New spec…" jumps to Home and focuses the composer.
+- `composerNonce`/`focusComposer(draft?)` — ⌘K "New spec…" jumps to Home and focuses the composer;
+  with a `draft` (Learn's *Use on Home*) it also fills it — Home takes it once via
+  `takeComposerDraft()` so a later focus does not refill it.
 
 ### `orchestrator.ts` — `useOrchestrator`
 **The global registry of every in-flight run** — chat, spec drafting, audits, and wave tasks all
@@ -286,29 +294,33 @@ needs eyes on the running app.
 
 ## Brand — one creature, not a logo and a mascot
 
-**The brand mark *is* the colony's octopus samurai.** There is a single drawing in the app,
+**The brand mark *is* the colony's creature — Mochi.** There is a single drawing in the app,
 `OctoMascot` (`components/wide/OctoMascot.tsx`), rendered at three levels of detail; the Travel
-Display uses the big two, and the main window's mark is the small one. The old `OctoLogo` (the
-visored octopus from the Octopus Brand Kit) is gone — the app no longer wears two creatures.
+Display uses the big two, and the main window's mark is the small one. Mochi — a cyberpunk daifuku:
+lavender body, dark neon visor, antenna with an LED, circuit traces, cyan-to-magenta rim — comes
+from the sibling **`cross`** project (`cross/Sources/CrossKit/Mascot.swift`, drawn procedurally in
+SwiftUI), redrawn here as SVG in the same 200 × 200 box so the two apps share one creature. It
+replaced the chibi octopus samurai (and, before that, the visored `OctoLogo`).
 
 | `detail` | Size | Where |
 | --- | --- | --- |
-| `full` | ≥ 64px | boot splash, `OctoLoader` md/lg, the colony's open run |
-| `simple` | 40–64px | the reef, the compressed colony, Home's welcome hero, `OctoLoader` sm |
+| `full` | ≥ 64px | boot splash, `OctoLoader` md/lg, Quick Start, the stage briefing, the colony's open run |
+| `simple` | 40–64px | the reef, the compressed colony, `OctoLoader` sm |
 | `mark` | 14–26px | every mark in the main window (see `OctoMark` below) |
 
-`mark` keeps arms, head, eyes and the kabuto silhouette, and drops the katana, mouth, chin guard,
-neck guard, cel shade, blush, rivets and mon — at 16px those stop being detail and become a
-smudge, and a blade sticking out of the nav rail's brand tile reads as an artefact rather than a
-sword. Strokes are thickened (head 3.5 → 4.6, kabuto 2 → 2.8) so the silhouette survives the
-downscale. Verified legible down to 14px.
+`mark` keeps body, antenna, visor and eyes, and drops the circuits, cheeks, mouth, shine, halo and
+extras (Cross applies the same cut below 40pt). Strokes are thickened (rim 2.6 → 6, antenna 3.2 → 6)
+so the silhouette survives the downscale, and `work` shows open eyes instead of the scanning bar —
+the rail's mark is furniture.
 
-**The mark is theme-driven**, not a fixed colourway: it takes `OctoMascot`'s `work` palette — rim
-`--accent2`, body `--card`, eyes `--accent-num`, lacquer `--rail` — so it is green on Signal,
-violet on Abyss, teal on Bioluminescent, and the app is never wearing two palettes at once. CSS
-variables only resolve through `style`, never through SVG presentation attributes, which is why
-every fill and stroke in the drawing is an inline style. `.octo-tile` behind it reads the accent
-too and swaps to a white tile on Daylight, so no light variant of the mark is needed.
+**Mochi's body is literal, its light is the theme's.** The lavender skin, cyan-to-magenta rim, visor
+glass and mouth ink are fixed hexes — that colourway *is* the character, the same reasoning that
+lets a tracker's brand hue escape the theme. What the eyes, antenna LED, halo and floor shadow glow
+with is the state's light, a theme token per state (`work` `--accent-num`, `think` `--agent-text`,
+`sleep` `--agent`/0.8, `done` `--accent-text`, `fail` `--danger-text`), so the mark is green on
+Signal, violet on Abyss, and so on. CSS variables only resolve through `style`, never through SVG
+presentation attributes, which is why the light is always an inline style. Gradient, clip and blur
+ids are suffixed with `useId()`, because many instances share one document.
 
 - **`OctoMark`** (`components/OctoMark.tsx`) — the mark everywhere in the main window. Props:
   `state` (defaults to `work`, the brand's resting expression; pass `done`/`fail`/`think`/`sleep`
@@ -316,17 +328,18 @@ too and swaps to a white tile on Daylight, so no light variant of the mark is ne
   (default `mark`), `seed`. It supplies the `k-mascot-<state>` wrapper the colony's CSS keys off
   and the `k-mascot-bob` squash; `animated={false}` adds **`.k-still`**, which freezes that one
   instance, eyes included — the rail's mark is furniture and should not breathe at you all day.
-  Size it with a **width class only** (`w-[18px]`, `w-11`); the drawing is square-ish
-  (`MASCOT_ASPECT`) and sets its own height.
+  Size it with a **width class only** (`w-[18px]`, `w-11`); the drawing is square
+  (`MASCOT_ASPECT = 1`) and sets its own height.
 - **`OctoLoader`** (`components/OctoLoader.tsx`) — the "reading code" loader: the animated mark
   over a scrolling code shimmer + three pulsing dots. Props: `size sm|md|lg`, `label`, `showCode`.
-  `sm` is 44px and takes `simple`; `md`/`lg` get the whole armour. Used for blocking states (e.g.
+  `sm` is 44px and takes `simple`; `md`/`lg` get `full` (halo and extras). Used for blocking states (e.g.
   Ship's summary generation); tiny inline button spinners stay `Loader2`.
-- **Keyframes** — the mark's motion is the colony's motion, so `octo-squash`, `octo-tent-sway`,
-  `octo-blink`, `octo-lag`, `octo-cut` &c. all live in `styles.css` under "Travel Display: the
-  colony", together with `.k-quiet` (mode-wide freeze) and `.k-still` (per-instance freeze). Only
-  `octo-tent-sway`, `octo-code-scroll`, `octo-dot-pulse` and `octo-glow-pulse` are declared in the
-  "Brand" block, alongside **`.octo-tile`** — the app-tile background behind the mark (nav rail,
+- **Keyframes** — the mark's motion is the colony's motion, so `octo-squash`, `octo-blink` and
+  Mochi's own `mochi-scan` (the bar sweeping the visor), `mochi-look`, `mochi-led`, `mochi-flow`
+  (current along the circuits) and `mochi-thought` all live in `styles.css` under "Travel Display:
+  the colony", together with `.k-quiet` (mode-wide freeze — it keeps the scanning bar, so a live
+  agent still reads as alive) and `.k-still` (per-instance freeze). Only `octo-code-scroll`,
+  `octo-dot-pulse` and `octo-glow-pulse` are declared in the "Brand" block, alongside **`.octo-tile`** — the app-tile background behind the mark (nav rail,
   welcome hero).
 - **Boot splash** — `index.html` ships a static `#boot-splash` overlay: the same creature in the
   `work` state at full detail, hand-inlined as plain HTML/CSS with an inline copy of the keyframes
@@ -335,11 +348,18 @@ too and swaps to a white tile on Daylight, so no light variant of the mark is ne
   **Keep the two keyframe copies in sync.** Its colours are Signal's literals — the CSP forbids
   the inline script that would read the persisted theme — so a non-default theme costs one
   brand-coloured frame.
-- **App icon** — `resources/icon.svg` is still the **old visored mark** and is deliberately
-  **inverted** versus the in-app creature: at 32px in a dock a dark tile with a thin rim
-  disappears, so it uses the palette's primary-button treatment (brand green fill, `#0F1400` ink,
-  `--accent-num` visor). Bringing the samurai to the icon needs a dedicated silhouette, not the
-  same SVG scaled down. `npm run icon` rasterizes it to `resources/icon.png` with Electron itself
+- **Design boards & site** — `design/` and `website/src/components/Octo.tsx` show the same Mochi.
+  `design/mochi/mochi.py` renders it as static SVG with Signal's literals; `design/mochi/apply.py`
+  swaps any octopus left in a board for it (state read from the markup, detail from the drawn
+  width), and `design/mochi/repack.py` refreshes a published canvas bundle (`0ct0-marca.html`,
+  `octo-home.html`, `travel-display-fleet.html`) from its `.dc.html` sources. The `*Octo` style
+  studies and the brand/Travel Display directions keep the octopus on purpose — they are the
+  exploration's history, on the canvas page *Pulpo (exploración)*.
+- **App icon** — `resources/icon.svg` is Mochi at the `simple` level on a **green Signal tile**: at
+  32px in a dock a dark tile with a thin rim disappears, so it uses the palette's primary-button
+  treatment. The halo is dropped (it muddies the silhouette on green) and a `#0F1400` outline sits
+  under Mochi's own rim so the lavender body separates from the tile at 16px; the eyes take
+  Signal's work light, `#C4F06A`. `npm run icon` rasterizes it to `resources/icon.png` with Electron itself
   (`scripts/render-icon.mjs`, no external SVG tooling); electron-builder converts the PNG per
   platform (`buildResources: resources`), and `main.ts` sets the dev dock icon (macOS) and the
   win/linux window icon from the same PNG.
@@ -551,9 +571,10 @@ container; rows open the run viewer in the overlay), **Specs** (`SpecsStudio`: w
 went — counts by phase and kind, run totals, error rate and time spent from the `runs` table,
 plus a per-spec detail with recent runs, the phase-advance timeline and a delete. Mounted only
 while the tab is open, because it queries the history DB on mount and Activity stays mounted for
-the whole session), **Reviews** (`review/PrReviewStudio.tsx`: open PRs on the left-hand list,
-the selected PR's review, findings and the confirm-then-post step; kept mounted so a review in
-flight survives a tab switch), **Terminals** (session chips + panes; `TerminalView` instances stay mounted
+the whole session), **Reviews** (`review/PrReviewStudio.tsx`: open PRs on the left-hand list; the
+selected PR — checked out into a local worktree — under two tabs, **Files changed**
+(`review/DiffFiles.tsx`, GitHub-style diff with findings inline) and **Review** (summary, findings,
+the confirm-then-post step); kept mounted so a review in flight survives a tab switch), **Terminals** (session chips + panes; `TerminalView` instances stay mounted
 app-wide via the `ui.terminals` store so PTYs survive navigation), and **Graph**
 (`AgentGraphView`).
 
@@ -675,7 +696,7 @@ There are three ways out — *I know Octo — skip this* in the header, the `×`
 at the end of the page — because reaching the bottom of a guide and having to hunt back up for the
 exit is its own small insult.
 
-Four sections:
+Five sections (the checklist state is read through `lib/useSetupSteps.ts`, which the guides share):
 
 - **Set up** — `buildSteps` reads the same state the rest of the app reads: workspace root, the
   backend and whether it is actually usable (CLI detected, or an API key stored), agent/skill
@@ -687,6 +708,9 @@ Four sections:
   left — counting a scaffold as done would tick the highest-leverage step for a workspace where
   nobody has written a word.
 - **How the loop works** — three cards, the SDD stages.
+- **Guides** — the start path as numbered cards (with the same verified checks) and the how-tos by
+  area, plus the EN/ES toggle. Opening one leaves Quick Start and opens the guide overlay, since a
+  guide's *Take me there* is about the app behind. See *Guides* below.
 - **Tips** — deliberately specific to how *this app* behaves (steering is prepended to every run;
   waves are parallel so their files must be disjoint; a criterion without `SHALL` is invisible).
   Rendered through `<Markdown>` because they name files and task lines.
@@ -696,6 +720,63 @@ Four sections:
   is what routing scores against). It reads the repo, judges whether the advice is true *here*, and
   rewrites the file in place. Octo's own bundled skills are excluded — the next library upgrade
   rewrites any default the user never edited, so improving them would just be undone.
+
+## Guides (`guides/` + `lib/guides.ts` + `views/GuideView.tsx`)
+
+How-to content for *users*, as opposed to these docs. **One body of content, two readers:** the
+same `guides/<lang>/<id>.md` files are bundled into the app and rendered by the public site's
+`/guides` (`website/src/pages/Guides.tsx`, `Guide.tsx`), so the folder lives at the repo root
+rather than in either project.
+
+- **Format** — `guides/guides.ts`, dependency-free so `scripts/guides-check.mjs` imports it with
+  Node's TS stripping. Flat front matter: `id`, `title`, `summary`, `track` (`start` = the ordered
+  first-hour path, `howto`), `order`, `area`, `minutes`, `goto`, optional `check`. Each consumer
+  globs the markdown (`import.meta.glob(…, { query: '?raw', eager: true })`) and hands it to
+  `loadGuides`; `tsconfig.web.json` includes `guides/**/*.ts` for that reason.
+- **`goto`** is the screen a guide is about, in a vocabulary that mirrors `Surface`/`SpecStage`/
+  `ActivityTab`/`LibrarySection` (`'home'`, `'spec:plan'`, `'library:steering'`…). `lib/guides.ts`
+  pins the two together with `GUIDE_GOTOS satisfies readonly Dest[]`, so renaming a screen breaks
+  the type check instead of silently breaking *Take me there*. `goTo` navigates; a `spec:*` target
+  with no spec open lands on Home.
+- **`check`** is a Quick Start `StepId` (same `satisfies` guard). A guide carrying one shows
+  *Done in this workspace* only when `buildSteps` says so — the same rule as the checklist.
+- **Entry points** — the `?` in `CommandBar` opens the guide for the screen on display
+  (`currentGoto` → `guidesFor`: exact match, then any guide on the same surface, then the first
+  start guide); ⌘K lists every guide *once you type* (thirty rows would bury the commands); Quick
+  Start's Guides section. `GuideView` is an overlay: index on the left, the guide on the right,
+  *Take me there* + *Next* at the end.
+- **Rendering** goes through `<Markdown>`, so the trust-boundary overrides apply even though the
+  text is ours. The site renders with the same rules (`website/src/lib/guides.ts`).
+- **Languages** — `en` and `es`, same ids and same structural front matter. UI labels stay in
+  English in both (the app's UI is English), except where the app itself is Spanish (Home's
+  *Entrada*, *Plan rápido*). `npm run guides -- --check` fails on a guide missing in one language,
+  mismatched front matter, an unknown `goto`/`check`, duplicate positions, or raw HTML. It cannot
+  tell a stale translation from a current one — edit both files in the same change.
+
+**A guide is documentation**: change the UI it describes, update the guide in the same change.
+
+## Learn — the interactive guide (`views/LearnView.tsx` + `lib/learn.ts`)
+
+The guides answer *how do I do X*; Learn answers the question before it — **what do you want to
+work on?** — and is a surface (graduation cap in `SurfaceNav`, ⌘K *Learn*) rather than a mode,
+because unlike Quick Start it is somewhere you come back to.
+
+- **Intents** (`INTENTS` in `lib/learn.ts`, bilingual like the guides): build a feature, fix a
+  bug, work from tickets, teach Claude the project, run tasks in parallel, review & ship,
+  automate, show me around. Each is a **path of guide ids** (title, summary and `check` come from
+  the guide — never restated), each step with the action that performs it (`goto`, composer,
+  pick a workspace, seed defaults, a shell terminal, the Travel Display); **examples** shaped the
+  way Octo parses them (a brief that routes as a bugfix, a steering doc, an agent whose
+  description will not hijack routing, a two-wave `tasks.md`, a hook JSON) that go to Home's
+  composer or the clipboard; and **one Claude action** with a prompt that reads the repository
+  (most are read-only; *Write my steering docs* edits `.octo/steering/`).
+- **Free text** is matched locally (`matchIntents`, accents folded, both languages) — instant and
+  free; Enter picks the best match. **Ask Claude** is the explicit second step: the question goes
+  to the Assistant with `questionContext` (what Octo is, the guide index, the bodies of the matched
+  intent's guides) as `pendingContext`.
+- A **setup strip** shows Quick Start's verified steps (`useSetupSteps`) so the dashboard says
+  where you are before suggesting where to go.
+- `intentSteps` drops a step whose guide id does not exist — `npm run guides` cannot see this file.
 
 ## Stage briefing (`views/StageBriefing.tsx`)
 

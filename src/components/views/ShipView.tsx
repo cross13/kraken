@@ -203,7 +203,7 @@ export function ShipView({ meta, onReopen }: { meta: SpecMeta; onReopen: () => v
         {git?.isRepo && <CodeReviewPanel meta={meta} specRel={specRel} />}
 
         {/* The PR, composed from what the branch actually contains. Only once
-            there is a remote and a token — otherwise there is nothing to open. */}
+            there is a remote and a signed-in gh — otherwise there is nothing to open. */}
         {git?.isRepo && git.hasOrigin && hasGithub && (
           <PrComposer
             meta={meta}
@@ -282,7 +282,7 @@ export function ShipView({ meta, onReopen }: { meta: SpecMeta; onReopen: () => v
                 ) : git.hasOrigin && hasGithub ? null : (
                   <span className="text-[11px] text-faint">
                     {git.hasOrigin
-                      ? 'Add a GitHub token in Library › Settings to open PRs from here.'
+                      ? 'Run gh auth login in a terminal to open PRs from here.'
                       : 'No origin remote — commit locally, or manage remotes in the repo panel.'}
                   </span>
                 )}

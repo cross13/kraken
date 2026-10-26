@@ -1,7 +1,8 @@
 import { Section, Reveal, Eyebrow, Panel } from '../components/ui';
 import { Button } from '../components/Button';
 import { GITHUB_URL } from '../components/site';
-import { ArrowUpRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ArrowRight, ArrowUpRight } from 'lucide-react';
 
 const DOCS = [
   { file: 'README.md', what: 'What it is, what it needs, and how to run it.', href: `${GITHUB_URL}#readme` },
@@ -13,25 +14,6 @@ const DOCS = [
   { file: 'docs/subsystems.md', what: 'Hooks, steering, orchestration, git, tickets, agents and skills.', href: `${GITHUB_URL}/blob/main/docs/subsystems.md` },
   { file: 'docs/adding-a-feature.md', what: 'The path a change takes through the codebase, and which doc it updates.', href: `${GITHUB_URL}/blob/main/docs/adding-a-feature.md` },
   { file: 'docs/security-review.md', what: 'The last full audit: what was found, what was fixed, what is still open.', href: `${GITHUB_URL}/blob/main/docs/security-review.md` },
-];
-
-const FIRST_RUN = [
-  {
-    title: 'Open a workspace',
-    body: 'Point the app at a repo you already know. It reads your .claude/agents and .claude/skills — workspace and global — plus your root CLAUDE.md or AGENTS.md as always-on steering.',
-  },
-  {
-    title: 'Seed the defaults (optional)',
-    body: 'One click installs a starter library: 12 agents, 6 skills, 3 steering scaffolds and 3 hooks. Seeding is an upgrade, not just an install — a default you never edited gets rewritten, and anything you did edit is left alone.',
-  },
-  {
-    title: 'Write one requirement',
-    body: 'Type what you want into the composer on Home. Plan creates the spec and opens it without starting a run; Quick Plan drafts both documents with no stops. Ending the line with ? sends it to the assistant instead.',
-  },
-  {
-    title: 'Walk the loop',
-    body: 'Approve requirements → answer the clarifying questions → approve the plan → run the task waves. The Ship panel opens on its own when the last task lands.',
-  },
 ];
 
 export function Docs() {
@@ -49,7 +31,10 @@ export function Docs() {
               out-of-date doc is treated as a bug. This page is the short version and the index.
             </p>
             <div className="flex flex-wrap gap-3">
-              <Button to="/download">Install first</Button>
+              <Button to="/guides">Read the guides</Button>
+              <Button to="/download" variant="ghost">
+                Install
+              </Button>
               <Button href={GITHUB_URL} variant="ghost">
                 Browse the repo
               </Button>
@@ -60,23 +45,24 @@ export function Docs() {
 
       <Section className="py-10">
         <Reveal>
-          <h2 className="font-display text-2xl font-bold tracking-tight text-ink-50">First run</h2>
+          {/* How to *use* it lives in the guides, shared with the app; this page
+              is the developer reference. */}
+          <Link to="/guides" className="card group flex flex-col gap-2 p-6 sm:flex-row sm:items-center sm:gap-6">
+            <div>
+              <h2 className="font-display text-xl font-bold tracking-tight text-ink-50">
+                New to it? Start with the guides.
+              </h2>
+              <p className="mt-1.5 text-sm leading-relaxed text-ink-400">
+                Five short guides from install to a merged pull request, then a how-to for every
+                screen — in English and Spanish, the same ones the app opens from its ? button.
+              </p>
+            </div>
+            <ArrowRight
+              size={18}
+              className="shrink-0 text-ink-600 transition-colors group-hover:text-accent-text sm:ml-auto"
+            />
+          </Link>
         </Reveal>
-        <div className="mt-8 grid gap-5 sm:grid-cols-2">
-          {FIRST_RUN.map((s, i) => (
-            <Reveal key={s.title} delay={0.05 * i} className="h-full">
-              <div className="card flex h-full gap-4 p-5">
-                <span className="font-mono text-xs text-accent-text">{String(i + 1).padStart(2, '0')}</span>
-                <div>
-                  <h3 className="font-display text-[15px] font-semibold tracking-tight text-ink-100">
-                    {s.title}
-                  </h3>
-                  <p className="mt-2 text-sm leading-relaxed text-ink-400">{s.body}</p>
-                </div>
-              </div>
-            </Reveal>
-          ))}
-        </div>
       </Section>
 
       <Section className="py-10">

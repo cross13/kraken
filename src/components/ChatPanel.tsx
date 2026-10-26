@@ -54,13 +54,14 @@ export function ChatPanel() {
   useEffect(() => {
     if (pendingPrompt && !busy) {
       const text = pendingPrompt;
+      const context = useChat.getState().pendingContext;
       setPendingPrompt(null);
-      send(text);
+      send(text, context);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingPrompt, busy]);
 
-  const send = (textArg?: string) => {
+  const send = (textArg?: string, context?: string | null) => {
     const raw = textArg ?? input;
     if (!raw.trim() || busy) return;
     const text = raw.trim();
@@ -122,6 +123,7 @@ export function ChatPanel() {
       editingHint,
       agent?.body,
       skillContext,
+      context,
     ]
       .filter(Boolean)
       .join('\n\n');

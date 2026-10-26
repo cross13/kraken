@@ -15,11 +15,18 @@ import type { ReviewFinding } from '../../../electron/shared/types';
 export function FindingsList({
   findings,
   canFix = true,
+  fileRoot,
+  onLocate,
 }: {
   findings: ReviewFinding[];
   canFix?: boolean;
+  /** where "Open file" reads from — a PR's worktree; defaults to the workspace */
+  fileRoot?: string | null;
+  /** jump to the finding in a diff instead of opening the bare file */
+  onLocate?: (f: ReviewFinding) => void;
 }) {
-  const root = useWorkspace((s) => s.root);
+  const workspaceRoot = useWorkspace((s) => s.root);
+  const root = fileRoot ?? workspaceRoot;
   const openOverlay = useUi((s) => s.openOverlay);
   const setAssistantOpen = useUi((s) => s.setAssistantOpen);
   const setPendingPrompt = useChat((s) => s.setPendingPrompt);
@@ -65,11 +72,11 @@ export function FindingsList({
               )}
             </div>
             <div className="flex shrink-0 gap-1">
-              {f.file && root && (
+              {f.file && (onLocate || root) && (
                 <button
                   type="button"
-                  title="Open file"
-                  onClick={() => openOverlay({ kind: 'file', path: `${root}/${f.file}` })}
+                  title={onLocate ? 'Show in diff' : 'Open file'}
+                  onClick={() => (onLocate ? onLocate(f) : openOverlay({ kind: 'file', path: `${root}/${f.file}` }))}
                   className="rounded p-1 text-dim hover:bg-ink-50/[0.06] hover:text-ink-50"
                 >
                   <FileCode2 size={13} />

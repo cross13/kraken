@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { Github, Menu, X } from 'lucide-react';
 import { Wordmark } from './Octo';
 import { NAV, GITHUB_URL } from './site';
@@ -7,6 +7,10 @@ import { NAV, GITHUB_URL } from './site';
 export function Nav() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const { pathname } = useLocation();
+  // The Spanish guides live under /es, which NavLink would not count as /guides.
+  const active = (to: string, isActive: boolean) =>
+    isActive || (to === '/guides' && pathname.startsWith('/es/guides'));
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -33,7 +37,7 @@ export function Nav() {
               to={item.to}
               className={({ isActive }: { isActive: boolean }) =>
                 `border-b-2 px-3.5 py-2 text-sm font-medium transition-colors ${
-                  isActive
+                  active(item.to, isActive)
                     ? 'border-accent text-ink-100'
                     : 'border-transparent text-ink-400 hover:text-ink-100'
                 }`
@@ -80,7 +84,7 @@ export function Nav() {
               to={item.to}
               onClick={() => setOpen(false)}
               className={({ isActive }: { isActive: boolean }) =>
-                `block px-3 py-2.5 text-sm font-medium ${isActive ? 'text-accent-text' : 'text-ink-300'}`
+                `block px-3 py-2.5 text-sm font-medium ${active(item.to, isActive) ? 'text-accent-text' : 'text-ink-300'}`
               }
             >
               {item.label}

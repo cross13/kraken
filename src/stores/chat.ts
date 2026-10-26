@@ -9,9 +9,15 @@ interface ChatStore {
   /** a prompt handed off from elsewhere (e.g. the Welcome command bar) for the
    *  ChatPanel to send on its next render */
   pendingPrompt: string | null;
+  /**
+   * System context that travels with `pendingPrompt` and is used for that one
+   * send only — reference material (e.g. the guides behind a Learn question) the
+   * run needs but the chat transcript should not show as the user's message.
+   */
+  pendingContext: string | null;
 
   setSelectedAgent: (a: string | null) => void;
-  setPendingPrompt: (text: string | null) => void;
+  setPendingPrompt: (text: string | null, context?: string | null) => void;
   push: (m: ChatMessage) => void;
   appendDelta: (id: string, text: string, channel?: StreamChannel) => void;
   finish: (id: string) => void;
@@ -34,9 +40,10 @@ export const useChat = create<ChatStore>((set) => ({
   currentRequestId: null,
   selectedAgent: null,
   pendingPrompt: null,
+  pendingContext: null,
 
   setSelectedAgent: (a) => set({ selectedAgent: a }),
-  setPendingPrompt: (text) => set({ pendingPrompt: text }),
+  setPendingPrompt: (text, context = null) => set({ pendingPrompt: text, pendingContext: context }),
 
   push: (m) => set((s) => ({ messages: [...s.messages, m] })),
 

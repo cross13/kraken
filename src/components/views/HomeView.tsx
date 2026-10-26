@@ -155,9 +155,13 @@ export function HomeView() {
     [tickets.groups]
   );
 
-  // ⌘K "New spec…" lands here and focuses the composer.
+  // ⌘K "New spec…" lands here and focuses the composer; Learn's examples also
+  // hand over the text to put in it.
   useEffect(() => {
-    if (composerNonce > 0) inputRef.current?.focus();
+    if (composerNonce === 0) return;
+    const draft = useUi.getState().takeComposerDraft();
+    if (draft !== null) setCommand(draft);
+    inputRef.current?.focus();
   }, [composerNonce]);
 
   // Esc backs out of whatever the board is holding, innermost first.

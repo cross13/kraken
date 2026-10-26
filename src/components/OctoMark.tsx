@@ -7,18 +7,18 @@ interface Props {
   state?: MascotState;
   /** Pulse a soft accent glow behind the mark. */
   glow?: boolean;
-  /** Bring the mark to life: squashing body, swaying arms, blinking eyes. */
+  /** Bring the mark to life: squashing body, blinking eyes, pulsing antenna LED. */
   animated?: boolean;
   /** `mark` (default) is the 14–26px drawing; `simple` from ~40px, `full` ≥64px. */
   detail?: 'full' | 'simple' | 'mark';
-  /** Stagger the arm sway so two marks on screen never move in lockstep. */
+  /** Stagger the motion so two marks on screen never move in lockstep. */
   seed?: number;
 }
 
 /**
- * Octo's brand mark — the same octopus samurai the Travel Display colony is
- * made of (`OctoMascot`), so the app has **one creature**, not a logo and a
- * mascot that merely rhyme.
+ * Octo's brand mark — Mochi, the same cyberpunk daifuku the Travel Display
+ * colony is made of (`OctoMascot`, shared with Cross), so the app has **one
+ * creature**, not a logo and a mascot that merely rhyme.
  *
  * The colony's state vocabulary comes with it: the mark is `work` wherever it
  * stands for the app itself, and the caller passes `done` / `fail` / `think` /
@@ -27,7 +27,7 @@ interface Props {
  * thing that should breathe at you all day.
  *
  * Sizing: pass a **width** class only (`w-[18px]`, `w-12`); the drawing is
- * square-ish (`MASCOT_ASPECT`) and sets its own height.
+ * square (`MASCOT_ASPECT`) and sets its own height.
  */
 export function OctoMark({
   className,

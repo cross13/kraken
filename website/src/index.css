@@ -85,6 +85,67 @@
   }
 }
 
+/* Guide bodies — markdown from guides/<lang>/*.md, the same text the app
+   renders. Squared and hairlined like everything else; green only as text on
+   grey (#A6E62E), never as a fill behind prose. */
+.guide-prose {
+  @apply text-[16px] leading-[1.75] text-ink-300;
+}
+.guide-prose > * + * {
+  @apply mt-5;
+}
+.guide-prose h2 {
+  @apply mt-10 font-display text-xl font-bold tracking-tight text-ink-50;
+}
+.guide-prose h3 {
+  @apply mt-8 font-display text-[17px] font-semibold tracking-tight text-ink-100;
+}
+.guide-prose strong {
+  @apply font-semibold text-ink-100;
+}
+.guide-prose a {
+  @apply text-accent-text underline decoration-line underline-offset-4 hover:decoration-accent-text;
+}
+.guide-prose ol,
+.guide-prose ul {
+  @apply space-y-2 pl-6;
+}
+.guide-prose ol {
+  @apply list-decimal;
+}
+.guide-prose ul {
+  @apply list-disc;
+}
+.guide-prose li::marker {
+  @apply font-mono text-[13px] text-ink-600;
+}
+.guide-prose li > ul,
+.guide-prose li > ol {
+  @apply mt-2;
+}
+.guide-prose code {
+  @apply border border-line bg-panel px-1.5 py-0.5 font-mono text-[13.5px] text-ink-100;
+}
+.guide-prose pre {
+  @apply overflow-x-auto border border-line bg-panel p-4 font-mono text-[13px] leading-[1.7];
+}
+.guide-prose pre code {
+  @apply border-0 bg-transparent p-0 text-ink-200;
+}
+.guide-prose blockquote {
+  @apply border-l-2 border-agent pl-4 text-ink-400;
+}
+.guide-prose table {
+  @apply w-full border-collapse text-sm;
+}
+.guide-prose th,
+.guide-prose td {
+  @apply border border-line px-3 py-2 text-left;
+}
+.guide-prose th {
+  @apply bg-panel font-semibold text-ink-100;
+}
+
 /* React Flow theme overrides — squared, hairlined, Signal-green edges. */
 .react-flow__attribution {
   display: none;

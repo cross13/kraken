@@ -192,7 +192,7 @@ export const GROUPS: FeatureGroup[] = [
       {
         icon: MonitorSmartphone,
         title: 'The Travel Display',
-        body: 'An optional second window for an ultrawide bar display, where every run in flight is an octopus. Its zone is the spec, its position is whether it is moving, the dashed leash is what it waits on, its face is the status and its katana’s pose is the verb.',
+        body: 'An optional second window for an ultrawide bar display, where every run in flight is a Mochi. Its zone is the spec, its position is whether it is moving, the dashed leash is what it waits on, and the light behind its visor is the status: scanning while it works, glancing sideways while it decides, asleep while queued.',
       },
       {
         icon: Ticket,

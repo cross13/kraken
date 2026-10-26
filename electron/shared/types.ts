@@ -792,6 +792,23 @@ export interface PrFile {
   patch?: string;
 }
 
+/**
+ * A pull request checked out locally for review (`git:pr-checkout`): the head
+ * sits detached in its own worktree, so the reviewer and the file viewer read
+ * the PR's real files instead of whatever branch the workspace is on.
+ */
+export interface PrCheckout {
+  ok: boolean;
+  /** absolute path of the worktree holding the PR head */
+  dir: string | null;
+  head: string | null;
+  /** merge-base of the PR and its base branch — the left side of the diff */
+  base: string | null;
+  /** `status` is git's letter (A/M/D); `patch` is absent for binary or oversized files */
+  files: PrFile[];
+  error?: string;
+}
+
 /** An inline comment in a review — `line` is on the RIGHT (new) side of the diff. */
 export interface PrReviewComment {
   path: string;

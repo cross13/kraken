@@ -10,6 +10,7 @@ import {
 } from 'electron';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import fs from 'node:fs/promises';
 import { existsSync, readFileSync, writeFileSync, renameSync } from 'node:fs';
 import { spawn, spawnSync } from 'node:child_process';
@@ -32,6 +33,8 @@ import {
   gitUnstageAll,
   gitBranchSummary,
   gitBranchDiff,
+  gitPrCheckout,
+  gitPrCheckoutPrune,
 } from './git.js';
 import {
   resolveRepo,
@@ -254,6 +257,12 @@ const seedLedger: SeedLedger = {
  */
 export interface SeedOpts {
   upgradeOnly?: boolean;
+}
+
+/** Where a workspace's PR review worktrees live: one folder per repo, outside it. */
+function reviewWorktreeRoot(cwd: string): string {
+  const id = createHash('sha1').update(path.resolve(cwd)).digest('hex').slice(0, 12);
+  return path.join(app.getPath('userData'), 'reviews', id);
 }
 
 function getEffectiveTools(): string[] {
@@ -874,6 +883,14 @@ function registerIpc() {
   // ...and the patch text itself, for a code review.
   ipcMain.handle('git:branch-diff', (_e, args: { cwd: string; base?: string }) =>
     gitBranchDiff(args.cwd, args.base)
+  );
+  // A PR read locally for review: fetched into private refs, checked out into a
+  // worktree under userData (never inside the repo, never the user's checkout).
+  ipcMain.handle('git:pr-checkout', (_e, args: { cwd: string; number: number; base: string }) =>
+    gitPrCheckout(args.cwd, args.number, args.base, path.join(reviewWorktreeRoot(args.cwd), `pr-${args.number}`))
+  );
+  ipcMain.handle('git:pr-checkout-prune', (_e, args: { cwd: string; keep: number[] }) =>
+    gitPrCheckoutPrune(args.cwd, reviewWorktreeRoot(args.cwd), args.keep)
   );
   ipcMain.handle('git:stage', (_e, args: { workspacePath: string; paths: string[] }) =>
     gitStage(args.workspacePath, args.paths)
@@ -2861,7 +2878,13 @@ interface ClaudePayload {
   taskId?: string | null;
   wave?: string | null;
   dependsOn?: string[];
+  /** read-only run (a code review): Read/Glob/Grep only, no edit auto-accept */
+  readOnly?: boolean;
 }
+
+/** The tools a `readOnly` run gets; everything that writes or shells out is refused. */
+const READ_ONLY_TOOLS = ['Read', 'Glob', 'Grep'];
+const WRITE_TOOLS = ['Write', 'Edit', 'MultiEdit', 'NotebookEdit', BASH_TOOL];
 
 async function streamClaude(sender: Electron.WebContents, payload: ClaudePayload) {
   const backend = store.get('backend') ?? 'cli';
@@ -2943,7 +2966,10 @@ function emit(
   channel: StreamChannel = 'text'
 ) {
   const event = { requestId, type, text, error, channel };
-  sender.send('claude:event', event);
+  // A closed window must not take the run log down with it: `send` on a
+  // destroyed sender throws, which used to skip the DB mirror and finishRun
+  // below and leave the run 'running' forever.
+  if (!sender.isDestroyed()) sender.send('claude:event', event);
   // Mirror the live stream to the Travel Display so its run detail can show what
   // each agent is doing in real time (the wide window is a separate renderer).
   if (wideWindow && !wideWindow.isDestroyed() && wideWindow.webContents !== sender) {
@@ -3008,8 +3034,9 @@ function streamViaCli(sender: Electron.WebContents, payload: ClaudePayload) {
     ? `${payload.system}\n\n---\n\n${history}`
     : history;
 
-  const allowedTools = getEffectiveTools();
-  const permissionMode = store.get('permissionMode') ?? 'acceptEdits';
+  const allowedTools = payload.readOnly ? READ_ONLY_TOOLS : getEffectiveTools();
+  // acceptEdits would auto-approve a Write that --allowedTools never listed.
+  const permissionMode = payload.readOnly ? 'default' : store.get('permissionMode') ?? 'acceptEdits';
   const args = [
     '-p',
     prompt,
@@ -3021,6 +3048,7 @@ function streamViaCli(sender: Electron.WebContents, payload: ClaudePayload) {
     '--allowedTools',
     allowedTools.join(','),
   ];
+  if (payload.readOnly) args.push('--disallowedTools', WRITE_TOOLS.join(','));
   if (payload.model) {
     args.push('--model', payload.model);
   }
@@ -3060,21 +3088,42 @@ function streamViaCli(sender: Electron.WebContents, payload: ClaudePayload) {
 
   let buffer = '';
   let stderrBuf = '';
+  // Exactly one terminal event per run. The CLI's own `result` event ends the
+  // run; the process exiting is only the fallback. Waiting for 'close' alone
+  // hung runs whose tools left a grandchild holding stdout open.
+  let finished = false;
+  const finish = (type: 'done' | 'error', error?: string) => {
+    if (finished) return;
+    finished = true;
+    emit(sender, payload.requestId, type, undefined, error, payload.cwd ?? null);
+    activeStreams.delete(payload.requestId);
+  };
+  const handleLine = (raw: string) => {
+    const line = raw.trim();
+    if (!line) return;
+    let evt: ClaudeCliEvent;
+    try {
+      evt = JSON.parse(line) as ClaudeCliEvent;
+    } catch {
+      return; // ignore non-JSON lines
+    }
+    const end = forwardCliEvent(sender, payload.requestId, evt, payload.cwd ?? null);
+    if (!end) return;
+    finish(end.type, end.error);
+    // The answer is in; a CLI that lingers past its own result has nothing left to say.
+    setTimeout(() => {
+      if (child.exitCode === null && child.signalCode === null) child.kill('SIGTERM');
+    }, 5000);
+  };
 
   child.stdout.setEncoding('utf8');
   child.stdout.on('data', (chunk: string) => {
     buffer += chunk;
     let idx;
     while ((idx = buffer.indexOf('\n')) >= 0) {
-      const line = buffer.slice(0, idx).trim();
+      const line = buffer.slice(0, idx);
       buffer = buffer.slice(idx + 1);
-      if (!line) continue;
-      try {
-        const evt = JSON.parse(line) as ClaudeCliEvent;
-        forwardCliEvent(sender, payload.requestId, evt, payload.cwd ?? null);
-      } catch {
-        // ignore non-JSON lines
-      }
+      handleLine(line);
     }
   });
 
@@ -3091,11 +3140,13 @@ function streamViaCli(sender: Electron.WebContents, payload: ClaudePayload) {
       category: 'cli_exit',
       message: msg,
     });
-    emit(sender, payload.requestId, 'error', undefined, msg, payload.cwd ?? null);
-    activeStreams.delete(payload.requestId);
+    finish('error', msg);
   });
 
-  child.on('close', (code) => {
+  const finishFromExit = (code: number | null) => {
+    if (finished) return;
+    if (buffer) handleLine(buffer);
+    buffer = '';
     if (code !== 0 && code !== null) {
       const msg = stderrBuf.trim().slice(0, 600) || `claude exited with code ${code}`;
       recordError({
@@ -3105,11 +3156,20 @@ function streamViaCli(sender: Electron.WebContents, payload: ClaudePayload) {
         message: msg,
         details: { exitCode: code },
       });
-      emit(sender, payload.requestId, 'error', undefined, msg, payload.cwd ?? null);
+      finish('error', msg);
     } else {
-      emit(sender, payload.requestId, 'done', undefined, undefined, payload.cwd ?? null);
+      finish('done');
     }
-    activeStreams.delete(payload.requestId);
+  };
+  // 'close' waits for every holder of the pipes; 'exit' is the process itself.
+  // Give 'close' a moment to deliver the tail of stdout, then stop waiting.
+  let exitTimer: NodeJS.Timeout | null = null;
+  child.on('exit', (code) => {
+    exitTimer = setTimeout(() => finishFromExit(code), 1500);
+  });
+  child.on('close', (code) => {
+    if (exitTimer) clearTimeout(exitTimer);
+    finishFromExit(code);
   });
 }
 
@@ -3198,7 +3258,7 @@ function forwardCliEvent(
   requestId: string,
   evt: ClaudeCliEvent,
   workspacePath: string | null
-) {
+): { type: 'done' | 'error'; error?: string } | void {
   // Claude Code stream-json emits several event shapes. Surface text content
   // and tool use from `assistant` messages, and forward errors verbatim.
   // The init `system` event reports the model Claude Code actually resolved.
@@ -3273,7 +3333,9 @@ function forwardCliEvent(
     emit(sender, requestId, 'delta', evt.delta.thinking, undefined, workspacePath, 'thinking');
     return;
   }
-  if (evt.type === 'result' && evt.subtype && evt.subtype !== 'success') {
+  // `result` is the CLI's last word: it ends the run (the caller emits it once).
+  if (evt.type === 'result') {
+    if (!evt.subtype || evt.subtype === 'success') return { type: 'done' };
     const msg =
       typeof evt.error === 'string'
         ? evt.error
@@ -3285,7 +3347,7 @@ function forwardCliEvent(
       message: msg,
       details: { subtype: evt.subtype },
     });
-    emit(sender, requestId, 'error', undefined, msg, workspacePath);
+    return { type: 'error', error: msg };
   }
 }
 

@@ -16,11 +16,21 @@ line. Space Grotesk (display) / Hanken Grotesk (body) / JetBrains Mono.
 > decide. Never both on the same control. That rule is the reason the site reads
 > as the app rather than as marketing for it.
 
-The mark is `src/components/Octo.tsx` — the octopus samurai, mirrored path-for-path
-from the app's `src/components/wide/OctoMascot.tsx`, so the site and the app show
-the same creature. `detail="mark"` is the 14–26px silhouette; `detail="full"` is
-what you need from ~64px up, because at `mark` the kabuto's brim cuts the eyes into
-slits and the kuwagata read as antennae.
+The mark is `src/components/Octo.tsx` — **Mochi**, the cyberpunk daifuku mirrored from
+the app's `src/components/wide/OctoMascot.tsx` (a port of the sibling Cross app's
+mascot), so the site and the app show the same creature. `detail="mark"` is the
+14–26px form (body, antenna, visor, eyes); `detail="full"` is what you want from ~64px
+up — halo, circuits, cheeks and mouth.
+
+## Guides
+
+`/guides` and `/es/guides` render the user guides from **`../guides/<lang>/*.md`** — the same
+files the desktop app bundles (its `?` button, ⌘K and Quick Start), so they live at the repo root
+and not in here. `src/lib/guides.ts` globs them; the format is `../guides/guides.ts`, and
+`npm run guides -- --check` **at the repo root** keeps EN and ES in step. Two consequences:
+`vite.config.ts` allows `..` in the dev server, and **the Docker build context is the repo root**
+(see Deploy). `base` is `/`, not `./` — a relative base breaks deep-link reloads two levels down
+(`/es/guides/<id>`).
 
 ## Develop
 
@@ -41,10 +51,10 @@ We ship a **Docker + nginx** image and a **DigitalOcean App Platform** spec:
 
 | File | What |
 | --- | --- |
-| `website/Dockerfile` | Multi-stage build: `node:22-alpine` runs `npm ci && npm run build`, then `nginx:alpine` serves `dist/`. |
+| `website/Dockerfile` | Multi-stage build from the **repo-root** context: `node:22-alpine` copies `website/` + `guides/`, runs `npm ci && npm run build`, then `nginx:alpine` serves `dist/`. |
 | `website/nginx.conf` | Listens on **80**, SPA fallback (`try_files ... /index.html`) for `BrowserRouter` deep links, gzip, immutable cache for hashed `/assets/`. |
-| `website/.dockerignore` | Keeps the build context lean (deps installed fresh in the image). |
-| `.do/app.yaml` (repo root) | App Platform spec — `source_dir: website` (build context), `dockerfile_path: website/Dockerfile` (repo-root relative), `http_port: 80`, deploy-on-push from `main`. |
+| `.dockerignore` (repo root) | Allowlist: excludes everything but `website/` and `guides/` (and their build output). |
+| `.do/app.yaml` (repo root) | App Platform spec — `source_dir: /` (build context = repo root, for `guides/`), `dockerfile_path: website/Dockerfile` (repo-root relative), `http_port: 80`, deploy-on-push from `main`. |
 
 ```bash
 # Build + run the production image locally (parity with DigitalOcean):

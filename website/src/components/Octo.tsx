@@ -1,148 +1,122 @@
+import { useId } from 'react';
+
 /**
  * The mark IS the mascot.
  *
- * One drawing, mirrored path-for-path from the desktop app's
- * `src/components/wide/OctoMascot.tsx`, so the site and the app show the same
- * creature rather than two that merely rhyme. Two levels of detail: `mark`
- * (14–26px — arms, head, eyes, kabuto silhouette) and `full` (≥64px — plus the
- * katana, the cel shade, the lacing and the rivets).
+ * Mochi — the cyberpunk daifuku the desktop app is made of — mirrored from the
+ * app's `src/components/wide/OctoMascot.tsx` (itself a port of the sibling
+ * Cross app's `Mascot.swift`), so the site and the app show the same creature
+ * rather than two that merely rhyme. Two levels of detail: `mark` (14–26px —
+ * body, antenna, visor, eyes) and `full` (≥64px — plus the halo, circuit
+ * traces, data port, cheeks and mouth).
  *
- * `tone="green"` inverts it for the one place it sits on a green fill (the app
- * icon treatment), where #0F1400 is the only ink the palette allows.
+ * On the site it is always in its resting `work` light, Signal's #C4F06A.
+ * Mochi's body colours are literals in the app too: the lavender skin and the
+ * cyan-to-magenta rim are the character, only the light follows the theme.
  */
 
-type Tone = 'grey' | 'green';
+const LIGHT = '#C4F06A';
+const INK = '#2E2850';
+const GLASS = '#120F22';
+const BODY =
+  'M 30,150 C 30,96 60,62 100,62 C 140,62 170,96 170,150 C 170,168 150,173 100,173 C 50,173 30,168 30,150 Z';
 
-// The armour is darker here than the app's `--rail` (#1A1A1A). In the app the
-// mark always sits on rail, panel or card, all of which are lighter than the
-// lacquer, so the kabuto separates on its own. This page's ground is #1E1E1E —
-// four values off — and at nav size the helmet vanished into it, leaving a
-// green smudge. The head stays #2A2A2A so head and armour still read as two
-// pieces, which is the thing that stops it looking like a beetle.
-const INK: Record<Tone, { rim: string; body: string; eye: string; tint: string; lacquer: string }> = {
-  grey: { rim: '#8AD000', body: '#2A2A2A', eye: '#C4F06A', tint: '#76B900', lacquer: '#121212' },
-  green: { rim: '#0F1400', body: '#2A2A2A', eye: '#8AD000', tint: '#0F1400', lacquer: '#141414' },
-};
-
-const ARMS: [string, number][] = [
-  ['M 31,88 C 26,99 24,108 29,112 C 32,114 35,111 34,107', 8],
-  ['M 43,92 C 40,102 39,111 43,115', 7],
-  ['M 55,94 C 54,104 53,112 56,116', 6.4],
-  ['M 67,94 C 68,104 69,112 66,116', 6.4],
-  ['M 79,92 C 82,102 83,111 79,115', 7],
-];
-const PLAIN_HAND = 'M 89,88 C 94,99 96,108 91,112 C 88,114 85,111 86,107';
-const WORK_HAND = 'M 91,88 C 99,86 105,82 101,75';
-const HEAD =
-  'M 24,80 C 24,38 40,18 60,18 C 80,18 96,38 96,80 C 96,89 84,94 60,94 C 36,94 24,89 24,80 Z';
-const SHADE =
-  'M 96,80 C 96,38 80,18 60,18 C 74,27 84,46 84,80 C 84,88 76,92 62,93.6 C 84,93.4 96,89 96,80 Z';
-const KABUTO = 'M 25,50 C 25,29 40,15 60,15 C 80,15 95,29 95,50 Z';
-const BRIM = 'M 19,49 L 101,49 L 96,59 L 24,59 Z';
-const KUWAGATA_L = 'M 51,49 C 43,37 35,25 33,10 C 39,19 50,31 56,43 Z';
-const KUWAGATA_R = 'M 69,49 C 77,37 85,25 87,10 C 81,19 70,31 64,43 Z';
-const FUKIGAESHI_L = 'M 25,45 L 11,41 L 9,59 L 24,59 Z';
-const FUKIGAESHI_R = 'M 95,45 L 109,41 L 111,59 L 96,59 Z';
-const CHIN = 'M 47,84 L 73,84 L 71,93 L 49,93 Z';
-
-export function OctoMark({
-  className = '',
-  detail = 'mark',
-  tone = 'grey',
-}: {
-  className?: string;
-  detail?: 'mark' | 'full';
-  tone?: Tone;
-}) {
-  const { rim, body, eye, tint, lacquer } = INK[tone];
+export function OctoMark({ className = '', detail = 'mark' }: { className?: string; detail?: 'mark' | 'full' }) {
   const mark = detail === 'mark';
+  // Gradient/clip ids must be unique per instance: the nav and the footer share a page.
+  const id = `mochi${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   return (
     <svg
-      viewBox="0 0 120 122"
+      viewBox="0 0 200 200"
       className={className}
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
       style={{ overflow: 'visible' }}
     >
-      <g fill="none" stroke={rim} strokeLinecap="round">
-        {ARMS.map(([d, w]) => (
-          <path key={d} d={d} strokeWidth={w} />
-        ))}
-        <path d={mark ? PLAIN_HAND : WORK_HAND} strokeWidth={mark ? 8 : 7.6} />
-      </g>
+      <defs>
+        <linearGradient id={`${id}-skin`} x1="100" y1="62" x2="100" y2="173" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#FFFBFF" />
+          <stop offset="0.6" stopColor="#EDE4FF" />
+          <stop offset="1" stopColor="#C4B3EE" />
+        </linearGradient>
+        <linearGradient id={`${id}-rim`} x1="30" y1="110" x2="170" y2="110" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#3EF0FF" stopOpacity={0.9} />
+          <stop offset="1" stopColor="#FF3EA5" stopOpacity={0.9} />
+        </linearGradient>
+        <clipPath id={`${id}-visor`}>
+          <rect x={50} y={90} width={100} height={38} rx={19} />
+        </clipPath>
+        <filter id={`${id}-halo`} x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation={14} />
+        </filter>
+        <filter id={`${id}-glow`} x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation={3} />
+        </filter>
+      </defs>
 
-      <path d={HEAD} fill={body} stroke={rim} strokeWidth={mark ? 4.6 : 3.5} strokeLinejoin="round" />
-      {/* Shading is black-at-low-alpha, not a token: it multiplies correctly
-          over every ground, where a fixed grey would only suit one. */}
-      {!mark && <path d={SHADE} fill="#000000" opacity={0.24} />}
-      {!mark && (
-        <>
-          <ellipse cx={31} cy={72} rx={6} ry={3.6} fill={tint} />
-          <ellipse cx={89} cy={72} rx={6} ry={3.6} fill={tint} />
-        </>
-      )}
+      {!mark && <ellipse cx={100} cy={128} rx={64} ry={46} fill={LIGHT} opacity={0.3} filter={`url(#${id}-halo)`} />}
+      <ellipse cx={100} cy={177} rx={62} ry={6} fill={LIGHT} opacity={0.4} />
 
-      {[43, 77].map((cx) => (
-        <g key={cx}>
-          <ellipse cx={cx} cy={56} rx={11.5} ry={13.5} fill={eye} />
-          {!mark && <circle cx={cx - 3.6} cy={50.5} r={3.9} fill="#FAFAFA" />}
-          {!mark && <circle cx={cx + 4.2} cy={61.5} r={2} fill="#FAFAFA" opacity={0.75} />}
-        </g>
-      ))}
+      <path d="M 110,64 C 112,52 116,46 124,40" fill="none" stroke={INK} strokeWidth={mark ? 6 : 3.2} strokeLinecap="round" />
+      {!mark && <circle cx={125} cy={39} r={9} fill={LIGHT} opacity={0.28} />}
+      <circle cx={125} cy={39} r={mark ? 8 : 4.6} fill={LIGHT} />
+
+      <path d={BODY} fill={`url(#${id}-skin)`} stroke={`url(#${id}-rim)`} strokeWidth={mark ? 6 : 2.6} />
+      {!mark && <ellipse cx={68} cy={82} rx={13} ry={5.5} fill="#fff" opacity={0.9} transform="rotate(-30 68 82)" />}
 
       {!mark && (
         <>
           <path
-            d="M 54,78 C 56.5,83 63.5,83 66,78"
+            d="M 38,152 L 52,152 L 60,160 L 72,160 M 162,152 L 148,152 L 140,160 L 128,160"
             fill="none"
-            stroke={eye}
-            strokeWidth={3}
+            stroke="#2FD6E8"
+            strokeWidth={1.7}
+            strokeDasharray="5 3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            opacity={0.85}
+          />
+          <circle cx={72} cy={160} r={2.4} fill="#2FD6E8" />
+          <circle cx={128} cy={160} r={2.4} fill="#2FD6E8" />
+          <rect x={164} y={122} width={9} height={17} rx={2.5} fill={INK} />
+          <rect x={166} y={125} width={5} height={3} rx={1} fill="#3EF0FF" />
+          <rect x={166} y={131} width={5} height={3} rx={1} fill="#FF3EA5" />
+          <rect x={55} y={134} width={15} height={5} rx={2.5} fill="#FF3EA5" opacity={0.6} />
+          <rect x={130} y={134} width={15} height={5} rx={2.5} fill="#FF3EA5" opacity={0.6} />
+        </>
+      )}
+
+      <rect x={50} y={90} width={100} height={38} rx={19} fill={GLASS} stroke={INK} strokeWidth={mark ? 3 : 2} />
+      <g clipPath={`url(#${id}-visor)`} fill={LIGHT}>
+        {!mark && (
+          <g filter={`url(#${id}-glow)`}>
+            <rect x={74} y={100} width={12} height={18} rx={5} />
+            <rect x={114} y={100} width={12} height={18} rx={5} />
+          </g>
+        )}
+        <rect x={74} y={100} width={12} height={18} rx={5} />
+        <rect x={114} y={100} width={12} height={18} rx={5} />
+      </g>
+      {!mark && (
+        <>
+          <path d="M 62,96 L 82,96" stroke="#fff" strokeOpacity={0.22} strokeWidth={2} strokeLinecap="round" />
+          <path
+            d="M 92,140 Q 96,144 100,140 Q 104,144 108,140"
+            fill="none"
+            stroke="#4A3F6B"
+            strokeWidth={2.6}
             strokeLinecap="round"
           />
-          <path d={CHIN} fill={lacquer} stroke={rim} strokeWidth={1.8} strokeLinejoin="round" />
-          <g fill={lacquer} stroke={rim} strokeWidth={1.6} strokeLinejoin="round">
-            <path d="M 23,59 L 9,62 L 7,72 L 23,70 Z" />
-            <path d="M 97,59 L 111,62 L 113,72 L 97,70 Z" />
-            <path d="M 23,70 L 7,73 L 6,84 L 24,81 Z" />
-            <path d="M 97,70 L 113,73 L 114,84 L 96,81 Z" />
-          </g>
         </>
-      )}
-
-      <g stroke={rim} strokeLinejoin="round">
-        <path d={FUKIGAESHI_L} fill={lacquer} strokeWidth={mark ? 2.4 : 1.8} />
-        <path d={FUKIGAESHI_R} fill={lacquer} strokeWidth={mark ? 2.4 : 1.8} />
-        <path d={KABUTO} fill={lacquer} strokeWidth={mark ? 2.8 : 2} />
-        <path d={BRIM} fill={lacquer} strokeWidth={mark ? 2.4 : 1.8} />
-      </g>
-      {!mark && <circle cx={60} cy={20} r={3.2} fill={eye} />}
-      <path d={KUWAGATA_L} fill={eye} />
-      <path d={KUWAGATA_R} fill={eye} />
-      {!mark && <circle cx={60} cy={44} r={5} fill={lacquer} stroke={eye} strokeWidth={1.6} />}
-
-      {/* The katana's pose is the run's state. At rest, on the site, it is drawn. */}
-      {!mark && (
-        <g transform="rotate(-6 100 76)">
-          <path
-            d="M 97,79 L 103,74 L 119,20 L 113,17 Z"
-            fill="#F2F2F2"
-            stroke="#848484"
-            strokeWidth={1.4}
-            strokeLinejoin="round"
-          />
-          <path d="M 100,76 L 115,20" stroke="#FAFAFA" strokeWidth={1.2} opacity={0.85} />
-          <path d="M 94,80 L 104,72 L 109,78 L 99,86 Z" fill={eye} />
-          <path d="M 89,88 L 97,81 L 102,87 L 94,94 Z" fill={lacquer} />
-        </g>
       )}
     </svg>
   );
 }
 
 /**
- * The trailing zero: the mark's abstraction. The green bar is the kabuto's
- * brim, cutting the counter exactly as the brim cuts the head — which is what
- * makes the two zeros of `0ct0` rhyme instead of merely repeat.
+ * The trailing zero: the mark's abstraction. The green bar is Mochi's visor,
+ * cutting across the counter exactly as the visor cuts across the body — which
+ * is what makes the two zeros of `0ct0` rhyme instead of merely repeat.
  */
 export function BarZero({ className = '' }: { className?: string }) {
   return (
@@ -162,9 +136,8 @@ export function Wordmark({ size = 'nav' }: { size?: 'nav' | 'hero' }) {
   if (size === 'hero') {
     return (
       <span className="inline-flex items-end gap-2 sm:gap-3" aria-label="0ct0">
-        {/* `full` from ~64px up: at `mark` detail the brim cuts the eyes into
-            slits and the kuwagata read as antennae — the creature only holds
-            together at hero size with its mouth, chin and katana. */}
+        {/* `full` from ~64px up: the halo, circuits, cheeks and mouth are what
+            make Mochi a face rather than a blob at hero size. */}
         <OctoMark className="-mb-2 h-24 w-24 sm:h-32 sm:w-32" detail="full" />
         <span className="font-display text-[5.5rem] font-bold leading-[0.78] tracking-[-0.045em] text-ink-100 sm:text-[7rem]">
           ct

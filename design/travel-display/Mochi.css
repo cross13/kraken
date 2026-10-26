@@ -1,0 +1,32 @@
+.root.sheet { width: 1200px; height: 800px; }
+.intro { margin: 18px 28px 6px; max-width: 980px; color: #C8C8C8; font-size: 13px; line-height: 1.55; }
+.intro b { color: #ECECEC; }
+.grid { display: grid; grid-template-columns: 110px repeat(5, 1fr); align-items: center; gap: 0 12px; padding: 8px 28px; }
+.ch { font: 500 11px/1 'JetBrains Mono', monospace; letter-spacing: .08em; text-transform: uppercase; color: #848484; text-align: center; padding-bottom: 6px; }
+.rl { display: flex; flex-direction: column; gap: 4px; }
+.rl b { font: 700 13px/1 'Space Grotesk', sans-serif; color: #ECECEC; }
+.rl span { color: #848484; font-size: 11px; }
+.cell { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; min-height: 150px; }
+.cap { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; }
+.cap b { font-size: 12.5px; color: #ECECEC; font-weight: 600; }
+.cap span { font-size: 11px; color: #848484; }
+
+/* Mochi (design/mochi/mochi.py) */
+@keyframes mochi-scan { from { transform: translateX(-20px); } to { transform: translateX(104px); } }
+@keyframes mochi-look { 0%, 100% { transform: translateX(-2px); } 50% { transform: translateX(4px); } }
+@keyframes mochi-led { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+@keyframes mochi-flow { to { stroke-dashoffset: -16; } }
+@keyframes mochi-thought { 0%, 100% { opacity: 0.25; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-3px); } }
+@keyframes mochi-blink { 0%, 91%, 100% { transform: scaleY(1); } 93.5% { transform: scaleY(0.06); } 96% { transform: scaleY(1); } }
+@keyframes mochi-spark { 0%, 100% { opacity: 0.25; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } }
+.mochi-scan { animation: mochi-scan 1.1s linear infinite; }
+.mochi-look { animation: mochi-look 3s ease-in-out infinite; }
+.mochi-led { animation: mochi-led 1.8s ease-in-out infinite; }
+.mochi-led.fast { animation-duration: 0.5s; }
+.mochi-flow { animation: mochi-flow 1.4s linear infinite; }
+.mochi-thought { animation: mochi-thought 1.2s ease-in-out infinite; }
+.mochi-eyes { transform-box: view-box; transform-origin: 100px 109px; animation: mochi-blink 4.4s infinite; }
+.mochi-spark { transform-box: fill-box; transform-origin: 50% 50%; animation: mochi-spark 1.1s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .mochi-scan, .mochi-look, .mochi-led, .mochi-flow, .mochi-thought, .mochi-eyes, .mochi-spark { animation: none; }
+}

@@ -17,7 +17,8 @@ deeper into *how to build*.
 | [`ipc-contract.md`](./ipc-contract.md) | Every IPC namespace + the exact recipe to add/change a handler | You're adding or modifying anything that crosses main ↔ renderer |
 | [`data-model.md`](./data-model.md) | Shared types, on-disk spec shape, and the SQLite schema | You're changing what gets stored or persisted |
 | [`backends.md`](./backends.md) | The CLI vs API Claude-streaming backends and the common event stream | You're touching how Claude is invoked or streamed |
-| [`renderer.md`](./renderer.md) | Zustand stores, component tree, layout, agent routing, skill injection | You're building UI or changing client-side state |
+| [`renderer.md`](./renderer.md) | Zustand stores, component tree, layout, agent routing, skill injection, the in-app guides | You're building UI or changing client-side state |
+| [`../guides/`](../guides/) | **User-facing** how-tos in EN + ES, shared by the app (`?`, ⌘K, Quick Start) and the site's `/guides` — format in `guides/guides.ts`, see `renderer.md` → Guides | You changed something a user does, or a screen a guide points at |
 | [`subsystems.md`](./subsystems.md) | Hooks, steering, orchestration, agents/skills, git/GitHub, code review, terminals, Travel Display | You're working on one of those features |
 | [`adding-a-feature.md`](./adding-a-feature.md) | A step-by-step recipe for shipping a new module end-to-end | You're creating a new module/view/feature from scratch |
 | [`security-review.md`](./security-review.md) | The last full audit: what was found, what was fixed, what is still open, and what was verified sound | You're touching secrets, IPC handlers, subprocess spawning, or anything that renders content the app didn't author |
@@ -45,11 +46,12 @@ There is **no test runner and no linter**. The only automated gate on the code i
 npm run typecheck   # runs typecheck:node (electron/**) AND typecheck:web (src/**)
 ```
 
-Two invariants it cannot see have their own scripts, and both should pass before declaring done:
+Three invariants it cannot see have their own scripts, and all should pass before declaring done:
 
 ```bash
 npm run routes -- --check   # a stray word in an agent's `description` hijacks every task run
 npm run hashes -- --check   # an unlisted default body never reaches a cloned workspace
+npm run guides -- --check   # a guide missing in one language, or pointing at a renamed screen
 ```
 
-Run all three after every change. See `CLAUDE.md` → Commands for the rest.
+Run all four after every change. See `CLAUDE.md` → Commands for the rest.

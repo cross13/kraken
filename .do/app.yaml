@@ -11,7 +11,9 @@ region: nyc
 services:
   - name: web
     # source_dir = Docker build context; dockerfile_path is always repo-root relative.
-    source_dir: website
+    # The context is the repo root because the site renders the shared guides/
+    # folder; the root .dockerignore narrows it to website/ + guides/.
+    source_dir: /
     dockerfile_path: website/Dockerfile
     github:
       repo: cross13/kraken

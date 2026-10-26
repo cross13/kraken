@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   X,
   Check,
@@ -11,6 +11,7 @@ import {
   Compass,
   Wand2,
   CircleDashed,
+  BookOpen,
 } from 'lucide-react';
 import { useWorkspace } from '../../stores/workspace';
 import { useUi } from '../../stores/ui';
@@ -18,8 +19,11 @@ import { useOrchestrator } from '../../stores/orchestrator';
 import { cn } from '../../lib/cn';
 import { OctoMascot } from '../wide/OctoMascot';
 import { Markdown } from '../Markdown';
+import { useSetupSteps } from '../../lib/useSetupSteps';
+import { GUIDES, GUIDE_CHROME } from '../../lib/guides';
+import { AREA_LABELS, GUIDE_AREAS } from '../../../guides/guides';
+import { LangToggle } from './GuideView';
 import {
-  buildSteps,
   TIPS,
   SKILL_REVIEW_SYSTEM,
   skillReviewPrompt,
@@ -41,39 +45,13 @@ import type { SkillMeta } from '../../../electron/shared/types';
  */
 export function QuickStart({ onClose }: { onClose: () => void }) {
   const root = useWorkspace((s) => s.root);
-  const agents = useWorkspace((s) => s.agents);
   const skills = useWorkspace((s) => s.skills);
-  const steering = useWorkspace((s) => s.steering);
-  const specs = useWorkspace((s) => s.specs);
   const pickWorkspace = useWorkspace((s) => s.pickWorkspace);
   const seedDefaults = useWorkspace((s) => s.seedDefaults);
   const openLibrary = useUi((s) => s.openLibrary);
   const setSurface = useUi((s) => s.setSurface);
-
-  const [backend, setBackend] = useState<'cli' | 'api'>('cli');
-  const [cli, setCli] = useState<{ found: boolean; version?: string }>({ found: false });
-  const [hasApiKey, setHasApiKey] = useState(false);
-  const [trackers, setTrackers] = useState(0);
+  const { steps, refresh } = useSetupSteps();
   const [busy, setBusy] = useState<StepId | null>(null);
-
-  const refresh = useCallback(async () => {
-    const [b, c, k] = await Promise.all([
-      window.octo.settings.getBackend().catch(() => 'cli' as const),
-      window.octo.cli.detect().catch(() => ({ found: false })),
-      window.octo.settings.hasApiKey().catch(() => false),
-    ]);
-    setBackend(b);
-    setCli(c);
-    setHasApiKey(k);
-    if (root) {
-      const p = await window.octo.tickets.listProviders(root).catch(() => []);
-      setTrackers(p.filter((x) => x.enabled).length);
-    }
-  }, [root]);
-
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
 
   // Captured, so leaving this mode never also closes whatever is behind it.
   useEffect(() => {
@@ -86,23 +64,6 @@ export function QuickStart({ onClose }: { onClose: () => void }) {
     window.addEventListener('keydown', onKey, true);
     return () => window.removeEventListener('keydown', onKey, true);
   }, [onClose]);
-
-  const steps = useMemo(
-    () =>
-      buildSteps({
-        root,
-        backend,
-        cliFound: cli.found,
-        cliVersion: cli.version,
-        hasApiKey,
-        agents,
-        skills,
-        steering,
-        specs,
-        trackers,
-      }),
-    [root, backend, cli, hasApiKey, agents, skills, steering, specs, trackers]
-  );
 
   const required = steps.filter((s) => !s.optional);
   const doneCount = required.filter((s) => s.done).length;
@@ -211,6 +172,8 @@ export function QuickStart({ onClose }: { onClose: () => void }) {
             />
           </div>
         </section>
+
+        <GuideIndex steps={steps} onOpen={onClose} />
 
         {/* tips */}
         <section>
@@ -362,6 +325,87 @@ function SkillWorkshop({ skills, root }: { skills: SkillMeta[]; root: string | n
             </button>
           </div>
         ))}
+      </div>
+    </section>
+  );
+}
+
+/**
+ * The guides — the same content as the public site's /guides. Opening one
+ * leaves Quick Start, since the guide's *Take me there* is about the app behind.
+ */
+function GuideIndex({ steps, onOpen }: { steps: Step[]; onOpen: () => void }) {
+  const lang = useUi((s) => s.guideLang);
+  const setLang = useUi((s) => s.setGuideLang);
+  const openOverlay = useUi((s) => s.openOverlay);
+  const t = GUIDE_CHROME[lang];
+  const list = GUIDES.byLang[lang];
+  const open = (id: string) => {
+    onOpen();
+    openOverlay({ kind: 'guide', id });
+  };
+
+  return (
+    <section>
+      <div className="flex items-start justify-between gap-3">
+        <SectionTitle icon={<BookOpen size={13} />}>{t.guides}</SectionTitle>
+        <LangToggle lang={lang} onChange={setLang} />
+      </div>
+      <ol className="k-cards">
+        {list
+          .filter((g) => g.track === 'start')
+          .map((g) => {
+            const done = g.check ? steps.find((s) => s.id === g.check)?.done : false;
+            return (
+              <li key={g.id}>
+                <button
+                  onClick={() => open(g.id)}
+                  className="w-full h-full text-left rounded-[13px] bg-card border border-ink-800 hover:border-ink-600 p-4 transition"
+                >
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span
+                      className={cn(
+                        'w-5 h-5 grid place-items-center rounded-full text-[10.5px] tabular-nums',
+                        done ? 'bg-good/15 text-ok' : 'bg-accent/12 text-accent'
+                      )}
+                    >
+                      {done ? <Check size={11} /> : g.order}
+                    </span>
+                    <span className="text-[10.5px] text-faint">
+                      {g.minutes} {t.min}
+                    </span>
+                  </div>
+                  <h3 className="text-[13px] font-medium text-ink-50 mb-1">{g.title}</h3>
+                  <p className="text-[11.5px] text-dim leading-snug">{g.summary}</p>
+                </button>
+              </li>
+            );
+          })}
+      </ol>
+      <div className="mt-5 grid gap-x-6 gap-y-4 grid-cols-[repeat(auto-fill,minmax(220px,1fr))]">
+        {GUIDE_AREAS.map((area) => {
+          const items = list.filter((g) => g.track === 'howto' && g.area === area);
+          if (!items.length) return null;
+          return (
+            <div key={area}>
+              <h4 className="text-[11px] font-semibold text-ink-400 mb-1.5">
+                {AREA_LABELS[area][lang]}
+              </h4>
+              <ul className="space-y-0.5">
+                {items.map((g) => (
+                  <li key={g.id}>
+                    <button
+                      onClick={() => open(g.id)}
+                      className="text-left text-[12px] text-dim hover:text-accent transition"
+                    >
+                      {g.title}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
       </div>
     </section>
   );

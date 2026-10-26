@@ -8,6 +8,7 @@ import { QuestionsView } from './views/QuestionsView';
 import { HookEditor } from './views/HookEditor';
 import { TicketDetailView } from './views/TicketDetailView';
 import { SourceControlView } from './sidebar/SourceControlView';
+import { GuideView } from './views/GuideView';
 
 const TITLES: Record<string, string> = {
   file: 'File',
@@ -18,12 +19,13 @@ const TITLES: Record<string, string> = {
   hook: 'Hook',
   ticket: 'Ticket',
   repo: 'Repository',
+  guide: 'Guide',
 };
 
 /**
  * The right slide-over host — detail views that used to be center tabs (file /
  * agent / skill / run viewers, open questions, hook editor, the global repo
- * panel) now open here on top of whatever surface is active.
+ * panel, the guides) now open here on top of whatever surface is active.
  */
 export function OverlayPanel() {
   const overlay = useUi((s) => s.overlay);
@@ -62,6 +64,7 @@ export function OverlayPanel() {
             <TicketDetailView ticket={overlay.ticket} provider={overlay.provider} />
           )}
           {overlay.kind === 'repo' && <SourceControlView variant="page" />}
+          {overlay.kind === 'guide' && <GuideView id={overlay.id} />}
         </div>
         </div>
       </div>

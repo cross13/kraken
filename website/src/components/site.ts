@@ -15,6 +15,7 @@ export const STILL =
 export const NAV = [
   { to: '/features', label: 'Features' },
   { to: '/workflow', label: 'The loop' },
+  { to: '/guides', label: 'Guides' },
   { to: '/docs', label: 'Docs' },
   { to: '/download', label: 'Download' },
 ] as const;

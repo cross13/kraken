@@ -9,6 +9,7 @@ import {
   Contrast,
   MessageSquare,
   MonitorSmartphone,
+  CircleHelp,
 } from 'lucide-react';
 import { useUi } from '../stores/ui';
 import { useWorkspace } from '../stores/workspace';
@@ -16,12 +17,13 @@ import { useOrchestrator } from '../stores/orchestrator';
 import { useTheme, THEME_LABEL } from '../stores/theme';
 import { CommandPalette } from './CommandPalette';
 import { cn } from '../lib/cn';
+import { GUIDES, currentGoto, guidesFor } from '../lib/guides';
 
 /**
  * The title bar — part of the dark app frame. A centered project pill opens
  * the ⌘K palette (Kiro-style); the right side keeps the compact status
  * controls: the single live-runs pill, branch (repo drawer), model/backend
- * (Settings), theme, and the Assistant toggle.
+ * (Settings), the guides for this screen, theme, and the Assistant toggle.
  */
 export function CommandBar() {
   const root = useWorkspace((s) => s.root);
@@ -31,6 +33,7 @@ export function CommandBar() {
   const openOverlay = useUi((s) => s.openOverlay);
   const toggleAssistant = useUi((s) => s.toggleAssistant);
   const assistantOpen = useUi((s) => s.assistantOpen);
+  const overlay = useUi((s) => s.overlay);
   const theme = useTheme((s) => s.theme);
   const cycleTheme = useTheme((s) => s.cycleTheme);
 
@@ -86,6 +89,14 @@ export function CommandBar() {
     const t = setInterval(read, 5000);
     return () => clearInterval(t);
   }, [root]);
+
+  // The `?` opens the guide about the screen on display, or the first-hour path
+  // when nothing is written about this one.
+  const openHelp = () => {
+    const lang = useUi.getState().guideLang;
+    const g = guidesFor(currentGoto(), lang)[0] ?? GUIDES.byLang[lang][0];
+    if (g) openOverlay({ kind: 'guide', id: g.id });
+  };
 
   const workspaceName = root ? root.split('/').filter(Boolean).pop() : null;
 
@@ -152,6 +163,13 @@ export function CommandBar() {
             title="Travel Display — a wide run monitor for a second screen"
           >
             <MonitorSmartphone size={15} />
+          </IconButton>
+          <IconButton
+            active={overlay?.kind === 'guide'}
+            onClick={openHelp}
+            title="Guides for this screen"
+          >
+            <CircleHelp size={15} />
           </IconButton>
           <IconButton onClick={cycleTheme} title={`Theme: ${THEME_LABEL[theme]}`}>
             <Contrast size={15} />

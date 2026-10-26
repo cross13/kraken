@@ -1,6 +1,7 @@
-import { spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
-import type { BranchCommit, BranchDiff, BranchFile, BranchSummary } from './shared/types.js';
+import { spawn, spawnSync } from 'node:child_process';
+import { existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
+import path from 'node:path';
+import type { BranchCommit, BranchDiff, BranchFile, BranchSummary, PrCheckout, PrFile } from './shared/types.js';
 
 export interface GitStatus {
   isRepo: boolean;
@@ -43,6 +44,36 @@ function emptyStatus(): GitStatus {
     upstream: null,
     hasOrigin: false,
   };
+}
+
+/** Per-file line counts and status for a diff range — what a file list shows. */
+function diffFiles(cwd: string, range: string[]): { files: BranchFile[]; added: number; deleted: number } {
+  const numstat = git(cwd, ['diff', '--numstat', ...range]);
+  const namestat = git(cwd, ['diff', '--name-status', ...range]);
+  const statusByPath = new Map<string, string>();
+  for (const line of namestat.stdout.split('\n')) {
+    if (!line.trim()) continue;
+    const [code, ...rest] = line.split('\t');
+    // Renames come through as `R100\told\tnew`; key on the destination.
+    statusByPath.set(rest[rest.length - 1], (code ?? '').charAt(0));
+  }
+
+  const files: BranchFile[] = [];
+  let added = 0;
+  let deleted = 0;
+  for (const line of numstat.stdout.split('\n')) {
+    if (!line.trim()) continue;
+    const [a, d, ...rest] = line.split('\t');
+    let p = rest[rest.length - 1];
+    if (p?.startsWith('"') && p.endsWith('"')) p = p.slice(1, -1);
+    const binary = a === '-' || d === '-';
+    const na = binary ? 0 : Number(a) || 0;
+    const nd = binary ? 0 : Number(d) || 0;
+    added += na;
+    deleted += nd;
+    files.push({ path: p, status: statusByPath.get(p) ?? 'M', added: na, deleted: nd, binary });
+  }
+  return { files, added, deleted };
 }
 
 export function gitStatus(cwd: string): GitStatus {
@@ -580,31 +611,7 @@ export function gitBranchSummary(cwd: string, preferredBase?: string): BranchSum
       return { hash: hash ?? '', subject: subject ?? '', author: author ?? '', date: date ?? '' };
     });
 
-  const numstat = git(cwd, ['diff', '--numstat', range]);
-  const namestat = git(cwd, ['diff', '--name-status', range]);
-  const statusByPath = new Map<string, string>();
-  for (const line of namestat.stdout.split('\n')) {
-    if (!line.trim()) continue;
-    const [code, ...rest] = line.split('\t');
-    // Renames come through as `R100\told\tnew`; key on the destination.
-    statusByPath.set(rest[rest.length - 1], (code ?? '').charAt(0));
-  }
-
-  const files: BranchFile[] = [];
-  let added = 0;
-  let deleted = 0;
-  for (const line of numstat.stdout.split('\n')) {
-    if (!line.trim()) continue;
-    const [a, d, ...rest] = line.split('\t');
-    let p = rest[rest.length - 1];
-    if (p?.startsWith('"') && p.endsWith('"')) p = p.slice(1, -1);
-    const binary = a === '-' || d === '-';
-    const na = binary ? 0 : Number(a) || 0;
-    const nd = binary ? 0 : Number(d) || 0;
-    added += na;
-    deleted += nd;
-    files.push({ path: p, status: statusByPath.get(p) ?? 'M', added: na, deleted: nd, binary });
-  }
+  const { files, added, deleted } = diffFiles(cwd, [range]);
   files.sort((x, y) => y.added + y.deleted - (x.added + x.deleted));
 
   return { ok: true, branch, base, baseGuessed: guessed, commits, files, added, deleted, dirty };
@@ -657,4 +664,149 @@ export function gitBranchDiff(cwd: string, preferredBase?: string): BranchDiff {
     patch: truncated ? full.slice(0, REVIEW_PATCH_CAP) : full,
     truncated,
   };
+}
+
+// ---------- Pull request checkout (local review) ----------
+
+/**
+ * Async git for the slow, networked steps. `GIT_TERMINAL_PROMPT=0` turns a
+ * missing credential into an error instead of a prompt nobody can answer, and
+ * it settles on 'exit' rather than 'close': a helper that inherits the pipes
+ * (an ssh master, a credential daemon) can hold them open past git's own exit.
+ */
+function gitAsync(
+  cwd: string,
+  args: string[],
+  timeoutMs = 120_000
+): Promise<{ status: number | null; stdout: string; stderr: string }> {
+  return new Promise((resolve) => {
+    const child = spawn('git', args, {
+      cwd,
+      env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    let stdout = '';
+    let stderr = '';
+    const timer = setTimeout(() => {
+      stderr += `\ngit ${args[0]} timed out after ${Math.round(timeoutMs / 1000)}s`;
+      child.kill('SIGTERM');
+    }, timeoutMs);
+    child.stdout.setEncoding('utf8').on('data', (d: string) => (stdout += d));
+    child.stderr.setEncoding('utf8').on('data', (d: string) => (stderr += d));
+    child.on('error', (err) => {
+      clearTimeout(timer);
+      resolve({ status: null, stdout, stderr: err.message });
+    });
+    child.on('exit', (code) => {
+      clearTimeout(timer);
+      // let the last buffered chunk land before resolving
+      setImmediate(() => resolve({ status: code, stdout, stderr }));
+    });
+  });
+}
+
+/** Past this a file's diff is listed but not inlined — same rule GitHub applies. */
+const FILE_PATCH_CAP = 400_000;
+
+/** Split a unified diff into each file's hunks (from the first `@@`), keyed by new path. */
+function splitPatch(full: string): Map<string, string> {
+  const out = new Map<string, string>();
+  for (const chunk of full.split(/^(?=diff --git )/m)) {
+    if (!chunk.startsWith('diff --git ')) continue;
+    const plus = chunk.match(/^\+\+\+ b\/(.+)$/m)?.[1];
+    const minus = chunk.match(/^--- a\/(.+)$/m)?.[1];
+    const file = plus ?? minus;
+    if (!file) continue;
+    const hunks = chunk.indexOf('\n@@');
+    if (hunks < 0) continue;
+    out.set(file.replace(/\t$/, ''), chunk.slice(hunks + 1).replace(/\n$/, ''));
+  }
+  return out;
+}
+
+const prRefs = (n: number) => ({ head: `refs/octo/pr/${n}/head`, base: `refs/octo/pr/${n}/base` });
+
+/**
+ * Check a pull request out locally so it can be read like any other code: the
+ * PR head and its base are fetched into private refs (`refs/octo/pr/<n>/*`,
+ * never a branch the user sees) and the head is checked out, detached, into
+ * its own worktree at `dir`. The workspace's own checkout is never touched.
+ *
+ * The diff is `merge-base..head` — the same three-dot comparison GitHub shows
+ * — with renames off, so every path is a plain added/modified/deleted file.
+ */
+export async function gitPrCheckout(
+  cwd: string,
+  number: number,
+  baseBranch: string,
+  dir: string
+): Promise<PrCheckout> {
+  const fail = (error: string): PrCheckout => ({ ok: false, dir: null, head: null, base: null, files: [], error });
+  if (!cwd || !existsSync(cwd)) return fail('Workspace not found.');
+  const refs = prRefs(number);
+
+  const fetch = await gitAsync(cwd, [
+    'fetch',
+    '--no-tags',
+    'origin',
+    `+refs/pull/${number}/head:${refs.head}`,
+    `+refs/heads/${baseBranch}:${refs.base}`,
+  ]);
+  if (fetch.status !== 0) return fail(fetch.stderr.trim() || `Could not fetch pull request #${number}.`);
+
+  const head = git(cwd, ['rev-parse', refs.head]).stdout.trim();
+  const mb = git(cwd, ['merge-base', refs.base, refs.head]);
+  const base = mb.stdout.trim();
+  if (!head || mb.status !== 0 || !base) return fail(mb.stderr.trim() || 'The pull request has no common history with its base.');
+
+  // Reuse the PR's worktree when it is still one; otherwise start it over.
+  let ready = false;
+  if (existsSync(path.join(dir, '.git'))) {
+    const co = await gitAsync(dir, ['checkout', '--detach', '--force', head]);
+    ready = co.status === 0;
+  }
+  if (!ready) {
+    if (existsSync(dir)) rmSync(dir, { recursive: true, force: true });
+    git(cwd, ['worktree', 'prune']);
+    mkdirSync(path.dirname(dir), { recursive: true });
+    const add = await gitAsync(cwd, ['worktree', 'add', '--detach', '--force', dir, head]);
+    if (add.status !== 0) return fail(add.stderr.trim() || 'Could not create the review worktree.');
+  }
+
+  const { files } = diffFiles(cwd, ['--no-renames', base, head]);
+  const diff = await gitAsync(cwd, ['diff', '--no-color', '--no-renames', '--unified=3', base, head], 60_000);
+  if (diff.status !== 0) return fail(diff.stderr.trim() || 'Could not read the pull request diff.');
+  const patches = splitPatch(diff.stdout);
+  const out: PrFile[] = files.map((f) => {
+    const patch = f.binary ? undefined : patches.get(f.path);
+    return {
+      path: f.path,
+      status: f.status,
+      added: f.added,
+      deleted: f.deleted,
+      patch: patch && patch.length <= FILE_PATCH_CAP ? patch : undefined,
+    };
+  });
+  return { ok: true, dir, head, base, files: out };
+}
+
+/**
+ * Drop the review worktrees (and private refs) of pull requests that are no
+ * longer open. `root` holds one `pr-<n>` directory per checked-out PR.
+ */
+export function gitPrCheckoutPrune(cwd: string, root: string, keep: number[]): void {
+  if (!cwd || !existsSync(cwd) || !existsSync(root)) return;
+  const keepSet = new Set(keep);
+  for (const name of readdirSync(root)) {
+    const n = Number(name.match(/^pr-(\d+)$/)?.[1]);
+    if (!n || keepSet.has(n)) continue;
+    const dir = path.join(root, name);
+    if (git(cwd, ['worktree', 'remove', '--force', dir], 60_000).status !== 0) {
+      rmSync(dir, { recursive: true, force: true });
+    }
+    const refs = prRefs(n);
+    git(cwd, ['update-ref', '-d', refs.head]);
+    git(cwd, ['update-ref', '-d', refs.base]);
+  }
+  git(cwd, ['worktree', 'prune']);
 }

@@ -18,5 +18,5 @@
       "@/*": ["src/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "electron/preload.ts", "electron/shared/**/*.ts"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "electron/preload.ts", "electron/shared/**/*.ts", "guides/**/*.ts"]
 }

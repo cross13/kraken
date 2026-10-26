@@ -15,6 +15,7 @@
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
     "hashes": "node scripts/seed-hashes.mjs",
     "routes": "node scripts/route-check.mjs",
+    "guides": "node scripts/guides-check.mjs",
     "icon": "electron scripts/render-icon.mjs",
     "postinstall": "electron-builder install-app-deps",
     "package:mac": "npm run build && electron-builder --mac --dir",

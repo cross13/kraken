@@ -1,4 +1,4 @@
-import { Home, FileCode2, Activity, LibraryBig } from 'lucide-react';
+import { Home, FileCode2, Activity, LibraryBig, GraduationCap } from 'lucide-react';
 import { useUi, type Surface } from '../stores/ui';
 import { useOrchestrator } from '../stores/orchestrator';
 import { OctoMark } from './OctoMark';
@@ -9,9 +9,10 @@ const NAV: { surface: Surface; icon: React.ReactNode; label: string }[] = [
   { surface: 'spec', icon: <FileCode2 size={18} />, label: 'Spec' },
   { surface: 'activity', icon: <Activity size={18} />, label: 'Activity' },
   { surface: 'library', icon: <LibraryBig size={18} />, label: 'Library' },
+  { surface: 'learn', icon: <GraduationCap size={18} />, label: 'Learn — what do you want to work on?' },
 ];
 
-/** The whole left nav: the brand mark + four surfaces, on the app frame. */
+/** The whole left nav: the brand mark + the surfaces, on the app frame. */
 export function SurfaceNav() {
   const surface = useUi((s) => s.surface);
   const setSurface = useUi((s) => s.setSurface);

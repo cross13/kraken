@@ -227,8 +227,9 @@ the agent graph would treat the stale row as live and spin a finished task forev
   tags every run in the orchestrator registry and the DB. `review` groups with `audit` in the
   graph (both read the work; neither changes it).
 - Code review — `ReviewSeverity` (`blocker | major | minor | nit`), `ReviewFinding`, `CodeReview`
-  (`target` = `branch:<name>` or `pr:<n>`), `BranchDiff`, `PrFile`, `PrReviewComment` (a RIGHT-side
-  line), `SpecReviewStamp`.
+  (`target` = `branch:<name>` or `pr:<n>`), `BranchDiff`, `PrFile`, `PrCheckout` (a PR checked out
+  into a review worktree: `dir`, `head`, merge-base `base`, local `files`), `PrReviewComment` (a
+  RIGHT-side line), `SpecReviewStamp`.
 - `ActiveRun` / `FinishedRun` — the in-flight and recent-activity shapes used by the orchestrator
   store. See [`renderer.md`](./renderer.md).
 - `HookConfig`, `HookTrigger`, `HookFireContext`, `HookFireEvent`, `HookRunRow` — hooks.

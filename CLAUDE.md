@@ -37,18 +37,20 @@ npm run start        # preview the production build
 npm run typecheck    # runs BOTH typecheck:node and typecheck:web — use this before declaring done
 npm run routes       # per-task agent routing table; `-- --check` fails on a wrong pick
 npm run hashes       # SHIPPED_DEFAULT_HASHES for the current bundled bodies; `-- --check` in CI
+npm run guides       # the user guides index; `-- --check` fails on a missing translation / bad goto
 npm run package:mac  # build + electron-builder --mac --dir
 ```
 
 There is **no test runner and no linter** configured. `npm run typecheck` is the only
-automated gate for the code; always run it after edits. Two invariants it cannot see have their
-own scripts, and both should pass before declaring done: **`npm run routes -- --check`** (a stray
-word in an agent's `description` silently hijacks every task run) and
-**`npm run hashes -- --check`** (an unlisted default body never reaches a cloned workspace).
+automated gate for the code; always run it after edits. Three invariants it cannot see have their
+own scripts, and all should pass before declaring done: **`npm run routes -- --check`** (a stray
+word in an agent's `description` silently hijacks every task run),
+**`npm run hashes -- --check`** (an unlisted default body never reaches a cloned workspace), and
+**`npm run guides -- --check`** (a guide missing in one language or pointing at a renamed screen).
 
 Two separate TypeScript projects compile independently:
 - `tsconfig.node.json` → `electron/**` (main + preload + shared), Node types only.
-- `tsconfig.web.json` → `src/**` plus `electron/preload.ts` and `electron/shared/**`, DOM types.
+- `tsconfig.web.json` → `src/**` plus `electron/preload.ts`, `electron/shared/**` and `guides/**/*.ts`, DOM types.
 - Path alias `@/*` → `src/*` (renderer only).
 
 ## Architecture
@@ -133,8 +135,9 @@ results arrive through `claude.onEvent(handler)`.
   syntax colours from the theme tokens; only the file viewer uses the selectable `--syn-*` palette. The visual language is **frame + floating
   panels** (Kiro-style): `--rail` is the near-black app frame, surfaces float on it as rounded
   panels with a hairline ring; greys are neutral and the purple lives only in the accent.
-- **The brand mark *is* the mascot.** There is one drawing in the app — the chibi octopus samurai
-  (`wide/OctoMascot.tsx`) — at three levels of detail: `full` (≥64px), `simple` (40–64px) and
+- **The brand mark *is* the mascot.** There is one drawing in the app — **Mochi**, the cyberpunk
+  daifuku shared with the sibling `cross` project (`cross/Sources/CrossKit/Mascot.swift`, ported to
+  SVG in `wide/OctoMascot.tsx`) — at three levels of detail: `full` (≥64px), `simple` (40–64px) and
   `mark` (14–26px). **`components/OctoMark.tsx`** wraps the `mark` level and is the mark
   everywhere in the main window (nav rail, Assistant, spec flow, task runner, runs header, Home's
   hero, `OctoLoader`, the boot splash); it defaults to the colony's `work` face and takes
@@ -144,13 +147,12 @@ results arrive through `claude.onEvent(handler)`.
   by `npm run icon`) is now the **same creature**, inverted onto a green Signal tile — at 32px in a
   dock a dark tile with a thin rim disappears, so the icon is the palette's primary-button
   treatment. Its rounded corner is the one exception to Signal's radius 0: that silhouette is
-  imposed by macOS, not chosen. **`0ct0` is the wordmark** (the two zeros bracket the creature;
-  the trailing zero's green bar is the kabuto's brim) while `octo` stays the identifier everywhere
+  imposed by macOS, not chosen. **`0ct0` is the wordmark** while `octo` stays the identifier everywhere
   in code and on disk — `.octo/`, `window.octo`, `dev.octo.app` — so the relaunch moves no files.
   The sheet is in `design/brand/`. See `docs/renderer.md` → Brand.
-- **Layout** is the **four-surface shell** (`App.tsx`): `CommandBar` (brand + ⌘K
+- **Layout** is the **surface shell** (`App.tsx`): `CommandBar` (brand + ⌘K
   `CommandPalette` + the one live-runs pill + project/model status) → `SurfaceNav` (4 icons) →
-  one of **Home · Spec · Activity · Library**, plus the **Assistant** chat drawer (⌘J,
+  one of **Home · Spec · Activity · Library · Learn**, plus the **Assistant** chat drawer (⌘J,
   `AssistantDrawer`), the **Explorer** drawer (⌘⇧E), and a right slide-over **`OverlayPanel`**
   for detail views (file/agent/skill/run viewers, Open Questions, hook editor, the repo panel).
   There is **no global tab bar and no focus mode** — surfaces are singletons. **Quick Start**
@@ -253,6 +255,16 @@ results arrive through `claude.onEvent(handler)`.
   the minimum contract (injection can be switched off) and the bundled agents carry judgement, not
   format. The Running-Tasks **Library verification** panel resolves the chosen agent/skill back to
   the installed file (root `.claude/` vs global) so you can confirm what's actually in use.
+- **Guides are shared content** (`guides/<en|es>/*.md`, format in `guides/guides.ts`): the same
+  how-tos render in the app — the `?` in the command bar opens the one for the screen on display,
+  ⌘K searches them, Quick Start lists them, all in the `{kind:'guide'}` overlay with *Take me
+  there* and Quick Start's verified checks — and on the public site at `/guides` + `/es/guides`
+  (so the site's Docker build context is the repo root). A guide is documentation: change the
+  screen, update the guide (both languages). See `docs/renderer.md` → Guides. **Learn**
+  (`LearnView` + `lib/learn.ts`) is the interactive front: it asks *what do you want to work on?*,
+  matches free text to an intent locally, and lays out a path of guides with the action for each
+  step, ready-to-use examples (to Home's composer via `focusComposer(draft)` or the clipboard) and
+  one Claude action; *Ask Claude* sends the question with the guides as `pendingContext`.
 - **Markdown is a trust boundary, not just a formatter.** `lib/markdown.ts` feeds
   `dangerouslySetInnerHTML`, and its sources include text the app did not author — a tracker
   ticket's description and comments, run transcripts, agent/skill bodies from an opened workspace.
@@ -367,7 +379,11 @@ One read-only review run (`{kind:'review'}` → `code-reviewer`, `RunKind 'revie
 `code-review-format` skill's JSON shape, parsed by `parseReview`) over two targets: **Ship › Code
 review** (`CodeReviewPanel`) reviews the spec branch's `git:branch-diff` and writes `review.md` +
 `SpecMeta.review` (HEAD sha → *stale* after a new commit; advisory, never blocks the PR), and
-**Activity › Reviews** (`PrReviewStudio`) reviews any open PR from `github:pr-files`. Posting back
+**Activity › Reviews** (`PrReviewStudio`) reviews any open PR **checked out locally** —
+`git:pr-checkout` fetches it into private refs and a detached worktree under `userData/reviews/`
+(the workspace's branch is never touched), `DiffFiles` shows GitHub's *Files changed* from disk with
+findings inline, and the reviewer runs inside the worktree (`github:pr-files` is only the
+fallback). Review runs are `readOnly` (Read/Glob/Grep, enforced by CLI flags). Posting back
 is the ticket rule again — the exact body + inline comments are shown first, and
 `github:pr-review` only ever sends a `COMMENT`. See `docs/subsystems.md` → Code review.
 
@@ -390,16 +406,16 @@ Edge, ~2560×720), toggled from the CommandBar (`MonitorSmartphone` icon) or ⌘
 Display*. `createWideWindow()` opens a single `frame:false` second `BrowserWindow` (`wideWindow`),
 placed via the `screen` module on a non-primary display (`pickTravelDisplay()`; compact-bar
 fallback on the primary), loading the same bundle with a `#wide` hash so `src/main.tsx` renders
-`WideApp` instead of `App`. The window is **one colony**: every run in flight is an octopus — a
-**chibi samurai** (`wide/OctoMascot.tsx` — the same drawing the app's brand mark is made of,
-drawn entirely from theme variables so it re-skins with the app) — and everything the creature
-does means something: the **zone** it lives in is its spec,
+`WideApp` instead of `App`. The window is **one colony**: every run in flight is a **Mochi**
+(`wide/OctoMascot.tsx` — the same drawing the app's brand mark is made of; its body keeps Mochi's
+own lavender/cyan/magenta, and the light behind its visor comes from theme variables) — and
+everything the creature does means something: the **zone** it lives in is its spec,
 its **position** is whether it's moving (live work up top, blocked work sleeping lower-right), the
-dashed violet **leash** is what it waits on (`dependsOn`), its **face** is the status (blinking /
-violet-deciding / `zzz` queued / happy done / crossed-out failed), **its katana's pose is the
-verb** (cutting · sheathed · resting · *chiburi* · driven into the ground), and its **speech
-bubble** is the tool it's running right now (parsed back out of the live `tool` delta).
-`detail="simple"` drops the armour's fine work below ~40px. A **reef** below keeps the last finished runs; the
+dashed violet **leash** is what it waits on (`dependsOn`), **the light behind its visor is the
+status** (a scanning bar while working / violet sideways glance with thought bubbles while
+deciding / shut with `zzz` while queued / ^ ^ with sparkles when done / crossed out when failed),
+and its **speech bubble** is the tool it's running right now (parsed back out of the live `tool`
+delta). `detail="simple"` drops the halo and extras below ~64px. A **reef** below keeps the last finished runs; the
 header has the task-slot meter and a **quiet toggle** (`.k-quiet`, default-on under
 `prefers-reduced-motion`) that freezes every colony animation. Clicking a creature opens its full
 run detail on the left with the colony compressed beside it (*Esc* to go back).

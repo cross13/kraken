@@ -1,8 +1,12 @@
 {
   "pages": [
     {
+      "id": "page-0",
+      "name": "Mochi"
+    },
+    {
       "id": "page-1",
-      "name": "Pulpo"
+      "name": "Pulpo (exploración)"
     },
     {
       "id": "page-2",
@@ -10,6 +14,15 @@
     }
   ],
   "artboards": [
+    {
+      "file": "Mochi.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 1200,
+      "h": 800,
+      "page": "page-0",
+      "title": "Mochi — estados y niveles de detalle"
+    },
     {
       "file": "SamuraiOcto.dc.html",
       "x": 0,
@@ -106,7 +119,7 @@
       "y": 2160,
       "w": 2560,
       "h": 720,
-      "title": "La colonia con el samurái (A2)",
+      "title": "La colonia con Mochi",
       "page": "page-1"
     },
     {
@@ -160,7 +173,7 @@
       "y": 880,
       "w": 2560,
       "h": 720,
-      "title": "D — La colonia (mark geométrico)",
+      "title": "D — La colonia (Mochi)",
       "page": "page-2"
     },
     {
@@ -169,7 +182,7 @@
       "y": 880,
       "w": 2560,
       "h": 720,
-      "title": "D — Un pulpo abierto",
+      "title": "D — Una Mochi abierta",
       "page": "page-2"
     }
   ],

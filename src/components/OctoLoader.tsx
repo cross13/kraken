@@ -25,8 +25,8 @@ const MARK_SIZE = {
  * code shimmer and three pulsing dots. Use it for blocking/large loading
  * states; small inline spinners stay `Loader2`.
  *
- * `sm` is 44px and takes the simplified drawing; from `md` up the octopus is
- * big enough to wear the whole armour and swing the katana.
+ * `sm` is 44px and takes the simplified drawing; from `md` up Mochi is big
+ * enough for its halo and the extras around it.
  */
 export function OctoLoader({
   label,

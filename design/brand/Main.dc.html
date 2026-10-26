@@ -16,7 +16,27 @@
     .p { font: 400 12.5px/1.55 "Hanken Grotesk", system-ui, sans-serif; color: #C8C8C8; }
     .mono { font: 400 11.5px/1.4 "JetBrains Mono", ui-monospace, monospace; color: #A8A8A8; }
     .sect { border-top: 1px solid #393939; padding: 26px 40px; }
-  </style>
+  
+/* Mochi (design/mochi/mochi.py) */
+@keyframes mochi-scan { from { transform: translateX(-20px); } to { transform: translateX(104px); } }
+@keyframes mochi-look { 0%, 100% { transform: translateX(-2px); } 50% { transform: translateX(4px); } }
+@keyframes mochi-led { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+@keyframes mochi-flow { to { stroke-dashoffset: -16; } }
+@keyframes mochi-thought { 0%, 100% { opacity: 0.25; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-3px); } }
+@keyframes mochi-blink { 0%, 91%, 100% { transform: scaleY(1); } 93.5% { transform: scaleY(0.06); } 96% { transform: scaleY(1); } }
+@keyframes mochi-spark { 0%, 100% { opacity: 0.25; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } }
+.mochi-scan { animation: mochi-scan 1.1s linear infinite; }
+.mochi-look { animation: mochi-look 3s ease-in-out infinite; }
+.mochi-led { animation: mochi-led 1.8s ease-in-out infinite; }
+.mochi-led.fast { animation-duration: 0.5s; }
+.mochi-flow { animation: mochi-flow 1.4s linear infinite; }
+.mochi-thought { animation: mochi-thought 1.2s ease-in-out infinite; }
+.mochi-eyes { transform-box: view-box; transform-origin: 100px 109px; animation: mochi-blink 4.4s infinite; }
+.mochi-spark { transform-box: fill-box; transform-origin: 50% 50%; animation: mochi-spark 1.1s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .mochi-scan, .mochi-look, .mochi-led, .mochi-flow, .mochi-thought, .mochi-eyes, .mochi-spark { animation: none; }
+}
+</style>
 </helmet>
 
 <div style="width: 1440px; background: #1A1A1A; font-family: 'Hanken Grotesk', system-ui, sans-serif;">
@@ -33,63 +53,7 @@
   <div class="sect" style="display: flex; align-items: center; gap: 64px;">
     <div style="display: flex; align-items: flex-end; gap: 8px;">
       <div style="width: 132px; margin-bottom: -16px;">
-          <svg viewBox="0 0 120 122" style="display: block; width: 100%; height: auto; overflow: visible;" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <g fill="none" stroke="#8AD000" stroke-linecap="round">
-              <path d="M 31,88 C 26,99 24,108 29,112 C 32,114 35,111 34,107" stroke-width="8"></path>
-              <path d="M 43,92 C 40,102 39,111 43,115" stroke-width="7"></path>
-              <path d="M 55,94 C 54,104 53,112 56,116" stroke-width="6.4"></path>
-              <path d="M 67,94 C 68,104 69,112 66,116" stroke-width="6.4"></path>
-              <path d="M 79,92 C 82,102 83,111 79,115" stroke-width="7"></path>
-              <path d="M 91,88 C 99,86 105,82 101,75" stroke-width="7.6"></path>
-            </g>
-            <path d="M 24,80 C 24,38 40,18 60,18 C 80,18 96,38 96,80 C 96,89 84,94 60,94 C 36,94 24,89 24,80 Z" fill="#2A2A2A" stroke="#8AD000" stroke-width="3.5" stroke-linejoin="round"></path>
-            <path d="M 96,80 C 96,38 80,18 60,18 C 74,27 84,46 84,80 C 84,88 76,92 62,93.6 C 84,93.4 96,89 96,80 Z" fill="#000000" opacity="0.24"></path>
-            <ellipse cx="31" cy="72" rx="6" ry="3.6" fill="#76B900"></ellipse>
-            <ellipse cx="89" cy="72" rx="6" ry="3.6" fill="#76B900"></ellipse>
-            <ellipse cx="43" cy="56" rx="11.5" ry="13.5" fill="#C4F06A"></ellipse>
-            <circle cx="39.4" cy="50.5" r="3.9" fill="#FAFAFA"></circle>
-            <circle cx="47.2" cy="61.5" r="2" fill="#FAFAFA" opacity="0.75"></circle>
-            <ellipse cx="77" cy="56" rx="11.5" ry="13.5" fill="#C4F06A"></ellipse>
-            <circle cx="73.4" cy="50.5" r="3.9" fill="#FAFAFA"></circle>
-            <circle cx="81.2" cy="61.5" r="2" fill="#FAFAFA" opacity="0.75"></circle>
-            <path d="M 54,78 C 56.5,83 63.5,83 66,78" fill="none" stroke="#C4F06A" stroke-width="3" stroke-linecap="round"></path>
-            <path d="M 47,84 L 73,84 L 71,93 L 49,93 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="1.8" stroke-linejoin="round"></path>
-            <path d="M 55,88 L 65,88" stroke="#C4F06A" stroke-width="1.4" opacity="0.8"></path>
-            <g fill="#1A1A1A" stroke="#8AD000" stroke-width="1.6" stroke-linejoin="round">
-              <path d="M 23,59 L 9,62 L 7,72 L 23,70 Z"></path>
-              <path d="M 97,59 L 111,62 L 113,72 L 97,70 Z"></path>
-              <path d="M 23,70 L 7,73 L 6,84 L 24,81 Z"></path>
-              <path d="M 97,70 L 113,73 L 114,84 L 96,81 Z"></path>
-            </g>
-            <g fill="none" stroke="#C4F06A" stroke-width="1.5" stroke-linecap="round" opacity="0.9">
-              <path d="M 12,64 L 12,69 M 17,63 L 17,68 M 11,75 L 11,80 M 16,74 L 16,79"></path>
-              <path d="M 108,64 L 108,69 M 103,63 L 103,68 M 109,75 L 109,80 M 104,74 L 104,79"></path>
-            </g>
-            <path d="M 25,45 L 11,41 L 9,59 L 24,59 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="1.8" stroke-linejoin="round"></path>
-            <path d="M 95,45 L 109,41 L 111,59 L 96,59 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="1.8" stroke-linejoin="round"></path>
-            <circle cx="16" cy="50" r="3.4" fill="#C4F06A"></circle>
-            <circle cx="104" cy="50" r="3.4" fill="#C4F06A"></circle>
-            <path d="M 25,50 C 25,29 40,15 60,15 C 80,15 95,29 95,50 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="2" stroke-linejoin="round"></path>
-            <path d="M 60,15 L 60,49" stroke="#000000" stroke-width="1.5" opacity="0.45"></path>
-            <circle cx="60" cy="20" r="3.2" fill="#C4F06A"></circle>
-            <g fill="#C4F06A" opacity="0.85">
-              <circle cx="38" cy="34" r="1.5"></circle>
-              <circle cx="47" cy="25" r="1.5"></circle>
-              <circle cx="73" cy="25" r="1.5"></circle>
-              <circle cx="82" cy="34" r="1.5"></circle>
-            </g>
-            <path d="M 19,49 L 101,49 L 96,59 L 24,59 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="1.8" stroke-linejoin="round"></path>
-            <path d="M 51,49 C 43,37 35,25 33,10 C 39,19 50,31 56,43 Z" fill="#C4F06A"></path>
-            <path d="M 69,49 C 77,37 85,25 87,10 C 81,19 70,31 64,43 Z" fill="#C4F06A"></path>
-            <circle cx="60" cy="44" r="5" fill="#1A1A1A" stroke="#C4F06A" stroke-width="1.6"></circle>
-            <g transform="rotate(-6 100 76)">
-              <path d="M 97,79 L 103,74 L 119,20 L 113,17 Z" fill="#F2F2F2" stroke="#848484" stroke-width="1.4" stroke-linejoin="round"></path>
-              <path d="M 100,76 L 115,20" stroke="#FAFAFA" stroke-width="1.2" opacity="0.85"></path>
-              <path d="M 94,80 L 104,72 L 109,78 L 99,86 Z" fill="#C4F06A"></path>
-              <path d="M 89,88 L 97,81 L 102,87 L 94,94 Z" fill="#1A1A1A"></path>
-              <path d="M 91,88 L 96,93 M 94,85 L 99,90" stroke="#C4F06A" stroke-width="1.4" opacity="0.7"></path>
-            </g>
-          </svg>
+          <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"  style="display: block; width: 100%; height: auto; overflow: visible;" aria-hidden="true"><defs><linearGradient id="skin-Maindc1" x1="100" y1="62" x2="100" y2="173" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFFBFF"/><stop offset="0.6" stop-color="#EDE4FF"/><stop offset="1" stop-color="#C4B3EE"/></linearGradient><linearGradient id="rim-Maindc1" x1="30" y1="110" x2="170" y2="110" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#3EF0FF" stop-opacity="0.9"/><stop offset="1" stop-color="#FF3EA5" stop-opacity="0.9"/></linearGradient><clipPath id="visor-Maindc1"><rect x="50" y="90" width="100" height="38" rx="19"/></clipPath><filter id="glow-Maindc1" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3"/></filter><filter id="halo-Maindc1" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="14"/></filter></defs><ellipse cx="100" cy="128" rx="64" ry="46" fill="#C4F06A" opacity="0.3" filter="url(#halo-Maindc1)"/><ellipse cx="100" cy="177" rx="62" ry="6" fill="#C4F06A" opacity="0.4"/><path d="M 110,64 C 112,52 116,46 124,40" fill="none" stroke="#2E2850" stroke-width="3.2" stroke-linecap="round"/><g class="mochi-led fast"><circle cx="125" cy="39" r="9" fill="#C4F06A" opacity="0.28"/><circle cx="125" cy="39" r="4.6" fill="#C4F06A"/></g><path d="M 30,150 C 30,96 60,62 100,62 C 140,62 170,96 170,150 C 170,168 150,173 100,173 C 50,173 30,168 30,150 Z" fill="url(#skin-Maindc1)" stroke="url(#rim-Maindc1)" stroke-width="2.6"/><ellipse cx="68" cy="82" rx="13" ry="5.5" fill="#fff" opacity="0.9" transform="rotate(-30 68 82)"/><path class="mochi-flow" d="M 38,152 L 52,152 L 60,160 L 72,160 M 162,152 L 148,152 L 140,160 L 128,160" fill="none" stroke="#2FD6E8" stroke-width="1.7" stroke-dasharray="5 3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/><circle cx="72" cy="160" r="2.4" fill="#2FD6E8"/><circle cx="128" cy="160" r="2.4" fill="#2FD6E8"/><rect x="164" y="122" width="9" height="17" rx="2.5" fill="#2E2850"/><rect x="166" y="125" width="5" height="3" rx="1" fill="#3EF0FF"/><rect x="166" y="131" width="5" height="3" rx="1" fill="#FF3EA5"/><rect x="55" y="134" width="15" height="5" rx="2.5" fill="#FF3EA5" opacity="0.6"/><rect x="130" y="134" width="15" height="5" rx="2.5" fill="#FF3EA5" opacity="0.6"/><rect x="50" y="90" width="100" height="38" rx="19" fill="#120F22" stroke="#2E2850" stroke-width="2"/><g clip-path="url(#visor-Maindc1)"><g filter="url(#glow-Maindc1)"><rect class="mochi-scan" x="50" y="90" width="16" height="38" fill="#C4F06A" opacity="0.35"/><rect x="73" y="104" width="14" height="9" rx="3" fill="#C4F06A"/><rect x="113" y="104" width="14" height="9" rx="3" fill="#C4F06A"/></g><rect class="mochi-scan" x="50" y="90" width="16" height="38" fill="#C4F06A" opacity="0.35"/><rect x="73" y="104" width="14" height="9" rx="3" fill="#C4F06A"/><rect x="113" y="104" width="14" height="9" rx="3" fill="#C4F06A"/></g><path d="M 62,96 L 82,96" fill="none" stroke="#fff" stroke-opacity="0.22" stroke-width="2" stroke-linecap="round"/><path d="M 92,140 Q 96,144 100,140 Q 104,144 108,140" fill="none" stroke="#4A3F6B" stroke-width="2.6" stroke-linecap="round"/></svg>
       </div>
       <div style="font: 700 118px/0.78 'Space Grotesk', system-ui, sans-serif; letter-spacing: -0.045em; color: #F2F2F2;">ct</div>
       <div style="width: 91px; margin-left: 3px;">
@@ -101,7 +65,7 @@
     </div>
     <div style="max-width: 420px; display: flex; flex-direction: column; gap: 12px;">
       <div class="h">Los dos ceros riman</div>
-      <div class="p">El primero es la criatura: el pulpo samurái que ya vive en la app, el mismo dibujo del que está hecha la marca en el riel, en el visor de flota y en el splash. El segundo es su abstracción — la barra verde es el ala del kabuto, cortando el cero igual que el ala corta la cabeza.</div>
+      <div class="p">El primero es la criatura: Mochi, el daifuku ciberpunk que comparten Octo y Cross — el mismo dibujo del que está hecha la marca en el riel, en el visor de flota y en el splash. El segundo es su abstracción — la barra verde es el visor de Mochi, cruzando el cero igual que el visor cruza el cuerpo.</div>
       <div class="p">El nombre y el dibujo dejan de ser dos cosas que hay que explicar juntas.</div>
     </div>
   </div>
@@ -117,111 +81,22 @@
       <!-- full -->
       <div style="border: 1px solid #393939; padding: 26px; display: flex; align-items: center; gap: 26px;">
         <div style="width: 108px; flex-shrink: 0; padding: 8px 12px;">
-          <svg viewBox="0 0 120 122" style="display: block; width: 100%; height: auto; overflow: visible;" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <g fill="none" stroke="#8AD000" stroke-linecap="round">
-              <path d="M 31,88 C 26,99 24,108 29,112 C 32,114 35,111 34,107" stroke-width="8"></path>
-              <path d="M 43,92 C 40,102 39,111 43,115" stroke-width="7"></path>
-              <path d="M 55,94 C 54,104 53,112 56,116" stroke-width="6.4"></path>
-              <path d="M 67,94 C 68,104 69,112 66,116" stroke-width="6.4"></path>
-              <path d="M 79,92 C 82,102 83,111 79,115" stroke-width="7"></path>
-              <path d="M 91,88 C 99,86 105,82 101,75" stroke-width="7.6"></path>
-            </g>
-            <path d="M 24,80 C 24,38 40,18 60,18 C 80,18 96,38 96,80 C 96,89 84,94 60,94 C 36,94 24,89 24,80 Z" fill="#2A2A2A" stroke="#8AD000" stroke-width="3.5" stroke-linejoin="round"></path>
-            <path d="M 96,80 C 96,38 80,18 60,18 C 74,27 84,46 84,80 C 84,88 76,92 62,93.6 C 84,93.4 96,89 96,80 Z" fill="#000000" opacity="0.24"></path>
-            <ellipse cx="31" cy="72" rx="6" ry="3.6" fill="#76B900"></ellipse>
-            <ellipse cx="89" cy="72" rx="6" ry="3.6" fill="#76B900"></ellipse>
-            <ellipse cx="43" cy="56" rx="11.5" ry="13.5" fill="#C4F06A"></ellipse>
-            <circle cx="39.4" cy="50.5" r="3.9" fill="#FAFAFA"></circle>
-            <circle cx="47.2" cy="61.5" r="2" fill="#FAFAFA" opacity="0.75"></circle>
-            <ellipse cx="77" cy="56" rx="11.5" ry="13.5" fill="#C4F06A"></ellipse>
-            <circle cx="73.4" cy="50.5" r="3.9" fill="#FAFAFA"></circle>
-            <circle cx="81.2" cy="61.5" r="2" fill="#FAFAFA" opacity="0.75"></circle>
-            <path d="M 54,78 C 56.5,83 63.5,83 66,78" fill="none" stroke="#C4F06A" stroke-width="3" stroke-linecap="round"></path>
-            <path d="M 47,84 L 73,84 L 71,93 L 49,93 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="1.8" stroke-linejoin="round"></path>
-            <path d="M 55,88 L 65,88" stroke="#C4F06A" stroke-width="1.4" opacity="0.8"></path>
-            <g fill="#1A1A1A" stroke="#8AD000" stroke-width="1.6" stroke-linejoin="round">
-              <path d="M 23,59 L 9,62 L 7,72 L 23,70 Z"></path>
-              <path d="M 97,59 L 111,62 L 113,72 L 97,70 Z"></path>
-              <path d="M 23,70 L 7,73 L 6,84 L 24,81 Z"></path>
-              <path d="M 97,70 L 113,73 L 114,84 L 96,81 Z"></path>
-            </g>
-            <g fill="none" stroke="#C4F06A" stroke-width="1.5" stroke-linecap="round" opacity="0.9">
-              <path d="M 12,64 L 12,69 M 17,63 L 17,68 M 11,75 L 11,80 M 16,74 L 16,79"></path>
-              <path d="M 108,64 L 108,69 M 103,63 L 103,68 M 109,75 L 109,80 M 104,74 L 104,79"></path>
-            </g>
-            <path d="M 25,45 L 11,41 L 9,59 L 24,59 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="1.8" stroke-linejoin="round"></path>
-            <path d="M 95,45 L 109,41 L 111,59 L 96,59 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="1.8" stroke-linejoin="round"></path>
-            <circle cx="16" cy="50" r="3.4" fill="#C4F06A"></circle>
-            <circle cx="104" cy="50" r="3.4" fill="#C4F06A"></circle>
-            <path d="M 25,50 C 25,29 40,15 60,15 C 80,15 95,29 95,50 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="2" stroke-linejoin="round"></path>
-            <path d="M 60,15 L 60,49" stroke="#000000" stroke-width="1.5" opacity="0.45"></path>
-            <circle cx="60" cy="20" r="3.2" fill="#C4F06A"></circle>
-            <g fill="#C4F06A" opacity="0.85">
-              <circle cx="38" cy="34" r="1.5"></circle>
-              <circle cx="47" cy="25" r="1.5"></circle>
-              <circle cx="73" cy="25" r="1.5"></circle>
-              <circle cx="82" cy="34" r="1.5"></circle>
-            </g>
-            <path d="M 19,49 L 101,49 L 96,59 L 24,59 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="1.8" stroke-linejoin="round"></path>
-            <path d="M 51,49 C 43,37 35,25 33,10 C 39,19 50,31 56,43 Z" fill="#C4F06A"></path>
-            <path d="M 69,49 C 77,37 85,25 87,10 C 81,19 70,31 64,43 Z" fill="#C4F06A"></path>
-            <circle cx="60" cy="44" r="5" fill="#1A1A1A" stroke="#C4F06A" stroke-width="1.6"></circle>
-            <g transform="rotate(-6 100 76)">
-              <path d="M 97,79 L 103,74 L 119,20 L 113,17 Z" fill="#F2F2F2" stroke="#848484" stroke-width="1.4" stroke-linejoin="round"></path>
-              <path d="M 100,76 L 115,20" stroke="#FAFAFA" stroke-width="1.2" opacity="0.85"></path>
-              <path d="M 94,80 L 104,72 L 109,78 L 99,86 Z" fill="#C4F06A"></path>
-              <path d="M 89,88 L 97,81 L 102,87 L 94,94 Z" fill="#1A1A1A"></path>
-              <path d="M 91,88 L 96,93 M 94,85 L 99,90" stroke="#C4F06A" stroke-width="1.4" opacity="0.7"></path>
-            </g>
-          </svg>
+          <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"  style="display: block; width: 100%; height: auto; overflow: visible;" aria-hidden="true"><defs><linearGradient id="skin-Maindc2" x1="100" y1="62" x2="100" y2="173" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFFBFF"/><stop offset="0.6" stop-color="#EDE4FF"/><stop offset="1" stop-color="#C4B3EE"/></linearGradient><linearGradient id="rim-Maindc2" x1="30" y1="110" x2="170" y2="110" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#3EF0FF" stop-opacity="0.9"/><stop offset="1" stop-color="#FF3EA5" stop-opacity="0.9"/></linearGradient><clipPath id="visor-Maindc2"><rect x="50" y="90" width="100" height="38" rx="19"/></clipPath><filter id="glow-Maindc2" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3"/></filter><filter id="halo-Maindc2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="14"/></filter></defs><ellipse cx="100" cy="128" rx="64" ry="46" fill="#C4F06A" opacity="0.3" filter="url(#halo-Maindc2)"/><ellipse cx="100" cy="177" rx="62" ry="6" fill="#C4F06A" opacity="0.4"/><path d="M 110,64 C 112,52 116,46 124,40" fill="none" stroke="#2E2850" stroke-width="3.2" stroke-linecap="round"/><g class="mochi-led fast"><circle cx="125" cy="39" r="9" fill="#C4F06A" opacity="0.28"/><circle cx="125" cy="39" r="4.6" fill="#C4F06A"/></g><path d="M 30,150 C 30,96 60,62 100,62 C 140,62 170,96 170,150 C 170,168 150,173 100,173 C 50,173 30,168 30,150 Z" fill="url(#skin-Maindc2)" stroke="url(#rim-Maindc2)" stroke-width="2.6"/><ellipse cx="68" cy="82" rx="13" ry="5.5" fill="#fff" opacity="0.9" transform="rotate(-30 68 82)"/><path class="mochi-flow" d="M 38,152 L 52,152 L 60,160 L 72,160 M 162,152 L 148,152 L 140,160 L 128,160" fill="none" stroke="#2FD6E8" stroke-width="1.7" stroke-dasharray="5 3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/><circle cx="72" cy="160" r="2.4" fill="#2FD6E8"/><circle cx="128" cy="160" r="2.4" fill="#2FD6E8"/><rect x="164" y="122" width="9" height="17" rx="2.5" fill="#2E2850"/><rect x="166" y="125" width="5" height="3" rx="1" fill="#3EF0FF"/><rect x="166" y="131" width="5" height="3" rx="1" fill="#FF3EA5"/><rect x="55" y="134" width="15" height="5" rx="2.5" fill="#FF3EA5" opacity="0.6"/><rect x="130" y="134" width="15" height="5" rx="2.5" fill="#FF3EA5" opacity="0.6"/><rect x="50" y="90" width="100" height="38" rx="19" fill="#120F22" stroke="#2E2850" stroke-width="2"/><g clip-path="url(#visor-Maindc2)"><g filter="url(#glow-Maindc2)"><rect class="mochi-scan" x="50" y="90" width="16" height="38" fill="#C4F06A" opacity="0.35"/><rect x="73" y="104" width="14" height="9" rx="3" fill="#C4F06A"/><rect x="113" y="104" width="14" height="9" rx="3" fill="#C4F06A"/></g><rect class="mochi-scan" x="50" y="90" width="16" height="38" fill="#C4F06A" opacity="0.35"/><rect x="73" y="104" width="14" height="9" rx="3" fill="#C4F06A"/><rect x="113" y="104" width="14" height="9" rx="3" fill="#C4F06A"/></g><path d="M 62,96 L 82,96" fill="none" stroke="#fff" stroke-opacity="0.22" stroke-width="2" stroke-linecap="round"/><path d="M 92,140 Q 96,144 100,140 Q 104,144 108,140" fill="none" stroke="#4A3F6B" stroke-width="2.6" stroke-linecap="round"/></svg>
         </div>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           <div class="lbl">full · ≥ 64px</div>
-          <div class="p">Con katana, remaches, lacado y sombra de cel. La pose de la katana es el estado de la corrida.</div>
+          <div class="p">Con halo, circuitos, puerto de datos, cachetes y boca. La luz detrás del visor es el estado de la corrida: barrido mientras trabaja, mirada de costado mientras decide, ojos cerrados en cola, ^ ^ al terminar, cruces si falló.</div>
         </div>
       </div>
 
       <!-- simple -->
       <div style="border: 1px solid #393939; padding: 26px; display: flex; align-items: center; gap: 26px;">
         <div style="width: 60px; flex-shrink: 0; padding: 8px 12px;">
-          <svg viewBox="0 0 120 122" style="display: block; width: 100%; height: auto; overflow: visible;" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <g fill="none" stroke="#8AD000" stroke-linecap="round">
-              <path d="M 31,88 C 26,99 24,108 29,112 C 32,114 35,111 34,107" stroke-width="8"></path>
-              <path d="M 43,92 C 40,102 39,111 43,115" stroke-width="7"></path>
-              <path d="M 55,94 C 54,104 53,112 56,116" stroke-width="6.4"></path>
-              <path d="M 67,94 C 68,104 69,112 66,116" stroke-width="6.4"></path>
-              <path d="M 79,92 C 82,102 83,111 79,115" stroke-width="7"></path>
-              <path d="M 91,88 C 99,86 105,82 101,75" stroke-width="7.6"></path>
-            </g>
-            <path d="M 24,80 C 24,38 40,18 60,18 C 80,18 96,38 96,80 C 96,89 84,94 60,94 C 36,94 24,89 24,80 Z" fill="#2A2A2A" stroke="#8AD000" stroke-width="3.5" stroke-linejoin="round"></path>
-            <ellipse cx="43" cy="56" rx="11.5" ry="13.5" fill="#C4F06A"></ellipse>
-            <circle cx="39.4" cy="50.5" r="3.9" fill="#FAFAFA"></circle>
-            <ellipse cx="77" cy="56" rx="11.5" ry="13.5" fill="#C4F06A"></ellipse>
-            <circle cx="73.4" cy="50.5" r="3.9" fill="#FAFAFA"></circle>
-            <path d="M 54,78 C 56.5,83 63.5,83 66,78" fill="none" stroke="#C4F06A" stroke-width="3" stroke-linecap="round"></path>
-            <path d="M 47,84 L 73,84 L 71,93 L 49,93 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="1.8" stroke-linejoin="round"></path>
-            <g fill="#1A1A1A" stroke="#8AD000" stroke-width="1.6" stroke-linejoin="round">
-              <path d="M 23,59 L 9,62 L 7,72 L 23,70 Z"></path>
-              <path d="M 97,59 L 111,62 L 113,72 L 97,70 Z"></path>
-            </g>
-            <path d="M 25,45 L 11,41 L 9,59 L 24,59 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="1.8" stroke-linejoin="round"></path>
-            <path d="M 95,45 L 109,41 L 111,59 L 96,59 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="1.8" stroke-linejoin="round"></path>
-            <path d="M 25,50 C 25,29 40,15 60,15 C 80,15 95,29 95,50 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="2" stroke-linejoin="round"></path>
-            <circle cx="60" cy="20" r="3.2" fill="#C4F06A"></circle>
-            <path d="M 19,49 L 101,49 L 96,59 L 24,59 Z" fill="#1A1A1A" stroke="#8AD000" stroke-width="1.8" stroke-linejoin="round"></path>
-            <path d="M 51,49 C 43,37 35,25 33,10 C 39,19 50,31 56,43 Z" fill="#C4F06A"></path>
-            <path d="M 69,49 C 77,37 85,25 87,10 C 81,19 70,31 64,43 Z" fill="#C4F06A"></path>
-            <circle cx="60" cy="44" r="5" fill="#1A1A1A" stroke="#C4F06A" stroke-width="1.6"></circle>
-            <g transform="rotate(-6 100 76)">
-              <path d="M 97,79 L 103,74 L 119,20 L 113,17 Z" fill="#F2F2F2" stroke="#848484" stroke-width="1.4" stroke-linejoin="round"></path>
-              <path d="M 94,80 L 104,72 L 109,78 L 99,86 Z" fill="#C4F06A"></path>
-              <path d="M 89,88 L 97,81 L 102,87 L 94,94 Z" fill="#1A1A1A"></path>
-            </g>
-          </svg>
+          <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"  style="display: block; width: 100%; height: auto; overflow: visible;" aria-hidden="true"><defs><linearGradient id="skin-Maindc3" x1="100" y1="62" x2="100" y2="173" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFFBFF"/><stop offset="0.6" stop-color="#EDE4FF"/><stop offset="1" stop-color="#C4B3EE"/></linearGradient><linearGradient id="rim-Maindc3" x1="30" y1="110" x2="170" y2="110" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#3EF0FF" stop-opacity="0.9"/><stop offset="1" stop-color="#FF3EA5" stop-opacity="0.9"/></linearGradient><clipPath id="visor-Maindc3"><rect x="50" y="90" width="100" height="38" rx="19"/></clipPath><filter id="glow-Maindc3" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3"/></filter><filter id="halo-Maindc3" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="14"/></filter></defs><ellipse cx="100" cy="177" rx="62" ry="6" fill="#C4F06A" opacity="0.4"/><path d="M 110,64 C 112,52 116,46 124,40" fill="none" stroke="#2E2850" stroke-width="3.2" stroke-linecap="round"/><g class="mochi-led fast"><circle cx="125" cy="39" r="9" fill="#C4F06A" opacity="0.28"/><circle cx="125" cy="39" r="4.6" fill="#C4F06A"/></g><path d="M 30,150 C 30,96 60,62 100,62 C 140,62 170,96 170,150 C 170,168 150,173 100,173 C 50,173 30,168 30,150 Z" fill="url(#skin-Maindc3)" stroke="url(#rim-Maindc3)" stroke-width="2.6"/><ellipse cx="68" cy="82" rx="13" ry="5.5" fill="#fff" opacity="0.9" transform="rotate(-30 68 82)"/><path class="mochi-flow" d="M 38,152 L 52,152 L 60,160 L 72,160 M 162,152 L 148,152 L 140,160 L 128,160" fill="none" stroke="#2FD6E8" stroke-width="1.7" stroke-dasharray="5 3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/><circle cx="72" cy="160" r="2.4" fill="#2FD6E8"/><circle cx="128" cy="160" r="2.4" fill="#2FD6E8"/><rect x="164" y="122" width="9" height="17" rx="2.5" fill="#2E2850"/><rect x="166" y="125" width="5" height="3" rx="1" fill="#3EF0FF"/><rect x="166" y="131" width="5" height="3" rx="1" fill="#FF3EA5"/><rect x="55" y="134" width="15" height="5" rx="2.5" fill="#FF3EA5" opacity="0.6"/><rect x="130" y="134" width="15" height="5" rx="2.5" fill="#FF3EA5" opacity="0.6"/><rect x="50" y="90" width="100" height="38" rx="19" fill="#120F22" stroke="#2E2850" stroke-width="2"/><g clip-path="url(#visor-Maindc3)"><g filter="url(#glow-Maindc3)"><rect class="mochi-scan" x="50" y="90" width="16" height="38" fill="#C4F06A" opacity="0.35"/><rect x="73" y="104" width="14" height="9" rx="3" fill="#C4F06A"/><rect x="113" y="104" width="14" height="9" rx="3" fill="#C4F06A"/></g><rect class="mochi-scan" x="50" y="90" width="16" height="38" fill="#C4F06A" opacity="0.35"/><rect x="73" y="104" width="14" height="9" rx="3" fill="#C4F06A"/><rect x="113" y="104" width="14" height="9" rx="3" fill="#C4F06A"/></g><path d="M 62,96 L 82,96" fill="none" stroke="#fff" stroke-opacity="0.22" stroke-width="2" stroke-linecap="round"/><path d="M 92,140 Q 96,144 100,140 Q 104,144 108,140" fill="none" stroke="#4A3F6B" stroke-width="2.6" stroke-linecap="round"/></svg>
         </div>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           <div class="lbl">simple · 40–64px</div>
-          <div class="p">Cae el remache, el lacado fino y una capa de shikoro. Debajo de 40px eso deja de ser detalle y es ruido.</div>
+          <div class="p">Cae el halo y los extras (burbujas, destellos). Circuitos y cachetes todavía se leen a este tamaño.</div>
         </div>
       </div>
 
@@ -229,55 +104,15 @@
       <div style="border: 1px solid #393939; padding: 26px; display: flex; align-items: center; gap: 26px;">
         <div style="width: 60px; flex-shrink: 0; display: flex; align-items: flex-end; gap: 12px; padding: 8px 0;">
           <div style="width: 26px;">
-            <svg viewBox="0 0 120 122" style="display: block; width: 100%; height: auto; overflow: visible;" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <g fill="none" stroke="#8AD000" stroke-linecap="round">
-                <path d="M 31,88 C 26,99 24,108 29,112 C 32,114 35,111 34,107" stroke-width="8"></path>
-                <path d="M 43,92 C 40,102 39,111 43,115" stroke-width="7"></path>
-                <path d="M 55,94 C 54,104 53,112 56,116" stroke-width="6.4"></path>
-                <path d="M 67,94 C 68,104 69,112 66,116" stroke-width="6.4"></path>
-                <path d="M 79,92 C 82,102 83,111 79,115" stroke-width="7"></path>
-                <path d="M 89,88 C 94,99 96,108 91,112 C 88,114 85,111 86,107" stroke-width="8"></path>
-              </g>
-              <path d="M 24,80 C 24,38 40,18 60,18 C 80,18 96,38 96,80 C 96,89 84,94 60,94 C 36,94 24,89 24,80 Z" fill="#2A2A2A" stroke="#8AD000" stroke-width="4.6" stroke-linejoin="round"></path>
-              <ellipse cx="43" cy="56" rx="11.5" ry="13.5" fill="#C4F06A"></ellipse>
-              <ellipse cx="77" cy="56" rx="11.5" ry="13.5" fill="#C4F06A"></ellipse>
-              <g stroke="#8AD000" stroke-linejoin="round">
-                <path d="M 25,45 L 11,41 L 9,59 L 24,59 Z" fill="#1A1A1A" stroke-width="2.4"></path>
-                <path d="M 95,45 L 109,41 L 111,59 L 96,59 Z" fill="#1A1A1A" stroke-width="2.4"></path>
-                <path d="M 25,50 C 25,29 40,15 60,15 C 80,15 95,29 95,50 Z" fill="#1A1A1A" stroke-width="2.8"></path>
-                <path d="M 19,49 L 101,49 L 96,59 L 24,59 Z" fill="#1A1A1A" stroke-width="2.4"></path>
-              </g>
-              <path d="M 51,49 C 43,37 35,25 33,10 C 39,19 50,31 56,43 Z" fill="#C4F06A"></path>
-              <path d="M 69,49 C 77,37 85,25 87,10 C 81,19 70,31 64,43 Z" fill="#C4F06A"></path>
-            </svg>
+            <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"  style="display: block; width: 100%; height: auto; overflow: visible;" aria-hidden="true"><defs><linearGradient id="skin-Maindc4" x1="100" y1="62" x2="100" y2="173" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFFBFF"/><stop offset="0.6" stop-color="#EDE4FF"/><stop offset="1" stop-color="#C4B3EE"/></linearGradient><linearGradient id="rim-Maindc4" x1="30" y1="110" x2="170" y2="110" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#3EF0FF" stop-opacity="0.9"/><stop offset="1" stop-color="#FF3EA5" stop-opacity="0.9"/></linearGradient><clipPath id="visor-Maindc4"><rect x="50" y="90" width="100" height="38" rx="19"/></clipPath><filter id="glow-Maindc4" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3"/></filter><filter id="halo-Maindc4" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="14"/></filter></defs><ellipse cx="100" cy="177" rx="62" ry="6" fill="#C4F06A" opacity="0.4"/><path d="M 110,64 C 112,52 116,46 124,40" fill="none" stroke="#2E2850" stroke-width="6" stroke-linecap="round"/><g class="mochi-led fast"><circle cx="125" cy="39" r="8" fill="#C4F06A"/></g><path d="M 30,150 C 30,96 60,62 100,62 C 140,62 170,96 170,150 C 170,168 150,173 100,173 C 50,173 30,168 30,150 Z" fill="url(#skin-Maindc4)" stroke="url(#rim-Maindc4)" stroke-width="6"/><rect x="50" y="90" width="100" height="38" rx="19" fill="#120F22" stroke="#2E2850" stroke-width="3"/><g clip-path="url(#visor-Maindc4)"><g class="mochi-eyes"><rect x="74" y="100" width="12" height="18" rx="5" fill="#C4F06A"/><rect x="114" y="100" width="12" height="18" rx="5" fill="#C4F06A"/></g></g></svg>
           </div>
           <div style="width: 18px;">
-            <svg viewBox="0 0 120 122" style="display: block; width: 100%; height: auto; overflow: visible;" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <g fill="none" stroke="#8AD000" stroke-linecap="round">
-                <path d="M 31,88 C 26,99 24,108 29,112 C 32,114 35,111 34,107" stroke-width="8"></path>
-                <path d="M 43,92 C 40,102 39,111 43,115" stroke-width="7"></path>
-                <path d="M 55,94 C 54,104 53,112 56,116" stroke-width="6.4"></path>
-                <path d="M 67,94 C 68,104 69,112 66,116" stroke-width="6.4"></path>
-                <path d="M 79,92 C 82,102 83,111 79,115" stroke-width="7"></path>
-                <path d="M 89,88 C 94,99 96,108 91,112 C 88,114 85,111 86,107" stroke-width="8"></path>
-              </g>
-              <path d="M 24,80 C 24,38 40,18 60,18 C 80,18 96,38 96,80 C 96,89 84,94 60,94 C 36,94 24,89 24,80 Z" fill="#2A2A2A" stroke="#8AD000" stroke-width="4.6" stroke-linejoin="round"></path>
-              <ellipse cx="43" cy="56" rx="11.5" ry="13.5" fill="#C4F06A"></ellipse>
-              <ellipse cx="77" cy="56" rx="11.5" ry="13.5" fill="#C4F06A"></ellipse>
-              <g stroke="#8AD000" stroke-linejoin="round">
-                <path d="M 25,45 L 11,41 L 9,59 L 24,59 Z" fill="#1A1A1A" stroke-width="2.4"></path>
-                <path d="M 95,45 L 109,41 L 111,59 L 96,59 Z" fill="#1A1A1A" stroke-width="2.4"></path>
-                <path d="M 25,50 C 25,29 40,15 60,15 C 80,15 95,29 95,50 Z" fill="#1A1A1A" stroke-width="2.8"></path>
-                <path d="M 19,49 L 101,49 L 96,59 L 24,59 Z" fill="#1A1A1A" stroke-width="2.4"></path>
-              </g>
-              <path d="M 51,49 C 43,37 35,25 33,10 C 39,19 50,31 56,43 Z" fill="#C4F06A"></path>
-              <path d="M 69,49 C 77,37 85,25 87,10 C 81,19 70,31 64,43 Z" fill="#C4F06A"></path>
-            </svg>
+            <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"  style="display: block; width: 100%; height: auto; overflow: visible;" aria-hidden="true"><defs><linearGradient id="skin-Maindc5" x1="100" y1="62" x2="100" y2="173" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFFBFF"/><stop offset="0.6" stop-color="#EDE4FF"/><stop offset="1" stop-color="#C4B3EE"/></linearGradient><linearGradient id="rim-Maindc5" x1="30" y1="110" x2="170" y2="110" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#3EF0FF" stop-opacity="0.9"/><stop offset="1" stop-color="#FF3EA5" stop-opacity="0.9"/></linearGradient><clipPath id="visor-Maindc5"><rect x="50" y="90" width="100" height="38" rx="19"/></clipPath><filter id="glow-Maindc5" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3"/></filter><filter id="halo-Maindc5" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="14"/></filter></defs><ellipse cx="100" cy="177" rx="62" ry="6" fill="#C4F06A" opacity="0.4"/><path d="M 110,64 C 112,52 116,46 124,40" fill="none" stroke="#2E2850" stroke-width="6" stroke-linecap="round"/><g class="mochi-led fast"><circle cx="125" cy="39" r="8" fill="#C4F06A"/></g><path d="M 30,150 C 30,96 60,62 100,62 C 140,62 170,96 170,150 C 170,168 150,173 100,173 C 50,173 30,168 30,150 Z" fill="url(#skin-Maindc5)" stroke="url(#rim-Maindc5)" stroke-width="6"/><rect x="50" y="90" width="100" height="38" rx="19" fill="#120F22" stroke="#2E2850" stroke-width="3"/><g clip-path="url(#visor-Maindc5)"><g class="mochi-eyes"><rect x="74" y="100" width="12" height="18" rx="5" fill="#C4F06A"/><rect x="114" y="100" width="12" height="18" rx="5" fill="#C4F06A"/></g></g></svg>
           </div>
         </div>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           <div class="lbl">mark · 14–26px</div>
-          <div class="p">Brazos, cabeza, ojos y silueta del kabuto. Sin katana: una hoja saliendo de una casilla de 16px se lee como un artefacto, no como una espada. <b style="color:#ECECEC;">Por encima de ~40px no sirve:</b> el ala del kabuto parte los ojos en dos ranuras y las kuwagata se leen como antenas — sale un escarabajo, no un pulpo.</div>
+          <div class="p">Cuerpo, antena, visor y ojos, con trazos engrosados. Sin circuitos, cachetes ni boca: a 16px son una mancha. <b style="color:#ECECEC;">Por encima de ~40px no sirve:</b> sin boca ni cachetes Mochi pierde la cara y queda un casco.</div>
         </div>
       </div>
     </div>
@@ -294,27 +129,7 @@
         <div style="display: flex; flex-direction: column; gap: 10px; align-items: center;">
           <div style="width: 168px; height: 168px; background: linear-gradient(#8AD000, #76B900); border-radius: 36px; box-sizing: border-box; border: 1px solid rgba(15,20,0,0.28); display: flex; align-items: center; justify-content: center;">
             <div style="width: 110px;">
-              <svg viewBox="0 0 120 122" style="display: block; width: 100%; height: auto; overflow: visible;" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                <g fill="none" stroke="#0F1400" stroke-linecap="round">
-                  <path d="M 31,88 C 26,99 24,108 29,112 C 32,114 35,111 34,107" stroke-width="8"></path>
-                  <path d="M 43,92 C 40,102 39,111 43,115" stroke-width="7"></path>
-                  <path d="M 55,94 C 54,104 53,112 56,116" stroke-width="6.4"></path>
-                  <path d="M 67,94 C 68,104 69,112 66,116" stroke-width="6.4"></path>
-                  <path d="M 79,92 C 82,102 83,111 79,115" stroke-width="7"></path>
-                  <path d="M 89,88 C 94,99 96,108 91,112 C 88,114 85,111 86,107" stroke-width="8"></path>
-                </g>
-                <path d="M 24,80 C 24,38 40,18 60,18 C 80,18 96,38 96,80 C 96,89 84,94 60,94 C 36,94 24,89 24,80 Z" fill="#1A1A1A" stroke="#0F1400" stroke-width="4.6" stroke-linejoin="round"></path>
-                <ellipse cx="43" cy="56" rx="11.5" ry="13.5" fill="#8AD000"></ellipse>
-                <ellipse cx="77" cy="56" rx="11.5" ry="13.5" fill="#8AD000"></ellipse>
-                <g stroke="#0F1400" stroke-linejoin="round">
-                  <path d="M 25,45 L 11,41 L 9,59 L 24,59 Z" fill="#1A1A1A" stroke-width="2.4"></path>
-                  <path d="M 95,45 L 109,41 L 111,59 L 96,59 Z" fill="#1A1A1A" stroke-width="2.4"></path>
-                  <path d="M 25,50 C 25,29 40,15 60,15 C 80,15 95,29 95,50 Z" fill="#1A1A1A" stroke-width="2.8"></path>
-                  <path d="M 19,49 L 101,49 L 96,59 L 24,59 Z" fill="#1A1A1A" stroke-width="2.4"></path>
-                </g>
-                <path d="M 51,49 C 43,37 35,25 33,10 C 39,19 50,31 56,43 Z" fill="#8AD000"></path>
-                <path d="M 69,49 C 77,37 85,25 87,10 C 81,19 70,31 64,43 Z" fill="#8AD000"></path>
-              </svg>
+              <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"  style="display: block; width: 100%; height: auto; overflow: visible;" aria-hidden="true"><defs><linearGradient id="skin-Maindc6" x1="100" y1="62" x2="100" y2="173" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFFBFF"/><stop offset="0.6" stop-color="#EDE4FF"/><stop offset="1" stop-color="#C4B3EE"/></linearGradient><linearGradient id="rim-Maindc6" x1="30" y1="110" x2="170" y2="110" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#3EF0FF" stop-opacity="0.9"/><stop offset="1" stop-color="#FF3EA5" stop-opacity="0.9"/></linearGradient><clipPath id="visor-Maindc6"><rect x="50" y="90" width="100" height="38" rx="19"/></clipPath><filter id="glow-Maindc6" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3"/></filter><filter id="halo-Maindc6" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="14"/></filter></defs><ellipse cx="100" cy="128" rx="64" ry="46" fill="#C4F06A" opacity="0.3" filter="url(#halo-Maindc6)"/><ellipse cx="100" cy="177" rx="62" ry="6" fill="#C4F06A" opacity="0.4"/><path d="M 110,64 C 112,52 116,46 124,40" fill="none" stroke="#2E2850" stroke-width="3.2" stroke-linecap="round"/><g class="mochi-led fast"><circle cx="125" cy="39" r="9" fill="#C4F06A" opacity="0.28"/><circle cx="125" cy="39" r="4.6" fill="#C4F06A"/></g><path d="M 30,150 C 30,96 60,62 100,62 C 140,62 170,96 170,150 C 170,168 150,173 100,173 C 50,173 30,168 30,150 Z" fill="url(#skin-Maindc6)" stroke="url(#rim-Maindc6)" stroke-width="2.6"/><ellipse cx="68" cy="82" rx="13" ry="5.5" fill="#fff" opacity="0.9" transform="rotate(-30 68 82)"/><path class="mochi-flow" d="M 38,152 L 52,152 L 60,160 L 72,160 M 162,152 L 148,152 L 140,160 L 128,160" fill="none" stroke="#2FD6E8" stroke-width="1.7" stroke-dasharray="5 3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/><circle cx="72" cy="160" r="2.4" fill="#2FD6E8"/><circle cx="128" cy="160" r="2.4" fill="#2FD6E8"/><rect x="164" y="122" width="9" height="17" rx="2.5" fill="#2E2850"/><rect x="166" y="125" width="5" height="3" rx="1" fill="#3EF0FF"/><rect x="166" y="131" width="5" height="3" rx="1" fill="#FF3EA5"/><rect x="55" y="134" width="15" height="5" rx="2.5" fill="#FF3EA5" opacity="0.6"/><rect x="130" y="134" width="15" height="5" rx="2.5" fill="#FF3EA5" opacity="0.6"/><rect x="50" y="90" width="100" height="38" rx="19" fill="#120F22" stroke="#2E2850" stroke-width="2"/><g clip-path="url(#visor-Maindc6)"><g filter="url(#glow-Maindc6)"><rect class="mochi-scan" x="50" y="90" width="16" height="38" fill="#C4F06A" opacity="0.35"/><rect x="73" y="104" width="14" height="9" rx="3" fill="#C4F06A"/><rect x="113" y="104" width="14" height="9" rx="3" fill="#C4F06A"/></g><rect class="mochi-scan" x="50" y="90" width="16" height="38" fill="#C4F06A" opacity="0.35"/><rect x="73" y="104" width="14" height="9" rx="3" fill="#C4F06A"/><rect x="113" y="104" width="14" height="9" rx="3" fill="#C4F06A"/></g><path d="M 62,96 L 82,96" fill="none" stroke="#fff" stroke-opacity="0.22" stroke-width="2" stroke-linecap="round"/><path d="M 92,140 Q 96,144 100,140 Q 104,144 108,140" fill="none" stroke="#4A3F6B" stroke-width="2.6" stroke-linecap="round"/></svg>
             </div>
           </div>
           <div class="lbl">512</div>
@@ -323,27 +138,7 @@
         <div style="display: flex; flex-direction: column; gap: 10px; align-items: center;">
           <div style="width: 64px; height: 64px; background: linear-gradient(#8AD000, #76B900); border-radius: 14px; display: flex; align-items: center; justify-content: center;">
             <div style="width: 42px;">
-              <svg viewBox="0 0 120 122" style="display: block; width: 100%; height: auto; overflow: visible;" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                <g fill="none" stroke="#0F1400" stroke-linecap="round">
-                  <path d="M 31,88 C 26,99 24,108 29,112 C 32,114 35,111 34,107" stroke-width="8"></path>
-                  <path d="M 43,92 C 40,102 39,111 43,115" stroke-width="7"></path>
-                  <path d="M 55,94 C 54,104 53,112 56,116" stroke-width="6.4"></path>
-                  <path d="M 67,94 C 68,104 69,112 66,116" stroke-width="6.4"></path>
-                  <path d="M 79,92 C 82,102 83,111 79,115" stroke-width="7"></path>
-                  <path d="M 89,88 C 94,99 96,108 91,112 C 88,114 85,111 86,107" stroke-width="8"></path>
-                </g>
-                <path d="M 24,80 C 24,38 40,18 60,18 C 80,18 96,38 96,80 C 96,89 84,94 60,94 C 36,94 24,89 24,80 Z" fill="#1A1A1A" stroke="#0F1400" stroke-width="4.6" stroke-linejoin="round"></path>
-                <ellipse cx="43" cy="56" rx="11.5" ry="13.5" fill="#8AD000"></ellipse>
-                <ellipse cx="77" cy="56" rx="11.5" ry="13.5" fill="#8AD000"></ellipse>
-                <g stroke="#0F1400" stroke-linejoin="round">
-                  <path d="M 25,45 L 11,41 L 9,59 L 24,59 Z" fill="#1A1A1A" stroke-width="2.4"></path>
-                  <path d="M 95,45 L 109,41 L 111,59 L 96,59 Z" fill="#1A1A1A" stroke-width="2.4"></path>
-                  <path d="M 25,50 C 25,29 40,15 60,15 C 80,15 95,29 95,50 Z" fill="#1A1A1A" stroke-width="2.8"></path>
-                  <path d="M 19,49 L 101,49 L 96,59 L 24,59 Z" fill="#1A1A1A" stroke-width="2.4"></path>
-                </g>
-                <path d="M 51,49 C 43,37 35,25 33,10 C 39,19 50,31 56,43 Z" fill="#8AD000"></path>
-                <path d="M 69,49 C 77,37 85,25 87,10 C 81,19 70,31 64,43 Z" fill="#8AD000"></path>
-              </svg>
+              <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"  style="display: block; width: 100%; height: auto; overflow: visible;" aria-hidden="true"><defs><linearGradient id="skin-Maindc7" x1="100" y1="62" x2="100" y2="173" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFFBFF"/><stop offset="0.6" stop-color="#EDE4FF"/><stop offset="1" stop-color="#C4B3EE"/></linearGradient><linearGradient id="rim-Maindc7" x1="30" y1="110" x2="170" y2="110" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#3EF0FF" stop-opacity="0.9"/><stop offset="1" stop-color="#FF3EA5" stop-opacity="0.9"/></linearGradient><clipPath id="visor-Maindc7"><rect x="50" y="90" width="100" height="38" rx="19"/></clipPath><filter id="glow-Maindc7" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3"/></filter><filter id="halo-Maindc7" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="14"/></filter></defs><ellipse cx="100" cy="177" rx="62" ry="6" fill="#C4F06A" opacity="0.4"/><path d="M 110,64 C 112,52 116,46 124,40" fill="none" stroke="#2E2850" stroke-width="3.2" stroke-linecap="round"/><g class="mochi-led fast"><circle cx="125" cy="39" r="9" fill="#C4F06A" opacity="0.28"/><circle cx="125" cy="39" r="4.6" fill="#C4F06A"/></g><path d="M 30,150 C 30,96 60,62 100,62 C 140,62 170,96 170,150 C 170,168 150,173 100,173 C 50,173 30,168 30,150 Z" fill="url(#skin-Maindc7)" stroke="url(#rim-Maindc7)" stroke-width="2.6"/><ellipse cx="68" cy="82" rx="13" ry="5.5" fill="#fff" opacity="0.9" transform="rotate(-30 68 82)"/><path class="mochi-flow" d="M 38,152 L 52,152 L 60,160 L 72,160 M 162,152 L 148,152 L 140,160 L 128,160" fill="none" stroke="#2FD6E8" stroke-width="1.7" stroke-dasharray="5 3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/><circle cx="72" cy="160" r="2.4" fill="#2FD6E8"/><circle cx="128" cy="160" r="2.4" fill="#2FD6E8"/><rect x="164" y="122" width="9" height="17" rx="2.5" fill="#2E2850"/><rect x="166" y="125" width="5" height="3" rx="1" fill="#3EF0FF"/><rect x="166" y="131" width="5" height="3" rx="1" fill="#FF3EA5"/><rect x="55" y="134" width="15" height="5" rx="2.5" fill="#FF3EA5" opacity="0.6"/><rect x="130" y="134" width="15" height="5" rx="2.5" fill="#FF3EA5" opacity="0.6"/><rect x="50" y="90" width="100" height="38" rx="19" fill="#120F22" stroke="#2E2850" stroke-width="2"/><g clip-path="url(#visor-Maindc7)"><g filter="url(#glow-Maindc7)"><rect class="mochi-scan" x="50" y="90" width="16" height="38" fill="#C4F06A" opacity="0.35"/><rect x="73" y="104" width="14" height="9" rx="3" fill="#C4F06A"/><rect x="113" y="104" width="14" height="9" rx="3" fill="#C4F06A"/></g><rect class="mochi-scan" x="50" y="90" width="16" height="38" fill="#C4F06A" opacity="0.35"/><rect x="73" y="104" width="14" height="9" rx="3" fill="#C4F06A"/><rect x="113" y="104" width="14" height="9" rx="3" fill="#C4F06A"/></g><path d="M 62,96 L 82,96" fill="none" stroke="#fff" stroke-opacity="0.22" stroke-width="2" stroke-linecap="round"/><path d="M 92,140 Q 96,144 100,140 Q 104,144 108,140" fill="none" stroke="#4A3F6B" stroke-width="2.6" stroke-linecap="round"/></svg>
             </div>
           </div>
           <div class="lbl">64</div>
@@ -352,27 +147,7 @@
         <div style="display: flex; flex-direction: column; gap: 10px; align-items: center;">
           <div style="width: 32px; height: 32px; background: linear-gradient(#8AD000, #76B900); border-radius: 7px; display: flex; align-items: center; justify-content: center;">
             <div style="width: 22px;">
-              <svg viewBox="0 0 120 122" style="display: block; width: 100%; height: auto; overflow: visible;" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                <g fill="none" stroke="#0F1400" stroke-linecap="round">
-                  <path d="M 31,88 C 26,99 24,108 29,112 C 32,114 35,111 34,107" stroke-width="8"></path>
-                  <path d="M 43,92 C 40,102 39,111 43,115" stroke-width="7"></path>
-                  <path d="M 55,94 C 54,104 53,112 56,116" stroke-width="6.4"></path>
-                  <path d="M 67,94 C 68,104 69,112 66,116" stroke-width="6.4"></path>
-                  <path d="M 79,92 C 82,102 83,111 79,115" stroke-width="7"></path>
-                  <path d="M 89,88 C 94,99 96,108 91,112 C 88,114 85,111 86,107" stroke-width="8"></path>
-                </g>
-                <path d="M 24,80 C 24,38 40,18 60,18 C 80,18 96,38 96,80 C 96,89 84,94 60,94 C 36,94 24,89 24,80 Z" fill="#1A1A1A" stroke="#0F1400" stroke-width="4.6" stroke-linejoin="round"></path>
-                <ellipse cx="43" cy="56" rx="11.5" ry="13.5" fill="#8AD000"></ellipse>
-                <ellipse cx="77" cy="56" rx="11.5" ry="13.5" fill="#8AD000"></ellipse>
-                <g stroke="#0F1400" stroke-linejoin="round">
-                  <path d="M 25,45 L 11,41 L 9,59 L 24,59 Z" fill="#1A1A1A" stroke-width="2.4"></path>
-                  <path d="M 95,45 L 109,41 L 111,59 L 96,59 Z" fill="#1A1A1A" stroke-width="2.4"></path>
-                  <path d="M 25,50 C 25,29 40,15 60,15 C 80,15 95,29 95,50 Z" fill="#1A1A1A" stroke-width="2.8"></path>
-                  <path d="M 19,49 L 101,49 L 96,59 L 24,59 Z" fill="#1A1A1A" stroke-width="2.4"></path>
-                </g>
-                <path d="M 51,49 C 43,37 35,25 33,10 C 39,19 50,31 56,43 Z" fill="#8AD000"></path>
-                <path d="M 69,49 C 77,37 85,25 87,10 C 81,19 70,31 64,43 Z" fill="#8AD000"></path>
-              </svg>
+              <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"  style="display: block; width: 100%; height: auto; overflow: visible;" aria-hidden="true"><defs><linearGradient id="skin-Maindc8" x1="100" y1="62" x2="100" y2="173" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFFBFF"/><stop offset="0.6" stop-color="#EDE4FF"/><stop offset="1" stop-color="#C4B3EE"/></linearGradient><linearGradient id="rim-Maindc8" x1="30" y1="110" x2="170" y2="110" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#3EF0FF" stop-opacity="0.9"/><stop offset="1" stop-color="#FF3EA5" stop-opacity="0.9"/></linearGradient><clipPath id="visor-Maindc8"><rect x="50" y="90" width="100" height="38" rx="19"/></clipPath><filter id="glow-Maindc8" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3"/></filter><filter id="halo-Maindc8" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="14"/></filter></defs><ellipse cx="100" cy="177" rx="62" ry="6" fill="#C4F06A" opacity="0.4"/><path d="M 110,64 C 112,52 116,46 124,40" fill="none" stroke="#2E2850" stroke-width="6" stroke-linecap="round"/><g class="mochi-led fast"><circle cx="125" cy="39" r="8" fill="#C4F06A"/></g><path d="M 30,150 C 30,96 60,62 100,62 C 140,62 170,96 170,150 C 170,168 150,173 100,173 C 50,173 30,168 30,150 Z" fill="url(#skin-Maindc8)" stroke="url(#rim-Maindc8)" stroke-width="6"/><rect x="50" y="90" width="100" height="38" rx="19" fill="#120F22" stroke="#2E2850" stroke-width="3"/><g clip-path="url(#visor-Maindc8)"><g class="mochi-eyes"><rect x="74" y="100" width="12" height="18" rx="5" fill="#C4F06A"/><rect x="114" y="100" width="12" height="18" rx="5" fill="#C4F06A"/></g></g></svg>
             </div>
           </div>
           <div class="lbl">32</div>
@@ -380,7 +155,7 @@
       </div>
 
       <div style="max-width: 480px; display: flex; flex-direction: column; gap: 12px;">
-        <div class="p"><b style="color:#ECECEC;">Reemplaza el visor.</b> El ícono actual (<span class="mono" style="color:#A6E62E;">resources/icon.svg</span>) todavía lleva la marca vieja con visor — es lo último que quedaba fuera del sistema. Este usa el mismo pulpo que la app.</div>
+        <div class="p"><b style="color:#ECECEC;">Mochi en el dock.</b> El ícono (<span class="mono" style="color:#A6E62E;">resources/icon.svg</span>) usa la misma Mochi que la app, con un contorno #0F1400 para que el cuerpo lila se separe del verde en el dock.</div>
         <div class="p"><b style="color:#ECECEC;">Única excepción al radio 0.</b> La esquina redondeada del ícono no es una decisión de marca: es la silueta que impone macOS. Dentro de la app, nada se redondea.</div>
       </div>
     </div>
@@ -435,7 +210,7 @@
       </div>
       <div style="display: flex; flex-direction: column; gap: 10px;">
         <div class="lbl">aire</div>
-        <div class="p">El margen mínimo alrededor del lockup es la altura del ala del kabuto — la barra verde del cero. Nada entra en esa banda, ni una casilla de nav.</div>
+        <div class="p">El margen mínimo alrededor del lockup es la altura del visor — la barra verde del cero. Nada entra en esa banda, ni una casilla de nav.</div>
       </div>
       <div style="display: flex; flex-direction: column; gap: 10px;">
         <div class="lbl">tamaño mínimo</div>

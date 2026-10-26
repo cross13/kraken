@@ -3,6 +3,7 @@ import type {
   AgentMeta,
   BranchDiff,
   BranchSummary,
+  PrCheckout,
   PrFile,
   PrReviewComment,
   SpecReviewStamp,
@@ -336,6 +337,12 @@ const api = {
     /** The patch text behind `branchSummary` — what a code review reads. */
     branchDiff: (args: { cwd: string; base?: string }) =>
       ipcRenderer.invoke('git:branch-diff', args) as Promise<BranchDiff>,
+    /** Fetch a PR and check its head out into a private worktree (see `PrCheckout`). */
+    prCheckout: (args: { cwd: string; number: number; base: string }) =>
+      ipcRenderer.invoke('git:pr-checkout', args) as Promise<PrCheckout>,
+    /** Remove review worktrees of PRs not in `keep`. */
+    prCheckoutPrune: (args: { cwd: string; keep: number[] }) =>
+      ipcRenderer.invoke('git:pr-checkout-prune', args) as Promise<void>,
     listChanges: (cwd: string) =>
       ipcRenderer.invoke('git:list-changes', cwd) as Promise<{
         ok: boolean;
@@ -516,6 +523,8 @@ const api = {
       taskId?: string | null;
       wave?: string | null;
       dependsOn?: string[];
+      /** read-only run (code review): Read/Glob/Grep only */
+      readOnly?: boolean;
     }) => ipcRenderer.send('claude:stream', payload),
     cancel: (requestId: string) =>
       ipcRenderer.invoke('claude:cancel', requestId) as Promise<void>,

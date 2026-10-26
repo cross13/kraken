@@ -1,18 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-  <!-- 0ct0 app icon: the colony's octopus samurai on a Signal tile.
-       Inverted on purpose versus the in-app mark: at 32px in a dock a dark tile
-       with a thin rim disappears, so the icon uses the palette's primary-button
-       treatment — brand green as fill, #0F1400 as the only ink allowed on it.
+  <!-- 0ct0 app icon: Mochi (OctoMascot, shared with Cross) on a Signal tile.
+       The tile keeps the palette's primary-button treatment — brand green as
+       fill — because at 32px in a dock a dark tile with a thin rim disappears.
 
-       Drawn at OctoMascot's `simple` level, NOT `mark`. `mark` is a 14–26px
-       silhouette: there the kabuto's brim cuts the eyes into slits and the
-       kuwagata read as antennae, which at icon size makes the creature look
-       like a beetle. `simple` keeps the mouth, the chin guard and the katana —
-       the three things that make it read as a face with a sword.
-
-       The head is #2A2A2A and the armour #141414 for the same reason: on the
-       in-app mark they separate because the head takes `--card` and the lacquer
-       `--rail`. Painting both near-black here merged them into one blob.
+       Drawn at OctoMascot's `simple` level: body, antenna, visor, eyes, cheeks
+       and mouth. The halo blur is left out (on a green tile it only muddies the
+       silhouette), and the rim is a #0F1400 outline under Mochi's own
+       cyan-to-magenta one, so the lavender body still separates from the tile
+       when the icon is 16px tall. The eyes take Signal's work light, #C4F06A.
 
        The rounded corner is the one exception to Signal's radius 0 — it is the
        silhouette macOS imposes, not a brand decision.
@@ -22,60 +17,59 @@
       <stop offset="0" stop-color="#8AD000"/>
       <stop offset="1" stop-color="#76B900"/>
     </linearGradient>
+    <linearGradient id="skin" x1="100" y1="62" x2="100" y2="173" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFBFF"/>
+      <stop offset="0.6" stop-color="#EDE4FF"/>
+      <stop offset="1" stop-color="#C4B3EE"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="30" y1="110" x2="170" y2="110" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3EF0FF"/>
+      <stop offset="1" stop-color="#FF3EA5"/>
+    </linearGradient>
+    <clipPath id="visor"><rect x="50" y="90" width="100" height="38" rx="19"/></clipPath>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3"/></filter>
   </defs>
 
   <rect x="100" y="100" width="824" height="824" rx="222" fill="url(#tile)"/>
   <rect x="103" y="103" width="818" height="818" rx="219" fill="none" stroke="rgba(15,20,0,0.28)" stroke-width="6"/>
 
-  <!-- OctoMascot's viewBox is 0 0 120 122. The katana reaches x≈119 / y≈17, so
-       the frame is inset to keep the whole creature inside the tile. -->
-  <svg x="252" y="250" width="520" height="529" viewBox="0 0 120 122">
-    <!-- arms; the sixth is the sword hand -->
-    <g fill="none" stroke="#0F1400" stroke-linecap="round">
-      <path d="M 31,88 C 26,99 24,108 29,112 C 32,114 35,111 34,107" stroke-width="8"/>
-      <path d="M 43,92 C 40,102 39,111 43,115" stroke-width="7"/>
-      <path d="M 55,94 C 54,104 53,112 56,116" stroke-width="6.4"/>
-      <path d="M 67,94 C 68,104 69,112 66,116" stroke-width="6.4"/>
-      <path d="M 79,92 C 82,102 83,111 79,115" stroke-width="7"/>
-      <path d="M 91,88 C 99,86 105,82 101,75" stroke-width="7.6"/>
+  <!-- OctoMascot's viewBox is 0 0 200 200; Mochi spans x 28..172, y 30..183. -->
+  <svg x="212" y="200" width="600" height="600" viewBox="0 0 200 200">
+    <!-- floor shadow -->
+    <ellipse cx="100" cy="178" rx="64" ry="7" fill="#0F1400" opacity="0.3"/>
+
+    <!-- antenna and LED -->
+    <path d="M 110,64 C 112,52 116,46 124,40" fill="none" stroke="#0F1400" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="125" cy="39" r="10" fill="#0F1400"/>
+    <circle cx="125" cy="39" r="6" fill="#C4F06A"/>
+
+    <!-- body: dark outline first, then Mochi's own rim -->
+    <path d="M 30,150 C 30,96 60,62 100,62 C 140,62 170,96 170,150 C 170,168 150,173 100,173 C 50,173 30,168 30,150 Z" fill="none" stroke="#0F1400" stroke-width="9"/>
+    <path d="M 30,150 C 30,96 60,62 100,62 C 140,62 170,96 170,150 C 170,168 150,173 100,173 C 50,173 30,168 30,150 Z" fill="url(#skin)" stroke="url(#rim)" stroke-width="3.6"/>
+    <ellipse cx="68" cy="82" rx="13" ry="5.5" fill="#fff" opacity="0.9" transform="rotate(-30 68 82)"/>
+
+    <!-- cheeks and data port -->
+    <rect x="55" y="134" width="15" height="5" rx="2.5" fill="#FF3EA5" opacity="0.7"/>
+    <rect x="130" y="134" width="15" height="5" rx="2.5" fill="#FF3EA5" opacity="0.7"/>
+    <rect x="164" y="122" width="9" height="17" rx="2.5" fill="#2E2850"/>
+    <rect x="166" y="125" width="5" height="3" rx="1" fill="#3EF0FF"/>
+    <rect x="166" y="131" width="5" height="3" rx="1" fill="#FF3EA5"/>
+
+    <!-- visor and eyes -->
+    <rect x="50" y="90" width="100" height="38" rx="19" fill="#120F22" stroke="#2E2850" stroke-width="2.4"/>
+    <g clip-path="url(#visor)">
+      <g filter="url(#glow)" fill="#C4F06A">
+        <rect x="74" y="100" width="12" height="18" rx="5"/>
+        <rect x="114" y="100" width="12" height="18" rx="5"/>
+      </g>
+      <g fill="#C4F06A">
+        <rect x="74" y="100" width="12" height="18" rx="5"/>
+        <rect x="114" y="100" width="12" height="18" rx="5"/>
+      </g>
     </g>
+    <path d="M 62,96 L 82,96" stroke="#fff" stroke-opacity="0.25" stroke-width="2" stroke-linecap="round"/>
 
-    <!-- head -->
-    <path d="M 24,80 C 24,38 40,18 60,18 C 80,18 96,38 96,80 C 96,89 84,94 60,94 C 36,94 24,89 24,80 Z" fill="#2A2A2A" stroke="#0F1400" stroke-width="3.5" stroke-linejoin="round"/>
-
-    <!-- eyes: the brim covers their top, so the glint sits low enough to survive -->
-    <ellipse cx="43" cy="56" rx="11.5" ry="13.5" fill="#8AD000"/>
-    <circle cx="39.4" cy="62" r="3.4" fill="#E4FFB0"/>
-    <ellipse cx="77" cy="56" rx="11.5" ry="13.5" fill="#8AD000"/>
-    <circle cx="73.4" cy="62" r="3.4" fill="#E4FFB0"/>
-
-    <!-- mouth + chin guard: what turns the silhouette back into a face -->
-    <path d="M 54,78 C 56.5,83 63.5,83 66,78" fill="none" stroke="#8AD000" stroke-width="3" stroke-linecap="round"/>
-    <path d="M 47,84 L 73,84 L 71,93 L 49,93 Z" fill="#141414" stroke="#0F1400" stroke-width="1.8" stroke-linejoin="round"/>
-
-    <!-- shikoro, one layer -->
-    <g fill="#141414" stroke="#0F1400" stroke-width="1.6" stroke-linejoin="round">
-      <path d="M 23,59 L 9,62 L 7,72 L 23,70 Z"/>
-      <path d="M 97,59 L 111,62 L 113,72 L 97,70 Z"/>
-    </g>
-
-    <!-- kabuto -->
-    <g fill="#141414" stroke="#0F1400" stroke-linejoin="round">
-      <path d="M 25,45 L 11,41 L 9,59 L 24,59 Z" stroke-width="1.8"/>
-      <path d="M 95,45 L 109,41 L 111,59 L 96,59 Z" stroke-width="1.8"/>
-      <path d="M 25,50 C 25,29 40,15 60,15 C 80,15 95,29 95,50 Z" stroke-width="2"/>
-      <path d="M 19,49 L 101,49 L 96,59 L 24,59 Z" stroke-width="1.8"/>
-    </g>
-    <circle cx="60" cy="20" r="3.2" fill="#8AD000"/>
-    <path d="M 51,49 C 43,37 35,25 33,10 C 39,19 50,31 56,43 Z" fill="#8AD000"/>
-    <path d="M 69,49 C 77,37 85,25 87,10 C 81,19 70,31 64,43 Z" fill="#8AD000"/>
-    <circle cx="60" cy="44" r="5" fill="#141414" stroke="#8AD000" stroke-width="1.6"/>
-
-    <!-- katana, drawn -->
-    <g transform="rotate(-6 100 76)">
-      <path d="M 97,79 L 103,74 L 119,20 L 113,17 Z" fill="#F2F2F2" stroke="#0F1400" stroke-width="1.6" stroke-linejoin="round"/>
-      <path d="M 94,80 L 104,72 L 109,78 L 99,86 Z" fill="#8AD000" stroke="#0F1400" stroke-width="1.2"/>
-      <path d="M 89,88 L 97,81 L 102,87 L 94,94 Z" fill="#141414" stroke="#0F1400" stroke-width="1.2"/>
-    </g>
+    <!-- mouth -->
+    <path d="M 92,140 Q 96,144 100,140 Q 104,144 108,140" fill="none" stroke="#4A3F6B" stroke-width="2.8" stroke-linecap="round"/>
   </svg>
 </svg>

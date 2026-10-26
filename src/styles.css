@@ -761,10 +761,6 @@ progress {
    code shimmer and its dots. The boot splash in index.html duplicates the
    keyframes it needs inline so it can animate before the bundle loads —
    keep the two in sync. */
-@keyframes octo-tent-sway {
-  0%, 100% { transform: rotate(-4deg); }
-  50% { transform: rotate(4deg); }
-}
 @keyframes octo-code-scroll {
   from { transform: translateY(0); }
   to { transform: translateY(-50%); }
@@ -796,18 +792,16 @@ progress {
 }
 
 /* ---- Travel Display: the colony ------------------------------------------
-   The wide window renders one octopus per run (`OctoMascot` — a chibi samurai),
-   and everything the creature does carries meaning: where it lives = which spec
-   it belongs to, the dashed leash = what it waits on, the face = its status,
-   and **the katana's pose = what the run is doing** (cutting, sheathed and
-   waiting, resting, flicked clean after a win, driven into the ground on a
-   failure). These are the motions; `octo-tent-sway` is declared under Brand
-   above. The **same drawing at `detail="mark"` is the app's brand mark**
-   (`OctoMark`), so these rules animate the main window too, and `.k-still`
-   below is how an individual mark opts out.
+   The wide window renders one Mochi per run (`OctoMascot` — the cyberpunk
+   daifuku from Cross), and everything the creature does carries meaning: where
+   it lives = which spec it belongs to, the dashed leash = what it waits on, and
+   **the light behind its visor = what the run is doing** (scanning while it
+   works, glancing sideways while it decides, shut while queued, ^ ^ when done,
+   crossed out on a failure). The **same drawing at `detail="mark"` is the
+   app's brand mark** (`OctoMark`), so these rules animate the main window too,
+   and `.k-still` below is how an individual mark opts out.
    Every mascot sets `--md` (its own delay) so no two neighbours ever move in
-   lockstep, and the armour lags that delay by a further frame — the
-   follow-through is what makes a helmet read as a helmet rather than a hat.
+   lockstep.
 
    All of it switches off under `.k-quiet` — a display you glance at all day
    should be able to hold still — and under prefers-reduced-motion. */
@@ -836,55 +830,6 @@ progress {
   93.5% { transform: scaleY(0.06); }
   96% { transform: scaleY(1); }
 }
-@keyframes octo-blush {
-  0%, 100% { opacity: 0.32; }
-  50% { opacity: 0.6; }
-}
-@keyframes octo-lag {
-  0%, 100% { transform: translateY(1.3px) rotate(0.9deg); }
-  45% { transform: translateY(-1.3px) rotate(-0.9deg); }
-}
-@keyframes octo-lag-far {
-  0%, 100% { transform: translateY(2.2px) rotate(1.6deg); }
-  45% { transform: translateY(-2.2px) rotate(-1.6deg); }
-}
-@keyframes octo-cut {
-  0%, 52% { transform: rotate(0deg); }
-  60% { transform: rotate(-26deg); }
-  66% { transform: rotate(38deg); }
-  80% { transform: rotate(-4deg); }
-  100% { transform: rotate(0deg); }
-}
-@keyframes octo-ready {
-  0%, 100% { transform: translate(0, 0); }
-  50% { transform: translate(-1.5px, 1.5px); }
-}
-@keyframes octo-flick {
-  0%, 44% { transform: rotate(0deg); }
-  54% { transform: rotate(-22deg); }
-  70% { transform: rotate(3deg); }
-  100% { transform: rotate(0deg); }
-}
-@keyframes octo-slash {
-  0%, 60% { opacity: 0; stroke-dasharray: 0 200; }
-  66% { opacity: 0.9; stroke-dasharray: 130 200; }
-  84%, 100% { opacity: 0; stroke-dasharray: 130 200; }
-}
-@keyframes octo-chiburi {
-  0%, 50% { opacity: 0; }
-  58% { opacity: 0.95; }
-  78%, 100% { opacity: 0; }
-}
-@keyframes octo-petal {
-  0% { opacity: 0; transform: translate(0, -14px) rotate(0deg); }
-  15% { opacity: 0.95; }
-  100% { opacity: 0; transform: translate(-14px, 26px) rotate(220deg); }
-}
-@keyframes octo-teardrop {
-  0% { opacity: 0; transform: translateY(-3px); }
-  30% { opacity: 1; }
-  100% { opacity: 0; transform: translateY(9px); }
-}
 @keyframes octo-shake {
   0%, 100% { transform: translateX(0); }
   25% { transform: translateX(-2px); }
@@ -912,57 +857,46 @@ progress {
 .k-mascot-fail .k-mascot-bob { animation: octo-shake 0.4s ease-in-out infinite; }
 /* Queued, finished and failed creatures hold their spot — only live work roams. */
 .k-mascot-sleep, .k-mascot-done, .k-mascot-fail { animation: none; }
-.k-mascot-tent {
-  transform-box: fill-box;
-  transform-origin: 50% 0%;
-  animation: octo-tent-sway 1.9s ease-in-out infinite;
-}
-.k-mascot-sleep .k-mascot-tent { animation-duration: 4.4s; }
 .k-mascot-eyes {
   transform-box: view-box;
-  transform-origin: 60px 56px;
+  transform-origin: 100px 109px;
   animation: octo-blink 4.4s infinite;
 }
 .k-mascot-sleep .k-mascot-eyes,
 .k-mascot-done .k-mascot-eyes,
 .k-mascot-fail .k-mascot-eyes { animation: none; }
-.k-mascot-blush { animation: octo-blush 2.8s ease-in-out infinite; }
 
-/* Follow-through — the one thing that makes armour read as armour: the kabuto
-   and the neck guard arrive a beat after the head does, not with it. */
-.k-mascot-crest {
-  transform-box: view-box;
-  transform-origin: 60px 50px;
-  animation: octo-lag 2.4s ease-in-out infinite;
-  animation-delay: calc(var(--md, 0s) - 0.13s);
+/* Mochi's verbs: the bar sweeping the visor while it works, the sideways glance
+   while it decides, the antenna LED, current along the circuits, and thought
+   bubbles rising one after the other. */
+@keyframes mochi-scan {
+  from { transform: translateX(-20px); }
+  to { transform: translateX(104px); }
 }
-.k-mascot-shikoro {
-  transform-box: view-box;
-  transform-origin: 60px 58px;
-  animation: octo-lag-far 2.4s ease-in-out infinite;
-  animation-delay: calc(var(--md, 0s) - 0.22s);
+@keyframes mochi-look {
+  0%, 100% { transform: translateX(-2px); }
+  50% { transform: translateX(4px); }
 }
-
-/* The katana's pose is the state; these are its verbs. */
-.k-mascot-work .k-sword {
-  transform-box: view-box;
-  transform-origin: 96px 88px;
-  animation: octo-cut 2.8s cubic-bezier(0.2, 0, 0.05, 1) infinite;
+@keyframes mochi-led {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
 }
-.k-mascot-think .k-sword {
-  transform-box: view-box;
-  transform-origin: 100px 88px;
-  animation: octo-ready 3.2s ease-in-out infinite;
+@keyframes mochi-flow {
+  to { stroke-dashoffset: -16; }
 }
-.k-mascot-done .k-sword {
-  transform-box: view-box;
-  transform-origin: 100px 86px;
-  animation: octo-flick 2.2s cubic-bezier(0.25, 0, 0.1, 1) infinite;
+@keyframes mochi-thought {
+  0%, 100% { opacity: 0.25; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-3px); }
 }
-.k-slash { animation: octo-slash 2.8s ease-out infinite; }
-.k-chiburi { animation: octo-chiburi 2.2s ease-out infinite; }
-.k-petal { animation: octo-petal 4.2s linear infinite; transform-box: fill-box; transform-origin: 50% 50%; }
-.k-drop { animation: octo-teardrop 1.6s ease-in infinite; }
+.k-mochi-scan { animation: mochi-scan 1.1s linear infinite; }
+.k-mochi-look { animation: mochi-look 3s ease-in-out infinite; }
+.k-mochi-led { animation: mochi-led 1.8s ease-in-out infinite; }
+.k-mascot-work .k-mochi-led,
+.k-mascot-fail .k-mochi-led { animation-duration: 0.5s; }
+.k-mascot-sleep .k-mochi-led { animation: none; opacity: 0.25; }
+.k-mochi-flow { animation: mochi-flow 1.4s linear infinite; }
+.k-mascot-sleep .k-mochi-flow { animation: none; }
+.k-mochi-thought { animation: mochi-thought 1.2s ease-in-out infinite; }
 
 .k-zzz { animation: octo-zzz 3.2s ease-out infinite; }
 .k-leash {
@@ -1002,18 +936,13 @@ progress {
    accessibility preference and stops everything, eyes included. */
 .k-quiet .k-mascot,
 .k-quiet .k-mascot-bob,
-.k-quiet .k-mascot-tent,
-.k-quiet .k-mascot-crest,
-.k-quiet .k-mascot-shikoro,
-.k-quiet .k-mascot-blush,
-.k-quiet .k-sword,
-.k-quiet .k-slash,
-.k-quiet .k-chiburi,
-.k-quiet .k-petal,
-.k-quiet .k-drop,
 .k-quiet .k-zzz,
 .k-quiet .k-leash,
 .k-quiet .k-spark,
+.k-quiet .k-mochi-look,
+.k-quiet .k-mochi-led,
+.k-quiet .k-mochi-flow,
+.k-quiet .k-mochi-thought,
 .k-quiet .k-dots {
   animation: none;
 }
@@ -1022,32 +951,24 @@ progress {
    component two panels over is animating because a run is live. */
 .k-still .k-mascot,
 .k-still .k-mascot-bob,
-.k-still .k-mascot-tent,
 .k-still .k-mascot-eyes,
-.k-still .k-mascot-crest,
-.k-still .k-mascot-shikoro,
-.k-still .k-mascot-blush,
-.k-still .k-sword,
-.k-still .k-slash,
-.k-still .k-chiburi,
-.k-still .k-petal,
-.k-still .k-drop {
+.k-still .k-mochi-scan,
+.k-still .k-mochi-look,
+.k-still .k-mochi-led,
+.k-still .k-mochi-flow,
+.k-still .k-mochi-thought {
   animation: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .k-mascot,
   .k-mascot-bob,
-  .k-mascot-tent,
   .k-mascot-eyes,
-  .k-mascot-crest,
-  .k-mascot-shikoro,
-  .k-mascot-blush,
-  .k-sword,
-  .k-slash,
-  .k-chiburi,
-  .k-petal,
-  .k-drop,
+  .k-mochi-scan,
+  .k-mochi-look,
+  .k-mochi-led,
+  .k-mochi-flow,
+  .k-mochi-thought,
   .k-zzz,
   .k-leash,
   .k-spark,
