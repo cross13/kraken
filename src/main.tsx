@@ -12,6 +12,9 @@ import './lib/prism';
 import '@fontsource-variable/hanken-grotesk';
 import '@fontsource-variable/space-grotesk';
 import '@fontsource-variable/jetbrains-mono';
+// Inter is the Brasa palettes' face (one family top to bottom); the other
+// themes never reference it.
+import '@fontsource-variable/inter';
 import './styles.css';
 
 // Same bundle, two entry points: the #wide hash (set by the main process when it

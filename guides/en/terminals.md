@@ -11,7 +11,7 @@ goto: activity:terminals
 
 Every other run in Octo is one-shot: the prompt goes in, the answer streams out, and nothing you type can reach it. Terminals are the exception — a real, two-way PTY in the workspace folder.
 
-1. Open **Activity › Terminals**, or use ⌘K → **New terminal** or **New Claude session**.
+1. Open the panel under the editor with ⌘⇧J and choose its **Terminal** tab, or use ⌘K → **New terminal** or **New Claude session**. The terminal sits below the file or spec you were on, so you can type next to the code it is about. Drag the panel's top edge to make it taller or shorter; the height is remembered.
 2. Press **Terminal** for your login shell, or **Claude session** for the interactive `claude` CLI. Both start in the workspace with the same expanded PATH the app uses to find `claude`. If the CLI cannot be found, a Claude session drops you into a shell instead, so you can start it yourself.
 3. In a Claude session, answer things the one-shot runs cannot: `AskUserQuestion` prompts, permission requests, and real slash commands, exactly as in your own terminal.
 4. Links Claude prints are clickable and open in Google Chrome, falling back to your default browser if Chrome is not installed.

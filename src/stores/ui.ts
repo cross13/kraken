@@ -6,8 +6,12 @@ import type {
 } from '../../electron/shared/types';
 import type { GuideLang } from '../../guides/guides';
 
-// The app is four singleton surfaces — no tab bar, no focus mode. Everything
-// else renders as a drawer (assistant, explorer) or a slide-over overlay.
+// The shell is an IDE: an activity bar, a side bar holding one **side view**
+// (explorer / changes / specs), and an editor area. The editor area shows either
+// the active **surface** — the five singleton pages below — or an **editor tab**
+// (a file or a file's diff against HEAD). Surfaces and tabs share one tab strip:
+// the surface is its pinned first tab. Detail views that are not files still
+// open in the slide-over overlay.
 // `learn` is the interactive guide: it asks what you want to do and builds the
 // path through the guides from the answer (`views/LearnView.tsx`).
 export type Surface = 'home' | 'spec' | 'activity' | 'library' | 'learn';
@@ -49,6 +53,28 @@ export type Overlay =
   // A how-to from `guides/` — the same content the public site renders.
   | { kind: 'guide'; id: string };
 
+/** Tabs of the panel under the editor area. */
+export type PanelTab = 'runs' | 'terminals' | 'history';
+
+/** What the side bar is showing. */
+export type SideView = 'explorer' | 'search' | 'changes' | 'specs';
+
+/**
+ * A tab in the editor area. `file` holds an absolute path (it can live outside
+ * the workspace — a PR review worktree); `diff` holds a repository-relative one,
+ * because that is what git is asked about.
+ */
+export interface EditorTab {
+  id: string;
+  kind: 'file' | 'diff';
+  path: string;
+  /** a `file` tab opened at a line (a search hit); `nonce` re-triggers the same line */
+  line?: number;
+  nonce?: number;
+}
+
+export const tabId = (kind: EditorTab['kind'], path: string) => `${kind}:${path}`;
+
 /** A live PTY session, hosted app-wide so the process survives navigation. */
 export interface TerminalSession {
   id: string;
@@ -59,6 +85,27 @@ export interface TerminalSession {
 // Panel sizing — persisted so the user's layout survives reloads.
 const ASSISTANT_MIN = 300;
 const ASSISTANT_MAX = 760;
+
+const SIDE_MIN = 200;
+const SIDE_MAX = 520;
+function clampSide(n: number) {
+  return Math.round(Math.max(SIDE_MIN, Math.min(SIDE_MAX, n)));
+}
+// The panel's ceiling follows the window: at most ~70% of its height, so a
+// height saved on a tall display cannot bury the editor on a laptop.
+function clampPanel(n: number) {
+  const max = Math.max(200, Math.round((typeof window === 'undefined' ? 900 : window.innerHeight) * 0.7));
+  return Math.round(Math.max(140, Math.min(max, n)));
+}
+function loadSideView(): SideView {
+  try {
+    const v = localStorage.getItem('octo.sideView');
+    if (v === 'explorer' || v === 'search' || v === 'changes' || v === 'specs') return v;
+  } catch {
+    // ignore (e.g. storage disabled)
+  }
+  return 'explorer';
+}
 
 function clampAssistant(n: number) {
   return Math.round(Math.max(ASSISTANT_MIN, Math.min(ASSISTANT_MAX, n)));
@@ -146,9 +193,39 @@ interface UiStore {
   assistantWidth: number;
   setAssistantWidth: (n: number) => void;
 
-  // ---- Explorer drawer (file tree) ----
-  explorerOpen: boolean;
+  // ---- Side bar (explorer / changes / specs) ----
+  sideView: SideView;
+  sideOpen: boolean;
+  sideWidth: number;
+  /** Show a side view; asking for the one already on screen closes the bar. */
+  showSide: (view: SideView) => void;
+  setSideOpen: (b: boolean) => void;
+  setSideWidth: (n: number) => void;
+  /** ⌘⇧E — kept under its old name; it now toggles the Explorer side view. */
   toggleExplorer: () => void;
+
+  // ---- Editor tabs (files and diffs, beside the surface) ----
+  tabs: EditorTab[];
+  /** `null` = the surface is on screen. */
+  activeTabId: string | null;
+  openFile: (path: string, line?: number) => void;
+  openDiff: (relPath: string) => void;
+  closeTab: (id: string) => void;
+  closeAllTabs: () => void;
+  setActiveTab: (id: string | null) => void;
+
+  // ---- Bottom panel (runs · terminals · history, under the editor area) ----
+  panelOpen: boolean;
+  panelTab: PanelTab;
+  /** persisted; clamped so the panel can neither vanish nor swallow the editor */
+  panelHeight: number;
+  setPanelHeight: (n: number) => void;
+  togglePanel: () => void;
+  /** Open the panel on a tab (it stays open if it already was). */
+  openPanel: (tab: PanelTab) => void;
+  /** Bumped when the tab strip asks a spec stage to show its *document*. */
+  specDocNonce: number;
+  showSpecDoc: (stage: SpecStage) => void;
 
   /**
    * The spec flow's **briefing** aside — who runs this step and how. On by
@@ -174,7 +251,8 @@ interface UiStore {
   setZen: (b: boolean) => void;
   toggleZen: () => void;
 
-  // ---- Slide-over overlay (file / agent / skill / run / questions / hook / repo) ----
+  // ---- Slide-over overlay (agent / skill / run / questions / hook / repo). A
+  // `file` overlay is redirected to an editor tab. ----
   overlay: Overlay | null;
   openOverlay: (o: Overlay) => void;
   closeOverlay: () => void;
@@ -201,27 +279,47 @@ interface UiStore {
 export const useUi = create<UiStore>((set, get) => ({
   surface: 'home',
   // Zen belongs to the document on screen: navigating away closes it.
-  setSurface: (s) => set({ surface: s, zenOpen: s === 'spec' && get().zenOpen }),
+  setSurface: (s) =>
+    set({ surface: s, activeTabId: null, zenOpen: s === 'spec' && get().zenOpen }),
 
   activeSpecId: null,
   specStage: 'define',
   openSpec: (specId, stage) =>
     set((s) => ({
       surface: 'spec',
+      activeTabId: null,
       activeSpecId: specId,
       specStage: stage ?? (specId === s.activeSpecId ? s.specStage : 'define'),
     })),
   closeSpec: () =>
-    set({ surface: 'home', activeSpecId: null, specStage: 'define', zenOpen: false }),
+    set({
+      surface: 'home',
+      activeTabId: null,
+      activeSpecId: null,
+      specStage: 'define',
+      zenOpen: false,
+    }),
   setSpecStage: (stage) => set({ specStage: stage, zenOpen: false }),
 
   activityTab: 'runs',
-  openActivity: (tab) =>
-    set((s) => ({ surface: 'activity', activityTab: tab ?? s.activityTab })),
+  openActivity: (tab) => {
+    // Terminals moved under the editor area. Every older caller (⌘K, guides,
+    // "Open a terminal") still asks Activity for them; send it to the panel.
+    if (tab === 'terminals') return get().openPanel('terminals');
+    set((s) => ({
+      surface: 'activity',
+      activeTabId: null,
+      activityTab: tab ?? (s.activityTab === 'terminals' ? 'runs' : s.activityTab),
+    }));
+  },
 
   librarySection: 'agents',
   openLibrary: (section) =>
-    set((s) => ({ surface: 'library', librarySection: section ?? s.librarySection })),
+    set((s) => ({
+      surface: 'library',
+      activeTabId: null,
+      librarySection: section ?? s.librarySection,
+    })),
 
   assistantOpen: false,
   toggleAssistant: () => set((s) => ({ assistantOpen: !s.assistantOpen })),
@@ -233,8 +331,82 @@ export const useUi = create<UiStore>((set, get) => ({
     set({ assistantWidth: w });
   },
 
-  explorerOpen: false,
-  toggleExplorer: () => set((s) => ({ explorerOpen: !s.explorerOpen })),
+  sideView: loadSideView(),
+  sideOpen: loadBool('octo.sideOpen', true),
+  sideWidth: clampSide(loadNum('octo.sideWidth', 280)),
+  showSide: (view) =>
+    set((s) => {
+      const sideOpen = s.sideView === view ? !s.sideOpen : true;
+      saveBool('octo.sideOpen', sideOpen);
+      try {
+        localStorage.setItem('octo.sideView', view);
+      } catch {
+        // ignore (e.g. storage disabled)
+      }
+      return { sideView: view, sideOpen };
+    }),
+  setSideOpen: (b) => {
+    saveBool('octo.sideOpen', b);
+    set({ sideOpen: b });
+  },
+  setSideWidth: (n) => {
+    const w = clampSide(n);
+    saveNum('octo.sideWidth', w);
+    set({ sideWidth: w });
+  },
+  toggleExplorer: () => get().showSide('explorer'),
+
+  tabs: [],
+  activeTabId: null,
+  openFile: (path, line) =>
+    set((s) => {
+      const id = tabId('file', path);
+      const at = line ? { line, nonce: Date.now() } : {};
+      const tabs = s.tabs.some((t) => t.id === id)
+        ? s.tabs.map((t) => (t.id === id && line ? { ...t, ...at } : t))
+        : [...s.tabs, { id, kind: 'file' as const, path, ...at }];
+      return { tabs, activeTabId: id, zenOpen: false };
+    }),
+  openDiff: (relPath) =>
+    set((s) => {
+      const id = tabId('diff', relPath);
+      const tabs = s.tabs.some((t) => t.id === id)
+        ? s.tabs
+        : [...s.tabs, { id, kind: 'diff' as const, path: relPath }];
+      return { tabs, activeTabId: id, zenOpen: false };
+    }),
+  closeTab: (id) =>
+    set((s) => {
+      const i = s.tabs.findIndex((t) => t.id === id);
+      if (i === -1) return {};
+      const tabs = s.tabs.filter((t) => t.id !== id);
+      // Closing the tab on screen lands on its neighbour, then on the surface.
+      const activeTabId =
+        s.activeTabId === id ? (tabs[i]?.id ?? tabs[i - 1]?.id ?? null) : s.activeTabId;
+      return { tabs, activeTabId };
+    }),
+  closeAllTabs: () => set({ tabs: [], activeTabId: null }),
+  setActiveTab: (id) => set({ activeTabId: id, zenOpen: false }),
+
+  panelOpen: false,
+  panelTab: 'runs',
+  panelHeight: clampPanel(loadNum('octo.panelHeight', 300)),
+  setPanelHeight: (n) => {
+    const h = clampPanel(n);
+    saveNum('octo.panelHeight', h);
+    set({ panelHeight: h });
+  },
+  togglePanel: () => set((s) => ({ panelOpen: !s.panelOpen })),
+  openPanel: (tab) => set({ panelOpen: true, panelTab: tab }),
+  specDocNonce: 0,
+  showSpecDoc: (stage) =>
+    set((s) => ({
+      surface: 'spec',
+      activeTabId: null,
+      specStage: stage,
+      zenOpen: false,
+      specDocNonce: s.specDocNonce + 1,
+    })),
 
   quickStartOpen: false,
   setQuickStart: (b) => set({ quickStartOpen: b }),
@@ -252,7 +424,16 @@ export const useUi = create<UiStore>((set, get) => ({
   toggleZen: () => set((s) => ({ zenOpen: !s.zenOpen })),
 
   overlay: null,
-  openOverlay: (o) => set({ overlay: o }),
+  // A file is a tab now, not a slide-over. Every older call site still says
+  // `openOverlay({kind:'file'})`; routing it here moves them all at once.
+  openOverlay: (o) => {
+    if (o.kind === 'file') {
+      get().openFile(o.path);
+      set({ overlay: null });
+      return;
+    }
+    set({ overlay: o });
+  },
   closeOverlay: () => set({ overlay: null }),
 
   guideLang: loadGuideLang(),
@@ -271,8 +452,10 @@ export const useUi = create<UiStore>((set, get) => ({
     const n = get().terminals.filter((t) => t.profile === profile).length + 1;
     const id = `term-${crypto.randomUUID()}`;
     set((s) => ({
-      surface: 'activity',
-      activityTab: 'terminals',
+      // A new terminal opens where terminals live — the panel — without
+      // taking you off the file or spec you were on.
+      panelOpen: true,
+      panelTab: 'terminals' as const,
       terminals: [
         ...s.terminals,
         { id, profile, title: profile === 'claude' ? `Claude ${n}` : `Terminal ${n}` },
@@ -296,6 +479,7 @@ export const useUi = create<UiStore>((set, get) => ({
   focusComposer: (draft) =>
     set((s) => ({
       surface: 'home',
+      activeTabId: null,
       composerNonce: s.composerNonce + 1,
       composerDraft: draft ?? null,
     })),

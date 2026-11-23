@@ -26,7 +26,7 @@ export function TerminalView({
 }) {
   const root = useWorkspace((s) => s.root);
   const isActive = useUi(
-    (s) => s.activeTerminalId === tabId && s.surface === 'activity' && s.activityTab === 'terminals'
+    (s) => s.activeTerminalId === tabId && s.panelOpen && s.panelTab === 'terminals'
   );
   const hostRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);

@@ -1,3 +1,4 @@
+import { CheckpointControl } from './CheckpointControl';
 import { useEffect, useRef, useState } from 'react';
 import {
   ArrowUp,
@@ -98,6 +99,7 @@ export function ChatPanel() {
       createdAt: Date.now(),
       streaming: true,
       agent: selectedAgent ?? undefined,
+      runId: requestId,
     });
     setBusy(true, requestId);
     const model = useModels.getState().modelFor('chat');
@@ -204,6 +206,7 @@ export function ChatPanel() {
             segments={m.segments}
             streaming={m.streaming}
             agent={m.agent}
+            runId={m.runId}
           />
         ))}
       </div>
@@ -291,12 +294,14 @@ function Message({
   segments,
   streaming,
   agent,
+  runId,
 }: {
   role: 'user' | 'assistant' | 'system';
   content: string;
   segments?: MessageSegment[];
   streaming?: boolean;
   agent?: string;
+  runId?: string;
 }) {
   if (role === 'system') {
     return (
@@ -339,6 +344,8 @@ function Message({
           <Markdown source={content} />
         )}
       </div>
+      {/* The way back: the working tree as it was before this answer's run. */}
+      {runId && <CheckpointControl runId={runId} live={streaming} className="mt-3" />}
     </div>
   );
 }

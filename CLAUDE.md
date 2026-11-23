@@ -41,6 +41,10 @@ npm run guides       # the user guides index; `-- --check` fails on a missing tr
 npm run package:mac  # build + electron-builder --mac --dir
 ```
 
+**Driving the app from a script?** Set `OCTO_USER_DATA=<dir>` first. `main.ts` hard-sets
+`userData`, so Chromium's `--user-data-dir` does NOT isolate a run: without the variable a driver
+reads and writes the real history DB, settings and last-workspace.
+
 There is **no test runner and no linter** configured. `npm run typecheck` is the only
 automated gate for the code; always run it after edits. Three invariants it cannot see have their
 own scripts, and all should pass before declaring done: **`npm run routes -- --check`** (a stray
@@ -108,7 +112,8 @@ results arrive through `claude.onEvent(handler)`.
 ### Renderer — `src/` (React 18 + Tailwind + Zustand)
 - **State** lives in Zustand stores (`src/stores/`): `workspace` (root path, specs,
   agents, skills), `chat` (message list, streaming state, selected agent, `pendingPrompt`
-  handoff), `ui` (surface + drawers + overlay + terminals), `orchestrator` (global run
+  handoff), `ui` (surface + side view + editor tabs + overlay + terminals), `git` (branch + the
+  files that differ from HEAD — one source for every badge and decoration), `orchestrator` (global run
   registry), `models` (planning model + **discovered** model list), `moduleConfig` (routing
   pins/skill toggles), `syntax`, and `theme` (active palette). Components subscribe to these —
   there is no other global state.
@@ -127,9 +132,13 @@ results arrive through `claude.onEvent(handler)`.
   `max-w-[NNNpx] mx-auto`;** pick a container. Wide content scrolls inside its own container so a
   surface never scrolls horizontally. See `docs/renderer.md` → Layout & space.
 - **Theming** is variable-driven: every Tailwind colour is `rgb(var(--x) / <alpha-value>)`,
-  with four palettes (Signal [default, the brand], Abyss, Bioluminescent, Daylight) selected by `<html data-theme>`
-  (see `docs/renderer.md` → Theming). `--accent-fg` is themeable; fonts are Hanken Grotesk (body) /
-  Space Grotesk (`font-display`, headings only) / JetBrains Mono, **bundled** via
+  with six palettes (Brasa [default] and Brasa dark — the IDE-shell palettes: ink to act, paper to
+  work, ONE orange accent for what waits on you, so `accent` is ink and `agent` is the orange —
+  plus Signal, Abyss, Bioluminescent, Daylight) selected by `<html data-theme>`
+  (see `docs/renderer.md` → Theming). Two token groups are defined for every theme: `--actbar*`
+  (the activity bar's ground) and `--diff-*` (GitHub's green/red, full colours, never the accent). `--accent-fg` is themeable; fonts are Hanken Grotesk (body) /
+  Space Grotesk (`font-display`, headings only) / JetBrains Mono — the Brasa palettes swap the
+  first two for Inter —, all **bundled** via
   `@fontsource-variable/*` (no CDN — the CSP allows no remote origin) with the stacks defined once
   as `--font-sans` / `--font-display` / `--font-mono`. Markdown code and the spec editor take their
   syntax colours from the theme tokens; only the file viewer uses the selectable `--syn-*` palette. The visual language is **frame + floating
@@ -150,12 +159,32 @@ results arrive through `claude.onEvent(handler)`.
   imposed by macOS, not chosen. **`0ct0` is the wordmark** while `octo` stays the identifier everywhere
   in code and on disk — `.octo/`, `window.octo`, `dev.octo.app` — so the relaunch moves no files.
   The sheet is in `design/brand/`. See `docs/renderer.md` → Brand.
-- **Layout** is the **surface shell** (`App.tsx`): `CommandBar` (brand + ⌘K
-  `CommandPalette` + the one live-runs pill + project/model status) → `SurfaceNav` (4 icons) →
-  one of **Home · Spec · Activity · Library · Learn**, plus the **Assistant** chat drawer (⌘J,
-  `AssistantDrawer`), the **Explorer** drawer (⌘⇧E), and a right slide-over **`OverlayPanel`**
-  for detail views (file/agent/skill/run viewers, Open Questions, hook editor, the repo panel).
-  There is **no global tab bar and no focus mode** — surfaces are singletons. **Quick Start**
+- **Layout** is the **IDE shell** (`App.tsx`, components in `src/components/shell/`):
+  `CommandBar` (brand + ⌘K `CommandPalette` + the one live-runs pill + project/model status) →
+  `ActivityBar` → `SideBar` → the **editor area** → `StatusBar`. The activity bar has two groups:
+  the top four pick the **side view** (`Explorer` ⌘⇧E · `Search` ⌘⇧F, over `git grep` · `Changes` ·
+  `Specs`), the rest pick the
+  **surface** in the editor area — one of **Home · Spec · Activity · Library · Learn**. The editor
+  area is `EditorTabs` over either that surface (its pinned first tab) or an **editor tab**: a
+  `file` (`FileViewer`; markdown gets **Code · Split · Preview**) or a `diff` (`DiffEditor`: one
+  file against HEAD via `git:file-diff`, split or unified, GitHub's green and red; **Revert hunk**
+  confirmed in place and sent as hunk *text* so a stale diff reverts nothing; the branch's last
+  code-review findings shown under the lines they cite, each with **Fix with Claude**). **A file is a
+  tab, not an overlay** — `openOverlay({kind:'file'})` is redirected to `openFile` in the store.
+  `Changes` lists what differs from HEAD (click → diff tab, checkbox = staged, commit in place),
+  grouped **by task**: each file sits under the run that last wrote it (`history:file-authors` over
+  the existing `run_files` log — file-level, last-writer-wins, only runs newer than HEAD), with
+  *Edited by hand* last; the diff tab names that run too.
+  While a spec is the surface its documents (`requirements.md` · `plan.md` · `tasks.md`) are the
+  pinned tabs of that same strip — `SpecFlow` draws no file tabs of its own. Every writing run
+  takes a **checkpoint** first (`refs/octo/checkpoints/<runId>`, built in a temporary index so
+  nothing visible moves); `CheckpointControl` restores it from the Assistant or the run viewer,
+  touching only the files runs wrote since.
+  Plus the **Assistant** chat panel (⌘J, `AssistantDrawer`), the **panel** under the editor
+  (⌘⇧J, `BottomPanel`: Runs · Terminal · History — always mounted, it holds the PTYs; drag its
+  upper edge to resize), and a right slide-over **`OverlayPanel`** for detail views that are not
+  files (agent/skill/run viewers, Open Questions, hook editor, tickets, guides, the repo panel).
+  Surfaces are singletons and there is no focus mode. **Quick Start**
   (`views/QuickStart.tsx`, ⌘K or the first-run card, auto-opened once on a new install) is a
   full-window mode like Zen: a setup checklist verified against real state, the loop explained, tips
   specific to how the app behaves, and a *Sharpen your own skills* section that points Claude at the
@@ -346,7 +375,7 @@ tasks all `startRun`/`finishRun` here (each tagged with a `RunKind` + human `tit
 from the chat store's single `busy`. It keeps a recent-activity `log` (finished runs) and exposes
 `taskRunningCount()` (task/refine/polish only) so chat/spec runs don't throttle wave scheduling.
 **Activity › Runs** (`OrchestratorView`) shows live agents with elapsed time + per-run/stop-all
-cancel, the concurrency control, and the activity log; the top bar and `SurfaceNav` show a live
+cancel, the concurrency control, and the activity log; the top bar and `ActivityBar` show a live
 running-count badge. Per-task agent specialization via `- [ ] T1 @agent-name: ...` (parsed in
 `tasks.ts`, precedence in `agentRouter.ts`: per-task > chat override > action default).
 `runWave`/`pump` schedule with failure isolation; **Autopilot** ("Run all", the tasks stage's
@@ -359,12 +388,14 @@ routes to `spec-doctor` for drift detection.
 
 ### Layout & resizing (`App.tsx` + `ResizeHandle` + `ui` store)
 The Assistant drawer is drag-resizable via `ResizeHandle` (`assistantWidth`, clamped + persisted
-to `localStorage`). Navigation state is `ui.surface` plus per-surface fields (`activeSpecId` +
-`specStage`, `activityTab`, `librarySection`) and the `overlay` slide-over — all surfaced in the
-`SurfaceNav` and the `CommandPalette`.
+to `localStorage`), and so is the side bar (`sideWidth`). Navigation state is `ui.surface` plus
+per-surface fields (`activeSpecId` + `specStage`, `activityTab`, `librarySection`), the side bar
+(`sideView` + `sideOpen`), the editor tabs (`tabs` + `activeTabId`, `null` = the surface is on
+screen) and the `overlay` slide-over — all surfaced in the `ActivityBar` and the `CommandPalette`.
 
 ### Git & GitHub — `electron/git.ts`, `electron/github.ts`
-Per-workspace git helpers (status, current-branch, create-branch, commit-push, push-current)
+Per-workspace git helpers (status, list-changes with line counts, search, revert-hunk, **file-diff** — one file against
+HEAD, the diff editor's source —, current-branch, create-branch, commit-push, push-current)
 surfaced through `git:*` IPC. `github.ts` is a GitHub REST client over the user's **local `gh` CLI** — every call is
 `gh api …`, so auth is `gh auth login` and **Octo stores no GitHub token** — exposed through
 `github:*` IPC: repo resolution from the `origin` remote, `github:status` (gh installed / signed
@@ -395,7 +426,7 @@ processes keyed by `termId`; `createTerminal` in `main.ts` resolves the spawn po
 always with `expandedPath()` + workspace cwd. This gives **AskUserQuestion answers, permission
 prompts, and real CLI slash commands** natively, "as in the cli". IPC: `terminal:create` (invoke)
 + `terminal:write`/`terminal:resize`/`terminal:kill` (send) + `terminal:data`/`terminal:exit`
-events. The renderer uses **xterm.js** (`TerminalView`, panes kept mounted under Activity › Terminals so
+events. The renderer uses **xterm.js** (`TerminalView`, panes kept mounted in the **Terminal** tab of the panel under the editor so
 the PTY survives navigation) with the web-links addon routing URL clicks to `shell:openUrl`, which **opens URLs Claude
 emits in Google Chrome** (default-browser fallback). node-pty ships an N-API prebuilt binary (no
 from-source rebuild; `asarUnpack`-ed for packaging). Sidebar: **Terminals** panel (`TerminalsView`).

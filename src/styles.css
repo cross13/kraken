@@ -232,6 +232,186 @@
   --shadow-glow: 0 0 0 1px rgb(var(--accent) / 0.5);
 }
 
+/* ---------------------------------------------------------------------------
+   Brasa — the IDE-shell palettes (Claude Design · "Brasa" + "0ct0 — Refactor UX
+   estilo IDE"). Ink to act, paper to work, orange for what waits on you.
+   ONE accent: what the legacy tokens call `accent` (execute & progress) is INK
+   here — work that advances on its own needs no hue — and `agent` (wait &
+   decide) is the orange. Radius 8 on controls / 12 on surfaces, no shadows.
+   `brasa-dark` is the same system on charcoal; it is not part of the published
+   Brasa design system, it was derived for this app.
+   ------------------------------------------------------------------------- */
+:root[data-theme='brasa'] {
+  color-scheme: light;
+  --font-sans: 'Inter Variable', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: var(--font-sans);
+
+  --rail: 244 244 242; /* #f4f4f2 bg-page: the frame */
+  --bg: 255 255 255; /* the sheet */
+  --panel: 250 250 249; /* zebra */
+  --card: 255 255 255;
+  --raised: 240 240 238; /* inset */
+  --elev: 239 239 236; /* subtle */
+  --line: 228 228 224;
+
+  --ink-600: 154 157 163; /* ghost — decoration only */
+  --faint: 104 108 116; /* #686c74, the 5:1 floor */
+  --ink-400: 98 102 110;
+  --dim: 90 94 102; /* muted */
+  --ink-200: 68 71 77; /* body */
+  --ink-100: 38 40 44; /* strong */
+  --ink-50: 20 21 23; /* max */
+
+  --accent: 20 21 23;
+  --accent2: 38 40 44;
+  --accent-fg: 255 255 255;
+  --accent-text: 20 21 23;
+  --accent-num: 20 21 23;
+
+  --agent: 194 65 12; /* #c2410c — the fill that carries white */
+  --agent2: 154 52 18;
+  --agent-text: 154 52 18; /* accent-deep: text on any orange tint */
+  --agent-tint: 255 237 227;
+  --agent-fg: 255 255 255;
+
+  --good: 26 127 55;
+  --warn: 194 65 12;
+  --danger: 163 18 31;
+  --danger-text: 163 18 31;
+
+  --radius-sm: 4px;
+  --radius: 6px;
+  --radius-md: 8px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 14px;
+  --radius-3xl: 20px;
+  --radius-full: 9999px;
+
+  --shadow-panel: none;
+  --shadow-card: 0 0 0 1px rgb(var(--line)), 0 12px 32px rgba(20, 21, 23, 0.08);
+  --shadow-glow: 0 0 0 2px rgb(var(--ink-50));
+
+  /* The activity bar is the one charcoal surface on a paper app. */
+  --actbar: 14 14 15;
+  --actbar-ink: 201 202 204;
+  --actbar-ink-strong: 242 242 240;
+  --actbar-mark: 255 90 31; /* accent-signal: bars and dots only, never text */
+}
+
+:root[data-theme='brasa-dark'] {
+  color-scheme: dark;
+  --font-sans: 'Inter Variable', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: var(--font-sans);
+
+  --rail: 14 14 15;
+  --bg: 26 26 27;
+  --panel: 31 31 33;
+  --card: 38 39 41;
+  --raised: 42 43 46;
+  --elev: 46 48 52;
+  --line: 61 64 69;
+
+  --ink-600: 110 113 118;
+  --faint: 150 152 158;
+  --ink-400: 158 160 166;
+  --dim: 166 168 173;
+  --ink-200: 196 197 200;
+  --ink-100: 227 227 224;
+  --ink-50: 242 242 240;
+
+  --accent: 242 242 240;
+  --accent2: 255 255 255;
+  --accent-fg: 14 14 15;
+  --accent-text: 242 242 240;
+  --accent-num: 242 242 240;
+
+  --agent: 255 138 92;
+  --agent2: 255 162 125;
+  --agent-text: 255 181 151;
+  --agent-tint: 61 36 22;
+  --agent-fg: 20 12 8;
+
+  --good: 63 185 80;
+  --warn: 255 138 92;
+  --danger: 248 81 73;
+  --danger-text: 255 123 134;
+
+  --radius-sm: 4px;
+  --radius: 6px;
+  --radius-md: 8px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 14px;
+  --radius-3xl: 20px;
+  --radius-full: 9999px;
+
+  --shadow-panel: none;
+  --shadow-card: 0 0 0 1px rgb(var(--line)), 0 12px 32px rgba(0, 0, 0, 0.4);
+  --shadow-glow: 0 0 0 2px rgb(var(--ink-50));
+
+  --actbar: 5 5 5;
+  --actbar-ink: 201 202 204;
+  --actbar-ink-strong: 242 242 240;
+  --actbar-mark: 255 90 31;
+}
+
+/* ---------------------------------------------------------------------------
+   Shell + diff tokens shared by every theme.
+   The activity bar sits on the frame unless a palette gives it its own ground.
+   The diff colours are GitHub's — green for added, red for removed — and are
+   FULL colours rather than channels: they are a convention readers already
+   know, so they do not follow the theme's accent, only its light/dark side.
+   ------------------------------------------------------------------------- */
+:root {
+  --actbar: var(--rail);
+  --actbar-ink: var(--faint);
+  --actbar-ink-strong: var(--ink-50);
+  --actbar-mark: var(--accent);
+
+  --diff-add-bg: rgba(46, 160, 67, 0.15);
+  --diff-add-word: rgba(46, 160, 67, 0.4);
+  --diff-add-num: rgba(63, 185, 80, 0.3);
+  --diff-add-text: #3fb950;
+  --diff-del-bg: rgba(248, 81, 73, 0.15);
+  --diff-del-word: rgba(248, 81, 73, 0.4);
+  --diff-del-num: rgba(248, 81, 73, 0.3);
+  --diff-del-text: #f85149;
+}
+:root[data-theme='daylight'],
+:root[data-theme='brasa'] {
+  --diff-add-bg: #e6ffec;
+  --diff-add-word: #abf2bc;
+  --diff-add-num: #ccffd8;
+  --diff-add-text: #1a7f37;
+  --diff-del-bg: #ffebe9;
+  --diff-del-word: rgba(255, 129, 130, 0.4);
+  --diff-del-num: #ffd7d5;
+  --diff-del-text: #cf222e;
+}
+
+/* The diff editor's rows (components/views/DiffEditor.tsx). */
+.diff-row { display: flex; min-width: 0; }
+.diff-num {
+  flex: none;
+  width: 52px;
+  padding-right: 10px;
+  text-align: right;
+  color: rgb(var(--ink-600));
+  user-select: none;
+  -webkit-user-select: none;
+}
+.diff-code { flex: 1; min-width: 0; padding-left: 10px; white-space: pre; }
+.diff-wrap .diff-code { white-space: pre-wrap; word-break: break-word; }
+.diff-add { background: var(--diff-add-bg); }
+.diff-add .diff-num { background: var(--diff-add-num); color: rgb(var(--ink-200)); }
+.diff-del { background: var(--diff-del-bg); }
+.diff-del .diff-num { background: var(--diff-del-num); color: rgb(var(--ink-200)); }
+.diff-add-word { background: var(--diff-add-word); border-radius: 2px; }
+.diff-del-word { background: var(--diff-del-word); border-radius: 2px; }
+.diff-empty { background: rgb(var(--panel)); }
+.diff-hunk { background: rgb(var(--elev) / 0.6); color: rgb(var(--faint)); }
+
 html,
 body,
 #root {
@@ -789,6 +969,12 @@ progress {
 [data-theme='daylight'] .octo-tile {
   background: rgb(var(--panel));
   box-shadow: 0 0 0 1px rgb(var(--line));
+}
+[data-theme='brasa'] .octo-tile,
+[data-theme='brasa-dark'] .octo-tile {
+  /* On the charcoal activity bar the tile is a well, not a lit card. */
+  background: rgb(255 255 255 / 0.06);
+  box-shadow: none;
 }
 
 /* ---- Travel Display: the colony ------------------------------------------

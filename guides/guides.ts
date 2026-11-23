@@ -51,6 +51,9 @@ export const GUIDE_GOTOS = [
   'library:tickets',
   'library:appearance',
   'library:settings',
+  // The side bar's views — the IDE shell's file tree and working-tree diff.
+  'side:explorer',
+  'side:changes',
 ] as const;
 export type GuideGoto = (typeof GUIDE_GOTOS)[number];
 

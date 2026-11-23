@@ -11,7 +11,7 @@ goto: activity:terminals
 
 Todos los demás runs de Octo son de una sola vuelta: entra el prompt, sale la respuesta en streaming, y nada de lo que escribas le llega. Las terminales son la excepción: un PTY real, de ida y vuelta, en la carpeta del workspace.
 
-1. Abrí **Activity › Terminals**, o usá ⌘K → **New terminal** o **New Claude session**.
+1. Abrí el panel de abajo del editor con ⌘⇧J y elegí su pestaña **Terminal**, o usá ⌘K → **New terminal** o **New Claude session**. La terminal queda debajo del archivo o del spec en el que estabas, así escribís al lado del código del que se trata. Arrastrá el borde de arriba del panel para hacerlo más alto o más bajo; la altura se recuerda.
 2. Apretá **Terminal** para tu shell de login, o **Claude session** para el CLI interactivo de `claude`. Las dos arrancan en el workspace con el mismo PATH extendido que usa la app para encontrar `claude`. Si no encuentra el CLI, la sesión de Claude te deja en una shell para que lo lances vos.
 3. En una sesión de Claude contestás lo que los runs de una vuelta no pueden: preguntas de `AskUserQuestion`, pedidos de permiso y slash commands de verdad, igual que en tu propia terminal.
 4. Los links que imprime Claude son clickeables y se abren en Google Chrome; si no tenés Chrome, en tu navegador por defecto.

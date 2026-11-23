@@ -4,17 +4,60 @@ React 18 + Tailwind + Zustand. The renderer talks to the backend **only** throug
 `window.octo.*` (see [`ipc-contract.md`](./ipc-contract.md)). There is no global state outside
 the Zustand stores.
 
-## The surface shell
+## The IDE shell
 
-The app is **four working surfaces** — Home, Spec, Activity, Library — plus **Learn**, the
-interactive guide (see *Learn* below), all singletons selected by a slim icon nav (`SurfaceNav`). There is **no tab bar and no focus mode**. Everything else renders
-as a drawer or a slide-over on top of the active surface:
+The window is laid out like an editor (Kiro / VS Code): an **activity bar**, a **side bar**, an
+**editor area** with a tab strip, the **Assistant** on the right, a **runs panel** under the
+editor, and a **status bar**. Designed in Claude Design (*"0ct0 — Refactor UX estilo IDE"*).
 
-- the **Assistant** (chat) — right drawer, ⌘J (`AssistantDrawer` → `ChatPanel`)
-- the **Explorer** (file tree) — left slide-over, ⌘⇧E (`ExplorerDrawer` → `ExplorerView`)
-- the **overlay** — right slide-over for detail views (`OverlayPanel`): file / agent / skill /
-  run viewers, Open Questions, the hook editor, and the global **repo panel**
-  (`SourceControlView variant="page"`), opened from the top bar's project·branch pill.
+- **Activity bar** (`shell/ActivityBar.tsx`) — two groups that do two different things. The top
+  four pick the **side view** (`explorer` · `search` · `changes` · `specs`; asking for the one on screen
+  closes the side bar). The rest pick the **surface** shown in the editor area: Home · Activity ·
+  Library · Learn. The open spec has no icon of its own — it is reached from a side view and is
+  the editor area's pinned tab while it is the surface.
+- **Side bar** (`shell/SideBar.tsx`) — in the layout flow and resizable (`sideWidth`), *not* a
+  slide-over: the tree and a file are visible together.
+  - **Explorer** (`sidebar/ExplorerView.tsx`, ⌘⇧E) — the specs in flight above the file tree; a
+    changed file carries its git letter (A/M/D), a folder containing changes a dot.
+    At its foot, **Outline** (`shell/MarkdownOutline.tsx`) lists the headings of the markdown file
+    on screen; clicking one opens the file at that line, and the preview scrolls to the same
+    heading.
+  - **Search** (`shell/SearchView.tsx`, ⌘⇧F) — text search through `git.search` (`git grep`:
+    tracked + untracked, `.gitignore` honoured, binaries skipped), debounced as you type, with
+    match-case and regex toggles. Hits are grouped by file; one opens the file **at that line**
+    (`openFile(path, line)` → `FileViewer`'s `line` prop scrolls to and marks it).
+  - **Changes** (`shell/ChangesView.tsx`) — every file that differs from HEAD, with `+n −n`
+    counts. **By task** (default; `lib/changeGroups.ts`) groups the files under the run that last
+    wrote them — `T3` + the task's sentence from `tasks.md` + its agent, a spec's non-task run, the
+    Assistant — with *Edited by hand* last; each group's **Run** opens that run. **By folder** is
+    tree order. Attribution is **file-level and last-writer-wins**, and only counts a run newer
+    than HEAD (see `useGit.authors`): it names the run that touched the file most recently, not
+    the author of each line. Clicking a row opens its **diff tab**; the checkbox is the index (ticked =
+    staged). The commit box commits what is ticked, or everything when nothing is. Branches, sync
+    and PRs stay in the repo overlay.
+  - **Specs** (`shell/SpecsSideView.tsx`) — Home's board as a list: specs under their phase, a
+    phase heading in the "waits on you" colour when a spec in it has no run going.
+- **Editor area** — `shell/EditorTabs.tsx` over either the active surface or an **editor tab**.
+  The pinned tabs come first and *are* the surface (they cannot be closed): one tab for Home /
+  Activity / Library / Learn, or — while a spec is the surface — its three documents
+  (`requirements.md` · `plan.md` · `tasks.md`, i.e. the stages; one past the current gate is
+  locked). `SpecFlow` no longer draws its own file tabs. The rest are `file` tabs
+  (`views/FileViewer`) and `diff` tabs (`views/DiffEditor`). The strip is hidden when there is
+  nothing to switch between (no file open and no spec). ⌘W closes the tab on screen; middle-click closes any.
+- **Panel** (`shell/BottomPanel.tsx`, ⌘⇧J) — **Runs** (`OrchestratorView`) · **Terminal**
+  (`views/TerminalsPane`) · **History** (`HistoryView`) under the editor area, beside the file a
+  run is editing. Its upper edge is a drag handle (`ResizeHandle side="top"`; `panelHeight`,
+  persisted, capped at 70% of the window both when set and at render). It is **always mounted** and hidden with `display` while closed, because the
+  terminals' PTYs live in it; Runs and History mount only while shown. Terminals no longer have
+  a tab in Activity: `openActivity('terminals')` and `addTerminal` are redirected to the panel.
+- **Status bar** (`shell/StatusBar.tsx`) — branch and uncommitted count (→ Changes), what the
+  editor area shows, and the run count (→ runs panel).
+- the **Assistant** (chat) — right panel, ⌘J (`AssistantDrawer` → `ChatPanel`)
+- the **overlay** — right slide-over for detail views that are not files (`OverlayPanel`): agent /
+  skill / run viewers, Open Questions, the hook editor, tickets, guides and the global **repo
+  panel** (`SourceControlView variant="page"`). **A file is a tab, not an overlay**:
+  `openOverlay({kind:'file'})` is redirected to `openFile` in the store, so every older call site
+  moved at once.
 
 Home, Activity, Library and Learn stay mounted (display-toggled) so terminals keep their PTYs and lists
 keep scroll position; the Spec flow mounts per spec (`key={activeSpecId}`).
@@ -30,12 +73,14 @@ carries the toggle (a `MonitorSmartphone` icon reflecting open state) and ⌘K h
 Display* command. See [`subsystems.md`](./subsystems.md) → Travel Display.
 
 ```
-App                      (the dark FRAME: title bar + icon rail + canvas; panels float on it)
+App                      (the FRAME: title bar + activity bar + canvas; panels float on it)
 ├─ CommandBar          title bar: centered project pill (opens the ⌘K palette), then compact
 │   └─ CommandPalette    status controls — live-runs pill (→ Activity), branch (→ repo overlay),
 │                        model·backend (→ Library › Settings), theme + Assistant toggles.
-├─ SurfaceNav          brand tile + 4 icons: Home · Spec · Activity · Library (running badge).
-├─ main
+├─ ActivityBar         brand tile · side views (Explorer / Changes / Specs) · surfaces
+│                      (Home / Activity / Library / Learn), with change + running badges.
+├─ SideBar             the picked side view; resizable, in the layout flow.
+├─ main                EditorTabs, then ONE of:
 │   ├─ HomeView        the board: composer that CREATES specs (Plan / Quick Plan), the
 │   │                  Entrada pane (TicketInbox, one lane per tracker), three phase
 │   │                  columns, the Entregado shelf, Gestionar (select + delete); the
@@ -45,10 +90,12 @@ App                      (the dark FRAME: title bar + icon rail + canvas; panels
 │   ├─ ActivitySurface the single "what's running" center: Runs (OrchestratorView) · History
 │   │                  (HistoryView) · Specs (SpecsStudio — per-spec run analytics) ·
 │   │                  Terminals (panes stay mounted) · Graph (AgentGraphView).
-│   └─ LibrarySurface  left sub-nav → Agents / Skills / Hooks / Steering / Routing / Appearance
-│                      (SyntaxStudio) / Settings — the consolidated config shell.
+│   ├─ LibrarySurface  left sub-nav → Agents / Skills / Hooks / Steering / Routing / Appearance
+│   │                  (SyntaxStudio) / Settings — the consolidated config shell.
+│   └─ FileViewer | DiffEditor   the active editor tab (mounted only while on screen).
+├─ BottomPanel         (⌘⇧J) live runs under the editor area.
 ├─ AssistantDrawer     (⌘J, resizable via ResizeHandle; width persisted)
-├─ ExplorerDrawer      (⌘⇧E)
+├─ StatusBar           branch · uncommitted changes · what is on screen · runs.
 └─ OverlayPanel        (esc closes)
 ```
 
@@ -85,8 +132,21 @@ The shell state. `surface: 'home' | 'spec' | 'activity' | 'library'` plus per-su
 - **Activity**: `activityTab` (`'runs' | 'history' | 'specs' | 'reviews' | 'terminals' | 'graph'`), `openActivity(tab?)`.
 - **Library**: `librarySection` (`'agents' | 'skills' | 'hooks' | 'steering' | 'routing' |
   'appearance' | 'settings'`), `openLibrary(section?)`.
-- **Drawers**: `assistantOpen`/`toggleAssistant` (+ persisted `assistantWidth`), `explorerOpen`.
-- **Overlay**: `overlay: Overlay | null` with `openOverlay`/`closeOverlay` — the discriminated
+- **Assistant**: `assistantOpen`/`toggleAssistant` (+ persisted `assistantWidth`).
+- **Side bar**: `sideView` (`'explorer' | 'search' | 'changes' | 'specs'`), `sideOpen`, `sideWidth` — all
+  persisted — with `showSide(view)` (toggles when the view is already on screen) and
+  `toggleExplorer()` (⌘⇧E, kept under its old name).
+- **Editor tabs**: `tabs: EditorTab[]` (`{id, kind: 'file' | 'diff', path, line?, nonce?}` — a file path is
+  absolute, a diff path repository-relative) and `activeTabId` (`null` = the surface is on
+  screen). `openFile(path, line?)`, `openDiff(relPath)`, `closeTab`, `closeAllTabs`, `setActiveTab`.
+  Every navigation to a surface (`setSurface`, `openSpec`, `openActivity`, `openLibrary`,
+  `focusComposer`, `addTerminal`) clears `activeTabId`, so a surface is never hidden behind a tab.
+- **Panel**: `panelOpen`, `panelTab` (`'runs' | 'terminals' | 'history'`), `panelHeight` +
+  `setPanelHeight`, `togglePanel`, `openPanel(tab)`.
+- **Spec documents as tabs**: `showSpecDoc(stage)` switches to a spec stage *and* bumps
+  `specDocNonce`, which `SpecFlow` listens to so a document tab opens the document, not Clarify.
+- **Overlay**: `overlay: Overlay | null` with `openOverlay`/`closeOverlay` (`kind: 'file'` is
+  redirected to an editor tab) — the discriminated
   union `{kind: 'file'|'agent'|'skill', path}` / `{kind: 'run', runId}` /
   `{kind: 'questions', specId}` / `{kind: 'hook', hookId?}` / `{kind: 'repo'}` /
   `{kind: 'guide', id}`.
@@ -110,7 +170,7 @@ The shell state. `surface: 'home' | 'spec' | 'activity' | 'library'` plus per-su
 and `maxConcurrency` (1–8). Selectors: `runningCount()`, `taskRunningCount()` (task/refine/polish
 only — so chat/spec runs don't throttle wave scheduling), `activeForTask(taskId)`.
 It has exactly **one full rendering** — Activity › Runs — plus lightweight indicators (the top-bar
-pill, SurfaceNav badge, in-situ task-row chips). **Concurrency has one control**, shown in two
+pill, ActivityBar badge, in-situ task-row chips). **Concurrency has one control**, shown in two
 mirrors of the same store field: the tasks-board header and Activity › Runs.
 
 ### `models.ts` — `useModels`
@@ -140,10 +200,20 @@ Configuration for **file-viewer syntax highlighting** (localStorage-persisted): 
 `theme`, installed extra **languages**, and `lineNumbers` / `wrap` prefs. Surfaced by
 Library › **Appearance** (`SyntaxStudio`). See **File viewer & syntax** below.
 
+### `git.ts` — `useGit`
+The working tree as the shell sees it: `isRepo`, `branch`, `files` (`git:list-changes`, with
+`added`/`deleted` against HEAD), `authors` (`history:file-authors` — the run that last wrote each
+changed file, keyed by repository-relative path, dropped when the run is older than HEAD's commit
+time so a file committed and then edited by hand is not credited to a run) and `refresh()`. One store so the activity-bar badge, the Changes
+view, the Explorer's decorations, the tab strip and the status bar cannot disagree. `App`
+refreshes it on workspace open, every 6 s, on window focus and whenever a run finishes.
+
 ### `theme.ts` — `useTheme`
-The active visual palette (`signal` [default] | `abyss` | `bioluminescent` | `daylight`); persists
-to `localStorage` and writes `document.documentElement.dataset.theme`. The `CommandBar`'s contrast
-button cycles it.
+The active visual palette (`brasa` [default] | `brasa-dark` | `signal` | `abyss` |
+`bioluminescent` | `daylight`); persists to `localStorage` and writes
+`document.documentElement.dataset.theme`. The `CommandBar`'s contrast button cycles it. Because
+the choice is persisted on every boot, a new default would never reach an existing install: the
+IDE-shell refactor moves each install to `brasa` **once** (`localStorage['octo.theme.brasa']`).
 
 ## Layout & space (`styles.css` → "Layout primitives")
 
@@ -184,7 +254,7 @@ reused as surfaces must be re-laid-out, not wrapped in a fixed centred box — t
 
 The whole app re-skins by swapping one attribute. Every Tailwind colour token is defined as
 `rgb(var(--x) / <alpha-value>)`, where `--x` is a **space-separated RGB channel triple**. The
-channel values live in `styles.css` under the four `data-theme` blocks. The visual language is
+channel values live in `styles.css` under the six `data-theme` blocks. The visual language is
 **frame + floating panels** (Kiro-style): `--rail` is the near-black app FRAME (title bar, icon
 rail, canvas), `--bg` (`ink-950`) is the interior of a floating panel, and panels are separated
 from the frame by rounded corners + a hairline `ring-ink-50/[0.07]` rather than borders. The
@@ -220,7 +290,24 @@ the opposite way from dark ones: Daylight's `faint`, `good` and `warn` were 3:1 
 ambers on white and had to be darkened to the 700 weights. Re-check the ladder after touching any
 channel — a "more muted" token that ends up *darker* than the one above it is a bug.
 
-### Signal — the brand palette (default)
+### Brasa — the IDE-shell palettes (default)
+
+`brasa` (light) and `brasa-dark` come from the Claude Design system *"Brasa"*: **ink to act, paper
+to work, orange for what waits on you.** They have ONE accent, so the two legacy roles map
+differently than on Signal: `accent` (execute & progress) is **ink** — work that advances on its
+own needs no hue — and `agent` (wait & decide) is the **orange**. Radius 8 on controls / 12 on
+surfaces, no shadows, Inter top to bottom (`@fontsource-variable/inter`, bundled). `brasa-dark` is
+the same system on charcoal; it is not part of the published Brasa system, it was derived here.
+
+Two token groups exist for the shell and are defined for **every** theme:
+
+- `--actbar*` — the activity bar's ground and ink. Brasa makes it the one charcoal surface on a
+  paper app; every other theme falls back to `--rail`.
+- `--diff-*` — the diff editor's colours: **GitHub's green and red**, as full colours rather than
+  channels. They are a convention readers already know, so they follow only the theme's
+  light/dark side, never its accent. Also used for the `+n −n` counts and the A/D status letters.
+
+### Signal — the brand palette
 
 `signal` comes from the Claude Design system *"Paleta y Tokens"* and is the theme the rebranding
 targets. Its rules differ from the Kiro-style themes above and are load-bearing:
@@ -755,10 +842,16 @@ rather than in either project.
 
 **A guide is documentation**: change the UI it describes, update the guide in the same change.
 
+**Destinations.** A guide's `goto` is `home`, `spec:<stage>`, `activity:<tab>`, `library:<section>`
+or `side:<explorer|changes>` — the last two open a side view (`goTo` only calls `showSide` when
+the view is not already on screen, because it toggles). `currentGoto()` returns a `side:*` value
+while an editor tab is on screen (file → `side:explorer`, diff → `side:changes`), so the `?`
+offers *files-and-tabs* / *review-changes* there.
+
 ## Learn — the interactive guide (`views/LearnView.tsx` + `lib/learn.ts`)
 
 The guides answer *how do I do X*; Learn answers the question before it — **what do you want to
-work on?** — and is a surface (graduation cap in `SurfaceNav`, ⌘K *Learn*) rather than a mode,
+work on?** — and is a surface (graduation cap in the `ActivityBar`, ⌘K *Learn*) rather than a mode,
 because unlike Quick Start it is somewhere you come back to.
 
 - **Intents** (`INTENTS` in `lib/learn.ts`, bilingual like the guides): build a feature, fix a
@@ -838,10 +931,55 @@ exists for people who want the automatic version, on `spec-advance` and disabled
 
 ## File viewer & syntax highlighting (`views/FileViewer.tsx`)
 
-Opens in the **overlay** (from the Explorer drawer, steering docs, LibBadge, etc.). Resolves the
+Opens as an **editor tab** (from the Explorer, steering docs, LibBadge, a diff's *Open file*, …).
+A **markdown** file has three modes — **Code · Split · Preview** (persisted as
+`localStorage['octo.mdMode']`, default Split) — the preview going through `Markdown`, i.e. the
+same trust-boundary renderer as every other document. A file that differs from HEAD gets a
+**Changes** button that opens its diff tab, and is re-read when git reports it moved. On a light
+palette the *default* syntax theme swaps to GitHub Light (an explicit choice is respected).
+Resolves the
 language via `detectLanguage` and highlights with `prism.ts` (lazy `ensureLanguage` for installed
 extras; one-click **Install `<lang>`** banner otherwise). Toolbar: theme picker, line-numbers +
 wrap, and a link to Library › Appearance. Colors are scoped as `--syn-*` vars on `.code-view`.
+
+## Diff editor (`views/DiffEditor.tsx`)
+
+One file against HEAD (`git.fileDiff`), drawn the way GitHub draws it: green added, red removed,
+the changed span inside a paired line a shade stronger (common prefix/suffix — no diff library).
+**Split** (HEAD | working tree) or **Unified**, persisted as `localStorage['octo.diffLayout']`;
+*Change n of m* steps between runs of removals+additions. It re-reads whenever the file's entry in
+`useGit.files` changes, so a task run editing the file updates the tab live. When a run is the
+file's author, a strip under the toolbar names it (*Last written by T1 · @agent in spec*) with
+**Open spec** and **View run**.
+
+Two things live on the diff itself:
+
+- **Revert hunk** — on each `@@` row of a *modified* file. It is confirmed in place (the row turns
+  into *Put this hunk back to HEAD? Revert / Cancel*), then `git.revertHunk` reverse-applies that
+  one hunk to the working tree. The renderer sends the hunk **text**, not an index: if the file
+  moved since the diff was read the backend finds no matching hunk and applies nothing.
+- **Review findings** — when a spec's `branch` is the current branch and it has a review, that
+  `review.md` is parsed (`parseReview`) and the findings for this file are shown: under the line
+  they cite when that line is in the diff, otherwise above it. They are labelled *from the last
+  code review* because the review may predate the working tree. **Fix with Claude** hands one
+  finding to the Assistant (`fixFindingPrompt` in `lib/codeReview.ts`, the same prompt Ship's and
+  the PR studio's lists send) and opens it beside the diff. Row styling is the
+`.diff-*` classes in `styles.css`. Not to be confused with `review/DiffFiles.tsx`, which renders a
+whole PR's patches with review findings inline.
+
+## Checkpoints (`components/CheckpointControl.tsx`)
+
+Every run that can write (CLI backend, not `readOnly`) gets a **checkpoint** before it starts:
+`gitCheckpointCreate` snapshots the working tree — tracked and untracked, `.gitignore` honoured —
+into a commit under `refs/octo/checkpoints/<runId>`, built in a **temporary index** so the real
+index, HEAD, the stash and the working tree never move. The newest 60 are kept.
+
+`CheckpointControl` shows it under each Assistant answer (`ChatMessage.runId`) and in the run
+viewer, with **Restore** confirmed in place and the file list spelled out. A restore is narrow on
+purpose: it touches only the files runs wrote since that run started (`run_files`), so hand edits
+elsewhere stay. A file in the snapshot is restored; one that is not was created by a run and is
+deleted — unless it is git-ignored, where absence from the snapshot proves nothing, so it is left
+and reported. It rolls back this run **and every later one** for those files.
 
 ## Markdown & mermaid (`components/Markdown.tsx` + `lib/markdown.ts`)
 

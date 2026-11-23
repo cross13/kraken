@@ -27,6 +27,12 @@ import {
   gitPull,
   gitFetch,
   gitListChanges,
+  gitFileDiff,
+  gitRevertHunk,
+  gitCheckpointCreate,
+  gitCheckpointInfo,
+  gitCheckpointRestore,
+  gitSearch,
   gitStage,
   gitUnstage,
   gitStageAll,
@@ -65,6 +71,8 @@ import {
   listRunFiles,
   runFileCounts,
   listSpecFiles,
+  listFileAuthors,
+  listFilesWrittenSince,
   appendRunResponse,
   finishRun,
   listRuns,
@@ -150,12 +158,16 @@ const __dirname = path.dirname(__filename);
 // Name the app early so userData (DB, settings) lives in an Octo-named folder
 // rather than the default "Electron" directory.
 app.setName('Octo');
-const userDataDir = path.join(app.getPath('appData'), 'Octo');
+// `OCTO_USER_DATA` points a run at a different folder — a driver or a second
+// instance that must not read or write the real history DB and settings.
+// (Chromium's `--user-data-dir` is not enough: the `setPath` below wins.)
+const userDataOverride = process.env.OCTO_USER_DATA?.trim();
+const userDataDir = userDataOverride || path.join(app.getPath('appData'), 'Octo');
 // The app was called Kraken until August 2026. That folder holds the history DB
 // and every electron-store setting, so carry it over rather than making a rename
 // look like a factory reset. One-shot: only when Octo's folder doesn't exist yet.
 const legacyUserDataDir = path.join(app.getPath('appData'), 'Kraken');
-if (!existsSync(userDataDir) && existsSync(legacyUserDataDir)) {
+if (!userDataOverride && !existsSync(userDataDir) && existsSync(legacyUserDataDir)) {
   try {
     renameSync(legacyUserDataDir, userDataDir);
   } catch {
@@ -876,6 +888,35 @@ function registerIpc() {
   ipcMain.handle('git:pull', (_e, cwd: string) => gitPull(cwd));
   ipcMain.handle('git:push', (_e, cwd: string) => gitPushCurrent(cwd));
   ipcMain.handle('git:list-changes', (_e, cwd: string) => gitListChanges(cwd));
+  // One file against HEAD — the diff editor's source.
+  ipcMain.handle('git:file-diff', (_e, args: { cwd: string; path: string }) =>
+    gitFileDiff(args.cwd, args.path)
+  );
+  // Put one hunk back to HEAD. Refuses when the hunk text no longer matches.
+  ipcMain.handle('git:revert-hunk', (_e, args: { cwd: string; path: string; hunk: string }) =>
+    gitRevertHunk(args.cwd, args.path, args.hunk)
+  );
+  // Checkpoints: the working tree as it was before a run.
+  const checkpointFiles = (cwd: string, runId: string): string[] => {
+    const run = getRun(runId);
+    if (!run) return [];
+    const rels = listFilesWrittenSince(cwd, run.started_at).map((p) =>
+      p.startsWith(`${cwd}/`) ? p.slice(cwd.length + 1) : p
+    );
+    return [...new Set(rels)].filter((p) => !path.isAbsolute(p)).sort();
+  };
+  ipcMain.handle('git:checkpoint-info', (_e, args: { cwd: string; runId: string }) => {
+    const info = gitCheckpointInfo(args.cwd, args.runId);
+    return { ...info, files: info.exists ? checkpointFiles(args.cwd, args.runId) : [] };
+  });
+  ipcMain.handle('git:checkpoint-restore', (_e, args: { cwd: string; runId: string }) =>
+    gitCheckpointRestore(args.cwd, args.runId, checkpointFiles(args.cwd, args.runId))
+  );
+  ipcMain.handle(
+    'git:search',
+    (_e, args: { cwd: string; query: string; caseSensitive?: boolean; regex?: boolean }) =>
+      gitSearch(args.cwd, args.query, { caseSensitive: args.caseSensitive, regex: args.regex })
+  );
   // What this branch adds on top of its base — the PR description's raw material.
   ipcMain.handle('git:branch-summary', (_e, args: { cwd: string; base?: string }) =>
     gitBranchSummary(args.cwd, args.base)
@@ -1162,6 +1203,10 @@ function registerIpc() {
   ipcMain.handle('history:list-run-files', (_e, runId: string) => listRunFiles(runId));
   ipcMain.handle('history:run-file-counts', (_e, opts) => runFileCounts(opts ?? {}));
   ipcMain.handle('history:list-spec-files', (_e, opts) => listSpecFiles(opts));
+  // Which run last wrote each file — the Changes view groups by it.
+  ipcMain.handle('history:file-authors', (_e, workspacePath: string) =>
+    listFileAuthors(workspacePath)
+  );
   ipcMain.handle('history:list-errors', (_e, opts) => listErrors(opts ?? {}));
   ipcMain.handle('history:stats', (_e, workspacePath) => getStats(workspacePath));
   ipcMain.handle('history:spec-run-stats', (_e, workspacePath: string) =>
@@ -2948,6 +2993,18 @@ async function streamClaude(sender: Electron.WebContents, payload: ClaudePayload
       message: 'db: failed to begin run',
       details: { error: String(err) },
     });
+  }
+
+  // Snapshot the working tree before a run that can write to it, so the run
+  // can be undone (Restore, on the run and in the Assistant). Read-only runs
+  // and the API backend have no tools that touch files. Best-effort: a failed
+  // snapshot must never stop the run.
+  if (backend === 'cli' && payload.cwd && !payload.readOnly) {
+    try {
+      gitCheckpointCreate(payload.cwd, payload.requestId);
+    } catch {
+      // no checkpoint for this run
+    }
   }
 
   if (backend === 'cli') {

@@ -13,11 +13,22 @@ import {
   type GuideLang,
 } from '../../guides/guides';
 import type { StepId } from './quickStart';
-import { useUi, type ActivityTab, type LibrarySection, type SpecStage } from '../stores/ui';
+import {
+  useUi,
+  type ActivityTab,
+  type LibrarySection,
+  type SideView,
+  type SpecStage,
+} from '../stores/ui';
 
 // Compile-time guard that the format's vocabulary still names real screens and
 // real Quick Start steps — a rename in `ui.ts` breaks this line, not a click.
-type Dest = 'home' | `spec:${SpecStage}` | `activity:${ActivityTab}` | `library:${LibrarySection}`;
+type Dest =
+  | 'home'
+  | `spec:${SpecStage}`
+  | `activity:${ActivityTab}`
+  | `library:${LibrarySection}`
+  | `side:${SideView}`;
 GUIDE_GOTOS satisfies readonly Dest[];
 GUIDE_CHECKS satisfies readonly StepId[];
 
@@ -31,6 +42,9 @@ export const GUIDES = loadGuides(
 /** The screen on display right now, in the guides' vocabulary. */
 export function currentGoto(): GuideGoto {
   const s = useUi.getState();
+  // An editor tab is on screen: the guide is about files or about changes.
+  const tab = s.tabs.find((t) => t.id === s.activeTabId);
+  if (tab) return tab.kind === 'diff' ? 'side:changes' : 'side:explorer';
   if (s.surface === 'spec') return `spec:${s.specStage}`;
   if (s.surface === 'activity') return `activity:${s.activityTab}`;
   if (s.surface === 'library') return `library:${s.librarySection}`;
@@ -63,6 +77,10 @@ export function goTo(goto: GuideGoto) {
     else ui.setSurface('home');
   } else if (surface === 'activity') ui.openActivity(sub as ActivityTab);
   else if (surface === 'library') ui.openLibrary(sub as LibrarySection);
+  else if (surface === 'side') {
+    // `showSide` toggles: only call it when the view is not already on screen.
+    if (!(ui.sideOpen && ui.sideView === sub)) ui.showSide(sub as SideView);
+  }
   else ui.setSurface('home');
 }
 

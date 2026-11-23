@@ -1,9 +1,14 @@
 import { useEffect } from 'react';
 import { CommandBar } from './components/CommandBar';
-import { SurfaceNav } from './components/SurfaceNav';
+import { ActivityBar } from './components/shell/ActivityBar';
+import { SideBar } from './components/shell/SideBar';
+import { EditorTabs } from './components/shell/EditorTabs';
+import { StatusBar } from './components/shell/StatusBar';
+import { BottomPanel } from './components/shell/BottomPanel';
+import { FileViewer } from './components/views/FileViewer';
+import { DiffEditor } from './components/views/DiffEditor';
 import { OverlayPanel } from './components/OverlayPanel';
 import { AssistantDrawer } from './components/AssistantDrawer';
-import { ExplorerDrawer } from './components/ExplorerDrawer';
 import { ResizeHandle } from './components/ResizeHandle';
 import { HomeView } from './components/views/HomeView';
 import { QuickStart } from './components/views/QuickStart';
@@ -14,6 +19,7 @@ import { LibrarySurface } from './components/views/LibrarySurface';
 import { useWorkspace } from './stores/workspace';
 import { useUi } from './stores/ui';
 import { useOrchestrator } from './stores/orchestrator';
+import { useGit } from './stores/git';
 
 export default function App() {
   const restoreLast = useWorkspace((s) => s.restoreLast);
@@ -27,6 +33,13 @@ export default function App() {
   const toggleExplorer = useUi((s) => s.toggleExplorer);
   const quickStartOpen = useUi((s) => s.quickStartOpen);
   const setQuickStart = useUi((s) => s.setQuickStart);
+  const togglePanel = useUi((s) => s.togglePanel);
+  const tabs = useUi((s) => s.tabs);
+  const activeTabId = useUi((s) => s.activeTabId);
+  const root = useWorkspace((s) => s.root);
+  const activeTab = tabs.find((t) => t.id === activeTabId) ?? null;
+  // A surface is on screen only while no editor tab is.
+  const show = (name: typeof surface) => (activeTab === null && surface === name ? 'block' : 'none');
 
   // Restore the last workspace, then fade out the boot splash (index.html).
   // A short floor keeps the brand animation from flashing on fast boots.
@@ -53,23 +66,59 @@ export default function App() {
     });
   }, [restoreLast]);
 
-  // Global shortcuts: ⌘J assistant, ⌘⇧E explorer, esc closes the overlay.
+  // Global shortcuts: ⌘J assistant, ⌘⇧J runs panel, ⌘⇧E explorer, ⌘⇧F search, ⌘W closes
+  // the editor tab, esc closes the overlay.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'j') {
         e.preventDefault();
-        toggleAssistant();
+        if (e.shiftKey) togglePanel();
+        else toggleAssistant();
+      }
+      // ⌘W closes the tab on screen — and only then swallows the key, so with
+      // no tab open it keeps its native meaning.
+      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'w') {
+        const { activeTabId: id, closeTab } = useUi.getState();
+        if (id) {
+          e.preventDefault();
+          closeTab(id);
+        }
       }
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'e') {
         e.preventDefault();
         toggleExplorer();
+      }
+      // ⌘⇧F always lands in the search box, whatever the side bar was showing.
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'f') {
+        e.preventDefault();
+        const ui = useUi.getState();
+        if (!(ui.sideOpen && ui.sideView === 'search')) ui.showSide('search');
+        window.dispatchEvent(new Event('octo:focus-search'));
       }
       // Quick Start and Zen own Escape themselves, on the capture phase.
       if (e.key === 'Escape') closeOverlay();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [toggleAssistant, toggleExplorer, closeOverlay]);
+  }, [toggleAssistant, togglePanel, toggleExplorer, closeOverlay]);
+
+  // Keep the working tree's change list fresh: on open, on a slow poll, when
+  // the window regains focus (you committed in a terminal), and whenever a run
+  // finishes (an agent just edited files).
+  useEffect(() => {
+    const refresh = () => void useGit.getState().refresh();
+    refresh();
+    const t = setInterval(refresh, 6000);
+    window.addEventListener('focus', refresh);
+    const unsub = useOrchestrator.subscribe((s, prev) => {
+      if (s.log !== prev.log) refresh();
+    });
+    return () => {
+      clearInterval(t);
+      window.removeEventListener('focus', refresh);
+      unsub();
+    };
+  }, [root]);
 
   // Mirror the live run registry to the Travel Display (the wide second window).
   // The main window is authoritative; we push a serialized snapshot whenever the
@@ -137,45 +186,57 @@ export default function App() {
 
       <CommandBar />
       <div className="flex-1 min-h-0 flex">
-        <SurfaceNav />
+        <ActivityBar />
 
-        <div className="flex-1 min-w-0 flex gap-1.5 pr-2 pb-2">
-          {/* Surfaces are singletons. Home / Activity / Library / Learn stay mounted
-              (display-toggled) so terminals keep their PTYs and lists keep
-              their scroll; the Spec flow mounts per spec. */}
-          <main className="flex-1 min-w-0 relative rounded-xl ring-1 ring-ink-50/[0.07] bg-ink-950 overflow-hidden">
-            <div className="absolute inset-0" style={{ display: surface === 'home' ? 'block' : 'none' }}>
-              <HomeView />
-            </div>
-            {activeSpecId && (
-              <div
-                className="absolute inset-0"
-                style={{ display: surface === 'spec' ? 'block' : 'none' }}
-              >
-                <SpecFlow key={activeSpecId} specId={activeSpecId} />
+        <div className="flex-1 min-w-0 flex gap-1.5 pl-1.5 pr-2 pb-2">
+          <SideBar />
+
+          <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+            {/* The editor area: a tab strip over either the active surface or an
+                editor tab. Surfaces are singletons and stay mounted
+                (display-toggled) so terminals keep their PTYs and lists keep
+                their scroll; the Spec flow mounts per spec; a file or diff tab
+                mounts only while it is the one on screen. */}
+            <main className="flex-1 min-h-0 flex flex-col rounded-xl ring-1 ring-ink-50/[0.07] bg-ink-950 overflow-hidden">
+              <EditorTabs />
+              <div className="flex-1 min-h-0 relative">
+                <div className="absolute inset-0" style={{ display: show('home') }}>
+                  <HomeView />
+                </div>
+                {activeSpecId && (
+                  <div className="absolute inset-0" style={{ display: show('spec') }}>
+                    <SpecFlow key={activeSpecId} specId={activeSpecId} />
+                  </div>
+                )}
+                <div className="absolute inset-0" style={{ display: show('activity') }}>
+                  <ActivitySurface />
+                </div>
+                <div className="absolute inset-0" style={{ display: show('library') }}>
+                  <LibrarySurface />
+                </div>
+                <div className="absolute inset-0" style={{ display: show('learn') }}>
+                  <LearnView />
+                </div>
+                {activeTab && (
+                  <div className="absolute inset-0">
+                    {activeTab.kind === 'file' ? (
+                      <FileViewer
+                        key={activeTab.id}
+                        path={activeTab.path}
+                        line={activeTab.line}
+                        lineNonce={activeTab.nonce}
+                      />
+                    ) : (
+                      <DiffEditor key={activeTab.id} path={activeTab.path} />
+                    )}
+                  </div>
+                )}
               </div>
-            )}
-            <div
-              className="absolute inset-0"
-              style={{ display: surface === 'activity' ? 'block' : 'none' }}
-            >
-              <ActivitySurface />
-            </div>
-            <div
-              className="absolute inset-0"
-              style={{ display: surface === 'library' ? 'block' : 'none' }}
-            >
-              <LibrarySurface />
-            </div>
-            <div
-              className="absolute inset-0"
-              style={{ display: surface === 'learn' ? 'block' : 'none' }}
-            >
-              <LearnView />
-            </div>
-          </main>
+            </main>
+            <BottomPanel />
+          </div>
 
-          {/* Assistant — the session drawer (⌘J), context-scoped to the active spec */}
+          {/* Assistant — the session panel (⌘J), context-scoped to the active spec */}
           {assistantOpen && (
             <>
               <ResizeHandle width={assistantWidth} side="left" onResize={setAssistantWidth} />
@@ -189,8 +250,8 @@ export default function App() {
           )}
         </div>
       </div>
+      <StatusBar />
 
-      <ExplorerDrawer />
       <OverlayPanel />
     </div>
   );
