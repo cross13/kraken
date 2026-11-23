@@ -1,3 +1,4 @@
+import { CheckpointControl } from '../CheckpointControl';
 import { useEffect, useState } from 'react';
 import {
   CheckCircle2,
@@ -72,6 +73,7 @@ export function RunViewer({ runId }: { runId: string }) {
             )}
           </div>
           <div className="font-mono text-[11px] text-ink-500 break-all">{run.id}</div>
+          <CheckpointControl runId={run.id} live={run.status === 'running'} />
           <div className="flex items-center gap-3 text-[11px] text-ink-400">
             <span>started {new Date(run.started_at).toLocaleString()}</span>
             {run.duration_ms != null && (

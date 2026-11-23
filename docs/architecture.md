@@ -70,9 +70,10 @@ method here, or the renderer can't reach it. See [`ipc-contract.md`](./ipc-contr
 
 React 18 + Tailwind + Zustand. Stores (`src/stores/`): `workspace`, `chat`, `ui`, the
 `orchestrator` registry of in-flight runs, plus `models`/`moduleConfig`/`syntax`/`theme`.
-**Four-surface shell**: `CommandBar` → `SurfaceNav` (Home · Spec · Activity · Library) with the
-Assistant drawer (⌘J), Explorer drawer (⌘⇧E), and a slide-over `OverlayPanel` for detail views —
-no tab bar. See [`renderer.md`](./renderer.md).
+**IDE shell**: `CommandBar` → `ActivityBar` → `SideBar` (Explorer · Changes · Specs) → the editor
+area (`EditorTabs` over a surface — Home · Spec · Activity · Library · Learn — or a file / diff
+tab) with the runs panel under it, the Assistant (⌘J) on the right, a `StatusBar`, and a
+slide-over `OverlayPanel` for detail views that are not files. See [`renderer.md`](./renderer.md).
 
 ## Two TypeScript projects
 

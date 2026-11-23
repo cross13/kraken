@@ -1,7 +1,7 @@
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
-import path from 'node:path';
-import type { BranchCommit, BranchDiff, BranchFile, BranchSummary, PrCheckout, PrFile } from './shared/types.js';
+import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs';
+import path, { isAbsolute } from 'node:path';
+import type { BranchCommit, BranchDiff, BranchFile, BranchSummary, CheckpointRestore, FileDiff, PrCheckout, PrFile, WorkspaceSearch } from './shared/types.js';
 
 export interface GitStatus {
   isRepo: boolean;
@@ -147,11 +147,22 @@ export interface ChangedFile {
   /** has changes in the working tree not yet staged */
   unstaged: boolean;
   untracked: boolean;
+  /** lines added / deleted against HEAD; absent for untracked and binary files */
+  added?: number;
+  deleted?: number;
+  /**
+   * last-modified time (ms). Line counts alone cannot tell that a file moved —
+   * an edit that swaps one line for another leaves `+n −n` exactly as it was —
+   * so open diff and file tabs re-read on this.
+   */
+  mtime?: number;
 }
 
 export interface ChangesResult {
   ok: boolean;
   files: ChangedFile[];
+  /** HEAD's commit time (ISO) — what a change in the working tree must be newer than */
+  headAt?: string;
   error?: string;
 }
 
@@ -186,7 +197,95 @@ export function gitListChanges(cwd: string): ChangesResult {
       untracked,
     });
   }
-  return { ok: true, files };
+  // Line counts against HEAD (staged + unstaged together) — what the Changes
+  // list shows beside each file. Binary files report `-` and stay uncounted.
+  const numstat = git(cwd, ['diff', 'HEAD', '--numstat']);
+  if (numstat.status === 0) {
+    const counts = new Map<string, { added: number; deleted: number }>();
+    for (const line of numstat.stdout.split('\n')) {
+      const [a, d, ...rest] = line.split('\t');
+      if (!rest.length || a === '-' || d === '-') continue;
+      counts.set(rest[rest.length - 1], { added: Number(a) || 0, deleted: Number(d) || 0 });
+    }
+    for (const f of files) {
+      const c = counts.get(f.path);
+      if (c) Object.assign(f, c);
+    }
+  }
+  for (const f of files) {
+    try {
+      f.mtime = Math.round(statSync(path.join(cwd, f.path)).mtimeMs);
+    } catch {
+      // deleted, or a path git quoted — no mtime, the counts still apply
+    }
+  }
+  const head = git(cwd, ['log', '-1', '--format=%cI']);
+  const headAt = head.status === 0 ? head.stdout.trim() || undefined : undefined;
+  return { ok: true, files, headAt };
+}
+
+// ---------- One file against HEAD ----------
+
+/** Past this a single file's patch is cut — the diff editor says so. */
+const WORKTREE_PATCH_CAP = 400_000;
+
+/**
+ * The working-tree diff of ONE file against HEAD — what the diff editor shows.
+ * Staged and unstaged changes together, because the question it answers is
+ * "what changed in this file since the last commit", not "what is in the index".
+ * An untracked file has no HEAD side, so it is diffed against /dev/null.
+ * `relPath` is relative to the repository; anything that escapes it is refused.
+ */
+export function gitFileDiff(cwd: string, relPath: string): FileDiff {
+  const fail = (error: string): FileDiff => ({
+    ok: false,
+    path: relPath,
+    status: 'M',
+    patch: '',
+    added: 0,
+    deleted: 0,
+    binary: false,
+    truncated: false,
+    error,
+  });
+  if (!cwd || !existsSync(cwd)) return fail('No workspace.');
+  if (!relPath || isAbsolute(relPath) || relPath.split(/[\\/]/).includes('..')) {
+    return fail('Path must be inside the repository.');
+  }
+  if (git(cwd, ['rev-parse', '--is-inside-work-tree']).status !== 0) {
+    return fail('Not a git repository.');
+  }
+  const porcelain = git(cwd, ['status', '--porcelain', '--', relPath]).stdout;
+  const code = porcelain.slice(0, 2);
+  const untracked = code === '??';
+  const hasHead = git(cwd, ['rev-parse', '--verify', '--quiet', 'HEAD']).status === 0;
+
+  // `--no-index` exits 1 when the files differ, which is the expected case.
+  const res = untracked
+    ? git(cwd, ['diff', '--no-color', '--no-index', '--', '/dev/null', relPath])
+    : git(cwd, ['diff', '--no-color', ...(hasHead ? ['HEAD'] : ['--cached']), '--', relPath]);
+  if (res.error || (res.status !== 0 && !(untracked && res.status === 1))) {
+    return fail((res.stderr || String(res.error ?? '')).trim() || 'git diff failed');
+  }
+
+  const full = res.stdout;
+  const binary = /^Binary files .* differ$/m.test(full) || full.includes('GIT binary patch');
+  // Keep only the hunks: the `diff --git` / `index` / `---` / `+++` header is
+  // noise in an editor that already names the file in its tab.
+  const at = full.indexOf('\n@@');
+  let patch = binary || at === -1 ? '' : full.slice(at + 1);
+  const truncated = patch.length > WORKTREE_PATCH_CAP;
+  if (truncated) patch = patch.slice(0, patch.lastIndexOf('\n', WORKTREE_PATCH_CAP));
+
+  let added = 0;
+  let deleted = 0;
+  for (const l of patch.split('\n')) {
+    if (l.startsWith('+')) added++;
+    else if (l.startsWith('-')) deleted++;
+  }
+  const status: FileDiff['status'] =
+    untracked || code.includes('A') ? 'A' : code.includes('D') ? 'D' : 'M';
+  return { ok: true, path: relPath, status, patch, added, deleted, binary, truncated };
 }
 
 /** Stage specific paths (git add). */
@@ -523,6 +622,201 @@ export function gitCommitPush(
   }
 
   return { ok: true, output, commitHash: hash, pushed: true };
+}
+
+// ---------- Undo one hunk ----------
+
+/** Split a hunks-only patch into its `@@` hunks, each ending in a newline. */
+function splitHunks(patch: string): string[] {
+  const out: string[] = [];
+  for (const line of patch.split('\n')) {
+    if (line.startsWith('@@')) out.push(line + '\n');
+    else if (out.length && line !== '') out[out.length - 1] += line + '\n';
+  }
+  return out;
+}
+
+/**
+ * Put ONE hunk of a file back to what HEAD has (`git apply -R` on the working
+ * tree). The caller sends the hunk text it is looking at; if the file moved
+ * since, that text no longer matches a current hunk and nothing is applied —
+ * reverting "hunk 2" by index would silently undo a different change.
+ * Only the working tree is touched: the index and every other hunk stay.
+ */
+export function gitRevertHunk(cwd: string, relPath: string, hunk: string): GitOpResult {
+  const current = gitFileDiff(cwd, relPath);
+  if (!current.ok) return { ok: false, error: current.error, output: '' };
+  if (current.status === 'A' || current.binary || current.truncated) {
+    return { ok: false, error: 'This change cannot be reverted hunk by hunk.', output: '' };
+  }
+  const want = hunk.replace(/\n+$/, '') + '\n';
+  const match = splitHunks(current.patch).find((h) => h === want);
+  if (!match) {
+    return { ok: false, error: 'The file changed since this diff was read. Nothing was reverted.', output: '' };
+  }
+  const res = spawnSync('git', ['apply', '-R', '--whitespace=nowarn', '-'], {
+    cwd,
+    encoding: 'utf8',
+    timeout: 15000,
+    input: `--- a/${relPath}\n+++ b/${relPath}\n${match}`,
+  });
+  if (res.status !== 0) {
+    return { ok: false, error: res.stderr.trim() || 'git apply failed', output: res.stdout };
+  }
+  return { ok: true, output: res.stdout };
+}
+
+// ---------- Checkpoints: the working tree before a run ----------
+
+const checkpointRef = (runId: string) =>
+  `refs/octo/checkpoints/${runId.replace(/[^A-Za-z0-9_-]/g, '_')}`;
+
+/** How many checkpoints a repository keeps; older ones are dropped on create. */
+const CHECKPOINT_KEEP = 60;
+
+/**
+ * Snapshot the working tree as it is right now — tracked AND untracked files,
+ * `.gitignore` honoured — into a commit under `refs/octo/checkpoints/<runId>`.
+ * Nothing the user can see moves: the snapshot is built in a **temporary
+ * index**, so the real index, HEAD, the stash and the working tree are
+ * untouched. Called before every run that can write, so "what did this run
+ * change, and can I have it back" always has an answer.
+ */
+export function gitCheckpointCreate(cwd: string, runId: string): { ok: boolean; sha?: string } {
+  if (!cwd || !existsSync(cwd)) return { ok: false };
+  const dir = git(cwd, ['rev-parse', '--absolute-git-dir']);
+  if (dir.status !== 0) return { ok: false };
+  const gitDir = dir.stdout.trim();
+  const tmpIndex = path.join(gitDir, `octo-checkpoint-${process.pid}-${Date.now()}.index`);
+  const env = {
+    ...process.env,
+    GIT_INDEX_FILE: tmpIndex,
+    // A commit object needs an identity; the user may not have set one.
+    GIT_AUTHOR_NAME: 'Octo',
+    GIT_AUTHOR_EMAIL: 'checkpoint@octo.local',
+    GIT_COMMITTER_NAME: 'Octo',
+    GIT_COMMITTER_EMAIL: 'checkpoint@octo.local',
+  };
+  const run = (args: string[]) => spawnSync('git', args, { cwd, encoding: 'utf8', timeout: 60000, env });
+  try {
+    // Start from the real index so git reuses its stat cache instead of
+    // re-hashing every file in the repository on every run.
+    const realIndex = path.join(gitDir, 'index');
+    if (existsSync(realIndex)) copyFileSync(realIndex, tmpIndex);
+    if (run(['add', '-A']).status !== 0) return { ok: false };
+    const tree = run(['write-tree']);
+    if (tree.status !== 0) return { ok: false };
+    const hasHead = git(cwd, ['rev-parse', '--verify', '--quiet', 'HEAD']).status === 0;
+    const commit = run([
+      'commit-tree',
+      tree.stdout.trim(),
+      ...(hasHead ? ['-p', 'HEAD'] : []),
+      '-m',
+      `octo checkpoint before run ${runId}`,
+    ]);
+    if (commit.status !== 0) return { ok: false };
+    const sha = commit.stdout.trim();
+    if (git(cwd, ['update-ref', checkpointRef(runId), sha]).status !== 0) return { ok: false };
+
+    // Keep the newest few; a ref per run forever would never let git collect.
+    const refs = git(cwd, ['for-each-ref', '--sort=-creatordate', '--format=%(refname)', 'refs/octo/checkpoints/']);
+    for (const old of refs.stdout.split('\n').filter(Boolean).slice(CHECKPOINT_KEEP)) {
+      git(cwd, ['update-ref', '-d', old]);
+    }
+    return { ok: true, sha };
+  } catch {
+    return { ok: false };
+  } finally {
+    rmSync(tmpIndex, { force: true });
+  }
+}
+
+/** Does this run have a checkpoint, and when was it taken? */
+export function gitCheckpointInfo(cwd: string, runId: string): { exists: boolean; at?: string } {
+  if (!cwd || !existsSync(cwd)) return { exists: false };
+  const res = git(cwd, ['log', '-1', '--format=%cI', checkpointRef(runId)]);
+  return res.status === 0 ? { exists: true, at: res.stdout.trim() } : { exists: false };
+}
+
+/**
+ * Put `paths` back to how they were at this run's checkpoint. Deliberately
+ * narrow: only the files handed in (the ones runs wrote since) are touched, so
+ * anything you edited elsewhere by hand stays. A file that was in the snapshot
+ * is restored; one that was not existed only because a run created it, and is
+ * deleted — unless it is git-ignored, where "not in the snapshot" proves
+ * nothing (ignored files are never snapshotted), so it is left and reported.
+ */
+export function gitCheckpointRestore(cwd: string, runId: string, paths: string[]): CheckpointRestore {
+  const out: CheckpointRestore = { ok: false, restored: [], removed: [], skipped: [] };
+  const ref = checkpointRef(runId);
+  if (!cwd || !existsSync(cwd) || git(cwd, ['rev-parse', '--verify', '--quiet', ref]).status !== 0) {
+    return { ...out, error: 'This run has no checkpoint.' };
+  }
+  for (const rel of paths) {
+    if (!rel || isAbsolute(rel) || rel.split(/[\\/]/).includes('..')) {
+      out.skipped.push({ path: rel, reason: 'outside the repository' });
+      continue;
+    }
+    if (git(cwd, ['cat-file', '-e', `${ref}:${rel}`]).status === 0) {
+      const res = git(cwd, ['restore', `--source=${ref}`, '--worktree', '--', rel]);
+      if (res.status === 0) out.restored.push(rel);
+      else out.skipped.push({ path: rel, reason: res.stderr.trim() || 'git restore failed' });
+    } else if (existsSync(path.join(cwd, rel))) {
+      if (git(cwd, ['check-ignore', '-q', '--', rel]).status === 0) {
+        out.skipped.push({ path: rel, reason: 'git-ignored, so it was never in the checkpoint' });
+      } else {
+        rmSync(path.join(cwd, rel), { force: true });
+        out.removed.push(rel);
+      }
+    }
+  }
+  return { ...out, ok: true };
+}
+
+// ---------- Search the workspace ----------
+
+/** Past this many matches the search stops — the UI says the list is partial. */
+const SEARCH_CAP = 500;
+
+/**
+ * Text search across the workspace, through `git grep`: tracked AND untracked
+ * files, `.gitignore` respected, binaries skipped. Fixed-string by default —
+ * a search box is not a regex prompt. Outside a repository there is no cheap,
+ * ignore-aware way to do this, so it reports that instead of walking
+ * `node_modules`.
+ */
+export function gitSearch(
+  cwd: string,
+  query: string,
+  opts: { caseSensitive?: boolean; regex?: boolean } = {}
+): WorkspaceSearch {
+  const empty = (error?: string): WorkspaceSearch => ({ ok: !error, matches: [], truncated: false, error });
+  if (!cwd || !existsSync(cwd)) return empty('No workspace.');
+  if (!query.trim()) return empty();
+  if (git(cwd, ['rev-parse', '--is-inside-work-tree']).status !== 0) {
+    return empty('Search needs a git repository.');
+  }
+  const args = ['grep', '-n', '-I', '--untracked', '--no-color', '--full-name'];
+  if (!opts.caseSensitive) args.push('-i');
+  args.push(opts.regex ? '-E' : '-F', '-e', query);
+  const res = spawnSync('git', args, { cwd, encoding: 'utf8', timeout: 20000, maxBuffer: 32 * 1024 * 1024 });
+  // 1 = no matches. Anything else non-zero is a real failure (bad regex, …).
+  if (res.status !== 0 && res.status !== 1) {
+    return empty((res.stderr || String(res.error ?? '')).trim() || 'Search failed.');
+  }
+  const matches: WorkspaceSearch['matches'] = [];
+  let truncated = false;
+  for (const line of res.stdout.split('\n')) {
+    const m = line.match(/^(.+?):(\d+):(.*)$/);
+    if (!m) continue;
+    if (matches.length >= SEARCH_CAP) {
+      truncated = true;
+      break;
+    }
+    // A minified bundle is one 2 MB line; keep what a row can show.
+    matches.push({ path: m[1], line: Number(m[2]), text: m[3].length > 400 ? m[3].slice(0, 400) : m[3] });
+  }
+  return { ok: true, matches, truncated };
 }
 
 // ---------- What a branch actually contains ----------

@@ -319,7 +319,7 @@ Fire Claude runs automatically on app-level events.
 - When the last task completes the spec **auto-advances to `done`** and the flow lands on the
   **Ship** stage (auto-generated summary + commit/PR). `specs:set-phase` reopens a phase
   (Re-sync). The **Audit** action routes to `spec-doctor`.
-- The top bar and SurfaceNav show a live running-count badge; Activity › Runs shows live agents
+- The top bar and the ActivityBar show a live running-count badge; Activity › Runs shows live agents
   with elapsed time + per-run / stop-all cancel and the activity log.
 
 ## Git & GitHub
@@ -404,7 +404,8 @@ permission prompts, and run real CLI slash commands — exactly as in a normal t
 - **IPC:** `terminal:create` (invoke), `terminal:write` / `terminal:resize` / `terminal:kill`
   (send), data/exit event channels. See [`ipc-contract.md`](./ipc-contract.md) → `terminal`.
 - **UI:** `TerminalView` (xterm.js + fit + web-links addons) renders each terminal; sessions
-  live in the `ui` store and render under **Activity › Terminals** (session chips + *Terminal* /
+  live in the `ui` store and render in the **Terminal** tab of the panel under the editor area (`shell/BottomPanel`, always
+  mounted so the PTYs survive) (session chips + *Terminal* /
   *Claude session* buttons; also creatable from ⌘K). Panes are **kept mounted (display-toggled)**
   so the PTY survives navigation — unmounting kills the shell. See [`renderer.md`](./renderer.md).
 - **Open in Chrome:** the web-links addon routes URL clicks to `shell.openUrl`, and the window

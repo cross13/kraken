@@ -14,6 +14,7 @@ import type {
   RunFileRow,
   RunFileCount,
   SpecFileChange,
+  FileAuthor,
 } from './shared/types.js';
 
 export type {
@@ -569,6 +570,40 @@ export function listSpecFiles(opts: {
      GROUP BY rf.path
      ORDER BY last_at DESC`;
   return d.prepare(sql).all(...params) as SpecFileChange[];
+}
+
+/**
+ * For every file any run in this workspace wrote: the run that wrote it last.
+ * SQLite returns the bare columns from the row that holds MAX(last_at), which is
+ * exactly "the latest writer".
+ */
+export function listFileAuthors(workspacePath: string): FileAuthor[] {
+  const d = require_db();
+  return d
+    .prepare(
+      `SELECT rf.path AS path, rf.run_id AS run_id, r.spec_id AS spec_id, r.task_id AS task_id,
+              r.agent AS agent, r.kind AS kind, r.source AS source, MAX(rf.last_at) AS last_at
+       FROM run_files rf JOIN runs r ON r.id = rf.run_id
+       WHERE r.workspace_path IS ?
+       GROUP BY rf.path`
+    )
+    .all(workspacePath) as FileAuthor[];
+}
+
+/**
+ * Every file any run in this workspace wrote at or after `since` — what
+ * restoring the checkpoint of a run that started at `since` has to put back.
+ */
+export function listFilesWrittenSince(workspacePath: string, since: string): string[] {
+  const d = require_db();
+  const rows = d
+    .prepare(
+      `SELECT DISTINCT rf.path AS path
+       FROM run_files rf JOIN runs r ON r.id = rf.run_id
+       WHERE r.workspace_path IS ? AND rf.last_at >= ?`
+    )
+    .all(workspacePath, since) as { path: string }[];
+  return rows.map((r) => r.path);
 }
 
 /** Distinct-file counts per run, for badges. Scoped to a workspace/spec via runs join. */

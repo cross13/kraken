@@ -180,6 +180,15 @@ export function parseReview(text: string, target: string): CodeReview {
   return { target, summary, findings, createdAt: new Date().toISOString() };
 }
 
+/**
+ * The Assistant prompt that fixes ONE finding. Shared by every place a finding
+ * is shown (Ship's list, the PR studio, the diff editor) so "Fix with Claude"
+ * asks for the same thing everywhere — including permission to disagree.
+ */
+export function fixFindingPrompt(f: ReviewFinding): string {
+  return `Fix this code review finding, and only this one:\n\n**${f.title}** (${f.severity}) in \`${f.file}${f.line ? `:${f.line}` : ''}\`\n\n${f.detail}${f.suggestion ? `\n\nSuggested fix: ${f.suggestion}` : ''}\n\nRead the code first; if the finding turns out to be wrong, say so instead of changing anything.`;
+}
+
 export function reviewCounts(findings: ReviewFinding[]): Record<ReviewSeverity, number> {
   const counts = { blocker: 0, major: 0, minor: 0, nit: 0 };
   for (const f of findings) counts[f.severity]++;

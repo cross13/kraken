@@ -150,6 +150,24 @@ letter; patch omitted for binary files or past 400 KB). The networked steps are 
 `GIT_TERMINAL_PROMPT=0`, so a missing credential is an error rather than a hung prompt.
 `prCheckoutPrune({cwd, keep})` removes the worktrees + refs of PRs not in `keep` (called with the
 open-PR list on every load).
+`fileDiff({cwd, path})` → `FileDiff` is ONE file's working-tree diff against HEAD (`git diff HEAD
+-- <path>`, staged + unstaged together; an untracked file is diffed against `/dev/null`) — hunks
+only, with `status` (`A`/`M`/`D`), `added`/`deleted`, `binary` and `truncated`. It feeds the diff
+editor. `path` is repository-relative; an absolute path or one containing `..` is refused.
+`revertHunk({cwd, path, hunk})` puts ONE hunk of a modified file back to HEAD (`git apply -R` on the
+working tree; the index is untouched). `hunk` is the hunk text the diff editor is showing — it must
+equal a hunk of the *current* diff or nothing is applied.
+`checkpointInfo({cwd, runId})` → `CheckpointInfo` (`exists`, `at`, and `files`: the repository-
+relative files runs wrote since that run started) and `checkpointRestore({cwd, runId})` →
+`CheckpointRestore` (`restored` / `removed` / `skipped[{path, reason}]`). The checkpoint itself is
+taken in `streamClaude`, not over IPC.
+`search({cwd, query, caseSensitive?, regex?})` → `WorkspaceSearch` (`git grep -n -I --untracked`,
+fixed-string unless `regex`; at most 500 matches, `truncated` says when it was cut). Needs a
+repository — outside one it returns an error instead of walking ignored folders.
+`listChanges(cwd)` rows also carry `added`/`deleted` (`git diff HEAD --numstat`; absent for
+untracked and binary files) and `mtime` (open diff and file tabs re-read on it — an edit that
+swaps one line for another leaves the counts unchanged), and the result carries `headAt` — HEAD's commit time, which the
+renderer uses to decide whether a run is still the author of a change.
 `status`, `listChanges`, `stage`, `unstage`, `stageAll`, `unstageAll`, `fetch`, `pull`, `push`,
 `listBranches`, `checkout`, `createBranch`, `commitPush`. Backed by `electron/git.ts`. All return
 `{ ok, error?, output, … }` result objects.
@@ -180,6 +198,10 @@ directory, and **throws while any run is active** so nothing writes a spec back 
 `specRunStats(root)` returns per-spec run aggregates (`runs`, `errors`, `cancelled`,
 `total_duration_ms`, `last_run_at`) powering the Spec Manager analytics. See
 [`data-model.md`](./data-model.md).
+`fileAuthors(workspacePath)` → `FileAuthor[]`: for every file a run in this workspace wrote, the
+run that wrote it **last** (`run_id`, `spec_id`, `task_id`, `agent`, `kind`, `source`, `last_at`).
+File-level, last-writer-wins. Feeds the Changes view's *By task* grouping and the diff editor's
+attribution strip.
 
 ### `claude`
 `stream(payload)` (fire-and-forget `send` on `claude:stream`), `cancel(requestId)`, and

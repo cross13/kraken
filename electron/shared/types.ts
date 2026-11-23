@@ -256,6 +256,8 @@ export interface ChatMessage {
   createdAt: number;
   streaming?: boolean;
   agent?: string;
+  /** the run that produced an assistant message — its checkpoint hangs off it */
+  runId?: string;
 }
 
 export interface ClaudeRequest {
@@ -366,6 +368,24 @@ export interface RunFileRow {
 export interface RunFileCount {
   run_id: string;
   files: number;
+}
+
+/**
+ * The run that last wrote a file (`history:file-authors`) — what lets the
+ * Changes view group the working tree by the task that produced it. File-level
+ * and last-writer-wins: it says which run touched the file most recently, not
+ * which lines are its.
+ */
+export interface FileAuthor {
+  /** as the tool call named it — usually absolute */
+  path: string;
+  run_id: string;
+  spec_id: string | null;
+  task_id: string | null;
+  agent: string | null;
+  kind: string | null;
+  source: string;
+  last_at: string;
 }
 
 /** One file changed across a spec's runs, aggregated for the completion summary. */
@@ -558,6 +578,55 @@ export interface BranchSummary {
   deleted: number;
   /** committed changes exist, but the working tree also has uncommitted ones */
   dirty: boolean;
+  error?: string;
+}
+
+/**
+ * One file's working-tree diff against HEAD (`git:file-diff`) — what the diff
+ * editor renders. Staged and unstaged changes together.
+ */
+export interface FileDiff {
+  ok: boolean;
+  /** repository-relative path */
+  path: string;
+  /** A = new (incl. untracked), M = modified, D = deleted */
+  status: 'A' | 'M' | 'D';
+  /** unified hunks only (from the first `@@`), no file header */
+  patch: string;
+  added: number;
+  deleted: number;
+  binary: boolean;
+  /** true when `patch` was cut at the byte cap */
+  truncated: boolean;
+  error?: string;
+}
+
+/** What a run's checkpoint can give back (`git:checkpoint-info`). */
+export interface CheckpointInfo {
+  exists: boolean;
+  /** when the snapshot was taken (ISO) */
+  at?: string;
+  /** repository-relative files that runs wrote since — what a restore touches */
+  files: string[];
+}
+
+/** The outcome of `git:checkpoint-restore`. */
+export interface CheckpointRestore {
+  ok: boolean;
+  /** put back to the snapshot's content */
+  restored: string[];
+  /** did not exist at the snapshot, so deleted */
+  removed: string[];
+  skipped: { path: string; reason: string }[];
+  error?: string;
+}
+
+/** A text search across the workspace (`git:search`). */
+export interface WorkspaceSearch {
+  ok: boolean;
+  matches: { path: string; line: number; text: string }[];
+  /** true when the match list was cut at the cap */
+  truncated: boolean;
   error?: string;
 }
 

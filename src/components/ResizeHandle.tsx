@@ -5,7 +5,7 @@ interface Props {
   /** current width of the panel being resized */
   width: number;
   /** which edge of the panel this handle sits on */
-  side: 'left' | 'right';
+  side: 'left' | 'right' | 'top';
   /** called with the proposed new width as the user drags */
   onResize: (next: number) => void;
   className?: string;
@@ -23,14 +23,16 @@ export function ResizeHandle({ width, side, onResize, className }: Props) {
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     e.preventDefault();
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
-    drag.current = { startX: e.clientX, startW: width };
-    document.body.style.cursor = 'col-resize';
+    drag.current = { startX: side === 'top' ? e.clientY : e.clientX, startW: width };
+    document.body.style.cursor = side === 'top' ? 'row-resize' : 'col-resize';
     document.body.style.userSelect = 'none';
   };
 
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!drag.current) return;
-    const delta = e.clientX - drag.current.startX;
+    // `top` resizes a HEIGHT: the handle is the panel's upper edge, so dragging
+    // up grows it. `width` then carries the height being resized.
+    const delta = side === 'top' ? e.clientY - drag.current.startX : e.clientX - drag.current.startX;
     const next = side === 'right' ? drag.current.startW + delta : drag.current.startW - delta;
     onResize(next);
   };
@@ -50,18 +52,19 @@ export function ResizeHandle({ width, side, onResize, className }: Props) {
   return (
     <div
       role="separator"
-      aria-orientation="vertical"
+      aria-orientation={side === 'top' ? 'horizontal' : 'vertical'}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={end}
       onPointerCancel={end}
       className={cn(
-        'group relative w-1 shrink-0 cursor-col-resize bg-ink-800 hover:bg-accent/60 active:bg-accent transition-colors',
+        'group relative shrink-0 bg-ink-800 hover:bg-accent/60 active:bg-accent transition-colors',
+        side === 'top' ? 'h-1 cursor-row-resize' : 'w-1 cursor-col-resize',
         className
       )}
     >
       {/* widen the hit target without taking layout space */}
-      <span className="absolute inset-y-0 -left-1 -right-1" />
+      <span className={side === 'top' ? 'absolute inset-x-0 -top-1 -bottom-1' : 'absolute inset-y-0 -left-1 -right-1'} />
     </div>
   );
 }

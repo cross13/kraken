@@ -26,6 +26,7 @@ import {
   Maximize2,
   FileSearch,
   BookOpen,
+  Activity,
 } from 'lucide-react';
 import { useWorkspace } from '../stores/workspace';
 import { useUi, stageForPhase, type LibrarySection, type ActivityTab } from '../stores/ui';
@@ -128,6 +129,25 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
       icon: <Folder size={15} />,
       group: 'Commands',
       run: () => toggleExplorer(),
+    });
+    out.push({
+      id: 'cmd:changes',
+      label: 'Show changes…',
+      hint: 'diff against HEAD',
+      icon: <GitBranch size={15} />,
+      group: 'Commands',
+      run: () => {
+        const ui = useUi.getState();
+        if (!(ui.sideOpen && ui.sideView === 'changes')) ui.showSide('changes');
+      },
+    });
+    out.push({
+      id: 'cmd:runs-panel',
+      label: 'Toggle runs panel',
+      hint: '⌘⇧J',
+      icon: <Activity size={15} />,
+      group: 'Commands',
+      run: () => useUi.getState().togglePanel(),
     });
     out.push({
       id: 'cmd:travel-display',

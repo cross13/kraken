@@ -139,10 +139,11 @@ appends a `### Critical Decision` back into `plan.md`, so the plan never drifts 
 
 ---
 
-## The four surfaces
+## The shell and its surfaces
 
-There is no tab bar and no focus mode — the app is four singleton surfaces plus two drawers and a
-slide-over panel.
+The window is laid out like an editor: an **activity bar**, a **side bar** (Explorer · Changes ·
+Specs), an **editor area** with tabs, the Assistant on the right, a runs panel and a status bar.
+The editor area shows one of four singleton surfaces — or a file / diff tab opened beside it.
 
 | Surface | What lives there |
 |---|---|
@@ -151,9 +152,15 @@ slide-over panel.
 | **Activity** | The single "what's running" centre: live **Runs** with cancel + the concurrency control, run **History**, **Specs** (per-spec run analytics), **Terminals** (PTYs stay mounted), and the agent **Graph**. |
 | **Library** | Everything that configures the loop: Agents · Skills · Hooks · Steering · **Tickets** · Routing · Appearance · Settings. |
 
-Plus: the **Assistant** chat drawer (⌘J, drag-resizable), the **Explorer** file drawer (⌘⇧E), a
-right slide-over **overlay** for detail views (file / agent / skill / run / hook / ticket / repo),
-and the **⌘K** command palette.
+Plus:
+
+- **Files open as tabs.** A markdown file (a README) shows as **Code · Split · Preview**.
+- **Changes** lists every file that differs from HEAD; clicking one opens its **diff** — split or
+  unified, green and red like GitHub — and you can commit from the same view.
+- The **Assistant** chat panel (⌘J, drag-resizable), the **runs panel** under the editor (⌘⇧J), a
+  right slide-over **overlay** for detail views (agent / skill / run / hook / ticket / repo), and
+  the **⌘K** command palette.
+- Six palettes; **Brasa** (light) and **Brasa dark** are the defaults.
 
 ---
 

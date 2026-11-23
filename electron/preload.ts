@@ -4,6 +4,11 @@ import type {
   BranchDiff,
   BranchSummary,
   PrCheckout,
+  FileDiff,
+  WorkspaceSearch,
+  CheckpointInfo,
+  CheckpointRestore,
+  FileAuthor,
   PrFile,
   PrReviewComment,
   SpecReviewStamp,
@@ -352,9 +357,29 @@ const api = {
           staged: boolean;
           unstaged: boolean;
           untracked: boolean;
+          added?: number;
+          deleted?: number;
+          mtime?: number;
         }[];
+        /** when HEAD was committed (ISO) — a run older than this is not the author of a change */
+        headAt?: string;
         error?: string;
       }>,
+    /** One file's working-tree diff against HEAD (staged + unstaged). */
+    fileDiff: (args: { cwd: string; path: string }) =>
+      ipcRenderer.invoke('git:file-diff', args) as Promise<FileDiff>,
+    /** Put ONE hunk back to HEAD; `hunk` is the hunk text on screen (refused if stale). */
+    revertHunk: (args: { cwd: string; path: string; hunk: string }) =>
+      ipcRenderer.invoke('git:revert-hunk', args) as Promise<{ ok: boolean; error?: string; output: string }>,
+    /** Does this run have a checkpoint, and which files would a restore touch? */
+    checkpointInfo: (args: { cwd: string; runId: string }) =>
+      ipcRenderer.invoke('git:checkpoint-info', args) as Promise<CheckpointInfo>,
+    /** Put the files runs wrote since this run started back to its checkpoint. */
+    checkpointRestore: (args: { cwd: string; runId: string }) =>
+      ipcRenderer.invoke('git:checkpoint-restore', args) as Promise<CheckpointRestore>,
+    /** Text search across the workspace (`git grep`, ignore-aware). */
+    search: (args: { cwd: string; query: string; caseSensitive?: boolean; regex?: boolean }) =>
+      ipcRenderer.invoke('git:search', args) as Promise<WorkspaceSearch>,
     stage: (args: { workspacePath: string; paths: string[] }) =>
       ipcRenderer.invoke('git:stage', args) as Promise<{ ok: boolean; error?: string; output: string }>,
     unstage: (args: { workspacePath: string; paths: string[] }) =>
@@ -483,6 +508,9 @@ const api = {
       ipcRenderer.invoke('history:run-file-counts', opts) as Promise<RunFileCount[]>,
     listSpecFiles: (opts: { workspacePath?: string | null; specId: string }) =>
       ipcRenderer.invoke('history:list-spec-files', opts) as Promise<SpecFileChange[]>,
+    /** The run that last wrote each file in this workspace. */
+    fileAuthors: (workspacePath: string) =>
+      ipcRenderer.invoke('history:file-authors', workspacePath) as Promise<FileAuthor[]>,
     listErrors: (opts: { workspacePath?: string | null; limit?: number }) =>
       ipcRenderer.invoke('history:list-errors', opts) as Promise<ErrorRow[]>,
     stats: (workspacePath?: string | null) =>

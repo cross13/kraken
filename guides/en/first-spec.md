@@ -17,7 +17,7 @@ You type one sentence on Home and get a spec folder under `.octo/specs/<id>/` wi
 3. Pick how far to go:
    - **Plan** (or `Enter`) creates the spec and opens it on its first stage. No Claude run starts. Your text is kept as the spec's brief, and the gate bar offers **Draft requirements with Claude** when you are ready to spend a run.
    - **Plan rápido** (or `⌘Enter`) drafts the requirements and then the plan back to back, with no approval stops, and leaves you in Build with `tasks.md` already derived. Use it when you already know the answers.
-4. If what you typed ends with `?`, no spec is created. The text goes to the Assistant drawer (⌘J) as a question instead.
+4. If what you typed ends with `?`, no spec is created. The text goes to the Assistant panel (⌘J) as a question instead.
 5. While a draft runs, a strip above the document says Claude is drafting it. The document reloads from disk when the run finishes; you can follow the run itself in the Assistant.
 
 ## Tip

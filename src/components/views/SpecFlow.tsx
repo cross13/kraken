@@ -100,7 +100,7 @@ function stageLabels(kind: 'feature' | 'bugfix') {
     : ['Bug analysis', 'Plan', 'Build'];
 }
 
-function stageFileNames(kind: 'feature' | 'bugfix') {
+export function stageFileNames(kind: 'feature' | 'bugfix') {
   return [
     kind === 'feature' ? 'requirements.md' : 'bugfix.md',
     'plan.md',
@@ -145,6 +145,14 @@ export function SpecFlow({ specId }: { specId: string }) {
   // The Plan stage opens on **Clarify** — the interactive question round that
   // runs before the plan is drafted — until its decisions have been applied.
   const [planTab, setPlanTab] = useState<'clarify' | 'doc'>('doc');
+
+  // A document tab in the shell's strip names a document, so it opens the
+  // document — Clarify is reached through the Plan stage's own sub-tab.
+  const specDocNonce = useUi((u) => u.specDocNonce);
+  useEffect(() => {
+    if (specDocNonce > 0) setPlanTab('doc');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [specDocNonce]);
   const debounceRef = useRef<number | null>(null);
   const dirtyRef = useRef(false);
 
@@ -396,40 +404,10 @@ export function SpecFlow({ specId }: { specId: string }) {
         />
       )}
 
-      {/* Row 1 — file tabs (the stages as documents) + doc tools */}
+      {/* Row 1 — doc tools. The stage documents themselves (requirements.md /
+          plan.md / tasks.md) are tabs in the shell's strip (`shell/EditorTabs`),
+          next to the files you have open — one row of tabs, not two. */}
       <div className="flex items-end gap-0.5 px-4 pt-1.5 shrink-0 border-b border-ink-50/[0.05]">
-        {STAGES.map((s, i) => {
-          const active = i === stageIdx;
-          const reachable = i <= phaseIdx;
-          return (
-            <button
-              key={s}
-              disabled={!reachable}
-              onClick={() => {
-                if (!reachable) return;
-                // The file tab names a document, so it opens the document —
-                // Clarify is reached through the stage's own sub-tab.
-                if (s === 'plan') setPlanTab('doc');
-                setStage(s);
-              }}
-              title={reachable ? fileNames[i] : `${fileNames[i]} — locked until the previous gate is approved`}
-              className={cn(
-                'relative px-3.5 py-2.5 text-[13px] rounded-t-lg transition',
-                active
-                  ? 'text-ink-50 bg-ink-50/[0.03]'
-                  : reachable
-                    ? 'text-faint hover:text-ink-100'
-                    : 'text-ink-600 cursor-default'
-              )}
-            >
-              {fileNames[i]}
-              {active && (
-                <span className="absolute left-2 right-2 -bottom-px h-[2px] rounded-full bg-accent" />
-              )}
-            </button>
-          );
-        })}
-
         <div className="ml-auto flex items-center gap-2 pb-1.5 shrink-0">
           <SaveStatus saving={saving} savedAt={savedAt} />
           {onDocument && <ViewSwitcher view={view} onView={setView} file={docKey} />}

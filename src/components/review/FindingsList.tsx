@@ -2,7 +2,7 @@ import { FileCode2, Wand2 } from 'lucide-react';
 import { useUi } from '../../stores/ui';
 import { useChat } from '../../stores/chat';
 import { useWorkspace } from '../../stores/workspace';
-import { SEVERITIES, SEVERITY_META } from '../../lib/codeReview';
+import { SEVERITIES, SEVERITY_META, fixFindingPrompt } from '../../lib/codeReview';
 import { cn } from '../../lib/cn';
 import type { ReviewFinding } from '../../../electron/shared/types';
 
@@ -36,9 +36,7 @@ export function FindingsList({
   }
 
   const fix = (f: ReviewFinding) => {
-    setPendingPrompt(
-      `Fix this code review finding, and only this one:\n\n**${f.title}** (${f.severity}) in \`${f.file}${f.line ? `:${f.line}` : ''}\`\n\n${f.detail}${f.suggestion ? `\n\nSuggested fix: ${f.suggestion}` : ''}\n\nRead the code first; if the finding turns out to be wrong, say so instead of changing anything.`
-    );
+    setPendingPrompt(fixFindingPrompt(f));
     setAssistantOpen(true);
   };
 
